@@ -17,10 +17,10 @@ declare
   rls_disabled_tables text[];
   exposed_tables text[];
 begin
-  select array_agg(table_name order by table_name)
+  select array_agg(expected.table_name order by expected.table_name)
     into missing_tables
-  from unnest(expected_tables) as table_name
-  where to_regclass(format('public.%I', table_name)) is null;
+  from unnest(expected_tables) as expected(table_name)
+  where to_regclass(format('public.%I', expected.table_name)) is null;
 
   if missing_tables is not null then
     raise exception 'Missing baseline tables: %', missing_tables;
