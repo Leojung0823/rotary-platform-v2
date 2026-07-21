@@ -19,7 +19,7 @@
 - Each operator uses an individual account; shared passwords are prohibited.
 - A club may authorize multiple executive secretaries.
 - Operators do not appear in member rosters or attendance denominators.
-- Existing membership and operator access must not overlap for the same person under the final product rule.
+- A person with any active Rotary club membership cannot hold an active executive-secretary assignment in any club, and vice versa.
 
 ## Delivery strategy
 
