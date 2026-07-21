@@ -1,17 +1,39 @@
 # Rotary Platform V2
 
-扶輪社多社管理平台 V2。
+扶輪社多社管理平台 V2。現有 Lovable 系統持續運作；本專案在獨立 staging 環境逐步重建應用層。
 
-## 核心原則
+## 技術基礎
 
-- 一個共用平台服務多個扶輪社，所有社級資料以 `club_id` 隔離。
-- `people` 表示真實人物；`app_accounts` 表示登入帳號。
-- `club_memberships` 只保存真正的扶輪社友。
-- 執行秘書使用獨立管理帳號與社級授權，不建立社員社籍。
-- 同一扶輪社可有多位執行秘書，每人使用自己的帳號。
-- 正式職務、自由標籤與動態智慧名單分開管理。
-- 目前 Lovable 系統持續運作；V2 先在獨立 staging 環境開發。
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- Supabase Auth / PostgreSQL
+- GitHub Actions
 
-## 目前階段
+## 本機啟動
 
-第一個垂直功能：建立扶輪社並邀請第一位執行秘書。
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+尚未建立 staging Supabase 專案時，可以先啟動首頁；Supabase client 只有在被呼叫時才要求環境變數。
+
+## 品質檢查
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
+## 第一個垂直功能
+
+1. 平台管理員建立扶輪社。
+2. 系統建立第一位執行秘書邀請。
+3. 執行秘書以自己的帳號接受邀請。
+4. 系統授予該社管理權限。
+5. 扶輪社由 provisioning 轉為 active。
+
+更多決策請見 `docs/architecture/core-decisions.md`。
