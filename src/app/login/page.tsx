@@ -4,6 +4,8 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { safeMessage } from "@/lib/validation";
 import { Button, Field, Input, Notice } from "@/components/ui";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (await getAuthenticatedUser()) redirect("/dashboard");
   const { error } = await searchParams;
