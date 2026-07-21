@@ -41,3 +41,7 @@ yarn-error.log*
 # Supabase CLI local state
 /supabase/.temp/
 /supabase/.branches/
+
+# Codex projectless working folders
+/outputs/
+/work/
