@@ -6,6 +6,7 @@ export type ClubInput = {
 };
 
 export type OperatorInput = { email: string; displayName: string };
+export type MemberInput = { name: string; phone: string; email: string; birthDate: string | null };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clubCodePattern = /^[A-Za-z0-9][A-Za-z0-9_-]{1,31}$/;
@@ -34,6 +35,16 @@ export function parseOperatorInput(formData: FormData): OperatorInput {
   return input;
 }
 
+export function parseMemberInput(formData: FormData): MemberInput {
+  const input = { name: String(formData.get("name") ?? "").trim(), phone: String(formData.get("phone") ?? "").trim(),
+    email: String(formData.get("email") ?? "").trim().toLowerCase(), birthDate: String(formData.get("birthDate") ?? "").trim() || null };
+  if (input.name.length < 2 || input.name.length > 80) throw new Error("invalid_name");
+  if (!input.phone && !input.email) throw new Error("missing_contact");
+  if (input.email && !emailPattern.test(input.email)) throw new Error("invalid_email");
+  if (input.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(input.birthDate)) throw new Error("invalid_birth_date");
+  return input;
+}
+
 export function safeMessage(code?: string): string | null {
   if (!code) return null;
   const messages: Record<string, string> = {
@@ -49,6 +60,12 @@ export function safeMessage(code?: string): string | null {
     invite_not_found: "找不到符合目前登入信箱的有效邀請。",
     invite_failed: "邀請已建立，但郵件暫時無法寄出；請稍後重試。",
     invalid_password: "密碼至少需要 12 個字元，且兩次輸入必須相同。",
+    line_login_failed: "LINE Login 未完成，請重新開啟邀請後再試一次。",
+    missing_contact: "手機與電子郵件至少需要填寫一項。",
+    invalid_birth_date: "生日格式不正確。",
+    invitation_invalid: "邀請不存在、已取消或已過期。",
+    member_exists: "這位社員已存在於扶輪社。",
+    oa_not_configured: "請先完成 LINE Official Account 設定。",
     unexpected: "操作未完成，請稍後再試。",
   };
   return messages[code] ?? messages.unexpected;

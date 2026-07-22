@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapDatabaseError, parseClubInput, parseNewPassword, parseOperatorInput, safeRedirectPath } from "./validation";
+import { mapDatabaseError, parseClubInput, parseMemberInput, parseNewPassword, parseOperatorInput, safeRedirectPath } from "./validation";
 
 function form(values: Record<string, string>) { const data = new FormData(); Object.entries(values).forEach(([key, value]) => data.set(key, value)); return data; }
 
@@ -14,6 +14,10 @@ describe("club input validation", () => {
   it("requires matching twelve-character invitation passwords", () => {
     expect(parseNewPassword(form({ password: "a-secure-local-password", passwordConfirmation: "a-secure-local-password" }))).toBe("a-secure-local-password");
     expect(() => parseNewPassword(form({ password: "too-short", passwordConfirmation: "too-short" }))).toThrow("invalid_password");
+  });
+  it("keeps known member data and requires only one contact method", () => {
+    expect(parseMemberInput(form({ name: " 林社員 ", phone: "0912345678", email: "", birthDate: "1980-02-03" }))).toEqual({ name: "林社員", phone: "0912345678", email: "", birthDate: "1980-02-03" });
+    expect(() => parseMemberInput(form({ name: "林社員", phone: "", email: "", birthDate: "" }))).toThrow("missing_contact");
   });
 });
 
