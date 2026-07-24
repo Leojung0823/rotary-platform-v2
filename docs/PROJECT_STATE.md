@@ -1,6 +1,6 @@
 # Project State
 
-> 本文件是專案目前狀態的持續更新快照。重大功能、架構或交付狀態改變時，應在同一個 Pull Request 中更新本文件。
+> 本文件是專案 delivery state、核心架構與主要風險的持續更新快照。它是導航文件，不可取代目標 branch 的實際程式碼、migration、PR 與 CI 證據。
 
 ## Snapshot
 
@@ -9,11 +9,13 @@
 - 預設分支：`main`
 - 狀態確認日期：2026-07-24（Asia/Taipei）
 - `main` 最新確認 commit：`7d1ec98a9a9422dbeb07b25174f9e56fdb2566fb` — `Bootstrap Next.js V2 foundation`
-- 目前階段：V2 基礎建置完成，第一個垂直功能尚未開始實作
+- 目前階段：`main` 已完成應用基礎；第一個垂直功能與 V0.3 身份／管理系統正在 stacked Draft PR 中實作與審查，尚未合併到 `main`
 
 ## Product Goal
 
-在不影響現有 Lovable 正式系統的前提下，以獨立 staging 環境重建可服務多個扶輪社的管理平台。第一個垂直功能為：
+在不影響現有 Lovable 正式系統的前提下，重建可服務多個扶輪社的管理平台。Hosted 測試與部署使用獨立 staging 環境；schema、RLS、auth 與 provisioning 可先在隔離的本機 Supabase 開發及驗證。
+
+第一個垂直功能為：
 
 1. 平台管理員建立扶輪社。
 2. 系統建立第一位執行秘書邀請。
@@ -28,23 +30,140 @@
 - 執行秘書使用個人帳號與 operator 權限，不建立社員社籍。
 - 同一扶輪社可以授權多位執行秘書。
 - 執行秘書不出現在社員名冊與出席率分母。
-- 現有 Lovable 系統繼續正式運作；V2 使用獨立 staging Supabase。
+- 同一人的 active membership 與 active operator access 依最終產品規則不得重疊。
+- 現有 Lovable 系統繼續正式運作；V2 的 hosted 測試／部署使用獨立 staging Supabase。
 
 詳細規則見 `docs/architecture/core-decisions.md`。
 
-## Completed
+## Merged on `main`
 
 ### Repository foundation
 
 - 建立私人 GitHub Repository 與 `main` 分支。
 - 建立 Next.js App Router、React、TypeScript strict 與 Tailwind CSS 基礎。
 - 建立 Supabase browser/server client 包裝。
-- 建立 `.env.example`，預留 Supabase URL 與 publishable key。
+- 建立 `.env.example`，預留 Supabase URL 與 publishable key 名稱。
 - 建立基礎首頁，呈現 V2 目標與身份／權限原則。
-- 建立 GitHub Actions CI。
+- 建立 GitHub Actions `CI`，使用 Node.js 24 執行 install、lint、typecheck 與 build。
 - 建立核心架構決策文件。
 
-### Current validation commands
+`main` 目前沒有已合併的 database migration、完整 auth、provisioning 或 V0.3 功能。
+
+## In progress in open stacked PRs
+
+目前交付鏈為：
+
+```text
+main
+└─ PR #2  feat/supabase-core-baseline
+   └─ PR #5  feat/supabase-issue-3
+      └─ PR #7  feat/v0.3-identity-admin
+```
+
+這些 PR 均為 Draft。CI 成功代表自動檢查通過，不代表已完成安全審查或可跳過依賴順序。
+
+### PR #2 — Supabase core identity baseline
+
+- Base：`main`
+- Head：`feat/supabase-core-baseline`
+- 已確認 head SHA：`c536e2433e12b908bdd2a151601dcbee55d2275a`
+- CI：`CI` success
+- Repository 證據：
+  - 版本化 Supabase local project
+  - 核心 identity／club schema migration
+  - `people`、`app_accounts`、`platform_roles`、`clubs`、`club_memberships`、`club_operator_permissions`、operator invites 與 audit logs
+  - RLS enabled
+  - 撤銷 `anon`、`authenticated` 的直接 table privileges
+  - membership／operator overlap 防護與 verification SQL
+- 尚未合併到 `main`。
+
+### PR #5 — Local auth and club provisioning vertical slice
+
+- Base：`feat/supabase-core-baseline`（依賴 PR #2）
+- Head：`feat/supabase-issue-3`
+- 已確認 head SHA：`e8c752495c5705d2a78477473ef1018675d5d907`
+- CI：`CI` success、`Quality` success
+- Repository 證據：
+  - secure provisioning forward-only migration 與 SECURITY DEFINER RPC
+  - 平台管理員、扶輪社建立、第一位 operator invitation、接受邀請與狀態流程
+  - Traditional Chinese login／app shell／operator management
+  - unit tests、migration history guard、local database verification 與 auth／Mailpit verification
+  - `npm test`、`npm run check:migrations`、`npm run verify:db`、`npm run verify:auth`
+- 尚未合併到 `main`，需先處理 PR #2 或在其合併後 retarget。
+
+### PR #7 — V0.3 Identity & Admin
+
+- Base：`feat/supabase-issue-3`（依賴 PR #5）
+- Head：`feat/v0.3-identity-admin`
+- 已確認 head SHA：`32716b39a60c30f1a92eb409f4ddc078896bbf8d`
+- CI：`CI` success、`Quality` success
+- Repository 證據：
+  - invitation-first identity／member administration schema 與 RPC
+  - LINE Login/OA、identity center、member／invitation／audit UI
+  - local-only LINE mock、安全邊界、V0.3 verification SQL
+  - lint、typecheck、14 tests、build、database／auth verification 與 audit checks
+- 尚未合併到 `main`，需先處理 PR #2 與 PR #5。
+
+### PR #8 — Project Rehydration workflow
+
+- Base：`main`
+- Head：`agent/project-rehydration`
+- 新增 `AGENTS.md`、本文件與 `docs/PROJECT_REHYDRATION.md`
+- 本 PR 僅修改文件，目的為讓新代理辨識 `main` 與 stacked PR 的差異，避免重複開發。
+
+## Not confirmed／尚無 Repository 證據
+
+- Hosted V2 staging Supabase 已建立、linked 或完成遠端驗證
+- Staging deployment 與可驗收 URL
+- Hosted staging secrets、ownership 與部署權限已完成確認
+- 正式 LINE provider credentials、callback／webhook 設定已完成
+- Lovable production data migration 策略與演練
+- PR #2、#5、#7 已完成獨立人工安全審查
+- 活動、例會、出席、公告、通知排程、CMS、會費／付款與其他後續模組已交付
+
+「Not confirmed」表示 GitHub 中缺少足夠可驗證證據，不代表 Repository 以外一定不存在。
+
+## Local-first safety boundary
+
+以下工作可在隔離的本機環境進行，不必等待 hosted staging credentials：
+
+- 撰寫與審查 migration／RLS／RPC
+- `supabase db reset --local`
+- `supabase db lint --local`
+- verification SQL
+- local Mailpit／Supabase Auth flow
+- unit tests、lint、typecheck 與 build
+
+以下動作需要先確認目標、ownership、秘密值與明確授權：
+
+- Supabase link／push 或遠端 migration
+- Hosted staging 測試或部署
+- 設定真實 LINE credentials
+- 讀寫 Lovable 或 production database
+- 匯入正式資料
+
+## Current Risks and Constraints
+
+1. **Stacked PR 整合順序**  
+   PR #5 依賴 #2，PR #7 依賴 #5。不得從 `main` 重新建立相同 schema 或功能，也不得跳過 base dependency 直接合併。
+
+2. **大型 Draft PR 尚待人工審查**  
+   PR #5 與 #7 變更範圍大。CI success 不能替代 migration、RLS、RPC、秘密值邊界與 UI 行為的獨立 review。
+
+3. **Hosted staging 尚未確認**  
+   本機開發與驗證可以繼續，但在 link、push、部署或使用真實 provider 前必須確認安全邊界。
+
+4. **文件可能因並行 PR 過時**  
+   每次重載都必須重新查詢 open PR、head SHA、base branch 與 Actions，而不是只相信本文件。
+
+5. **正式 Lovable 系統必須維持隔離**  
+   未經明確決策與審查，V2 不得連線或寫入正式資料庫。
+
+## Current validation model
+
+驗證命令應以目標 branch 的 `package.json` 與 workflow 為準。
+
+`main` 目前提供：
 
 ```bash
 npm run lint
@@ -52,87 +171,53 @@ npm run typecheck
 npm run build
 ```
 
-CI 目前在 Pull Request 與推送到 `main` 時使用 Node.js 24 執行上述檢查。狀態快照建立時，GitHub API 未回傳 `main` 最新 commit 的 combined status；不可據此宣稱 CI 已通過或失敗。
+PR #5／#7 的堆疊分支另提供或使用：
 
-## Not Yet Implemented
+```bash
+npm ci
+npm run check:migrations
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run verify:db
+npm run bootstrap:superadmin
+npm run verify:auth
+```
 
-截至本次狀態確認，在已檢查的 Repository 快照中尚未看到以下成果：
-
-- V2 staging Supabase 專案與環境設定完成證據
-- 資料庫 schema migrations
-- Row Level Security policies
-- 平台管理員認證與授權
-- 建立扶輪社功能
-- 執行秘書邀請與接受流程
-- `provisioning` 至 `active` 狀態轉換
-- 自動化測試套件與 domain-level tests
-- staging 部署設定與可驗收 URL
-- 正式資料遷移策略
-
-「尚未看到」表示目前 Repository 中沒有足夠證據，不代表外部服務或未推送分支一定不存在。
-
-## Current Risks and Constraints
-
-1. **Staging infrastructure 尚未確認**  
-   在建立認證、migration 或 RLS 前，需要先確認 V2 staging Supabase 專案與秘密值管理方式。
-
-2. **多租戶隔離尚未經實作驗證**  
-   `club_id` 隔離目前是架構決策，尚需透過 schema、RLS 與測試落實。
-
-3. **身份與 operator 規則容易被簡化錯誤**  
-   不可將執行秘書直接放入 `club_memberships`，也不可使用共用管理帳號。
-
-4. **正式 Lovable 系統必須維持隔離**  
-   未經明確決策與審查，V2 不得連線或寫入正式資料庫。
-
-5. **CI 可見性不足**  
-   本次查詢沒有取得最新 `main` commit 的 status context；新的 PR 應以實際 Actions 結果作為驗證依據。
+GitHub Actions 應查詢 workflow runs、jobs 與 step conclusions。Legacy combined commit status 沒有 context，不等於 Actions 不存在或失敗。
 
 ## Recommended Next Work
 
-### Priority 1 — Establish staging foundation
+### Priority 1 — Review and integrate the stacked delivery chain
 
-- 建立或確認獨立 V2 staging Supabase 專案。
-- 將公開環境變數安全地設定於本機與 staging deployment。
-- 確認 service-role key 不會進入前端或 Repository。
-- 記錄 staging ownership、環境名稱與部署方式，但不要把秘密值寫入文件。
+1. 對 PR #2 執行獨立 schema、RLS、migration history 與 local verification review。
+2. 修正後將 PR #2 標記 Ready 並合併，或保留 Draft 直到人工驗收完成。
+3. 將 PR #5 更新／retarget 到合併後的 `main`，重新確認 diff、CI、Quality 與 local verification，再審查 provisioning/auth。
+4. PR #5 完成後，以相同方式處理 PR #7。
+5. 每層合併後，更新本文件的 Merged／In progress 狀態。
 
-### Priority 2 — Design first vertical slice
+### Priority 2 — Confirm hosted staging boundary
 
-建立可審查的資料模型與 migration，至少涵蓋：
+在需要遠端驗收時再確認：
 
-- clubs
-- people
-- app_accounts
-- club_memberships
-- club_operator_permissions
-- operator invitations
-- club lifecycle status
+- staging Supabase ownership 與 project reference
+- deployment target 與可驗收 URL
+- secrets 管理與最小權限
+- 禁止觸及 Lovable production 的操作邊界
 
-同時定義唯一性、外鍵、稽核欄位與 RLS 邊界。
+### Priority 3 — Choose the next product slice
 
-### Priority 3 — Implement and verify provisioning flow
+只有在確認 PR #2 → #5 → #7 的實際合併狀態後，才規劃下一個功能。不得重做已存在於 stacked PR 的 migration、RLS、auth、provisioning 或 identity administration。
 
-- 平台管理員建立扶輪社
-- 建立第一位 operator invitation
-- 接受邀請並綁定個人帳號
-- 授予社級 operator 權限
-- 將扶輪社狀態轉為 `active`
-- 建立成功、過期邀請、重複邀請、跨社存取與權限不足測試
+## Update policy
 
-## Definition of Done for the Next Vertical Slice
-
-下一個垂直功能只有在以下條件成立時才可標示完成：
-
-- migration 可重複套用於乾淨的 staging database
-- RLS 可阻止未授權與跨社資料存取
-- 每位 operator 使用個人帳號
-- operator 不會被錯誤加入社員名冊
-- UI／API／database 流程可從建立扶輪社走到 `active`
-- lint、typecheck、build 與相關測試通過
-- PR 說明包含驗證證據與已知限制
-- 本文件已更新
+- 只有 delivery state、核心架構、主要風險、外部環境或後續工作順序改變時才更新本文件。
+- Stacked PR 各自只記錄相對於 base branch 的新增狀態。
+- 純樣式、小修正或不影響交付狀態的重構通常不更新。
+- 堆疊合併完成後，由最上層／最後合併 PR 或專門同步 PR 整理 `main` snapshot。
 
 ## Update Log
 
-- 2026-07-24：建立 Project Rehydration 基礎文件，記錄目前 Repository 的真實基礎狀態。
+- 2026-07-24：建立 Project Rehydration 基礎文件。
+- 2026-07-24：依獨立審查補入 PR #2 → #5 → #7 stacked delivery chain、local-first safety boundary、實際驗證命令與整合優先順序。
