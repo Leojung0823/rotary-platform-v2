@@ -32,6 +32,7 @@
     "db:v12:security:scan": "bash database/v12/scripts/security-scan.sh",
     "db:v12:lint": "bash database/v12/scripts/lint.sh",
     "db:v12:migrations:verify": "bash database/v12/scripts/verify-migrations.sh",
+    "db:v12:migrations:test": "bash database/v12/scripts/verify-migrations-test.sh",
     "db:v12:migration:new": "bash database/v12/scripts/new-migration.sh",
     "db:v12:types": "bash database/v12/scripts/types.sh",
     "db:v12:types:check": "bash database/v12/scripts/types-check.sh",

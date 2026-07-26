@@ -29,7 +29,11 @@ jobs:
         with: { node-version: 24, cache: npm }
       - uses: supabase/setup-cli@v1
         with: { version: 2.107.0 }
+      - name: Install V1.2 migration verification dependency
+        run: sudo apt-get update && sudo apt-get install --yes ripgrep
       - run: npm ci
+      - name: Regression-test V1.2 migration verification
+        run: npm run db:v12:migrations:test
       - name: Verify V1.2 migration framework and Legacy checksums
         run: npm run db:v12:migrations:verify
       - name: Start isolated V1.2 Supabase workdir
