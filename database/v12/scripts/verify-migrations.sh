@@ -45,6 +45,12 @@ if find "$V12_ROOT/migrations" -type f -name '*.sql' -print -quit 2>/dev/null | 
 fi
 (
   cd "$REPOSITORY_ROOT"
-  shasum -a 256 -c "$legacy_checksums"
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum -c "$legacy_checksums"
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 -c "$legacy_checksums"
+  else
+    v12_fail "no SHA-256 checksum verifier is available"
+  fi
 )
 printf 'V1.2 migration naming, ordering, manifest, envelope, uniqueness, and Legacy checksums passed.\n'
