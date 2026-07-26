@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_edge-readiness.sh"
 
 v12_require_no_args "$@"
 v12_assert_local_stack
@@ -27,31 +28,6 @@ api_url="$(jq -er '.API_URL' <<< "$status_json")"
 anon_key="$(jq -er '.ANON_KEY' <<< "$status_json")"
 service_role_key="$(jq -er '.SERVICE_ROLE_KEY' <<< "$status_json")"
 jwt_secret="$(jq -er '.JWT_SECRET' <<< "$status_json")"
-
-edge_env_pipe="$temporary_root/edge.env.pipe"
-mkfifo "$edge_env_pipe"
-(
-  printf '%s\n' \
-    'INVITATION_HMAC_CURRENT_KEY_VERSION=1' \
-    'INVITATION_HMAC_ACCEPTED_KEY_VERSIONS=1' \
-    'INVITATION_HMAC_SECRET_V1=AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA' \
-    > "$edge_env_pipe"
-) &
-supabase functions serve \
-  --workdir "$V12_ROOT" \
-  --env-file "$edge_env_pipe" \
-  --log-level error \
-  > "$temporary_root/functions-serve.log" 2>&1 &
-serve_pid=$!
-
-for _ in {1..100}; do
-  if curl -sS -o /dev/null --max-time 1 \
-    "http://127.0.0.1:55321/functions/v1/validate-membership-invitation"; then
-    break
-  fi
-  sleep 0.1
-done
-kill -0 "$serve_pid" 2>/dev/null || v12_fail "local Edge runtime did not remain available"
 
 synthetic_email="edge-recovery-$(date +%s)-$$@example.test"
 synthetic_password='Local-Only-Edge-Recovery-2026!'
@@ -180,6 +156,67 @@ header_value() {
     END { print value }
   ' "$EDGE_HEADERS"
 }
+
+probe_live_edge_create_dependency() {
+  EDGE_READY=false
+  edge_post create-membership-invitation "$(jq -cn \
+    --arg membership_id 'f0000000-0000-4000-8000-000000000001' \
+    --arg idempotency_key 'edge-readiness-0001' \
+    '{membership_id:$membership_id,idempotency_key:$idempotency_key,expires_in_seconds:86400}')"
+  [[ "$EDGE_STATUS" == "404" ]] || return 0
+  [[ "$EDGE_BODY" == '{"error_code":"INVITATION_NOT_FOUND"}' ]] || return 0
+  [[ "$(header_value content-type)" == "application/json; charset=utf-8" ]] || return 0
+  [[ "$(header_value cache-control)" == "no-store, max-age=0" ]] || return 0
+  [[ "$(header_value pragma)" == "no-cache" ]] || return 0
+  [[ "$(header_value x-content-type-options)" == "nosniff" ]] || return 0
+  EDGE_READY=true
+}
+
+print_live_edge_readiness_diagnostics() {
+  local failure_kind="$1"
+  local attempts="$2"
+  local status="$3"
+  printf 'Live Edge Create readiness diagnostics: kind=%s attempts=%s last_http_status=%s.\n' \
+    "$failure_kind" "$attempts" "$status" >&2
+  if kill -0 "$serve_pid" 2>/dev/null; then
+    printf 'functions serve process is still running.\n' >&2
+  else
+    printf 'functions serve process exited before Create became ready.\n' >&2
+  fi
+  docker ps --filter "name=^/supabase_edge_runtime_${V12_PROJECT_ID}$" \
+    --format 'Edge runtime: {{.Names}} {{.Status}}' >&2
+  docker ps --filter "name=^/supabase_kong_${V12_PROJECT_ID}$" \
+    --format 'Kong: {{.Names}} {{.Status}}' >&2
+  printf 'functions serve log tail (redacted):\n' >&2
+  tail -n 80 "$temporary_root/functions-serve.log" 2>&1 | v12_redact_edge_readiness_log_values >&2 || true
+  printf 'Edge runtime log tail (redacted):\n' >&2
+  docker logs --tail 80 "supabase_edge_runtime_${V12_PROJECT_ID}" 2>&1 | \
+    v12_redact_edge_readiness_log_values >&2 || true
+  printf 'Kong log tail (redacted):\n' >&2
+  docker logs --tail 80 "supabase_kong_${V12_PROJECT_ID}" 2>&1 | \
+    v12_redact_edge_readiness_log_values >&2 || true
+}
+
+edge_env_pipe="$temporary_root/edge.env.pipe"
+mkfifo "$edge_env_pipe"
+(
+  printf '%s\n' \
+    'INVITATION_HMAC_CURRENT_KEY_VERSION=1' \
+    'INVITATION_HMAC_ACCEPTED_KEY_VERSIONS=1' \
+    'INVITATION_HMAC_SECRET_V1=AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA' \
+    > "$edge_env_pipe"
+) &
+supabase functions serve \
+  --workdir "$V12_ROOT" \
+  --env-file "$edge_env_pipe" \
+  --log-level error \
+  > "$temporary_root/functions-serve.log" 2>&1 &
+serve_pid=$!
+
+v12_wait_for_live_edge_create \
+  probe_live_edge_create_dependency \
+  print_live_edge_readiness_diagnostics
+kill -0 "$serve_pid" 2>/dev/null || v12_fail "local Edge runtime exited after Create became ready"
 
 create_invitation() {
   local membership_id="$1"
@@ -328,7 +365,8 @@ plaintext_column_count="$(docker exec "$container" psql -XqAt -v ON_ERROR_STOP=1
 docker exec "$container" pg_dump -U postgres -d postgres --data-only --no-owner --no-privileges \
   > "$temporary_root/database-data.sql" 2> "$temporary_root/pg-dump.log"
 docker logs "supabase_edge_runtime_${V12_PROJECT_ID}" > "$temporary_root/edge-runtime.log" 2>&1
-for forbidden_value in "$lost_token" "$first_resend_token" "$second_resend_token" "$access_token"; do
+for forbidden_value in "$lost_token" "$first_resend_token" "$second_resend_token" "$access_token" \
+  'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA'; do
   if rg -Fq -- "$forbidden_value" "$temporary_root/database-data.sql" "$temporary_root/edge-runtime.log" "$temporary_root/functions-serve.log" "$temporary_root/pg-dump.log"; then
     v12_fail "plaintext token or Authorization material appeared in database or Edge logs"
   fi

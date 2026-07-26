@@ -2,9 +2,9 @@
 
 ## 1. Authority, scope, and repository baseline
 
-Primary product/architecture authority is `docs/roadmap/V12_PRODUCT_ARCHITECTURE_ROADMAP.md`; repository planning details follow `docs/roadmap/CODEX_V12_REPOSITORY_PLAN_PROMPT.md`. The current branch is `feat/v12-database-foundation`, HEAD `32716b3`. Baseline V0.3 is the same commit as `origin/feat/v0.3-identity-admin`; the requested legacy baseline branch remains reachable at `origin/feat/supabase-core-baseline`.
+Primary product/architecture authority is `docs/roadmap/V12_PRODUCT_ARCHITECTURE_ROADMAP.md`; repository planning details follow `docs/roadmap/CODEX_V12_REPOSITORY_PLAN_PROMPT.md`. This document is a historical planning snapshot: at the time it was drafted, its planning baseline was the same commit as `origin/feat/v0.3-identity-admin`, and the requested legacy baseline branch was reachable at `origin/feat/supabase-core-baseline`. Earlier branch and commit references in this document record that planning context only and are not statements of current repository state.
 
-This planning pass does not modify the four legacy migrations, does not execute remote Supabase operations, and does not commit, push, deploy, or change Draft PR #7. Existing uncommitted `package.json`, `database/`, and `docs/roadmap/` work is preserved.
+At the time this plan was drafted, the planning pass did not modify the four legacy migrations, execute remote Supabase operations, commit, push, deploy, or change Draft PR #7; it preserved its then-uncommitted `package.json`, `database/`, and `docs/roadmap/` prototype work.
 
 All implementation work in this plan must also follow the permanent governance set:
 
@@ -45,9 +45,9 @@ The product roadmap remains the authority for scope and Gates. If a permanent ru
 
 ## 3. Isolation options
 
-### Option A — fixed dedicated PostgreSQL database inside the current local Supabase DB container
+### Option A — fixed dedicated PostgreSQL database inside the then-local Supabase DB container
 
-Current uncommitted implementation uses fixed database `rotary_platform_v12_test`; wrappers obtain only local connection data and refuse an arbitrary database name (`database/v12/README.md:13-22`).
+At the time this plan was drafted, historical Option A used fixed database `rotary_platform_v12_test`; its wrappers obtained only local connection data and refused an arbitrary database name (`database/v12/README.md:13-22`). This is retained as design background, not as a description of the current implementation.
 
 **Pros:** already reproducible; fastest schema/pgTAP/lint loop; cannot touch legacy `postgres` migration history; single `npm run db:v12:verify` command.
 
@@ -72,7 +72,7 @@ Use a distinct `project_id`, non-overlapping API/DB/shadow/Studio/Inbucket ports
 
 **Pros:** V1.2 gets its own migration history, Auth, PostgREST, RLS, type generation and Edge Runtime; CI/E2E match production architecture without touching V0.3. Single reset/test/verify wrappers remain possible.
 
-**Cons:** more Docker resources; PR-01 must relocate/adapt the current foundation migration and allocate ports; developers must explicitly stop/select the correct stack.
+**Cons:** more Docker resources; PR-01 needed to relocate/adapt the then-foundation migration and allocate ports; developers must explicitly stop/select the correct stack.
 
 ### Recommendation and transition
 
@@ -87,7 +87,7 @@ npm run db:v12:verify
 npx supabase stop --workdir database/v12
 ```
 
-CI job uses the same workdir: `npm ci` → start isolated stack → `npm run db:v12:verify` → always stop in a cleanup step. Current wrappers still implement Option A; they must not be described as full Auth/Edge verification until PR-01 transition is complete.
+CI job uses the same workdir: `npm ci` → start isolated stack → `npm run db:v12:verify` → always stop in a cleanup step. The current verification approach uses an isolated Supabase workdir per worktree; this historical plan's Option A wrapper discussion must not be read as a statement of the current implementation or as full Auth/Edge verification.
 
 ## 4. Legacy mapping and cutover seams
 

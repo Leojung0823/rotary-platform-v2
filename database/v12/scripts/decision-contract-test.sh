@@ -6,6 +6,7 @@ v12_require_no_args "$@"
 v12_assert_config
 
 decisions="$REPOSITORY_ROOT/docs/roadmap/V12_DECISIONS_REQUIRED.md"
+implementation_plan="$REPOSITORY_ROOT/docs/roadmap/V12_REPOSITORY_IMPLEMENTATION_PLAN.md"
 
 extract_section() {
   local heading="$1"
@@ -29,8 +30,22 @@ rate_limit="$(extract_section '## PR-02 Distributed Rate Limit')"
 
 if [[ "${V12_DECISION_TEST_NEGATIVE:-}" == "missing-d03-status" ]]; then
   d03="${d03/- Status: Accepted for MVP/- Status: injected-invalid}"
+elif [[ "${V12_DECISION_TEST_NEGATIVE:-}" == "stale-implementation-plan-wording" ]]; then
+  stale_plan_fixture=$'The current branch is injected-invalid\nCurrent uncommitted implementation is injected-invalid'
+  if rg -Fq 'The current branch is' <<< "$stale_plan_fixture" &&
+    rg -Fq 'Current uncommitted implementation' <<< "$stale_plan_fixture"; then
+    v12_fail "failure injection detected stale implementation-plan current-state wording"
+  fi
+  v12_fail "failure injection was not detected"
 elif [[ -n "${V12_DECISION_TEST_NEGATIVE:-}" ]]; then
   v12_fail "unknown decision failure-injection mode"
+fi
+
+if rg -n -F -- 'The current branch is' "$implementation_plan"; then
+  v12_fail "implementation plan contains stale current-branch wording"
+fi
+if rg -n -F -- 'Current uncommitted implementation' "$implementation_plan"; then
+  v12_fail "implementation plan contains stale uncommitted-implementation wording"
 fi
 
 require_text "$d03" '- Status: Accepted for MVP' 'D03 exact status is missing'
