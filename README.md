@@ -82,6 +82,20 @@ npm run verify:auth
 
 `npm run verify:db` 會依序 reset、lint 並執行全部 verification SQL；若主機沒有 `psql`，會自動使用 local database container。SQL 使用 transaction 並在結尾 rollback，不保留測試資料。V0.3 SQL 另驗證 token hashing、跨社隔離、RBAC、LINE bind/unbind、OA 分離、裝置、偏好與 audit log。`npm run verify:auth` 會建立一個隨機本機社與受邀者，實際驗證 Mailpit template、Supabase Auth、設定密碼、邀請冪等接受及登入後單一社可見性；請在 reset 後執行。
 
+## V1.2 Database Foundation
+
+V1.2 使用完全獨立的 `database/v12/` Supabase workdir、project id、ports、containers、volumes、Auth／REST／Storage／Edge Runtime 與 migration history；不會套用或修改上方 V0.3 Legacy migrations。
+
+```bash
+npm run db:v12:start
+npm run db:v12:verify
+npm run db:v12:stop
+```
+
+完整結構、隔離 port、seed、pgTAP、verification 與 generated types 使用方式見 [`database/v12/README.md`](database/v12/README.md)。
+
+演進順序固定為：`Legacy → Shadow → V1.2 → Cutover → Legacy Retirement`；本 checkout 只建立獨立 V1.2 foundation／Invitation Core，尚未開始 Shadow、Cutover 或 Retirement。
+
 ## 安全模型
 
 - `people` 是跨社共用的真人身份；`app_accounts` 是個人登入帳號。

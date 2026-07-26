@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 database_url="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 npx supabase db reset --local

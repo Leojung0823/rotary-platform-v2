@@ -18,3 +18,32 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local-ci-placeholder
+
+  database-v12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - uses: supabase/setup-cli@v1
+        with: { version: 2.107.0 }
+      - run: npm ci
+      - name: Verify V1.2 migration framework and Legacy checksums
+        run: npm run db:v12:migrations:verify
+      - name: Start isolated V1.2 Supabase workdir
+        run: npm run db:v12:start
+      - name: Test Invitation Edge preflight and HMAC contract
+        run: npm run db:v12:invitation:edge:test
+      - name: Test Invitation RPC role and bypass boundary
+        run: npm run db:v12:invitation:rpc-boundary:test
+      - name: Verify V1.2 database, seed, Invitation pgTAP, catalog, lint, and generated types
+        run: npm run db:v12:verify
+      - name: Confirm V1.2 generated types are reproducible
+        run: npm run db:v12:types:check
+      - name: Scan V1.2 Invitation security and decision contracts
+        run: npm run db:v12:security:scan
+      - name: Stop isolated V1.2 Supabase workdir
+        if: always()
+        run: npm run db:v12:stop
