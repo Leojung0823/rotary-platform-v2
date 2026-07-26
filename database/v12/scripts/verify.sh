@@ -12,6 +12,7 @@ v12_assert_local_stack
 "$V12_ROOT/scripts/invitation-rpc-boundary-test.sh"
 "$V12_ROOT/scripts/invitation-constraint-test.sh"
 "$V12_ROOT/scripts/decision-contract-test.sh"
+"$V12_ROOT/scripts/invitation-edge-readiness-test.sh"
 "$V12_ROOT/scripts/invitation-edge-recovery-test.sh"
 
 (
