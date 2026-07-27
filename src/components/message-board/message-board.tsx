@@ -101,7 +101,27 @@ export function MessageBoard() {
     }
   }, [handleError]);
 
-  useEffect(() => { void loadPosts(null, false); }, [loadPosts]);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialPosts() {
+      try {
+        const response = await fetch("/api/v1/board/posts?limit=20", { cache: "no-store" });
+        const data = await readResponse<BoardList>(response);
+        if (!cancelled) {
+          setPosts(data.posts);
+          setCursor(data.next_cursor);
+        }
+      } catch (error) {
+        if (!cancelled) handleError(error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadInitialPosts();
+    return () => { cancelled = true; };
+  }, [handleError]);
 
   async function publish(event: FormEvent) {
     event.preventDefault();
