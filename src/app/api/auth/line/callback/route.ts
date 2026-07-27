@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
   const store = await cookies();
   let sessionClient: Awaited<ReturnType<typeof createClient>> | null = null;
   let sessionCreated = false;
+  let adminClient: ReturnType<typeof createTrustedAdminClient> | null = null;
+  let newlyCreatedInvitationAuthUserId: string | null = null;
   const fail = () => {
     clearLineOAuthCookies(store);
     return loginFailure();
@@ -54,8 +56,8 @@ export async function GET(request: NextRequest) {
       throw new Error("LINE Login authorization response is invalid.");
     }
 
-    const admin = createTrustedAdminClient();
-    const stateResult = await admin.from("line_oauth_states")
+    adminClient = createTrustedAdminClient();
+    const stateResult = await adminClient.from("line_oauth_states")
       .select("id, nonce_hash, invitation_token_hash, return_path, expires_at, consumed_at")
       .eq("state_hash", digest(state))
       .maybeSingle();
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     // The conditional update makes success, provider cancel, and provider
     // error terminal for this state. Replay and expiry both fail closed.
-    const consumed = await admin.from("line_oauth_states")
+    const consumed = await adminClient.from("line_oauth_states")
       .update({ consumed_at: now.toISOString() })
       .eq("id", persistedState.id)
       .is("consumed_at", null)
@@ -86,27 +88,34 @@ export async function GET(request: NextRequest) {
     let invitedPersonId: string | null = null;
 
     if (invitationToken) {
-      const invitation = await admin.from("member_invitations")
-        .select("person_id")
+      // Validate status and expiry before creating an Auth user. The database
+      // binding RPC remains authoritative and rechecks these conditions under
+      // row lock, while this preflight prevents known-invalid partial success.
+      const invitation = await adminClient.from("member_invitations")
+        .select("person_id, invitation_status, expires_at")
         .eq("token_hash", digest(invitationToken))
         .maybeSingle();
-      if (invitation.error || !invitation.data) throw new Error("LINE Login invitation lookup failed.");
+      if (invitation.error || !invitation.data
+        || !["pending", "sent"].includes(invitation.data.invitation_status)
+        || new Date(invitation.data.expires_at).getTime() <= Date.now()) {
+        throw new Error("LINE Login invitation is invalid or expired.");
+      }
       invitedPersonId = invitation.data.person_id;
-      const accountResult = await admin.from("app_accounts")
+      const accountResult = await adminClient.from("app_accounts")
         .select("id, person_id, auth_user_id, login_email")
         .eq("person_id", invitedPersonId)
         .maybeSingle();
       if (accountResult.error) throw new Error("LINE Login account lookup failed.");
       account = accountResult.data;
     } else {
-      const identity = await admin.from("line_identities")
+      const identity = await adminClient.from("line_identities")
         .select("app_account_id")
         .eq("provider_subject", profile.subject)
         .eq("identity_status", "active")
         .maybeSingle();
       if (identity.error) throw new Error("LINE Login identity lookup failed.");
       if (identity.data) {
-        const accountResult = await admin.from("app_accounts")
+        const accountResult = await adminClient.from("app_accounts")
           .select("id, person_id, auth_user_id, login_email")
           .eq("id", identity.data.app_account_id)
           .single();
@@ -119,23 +128,24 @@ export async function GET(request: NextRequest) {
     let loginEmail = account?.login_email;
     if (!authUserId) {
       loginEmail = `line-${digest(profile.subject).slice(0, 24)}@identity.local`;
-      const created = await admin.auth.admin.createUser({
+      const created = await adminClient.auth.admin.createUser({
         email: loginEmail,
         email_confirm: true,
         user_metadata: { line_display_name: profile.displayName },
       });
       if (created.error || !created.data.user) throw new Error("LINE Login Auth user creation failed.");
       authUserId = created.data.user.id;
+      if (invitationToken) newlyCreatedInvitationAuthUserId = authUserId;
 
       if (!invitationToken) {
-        const personResult = await admin.from("people").insert({
+        const personResult = await adminClient.from("people").insert({
           canonical_name: profile.displayName,
           primary_email: profile.email ?? null,
           avatar_url: profile.pictureUrl ?? null,
         }).select("id").single();
         if (personResult.error) throw new Error("LINE Login person creation failed.");
 
-        const accountResult = await admin.from("app_accounts").insert({
+        const accountResult = await adminClient.from("app_accounts").insert({
           auth_user_id: authUserId,
           person_id: personResult.data.id,
           login_email: loginEmail,
@@ -144,7 +154,7 @@ export async function GET(request: NextRequest) {
         if (accountResult.error) throw new Error("LINE Login account creation failed.");
         account = accountResult.data;
 
-        const identityResult = await admin.from("line_identities").insert({
+        const identityResult = await adminClient.from("line_identities").insert({
           person_id: account.person_id,
           app_account_id: account.id,
           provider_subject: profile.subject,
@@ -157,7 +167,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const link = await admin.auth.admin.generateLink({ type: "magiclink", email: loginEmail! });
+    const link = await adminClient.auth.admin.generateLink({ type: "magiclink", email: loginEmail! });
     if (link.error || !link.data.properties.hashed_token) throw new Error("LINE Login session link creation failed.");
     sessionClient = await createClient();
     const verified = await sessionClient.auth.verifyOtp({
@@ -177,7 +187,7 @@ export async function GET(request: NextRequest) {
       });
       if (bound.error) throw new Error("LINE Login invitation binding failed.");
     } else {
-      const updated = await admin.from("line_identities").update({
+      const updated = await adminClient.from("line_identities").update({
         display_name: profile.displayName,
         picture_url: profile.pictureUrl ?? null,
         email: profile.email ?? null,
@@ -210,10 +220,24 @@ export async function GET(request: NextRequest) {
       try {
         await sessionClient.auth.signOut({ scope: "local" });
       } catch {
-        // The public result remains generic. Residual partial-success handling
-        // is documented in the MVP security boundary.
+        // The public result remains generic.
       }
     }
+
+    if (newlyCreatedInvitationAuthUserId && adminClient) {
+      try {
+        const linkedAccount = await adminClient.from("app_accounts")
+          .select("id")
+          .eq("auth_user_id", newlyCreatedInvitationAuthUserId)
+          .maybeSingle();
+        if (!linkedAccount.error && !linkedAccount.data) {
+          await adminClient.auth.admin.deleteUser(newlyCreatedInvitationAuthUserId);
+        }
+      } catch {
+        // Cleanup is best-effort and never changes the generic public result.
+      }
+    }
+
     return fail();
   }
 }
