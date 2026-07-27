@@ -15,6 +15,7 @@ export default async function NewMemberPage({
   const { clubId } = await params;
   const message = safeMessage((await searchParams).error);
   const idempotencyKey = randomUUID();
+  const importIdempotencyKey = randomUUID();
 
   return <div className="narrow page-stack">
     <header>
@@ -54,10 +55,11 @@ export default async function NewMemberPage({
     </Card>
     <Card>
       <h2>Excel 批次匯入</h2>
-      <p>下載範本或上傳 `.xlsx`；每列會經過相同驗證與權限檢查。</p>
+      <p>下載範本或上傳 `.xlsx`；同一份表單重送會以批次 key 與列號重用每列邀請。</p>
       <div className="form-actions">
         <a className="button button-secondary" href={`/api/v1/clubs/${clubId}/members/template`}>下載範本</a>
         <form action={`/api/v1/clubs/${clubId}/members/import`} method="post" encType="multipart/form-data">
+          <input type="hidden" name="idempotencyKey" value={importIdempotencyKey} />
           <Input name="file" type="file" accept=".xlsx" required />
           <Button type="submit">匯入 Excel</Button>
         </form>
