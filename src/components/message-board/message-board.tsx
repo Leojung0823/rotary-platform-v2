@@ -62,7 +62,14 @@ function validationMessage(value: string) {
   return null;
 }
 
-export function MessageBoard() {
+function boardEndpoint(clubId: string, postId?: string, parameters?: URLSearchParams) {
+  const query = parameters ?? new URLSearchParams();
+  query.set("club_id", clubId);
+  const path = postId ? `/api/v1/board/posts/${postId}` : "/api/v1/board/posts";
+  return `${path}?${query.toString()}`;
+}
+
+export function MessageBoard({ clubId }: { clubId: string }) {
   const [posts, setPosts] = useState<BoardPost[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [content, setContent] = useState("");
@@ -78,7 +85,7 @@ export function MessageBoard() {
   const handleError = useCallback((error: unknown) => {
     if (error instanceof BoardRequestError && (error.status === 401 || error.status === 403)) {
       setSessionExpired(true);
-      setStateMessage("登入狀態已失效或帳號目前無法使用，請重新登入。");
+      setStateMessage("登入狀態已失效，或您不是這個扶輪社的有效社員。請重新登入或切換社別。");
       return;
     }
     setStateMessage("操作未完成，請稍後再試。");
@@ -90,7 +97,7 @@ export function MessageBoard() {
     try {
       const query = new URLSearchParams({ limit: "20" });
       if (nextCursor) query.set("cursor", nextCursor);
-      const response = await fetch(`/api/v1/board/posts?${query}`, { cache: "no-store" });
+      const response = await fetch(boardEndpoint(clubId, undefined, query), { cache: "no-store" });
       const data = await readResponse<BoardList>(response);
       setPosts(current => append ? [...current, ...data.posts] : data.posts);
       setCursor(data.next_cursor);
@@ -99,14 +106,19 @@ export function MessageBoard() {
     } finally {
       append ? setLoadingMore(false) : setLoading(false);
     }
-  }, [handleError]);
+  }, [clubId, handleError]);
 
   useEffect(() => {
     let cancelled = false;
+    setPosts([]);
+    setCursor(null);
+    setLoading(true);
+    setSessionExpired(false);
 
     async function loadInitialPosts() {
       try {
-        const response = await fetch("/api/v1/board/posts?limit=20", { cache: "no-store" });
+        const query = new URLSearchParams({ limit: "20" });
+        const response = await fetch(boardEndpoint(clubId, undefined, query), { cache: "no-store" });
         const data = await readResponse<BoardList>(response);
         if (!cancelled) {
           setPosts(data.posts);
@@ -121,7 +133,7 @@ export function MessageBoard() {
 
     void loadInitialPosts();
     return () => { cancelled = true; };
-  }, [handleError]);
+  }, [clubId, handleError]);
 
   async function publish(event: FormEvent) {
     event.preventDefault();
@@ -130,7 +142,7 @@ export function MessageBoard() {
     setPublishing(true);
     setStateMessage(null);
     try {
-      const response = await fetch("/api/v1/board/posts", {
+      const response = await fetch(boardEndpoint(clubId), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
@@ -157,7 +169,7 @@ export function MessageBoard() {
     setPendingPostId(postId);
     setStateMessage(null);
     try {
-      const response = await fetch(`/api/v1/board/posts/${postId}`, {
+      const response = await fetch(boardEndpoint(clubId, postId), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: editingContent }),
@@ -178,7 +190,7 @@ export function MessageBoard() {
     setPendingPostId(postId);
     setStateMessage(null);
     try {
-      const response = await fetch(`/api/v1/board/posts/${postId}`, { method: "DELETE" });
+      const response = await fetch(boardEndpoint(clubId, postId), { method: "DELETE" });
       await readResponse<{ deleted: true }>(response);
       setPosts(current => current.filter(post => post.id !== postId));
       if (editingPostId === postId) setEditingPostId(null);
@@ -204,7 +216,7 @@ export function MessageBoard() {
           value={content}
           onChange={event => setContent(event.target.value)}
           rows={4}
-          placeholder="輸入想和大家分享的內容……"
+          placeholder="輸入想和本社社員分享的內容……"
           disabled={publishing || sessionExpired}
           aria-invalid={contentCount > BOARD_CONTENT_MAX_CODE_POINTS}
         />
@@ -221,13 +233,13 @@ export function MessageBoard() {
 
     <section aria-labelledby="latest-posts-title">
       <div className={styles.listHeading}>
-        <div><p className={styles.eyebrow}>社群動態</p><h2 id="latest-posts-title">最新留言</h2></div>
+        <div><p className={styles.eyebrow}>社內動態</p><h2 id="latest-posts-title">最新留言</h2></div>
         <button className={styles.secondaryButton} onClick={() => void loadPosts(null, false)} disabled={loading}>重新整理</button>
       </div>
 
-      {loading ? <div className={styles.state}>正在載入留言…</div> : posts.length === 0 ?
-        <div className={styles.state}><strong>目前還沒有留言</strong><span>成為第一位分享近況的人吧。</span></div> :
-        <div className={styles.list}>{posts.map(post => {
+      {loading ? <div className={styles.state}>正在載入留言…</div> : posts.length === 0
+        ? <div className={styles.state}><strong>目前還沒有留言</strong><span>成為本社第一位分享近況的人吧。</span></div>
+        : <div className={styles.list}>{posts.map(post => {
           const editing = editingPostId === post.id;
           const pending = pendingPostId === post.id;
           const edited = post.updated_at !== post.created_at;
