@@ -5,6 +5,7 @@ import { resolveLineOaWebhookSecret, verifyLineWebhookSignature } from "@/lib/li
 
 const MAX_WEBHOOK_BYTES = 256 * 1024;
 const MAX_WEBHOOK_EVENTS = 100;
+const MAX_WEBHOOK_REQUESTS_PER_MINUTE = 120;
 
 type LineEvent = {
   type?: string;
@@ -48,13 +49,6 @@ async function readLimitedBody(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ clubId: string }> }) {
-  let rawBody: string;
-  try {
-    rawBody = await readLimitedBody(request);
-  } catch {
-    return NextResponse.json({ error: "payload_too_large" }, { status: 413 });
-  }
-
   const { clubId } = await params;
   const admin = createTrustedAdminClient();
   const account = await admin.from("line_oa_accounts")
@@ -64,6 +58,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .maybeSingle();
   if (account.error || !account.data) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  const rateLimit = await admin.rpc("consume_line_webhook_rate_limit", {
+    p_line_oa_account_id: account.data.id,
+    p_limit: MAX_WEBHOOK_REQUESTS_PER_MINUTE,
+  });
+  if (rateLimit.error) {
+    return NextResponse.json({ error: "rate_limit_unavailable" }, { status: 503 });
+  }
+  if (rateLimit.data !== true) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "retry-after": "60" } },
+    );
+  }
+
+  let rawBody: string;
+  try {
+    rawBody = await readLimitedBody(request);
+  } catch {
+    return NextResponse.json({ error: "payload_too_large" }, { status: 413 });
   }
 
   let secret: string;
@@ -79,8 +94,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     secret,
   );
   if (!signatureValid) {
-    // Invalid requests are rejected before per-event database writes. Aggregate
-    // rate and rejection metrics should be recorded at the proxy/edge layer.
+    // Invalid requests are rejected before per-event database writes. Edge or
+    // reverse-proxy IP limits should provide an additional network boundary.
     return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
   }
 
