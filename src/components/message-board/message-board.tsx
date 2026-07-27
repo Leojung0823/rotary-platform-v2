@@ -3,8 +3,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { BoardPost } from "@/lib/message-board/contracts";
-import { BOARD_CONTENT_MAX_CODE_POINTS, boardContentLength } from "@/lib/message-board/validation";
 import styles from "./message-board.module.css";
+
+const BOARD_CONTENT_MAX_CODE_POINTS = 1000;
+function boardContentLength(value: string) { return Array.from(value).length; }
 
 type BoardList = { posts: BoardPost[]; next_cursor: string | null };
 type ApiEnvelope<T> = { data?: T; error?: string };
