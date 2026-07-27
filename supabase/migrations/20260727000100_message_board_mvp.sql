@@ -8,7 +8,7 @@ create table public.board_posts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
-  constraint board_posts_content_not_blank check (btrim(content) <> ''),
+  constraint board_posts_content_not_blank check (content !~ '^[[:space:]]*$'),
   constraint board_posts_content_length check (char_length(content) between 1 and 1000),
   constraint board_posts_status_check check (status in ('active', 'deleted')),
   constraint board_posts_deleted_consistency check (
@@ -33,7 +33,15 @@ language sql
 immutable
 set search_path = pg_catalog, public
 as $$
-  select btrim(replace(replace(p_content, E'\r\n', E'\n'), E'\r', E'\n'))
+  select regexp_replace(
+    regexp_replace(
+      replace(replace(p_content, E'\r\n', E'\n'), E'\r', E'\n'),
+      '^[[:space:]]+',
+      ''
+    ),
+    '[[:space:]]+$',
+    ''
+  )
 $$;
 
 create or replace function public.protect_board_post_update()
