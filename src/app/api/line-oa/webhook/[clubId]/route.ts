@@ -60,20 +60,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const rateLimit = await admin.rpc("consume_line_webhook_rate_limit", {
-    p_line_oa_account_id: account.data.id,
-    p_limit: MAX_WEBHOOK_REQUESTS_PER_MINUTE,
-  });
-  if (rateLimit.error) {
-    return NextResponse.json({ error: "rate_limit_unavailable" }, { status: 503 });
-  }
-  if (rateLimit.data !== true) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "retry-after": "60" } },
-    );
-  }
-
   let rawBody: string;
   try {
     rawBody = await readLimitedBody(request);
@@ -95,8 +81,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   );
   if (!signatureValid) {
     // Invalid requests are rejected before per-event database writes. Edge or
-    // reverse-proxy IP limits should provide an additional network boundary.
+    // reverse-proxy IP limits must absorb unauthenticated traffic without
+    // allowing an attacker to consume the legitimate OA request quota.
     return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
+  }
+
+  const rateLimit = await admin.rpc("consume_line_webhook_rate_limit", {
+    p_line_oa_account_id: account.data.id,
+    p_limit: MAX_WEBHOOK_REQUESTS_PER_MINUTE,
+  });
+  if (rateLimit.error) {
+    return NextResponse.json({ error: "rate_limit_unavailable" }, { status: 503 });
+  }
+  if (rateLimit.data !== true) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "retry-after": "60" } },
+    );
   }
 
   let payload: { events?: LineEvent[] };
