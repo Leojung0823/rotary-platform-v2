@@ -8,12 +8,14 @@ import {
   isJsonContentType,
   isSameOriginMutation,
   normalizeBoardContent,
+  parseBoardClubId,
   parseBoardContentBody,
   parseBoardLimit,
   parseBoardPostId,
 } from "./validation";
 
 const postId = "123e4567-e89b-42d3-a456-426614174000";
+const clubId = "52000000-0000-4000-8000-000000000001";
 
 describe("board content validation", () => {
   it("normalizes CRLF, trims outer whitespace, and keeps internal newlines", () => {
@@ -53,8 +55,11 @@ describe("board query validation", () => {
     }
   });
 
-  it("validates post UUIDs", () => {
+  it("requires valid club and post UUIDs", () => {
+    expect(parseBoardClubId(clubId)).toBe(clubId);
     expect(parseBoardPostId(postId)).toBe(postId);
+    expect(() => parseBoardClubId(null)).toThrow("invalid_club_id");
+    expect(() => parseBoardClubId("not-a-uuid")).toThrow("invalid_club_id");
     expect(() => parseBoardPostId("not-a-uuid")).toThrow("invalid_post_id");
   });
 });
