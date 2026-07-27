@@ -1,35 +1,37 @@
-# PR-03 FORMAL SPECIFICATION — REVISION 10.7
+# PR-03 FORMAL SPECIFICATION — REVISION 10.8
 
-## Callback Recovery Lifecycle and Lock-Order Closure Edition
+## Durable Recovery Expiry Maintenance Closure Edition
 
 ## Specification Status
 
 Planning document: READY FOR INTERMEDIATE ARCHITECTURE REVIEW
 Runtime implementation: BLOCKED
 Ninth independent review: REQUEST CHANGES
-Revision 10.6 intermediate architecture review: ARCHITECTURE REVISION REQUIRED
-Revision 10.7 review status: NOT YET REVIEWED
+Revision 10.7 intermediate architecture review: ARCHITECTURE REVISION REQUIRED
+Revision 10.8 review status: NOT YET REVIEWED
 Formal specification approval requested: No
 Human/legal approval represented: No
 Repository validation status: NOT VERIFIED IN THIS SPECIFICATION RUN
 
-Revision 10.7 closes the Callback recovery lifecycle and Terminal Callback lock-order blockers identified during the prior Intermediate Architecture Review. It does not implement the acknowledgment endpoint or cleanup jobs, perform Revision 11 HTTP-header, CORS, exact-byte, fixture, package, manifest, ZIP, sidecar, or governance finalization, or authorize Runtime implementation.
+Revision 10.8 resolves only `INT-ARCH-10.7-P0-01`: authoritative Callback recovery expiry and sealed-material destruction commit independently before Account Switch or ordinary logout classifies blockers. A denied authentication transition cannot undo that committed maintenance. This document does not implement expiry maintenance, the acknowledgment endpoint, cleanup jobs, Account Switch, or logout; perform Revision 11 HTTP-header, CORS, exact-byte, fixture, package, manifest, ZIP, sidecar, or governance finalization; or authorize Runtime implementation.
 
 # DOCUMENT PURPOSE, AUTHORITY, AND SCOPE
 
 ## Purpose
 
-Revision 10.7 preserves all earlier converged architecture and adds:
+Revision 10.8 preserves all unaffected earlier converged architecture and specifies:
 
 1. server-authoritative `container_auth_epoch`;
 2. continuation binding to one exact container epoch;
 3. a successful Callback dual-epoch commit that binds the committed epoch, family, logical session, immutable outcome, and cookie capability;
 4. an authoritative durable `recovery_pending` → `acknowledged` or `recovery_expired` lifecycle;
 5. a bounded, non-sliding sealed-material deadline and idempotent Callback delivery acknowledgment architecture;
-6. authoritative lazy expiry and same-transaction sealed-material destruction;
-7. Account-Switch and logout blocker classification based only on active, unexpired `recovery_pending` terminal recovery;
-8. one Terminal Callback reissue lock order compatible with acknowledgment, provider refresh, logout, Account Switch, forced termination, and Consume;
-9. Tests 304–308 and synchronized architecture remediation.
+6. authoritative expiry and same-transaction sealed-material destruction in a separately committed Recovery Expiry Maintenance Transaction, Phase M;
+7. Account-Switch and logout blocker classification only after Phase M commits and the authentication-transition transaction reacquires guards and rereads blockers;
+8. rollback isolation under which denial of Account Switch or ordinary logout rolls back only that authentication-transition transaction and never Phase M;
+9. preservation of active, unexpired `recovery_pending` rows while expired rows in the same container are maintained;
+10. one global container-first guard family compatible with Terminal Callback recovery, acknowledgment, expiry maintenance, provider refresh, logout, Account Switch, forced termination, and Consume;
+11. Tests 304–308, including the updated Tests 306–307, and synchronized architecture remediation.
 
 ## Preserved architecture
 
@@ -45,6 +47,8 @@ Revision 10.7 preserves all earlier converged architecture and adds:
 - Handoff advisory locks cover the complete Handoff lifecycle.
 - Unknown Consume commit never deletes the raw Idempotency-Key through a local timer.
 - Reconciliation performs complete post-lock authoritative reread.
+- Recovery Expiry Maintenance is separate from a requested authentication transition and commits before that transition classifies blockers.
+- Active, unexpired pending recovery remains unchanged and continues to block ordinary Account Switch and the proposed ordinary-logout policy.
 - Runtime implementation remains `BLOCKED`.
 
 ## Excluded
@@ -68,11 +72,15 @@ Revision 10.7 preserves all earlier converged architecture and adds:
 | `recovery_pending` | The session is committed but durable browser receipt is not proved; exact same-cookie recovery remains possible only before the authoritative deadline. |
 | `acknowledged` | A valid idempotent browser delivery acknowledgment committed and the sealed reissue material was destroyed in the same transaction. |
 | `recovery_expired` | Authoritative database time reached the non-sliding deadline and sealed material was destroyed; cookie reissue is permanently prohibited. |
+| Active pending recovery | A `recovery_pending` row for which authoritative database time is strictly before the committed deadline and sealed material plus the committed epoch/family/session relationship remain valid. |
 | Cookie reissue material | Server-protected encrypted or sealed material retained only while recovery is pending and before its bounded deadline so the exact committed capability bytes can be reissued. |
 | Cookie reissue material deadline | Authoritative, non-sliding server/database deadline no later than every Callback, session, cookie-capability, and container recovery bound. |
 | Delivery acknowledgment | Idempotent, same-origin, BFF-session-authenticated confirmation sent only after the browser accepts the committed cookie and persists required non-secret completion state. |
 | Container auth-transition guard | Transaction advisory lock derived from trusted flow-container UUID and a fixed domain/version prefix. |
 | Authenticated logout guard | Guard derived from trusted session-family UUID + flow-container UUID. |
+| Recovery Expiry Maintenance Transaction | Separate guarded Phase M database transaction that authoritatively expires every due committed Callback recovery for a container, destroys its sealed cookie reissue material, and commits without changing authentication state. |
+| Phase M | Durable Recovery Expiry Maintenance performed and committed before Account Switch or ordinary logout begins blocker classification. |
+| Phase T | Authentication-transition work begun only after Phase M commits; Account Switch uses Phase T-A and Phase T-B, while ordinary logout uses Phase L. |
 | Pre-auth callback guard | Guard derived from server-only pre-auth subject UUID + flow-container UUID. |
 | Container auth transition | First-login provider start/commit, voluntary logout, forced logout, account-switch initiation, first family attach, family detach, or family replacement. |
 | Existing-session capability transition | Cookie reissue or provider refresh that does not change the container-to-family binding. |
@@ -88,13 +96,13 @@ Revision 10.7 preserves all earlier converged architecture and adds:
 
 1. A first-login continuation is valid for mutation only at the exact container epoch at creation.
 2. Every path that reads or mutates `container_auth_epoch` acquires `container_auth_transition_guard` first.
-3. Voluntary logout, forced security logout, administrative termination, and a successful Account-Switch Phase A increment the epoch atomically.
-4. Account Switch must authoritatively prove that no blocking Callback or Consume work exists before it increments the epoch, revokes the family, or invalidates recovery material.
+3. Voluntary logout Phase L, forced security logout, administrative termination, and a successful Account-Switch Phase T-A increment the epoch atomically.
+4. Account Switch must commit Phase M, reacquire the full required guard order in Phase T-A, and authoritatively prove that no blocking Callback or Consume work exists before it increments the epoch, revokes the family, or invalidates remaining recovery material.
 5. Session-family attach, detach, or replacement increments the epoch unless the same declared transition already increments it in the same transaction.
 6. The first successful logical-session commit advances `E` to `E + 1` exactly once and atomically binds both epochs, the family, logical session, outcome, and cookie capability.
 7. First-login provider start and first logical-session commit both acquire the container guard and revalidate the bound epoch.
 8. Container transition guard precedes authenticated logout, pre-auth callback, Callback-operation, Handoff, session-family, and row locks.
-9. Terminal Callback recovery, acknowledgment, provider refresh, logout, Account Switch, and forced termination use compatible container-first and authenticated-logout-guard prefixes; no narrower lock may be acquired before either required prefix guard.
+9. Terminal Callback recovery, acknowledgment, Recovery Expiry Maintenance, provider refresh, logout, Account Switch, and forced termination use compatible container-first and authenticated-logout-guard prefixes; no narrower lock may be acquired before either required prefix guard.
 10. Provider network I/O holds neither container nor logout guard and is not part of a local ACID database transaction.
 11. A provider result produced for a stale epoch cannot create a logical session or usable cookie.
 12. Callback operation state and Callback recovery state are separate durable state machines.
@@ -103,16 +111,21 @@ Revision 10.7 preserves all earlier converged architecture and adds:
 15. Successful Callback replay reissues the exact same committed cookie capability bytes and creates no new capability, family, session, provider call, outcome, epoch increment, or deadline extension.
 16. A valid acknowledgment transitions `recovery_pending` to `acknowledged` atomically and idempotently while destroying sealed material; authoritative expiry transitions it to `recovery_expired` and destroys material.
 17. Neither terminal recovery state may return to `recovery_pending`, and neither may reissue the authentication cookie.
-18. Account Switch blocks a committed Callback only while its recovery is pending, unexpired, material-backed, and still bound to the current committed epoch/family/session.
-19. Ordinary logout uses the same classification; the proposed user-requested blocking policy remains human-approval-required before Runtime implementation.
-20. Forced security termination may override pending recovery only under a separately approved incident policy; no such approval is represented here.
-21. Any later epoch advancement invalidates old Callback cookie reissue and cannot restore or reattach the old family.
-22. Logout makes its final blocking-work decision while holding the container guard and authenticated logout guard.
-23. A created-but-not-started first-login callback does not block logout; the epoch increment invalidates it.
-24. A first-login callback that commits `provider_exchange_started` first blocks voluntary logout until classified or expired.
-25. Account-Switch continuation creation occurs only after old-family termination commits and is idempotent under one durable transition ID.
-26. Browser input cannot supply an epoch, pre-auth subject, session family, guard key, transition ID, committed outcome reference, recovery state, or deadline as authority.
-27. Runtime implementation remains `BLOCKED`.
+18. Phase M commits every due `recovery_pending → recovery_expired` transition and sealed-material destruction independently of a later denied Account Switch or ordinary logout.
+19. Phase M does not change the auth epoch, family attachment, logical session, cookie, descriptor, raw Idempotency-Key, Account-Switch transition, Auth continuation, Consume state, or Invitation semantics.
+20. Account Switch and ordinary logout reacquire the full guard order after Phase M commits and classify blockers only from authoritative post-Phase-M rereads.
+21. Account Switch blocks a committed Callback only while its recovery is pending, unexpired, material-backed, and still bound to the current committed epoch/family/session.
+22. Ordinary logout uses the same classification; the proposed user-requested blocking policy remains human-approval-required before Runtime implementation.
+23. Denial of Account Switch or ordinary logout rolls back only its transition transaction; committed Phase M expiry, `recovery_expired_at`, the one-time recovery-state version increment, and sealed-material destruction remain durable.
+24. Phase M preserves every active, unexpired `recovery_pending` row, including its material, deadline, state version, and blocker authority.
+25. Forced security termination may override pending recovery only under a separately approved incident policy; no such approval is represented here.
+26. Any later epoch advancement invalidates old Callback cookie reissue and cannot restore or reattach the old family.
+27. Logout makes its final blocking-work decision while holding the container guard and authenticated logout guard acquired after Phase M commits.
+28. A created-but-not-started first-login callback does not block logout; the epoch increment invalidates it.
+29. A first-login callback that commits `provider_exchange_started` first blocks voluntary logout until classified or expired.
+30. Account-Switch continuation creation occurs only after old-family termination commits and is idempotent under one durable transition ID.
+31. Browser input cannot supply an epoch, pre-auth subject, session family, guard key, transition ID, committed outcome reference, recovery state, or deadline as authority.
+32. Runtime implementation remains `BLOCKED`.
 
 # NORMATIVE DECISION REGISTER
 
@@ -218,11 +231,11 @@ Pre-lock lookup may provide only a candidate Handoff UUID. Flow, mapping, genera
 
 ## PR03-D026 — Callback and BFF recovery closure
 
-OAuth continuation is persistent, callback recovery is continuation-based, cookie capabilities are digest-backed, and existing-session versus first-login guard identities are explicit. A successful first-login Callback persists the committed dual-epoch/family/session/outcome tuple and starts an authoritative `recovery_pending` lifecycle; same-cookie reissue ends permanently on acknowledgment, expiry, or later auth transition.
+OAuth continuation is persistent, callback recovery is continuation-based, cookie capabilities are digest-backed, and existing-session versus first-login guard identities are explicit. A successful first-login Callback persists the committed dual-epoch/family/session/outcome tuple and starts an authoritative `recovery_pending` lifecycle; same-cookie reissue ends permanently on acknowledgment, separately committed Phase M expiry, or a later authorized auth transition. Denial of a later Account Switch or ordinary logout cannot restore expired recovery or destroyed sealed material.
 
 ## PR03-D027 — No client abandonment
 
-No operation-abandonment endpoint exists. Account Switch and the proposed ordinary-logout policy block only active, unexpired pending recovery or other unresolved work that would lose authoritative recovery. Forced security termination cannot release or rebind server operation coordination and permanently invalidates old Callback cookie reissue under an explicit incident-policy gate.
+No operation-abandonment endpoint exists. Phase M preserves active, unexpired pending recovery. Account Switch and the proposed ordinary-logout policy then block on that active recovery or other unresolved work that would lose authoritative recovery. Forced security termination cannot release or rebind server operation coordination and permanently invalidates old Callback cookie reissue under an explicit incident-policy gate.
 
 ## PR03-D028 — Response precedence
 
@@ -230,7 +243,7 @@ Imported PR-02 remains semantic fixture authority. Revision 11 finalizes PR-03-o
 
 ## PR03-D029 — Complete synchronization hierarchy
 
-Exchange tuple lock precedes Exchange semantics; Invitation-generation lifecycle locks stabilize generation membership; Handoff locks protect each Handoff lifecycle; the container auth-transition guard is first for every epoch reader or mutator. Terminal Callback recovery then acquires authenticated logout guard, Callback guard, logical session/family rows, and recovery material in that single order; provider refresh and auth transitions use compatible prefixes.
+Exchange tuple lock precedes Exchange semantics; Invitation-generation lifecycle locks stabilize generation membership; Handoff locks protect each Handoff lifecycle; the container auth-transition guard is first for every epoch reader or mutator. Terminal Callback recovery and Phase M then acquire authenticated logout guard, Callback guard or guards in stable-key order, logical session/family rows, and recovery material in that single order. Phase M commits and releases its guards before Phase T reacquires the compatible full order and authoritatively rereads blockers.
 
 ## PR03-D030 — Invitation bearer authority
 
@@ -306,14 +319,14 @@ Every comparison uses authoritative server/database time. The deadline is non-sl
 
 Increment exactly once in the transaction that commits:
 
-- successful voluntary logout;
+- successful voluntary logout Phase L, after Phase M has committed;
 - forced security logout or authorized administrative termination;
-- Account-Switch Phase A only after the authoritative no-blocker reread;
+- Account-Switch Phase T-A only after the authoritative post-Phase-M no-blocker reread;
 - session-family attach, detach, or replacement occurring outside a transition that already incremented the epoch.
 
 The first successful logical-session commit increments `E` to `E + 1` once for first-family attachment. Callback replay never increments it again.
 
-For Account Switch, establishing transaction-local `account_switch_pending` is not an increment event. If any blocker exists, the transaction rolls back with the epoch and all pre-switch state unchanged. When no blocker exists, Phase A advances the epoch once and detaches/revokes the old family in the same transaction; Phase B never increments it.
+Phase M is not an epoch increment event and changes no authentication state. For Account Switch, establishing transaction-local `account_switch_pending` is not an increment event. If any post-Phase-M blocker exists, Phase T-A rolls back with the epoch and all authentication-transition state unchanged while already committed Phase M expiry remains durable. When no blocker exists, Phase T-A advances the epoch once and detaches/revokes the old family in the same transaction; Phase T-B never increments it.
 
 ## Later epoch invalidation
 
@@ -328,15 +341,18 @@ Invariant: every path that reads or mutates `container_auth_epoch` acquires `con
 | Callback first session commit | container auth-transition guard → pre-auth Callback guard → Callback operation guard → logical session/family rows → recovery material |
 | Terminal Callback reconciliation/reissue | container auth-transition guard → authenticated logout guard → Callback operation guard → logical session/family rows → recovery material |
 | Callback acknowledgment | container auth-transition guard → authenticated logout guard → Callback operation guard → logical session/family rows → recovery material |
+| Recovery Expiry Maintenance Phase M | container auth-transition guard → authenticated logout guard → Callback operation guards in stable-key order → logical session/session-family synchronization → recovery/material rows |
 | Provider refresh | container auth-transition guard → authenticated logout guard → logical session/family rows |
-| Logout | container auth-transition guard → authenticated logout guard → Callback/Handoff blockers in stable order → logical session/family rows |
-| Account Switch | container auth-transition guard → authenticated logout/account-switch guard → Callback guards → Handoff locks → session-family rows |
+| Voluntary logout Phase L | container auth-transition guard → authenticated logout guard → Callback-operation guards in stable-key order → Handoff locks in stable-key order → logical session/session-family rows → recovery/material rows |
+| Account Switch Phase T-A | container auth-transition guard → authenticated logout/account-switch guard → Callback guards in stable-key order → Handoff locks in stable-key order → logical session/session-family rows → recovery/material rows |
+| Account Switch Phase T-B | container auth-transition guard → Account-Switch transition guard → transition/continuation rows |
 | Forced termination | container auth-transition guard → termination/logout-compatible guard → Callback/Handoff blockers → session-family rows |
 | Consume | container auth-transition guard → Handoff advisory lock → canonical business rows |
 
 Rules:
 
 - Multiple Callback rows are acquired by stable primary key; multiple Handoff rows are acquired by stable lock key using deterministic unsigned ordering and stable tie-breaks.
+- Phase M commits and releases all guards before Phase T-A or Phase L begins. The authentication-transition transaction then reacquires its full required order and rereads every Callback and Consume blocker; no blocker state read before Phase M is authoritative for that decision.
 - The final blocker reread and any epoch increment occur while the same container guard remains held.
 - A concurrent Consume or Callback path acquires that same container guard before creating new blocking work, so no blocker can appear between the final reread and epoch advancement.
 - No path may acquire `callback_operation_guard` and then `authenticated_logout_guard`.
@@ -383,7 +399,7 @@ committed_cookie_capability_version
 committed_cookie_reissue_material_reference
 ```
 
-Recovery-state updates use authoritative database time, the single Terminal Callback guard order, compare-and-set or equivalent row-version enforcement, and one atomic transaction. The only forward transitions are:
+Recovery-state updates use authoritative database time, the shared container-first guard order, compare-and-set or equivalent row-version enforcement, and one atomic transaction. The only forward transitions are:
 
 ```text
 recovery_pending → acknowledged
@@ -406,7 +422,7 @@ Exact Terminal Callback reconciliation may return the stored outcome and reissue
 - sealed reissue material remains present, valid, and version-bound;
 - all required guards are held.
 
-Account Switch, the proposed ordinary user-requested logout policy, and ordinary user-requested family replacement treat this state as blocking while these conditions remain valid. Forced security termination may override it only through the explicit incident-policy gate described below.
+Phase M must not alter this state while authoritative database time is strictly before the deadline. Its sealed material, committed deadline, recovery state, `recovery_state_version`, and blocker authority remain unchanged; no acknowledgment or expiry is inferred. Account Switch, the proposed ordinary user-requested logout policy, and ordinary user-requested family replacement treat this active state as blocking while these conditions remain valid. Forced security termination may override it only through the explicit incident-policy gate described below.
 
 ## acknowledged
 
@@ -422,7 +438,7 @@ The transition `recovery_pending → acknowledged` is atomic, monotonic, and ide
 
 Callback recovery cannot reissue the cookie, Account Switch or logout no longer treats this record as a Callback recovery blocker, and the historical outcome remains non-authorizing where retention policy permits.
 
-The transition `recovery_pending → recovery_expired` is atomic and monotonic. It cannot extend the deadline or restore pending recovery.
+The transition `recovery_pending → recovery_expired` is atomic, monotonic, and idempotent. It cannot extend the deadline or restore pending recovery. Once committed, its `recovery_expired_at`, one-time version increment, and sealed-material destruction remain durable even if a later Account Switch or ordinary logout is denied by an independent blocker.
 
 # FIRST-LOGIN PROVIDER-START ALGORITHM
 
@@ -484,6 +500,7 @@ If provider succeeded but the epoch changed before local commit, no family, sess
 | Committed recovery pending | The family is attached, initial delivery is not durably proved, and exact same-cookie recovery is available only while recovery is pending and unexpired. |
 | Delivery acknowledged | The committed result was acknowledged idempotently; sealed material is destroyed and the stored result is non-authorizing. |
 | Recovery expired | The authoritative deadline was reached; sealed material is destroyed and the stored result is non-authorizing. |
+| Recovery expiry maintenance | Phase M may durably expire due Callback recovery without changing the attached family, logical session, cookie, descriptor, or auth epoch. |
 | Logout or termination pending | New blocker creation is fenced by the container guard; the final authoritative reread decides the transition. |
 | Revoked or replaced | The epoch is later than the old committed epoch or the family is no longer attached. Old Callback reissue is permanently prohibited. |
 
@@ -519,7 +536,7 @@ The authenticated logout guard is the same guard used by provider refresh, logou
 
 After acquiring those guards, Terminal Callback recovery rereads the operation state, recovery state and version, both epochs, attached and committed family, committed logical session, outcome reference, authoritative database time, deadline, cookie-capability version, and sealed-material validity.
 
-If recovery is pending and database time is at or after the deadline, the same guarded transaction first transitions it to `recovery_expired`, sets `recovery_expired_at`, and destroys or invalidates sealed material. Reconciliation then continues only with the resulting non-authorizing state.
+If recovery is pending and database time is at or after the deadline, the same guarded Terminal Callback transaction transitions it to `recovery_expired`, sets `recovery_expired_at`, advances `recovery_state_version` once, destroys or invalidates sealed material, and commits that state. Reconciliation then continues only with the resulting non-authorizing state. This transaction is not an Account-Switch or logout transition and its committed expiry cannot be restored by either transition.
 
 Cookie reissue is permitted only when all of the following are true:
 
@@ -554,9 +571,11 @@ To support response-loss recovery:
 - reissue material is never returned in JSON, logged, traced, audited, or used as a metric label;
 - it cannot authorize a different session, family, Callback, or container;
 - acknowledgment destroys or renders it unusable atomically with `recovery_pending → acknowledged`;
-- authoritative expiry destroys or renders it unusable atomically with `recovery_pending → recovery_expired`;
+- authoritative expiry destroys or renders it unusable atomically with `recovery_pending → recovery_expired`, and Phase M commits that destruction before any requested Account Switch or ordinary logout transition begins;
 - logout, Account Switch, forced termination, security revocation, or session-family replacement destroys or invalidates it when that transition is permitted to commit;
 - no replay, reconciliation, acknowledgment, retry, or cleanup action extends the deadline.
+
+A denied Account Switch or ordinary logout never recreates material destroyed by Phase M, restores its reference, clears `recovery_expired_at`, decrements `recovery_state_version`, or returns the row to `recovery_pending`. Phase M leaves sealed material for active, unexpired pending recovery intact.
 
 Because the same capability is reissued, Callback replay creates no overlapping old/new capability window, no second active capability, and no capability-generation counter increment.
 
@@ -603,7 +622,7 @@ The acknowledgment transaction:
 6. verifies the requesting BFF session is the same committed logical session/family under the current committed epoch;
 7. when state is `recovery_pending` and database time is strictly before the deadline, sets `acknowledged`, sets `delivery_acknowledged_at` once, advances `recovery_state_version`, destroys or invalidates sealed material, and commits atomically;
 8. when already `acknowledged`, returns the same successful acknowledgment classification without another mutation;
-9. when pending but database time is at or after the deadline, atomically applies authoritative expiry instead of acknowledgment;
+9. when pending but database time is at or after the deadline, atomically applies and durably commits authoritative expiry instead of acknowledgment;
 10. when `recovery_expired`, never recreates material or reissues the cookie;
 11. when current epoch/family/session does not match, fails closed before Invitation semantic lookup.
 
@@ -613,22 +632,189 @@ Concurrent acknowledgment and expiry have one deterministic winner under the sam
 
 # RECOVERY EXPIRY
 
-When a guarded path observes `callback_recovery_state = recovery_pending` and authoritative `database_time >= cookie_reissue_material_expires_at`, it atomically:
+## Recovery Expiry Transaction
+
+When a guarded path observes `callback_operation_state = session_committed`, `callback_recovery_state = recovery_pending`, and authoritative `database_time >= cookie_reissue_material_expires_at`, its Recovery Expiry Transaction atomically:
 
 1. transitions the state to `recovery_expired`;
 2. sets `recovery_expired_at` from authoritative database time;
 3. advances `recovery_state_version` exactly once;
 4. destroys or cryptographically invalidates sealed reissue material;
-5. prohibits all further cookie reissue;
-6. commits before returning a classification based on the expired state.
+5. clears or invalidates the committed reissue-material reference as required by the storage design;
+6. preserves the immutable historical outcome as non-authorizing;
+7. prohibits all further cookie reissue;
+8. commits before returning a classification based on the expired state.
 
-This lazy authoritative transition is available from Terminal Callback reconciliation, delivery acknowledgment, Account-Switch blocker classification, logout blocker classification, forced-termination processing, and governed cleanup processing. Correctness does not depend on browser time, local timers, or scheduled cleanup.
+This lazy authoritative transition is available from Terminal Callback reconciliation, delivery acknowledgment, the separate Phase M required before Account Switch and ordinary logout, forced-termination processing, and governed cleanup processing. Correctness does not depend on browser time, local timers, or scheduled cleanup.
 
 The deadline is non-sliding. No replay, acknowledgment, concurrent retry, reconciliation, or cleanup action extends it. Concurrent acknowledgment and expiry follow the deterministic strictly-before rule in Delivery Acknowledgment.
 
+# DURABLE RECOVERY EXPIRY MAINTENANCE
+
+Recovery expiry maintenance and the requested authentication transition are separate transactions with separate rollback domains. Expiry maintenance is never part of the rollback domain of a denied Account Switch or ordinary logout.
+
+## Phase M — Recovery Expiry Maintenance
+
+### Recovery Expiry Maintenance Transaction
+
+Before Account Switch or ordinary logout classifies blockers, it executes and commits a separate guarded database transaction called the **Recovery Expiry Maintenance Transaction**.
+
+Phase M acquires guards and locks only in this order:
+
+```text
+container_auth_transition_guard
+→ authenticated_logout_guard
+→ callback_operation_guard(s) in stable-key order
+→ logical_session/session_family synchronization
+→ recovery/material rows
+```
+
+While holding those guards, Phase M authoritatively rereads every candidate Callback recovery relevant to the container. For each row where:
+
+```text
+callback_operation_state = session_committed
+callback_recovery_state = recovery_pending
+database_time >= cookie_reissue_material_expires_at
+```
+
+the same transaction must:
+
+1. transition `callback_recovery_state` to `recovery_expired`;
+2. set `recovery_expired_at` using authoritative database time;
+3. increment `recovery_state_version` exactly once;
+4. destroy or cryptographically render unusable the sealed cookie reissue material;
+5. clear or invalidate the committed reissue-material reference as required by the storage design;
+6. preserve the immutable historical outcome as non-authorizing;
+7. commit the expiry mutation durably.
+
+Phase M must not:
+
+- advance `container_auth_epoch`;
+- revoke or detach the current session family;
+- invalidate the current logical session;
+- clear the current BFF cookie or actor-session descriptor;
+- delete a raw Idempotency-Key;
+- remove Callback or Consume recovery material unrelated to the expired sealed cookie material;
+- create an Account-Switch transition;
+- create a new Auth continuation;
+- perform Account Switch;
+- perform logout;
+- classify Invitation semantics.
+
+The transaction is idempotent. Repeated processing of an already `recovery_expired` row performs no second state-version increment, recreates no material, preserves the first `recovery_expired_at` value, and returns the same maintenance classification.
+
+### Active Pending Recovery Preservation
+
+Phase M must not alter a recovery where:
+
+```text
+callback_recovery_state = recovery_pending
+database_time < cookie_reissue_material_expires_at
+```
+
+For every active, unexpired `recovery_pending` row, sealed material remains intact, the committed deadline remains unchanged, the recovery state and `recovery_state_version` remain unchanged, and the row remains a blocker for ordinary Account Switch and ordinary logout under the existing policy. No acknowledgment or expiry is inferred. Phase M may expire due rows while preserving active pending rows in the same container.
+
+## Phase T — Authentication Transition
+
+Only after Phase M commits may Account Switch Phase T-A or ordinary logout Phase L begin its authentication-transition transaction. The transition transaction must reacquire its full required guard order and authoritatively reread all Callback and Consume blockers after the Phase M commit. It must not rely on blocker state read before Phase M.
+
+When another independent blocker exists, Phase T must deny the requested Account Switch or ordinary logout and roll back only its own transition mutations. It must preserve committed Phase M expiry and must not:
+
+- restore `recovery_expired` to `recovery_pending`;
+- recreate sealed reissue material;
+- restore the destroyed material reference;
+- change the first committed `recovery_expired_at`;
+- decrement `recovery_state_version`.
+
+When Phase T is denied, all authentication state remains unchanged: `container_auth_epoch`, the attached session family, logical-session state, BFF session cookie, actor-session descriptor, raw Idempotency-Key, active unexpired Callback recovery state, Consume recovery state, Account-Switch transition state, and Auth continuation state. No new Account-Switch transition or continuation may be created.
+
+## Independent Blocker Behavior
+
+The following sequence is normative for both Account Switch and ordinary user-requested logout:
+
+1. Callback recovery A is `recovery_pending`.
+2. A has reached or passed its authoritative deadline.
+3. Independent Callback or Consume operation B remains a valid blocker.
+4. Account Switch or ordinary logout is requested.
+5. Phase M expires A and destroys A's sealed material.
+6. Phase M commits.
+7. Phase T reacquires all guards and rereads blockers.
+8. B remains blocking.
+9. Phase T denies and rolls back the requested authentication transition.
+
+The durable result is:
+
+- A remains `recovery_expired`;
+- A.`recovery_expired_at` remains committed;
+- A's sealed material remains destroyed or unusable;
+- A no longer blocks future authentication transitions;
+- B remains unchanged and continues to block;
+- `container_auth_epoch` remains unchanged;
+- the current family remains attached;
+- the current logical session remains active;
+- the current cookie and descriptor remain valid;
+- the raw Idempotency-Key remains;
+- no Account-Switch transition exists;
+- no new continuation exists.
+
+## Crash and Response-Loss Handling
+
+### Crash before Phase M commit
+
+- No expiry mutation or material destruction is assumed.
+- Retry Phase M using authoritative time and state.
+- No authentication transition begins.
+
+### Crash after Phase M commit but before Phase T begins
+
+- Expiry mutations remain durable and sealed material remains destroyed.
+- Retry starts by rereading the durable expiry state.
+- Phase M replay is idempotent.
+- Phase T may then be attempted separately.
+
+### Crash during Phase T
+
+- Phase M expiry remains committed.
+- Phase T follows the existing Account-Switch or logout rollback and recovery contract.
+- No expired recovery may be restored.
+
+### HTTP response loss after denied Phase T
+
+- Client retry rereads durable `recovery_expired` state.
+- The independent blocker remains authoritative.
+- No additional expiry mutation occurs.
+- No auth epoch change is inferred.
+- No transition or continuation is fabricated.
+
+## Concurrency Rules
+
+Phase M and Phase T use the same global container-first guard family. Concurrent behavior is deterministic.
+
+### Expiry versus acknowledgment
+
+- Acknowledgment may win only when all guards are acquired and authoritative database time is strictly before the deadline.
+- At or after the deadline, expiry wins.
+
+### Expiry maintenance versus Account Switch or logout
+
+- Phase T cannot classify blockers from stale reads taken before Phase M.
+- Phase T must reread after Phase M commits.
+- No path may hold narrower locks and then acquire the container guard.
+
+### Concurrent Phase M executions
+
+- Exactly one transaction performs the pending-to-expired transition.
+- Other executions reread `recovery_expired`.
+- Sealed-material destruction is idempotent.
+- `recovery_state_version` advances exactly once.
+
+### New blocking work
+
+Any Callback or Consume path capable of creating new blocking work must acquire the same `container_auth_transition_guard` before committing that work. No new blocker may appear between Phase T's final authoritative blocker reread and its epoch/session mutation without sharing the same guard.
+
 # CLEANUP
 
-A scheduled cleanup job may additionally process expired records, but this document does not implement one and correctness never depends solely on it. Governed cleanup uses the same container-first stable lock order, obtains recovery/material rows last, rereads authoritative database time and current recovery state, and performs only the idempotent expiry transition or retention deletion already authorized by policy.
+A scheduled cleanup job may additionally process expired records, but this document does not implement one and correctness never depends solely on it. Governed cleanup uses the same container-first stable lock order, obtains recovery/material rows last, rereads authoritative database time and current recovery state, and performs only the idempotent expiry transition or retention deletion already authorized by policy. Account Switch and ordinary logout do not wait for scheduled cleanup; their Phase M performs the required authoritative maintenance and commits independently.
 
 Cleanup never recreates sealed material, changes a terminal state back to pending, extends the deadline, reissues a cookie, alters the immutable outcome, advances the container epoch, or logs secret material.
 
@@ -640,7 +826,7 @@ Forced-termination recovery override is auditable by policy identifier and non-s
 
 # RESPONSE-LOSS RECOVERY
 
-An HTTP response may be lost after the local `session_committed`/`recovery_pending` transaction. A subsequent request resolves the same Callback operation, acquires the single Terminal Callback lock order, applies lazy expiry, rereads the committed tuple and recovery state, and applies the post-commit terminal recovery conditions. Before the deadline, successful pending recovery returns the immutable stored outcome and the exact same committed cookie capability bytes. It does not repeat provider exchange or local session mutation.
+An HTTP response may be lost after the local `session_committed`/`recovery_pending` transaction. A subsequent request resolves the same Callback operation, acquires the single Terminal Callback lock order, applies authoritative expiry when due, rereads the committed tuple and recovery state, and applies the post-commit terminal recovery conditions. Before the deadline, successful pending recovery returns the immutable stored outcome and the exact same committed cookie capability bytes. It does not repeat provider exchange or local session mutation.
 
 Response loss before the local commit never authorizes a cookie. Unknown local commit is reconciled from authoritative Callback/session rows; absence of a fully committed tuple fails closed.
 
@@ -652,48 +838,56 @@ Tabs sharing a flow container share its server-authoritative epoch, family attac
 
 # AUTHENTICATED LOGOUT GUARD
 
-The authenticated logout guard is derived only from trusted current session-family and flow-container identities. Terminal Callback reconciliation/reissue, delivery acknowledgment, provider refresh, ordinary logout, Account Switch, and logout-compatible forced termination all acquire `container_auth_transition_guard` first and then this same guard, or the explicitly compatible transition guard identified by the global matrix.
+The authenticated logout guard is derived only from trusted current session-family and flow-container identities. Terminal Callback reconciliation/reissue, delivery acknowledgment, Recovery Expiry Maintenance, provider refresh, ordinary logout, Account Switch, and logout-compatible forced termination all acquire `container_auth_transition_guard` first and then this same guard, or the explicitly compatible transition guard identified by the global matrix.
 
-No browser value selects the guard identity. The guard is held until every epoch/family/session/recovery validation, expiry classification, material decision, outcome lookup, capability decision, and applicable transition mutation completes.
+No browser value selects the guard identity. Phase M holds the guard through its authoritative reread, expiry mutation, sealed-material destruction, and commit. It then releases the guard. Phase T-A or Phase L reacquires the full required order and holds it through the post-Phase-M blocker reread and applicable transition mutation. No browser value or pre-Phase-M read can bypass this sequencing.
 
 # ATOMIC VOLUNTARY LOGOUT
 
 `GET /functions/v1/logout-readiness` is advisory only.
 
-`POST /functions/v1/logout`:
+`POST /functions/v1/logout` uses two separately committed transactions.
+
+## Phase M — Durable Recovery Expiry Maintenance
+
+1. execute the Recovery Expiry Maintenance Transaction under the required container-first guard order;
+2. authoritatively expire every due Callback recovery and destroy only its sealed reissue material;
+3. preserve every active, unexpired `recovery_pending` row;
+4. commit Phase M before logout blocker classification begins.
+
+## Phase L — Atomic Voluntary Logout
 
 1. resolve trusted container and family;
-2. acquire container auth-transition guard;
-3. acquire authenticated logout guard;
+2. after Phase M commits, reacquire `container_auth_transition_guard`;
+3. reacquire `authenticated_logout_guard`;
 4. establish transaction-local `logout_pending`;
-5. acquire Callback-operation guards, Handoff locks, and session/family rows in stable global order;
-6. authoritatively reread all blocking Callback and Consume states, including separate Callback operation and recovery states;
-7. lazily transition every pending terminal recovery whose deadline has arrived to `recovery_expired`, set its expiry timestamp, and destroy its sealed material, then classify the resulting state;
-8. blocking exists: roll back the transaction with no persisted pending state or epoch change, then return Logout Recovery Required;
-9. no blocking exists:
+5. acquire Callback-operation guards, Handoff locks, session/family rows, and recovery/material rows in stable global order;
+6. authoritatively reread all blocking Callback and Consume states after Phase M, including separate Callback operation and recovery states;
+7. when a valid blocker exists, roll back Phase L only with no persisted pending state or epoch change, preserve committed Phase M expiry, and return Logout Recovery Required;
+8. when no blocker exists:
    - increment `container_auth_epoch`;
    - revoke family/session and current/previous capability digests;
    - detach the family in the same transaction;
    - delete or render unusable old Callback reissue material and clear only recovery material proven safe to clear;
    - mark transition stable;
    - commit;
-10. clear cookie only after commit.
+9. clear the cookie only after Phase L commits.
 
 Pre-commit Callback states and unresolved Consume work remain blockers as previously specified. A `session_committed` Callback blocks ordinary logout only when its recovery is `recovery_pending`, authoritative database time is before its deadline, sealed material is valid, and the current committed epoch/family/session relationship remains valid. `acknowledged`, `recovery_expired`, terminal failures without recoverable authentication, and historical non-authorizing outcomes are not Callback recovery blockers.
 
-This specification proposes blocking ordinary user-requested logout while that active pending condition holds so browser recovery authority is not destroyed. Human product/security approval remains REQUIRED before Runtime implementation; this document does not represent that approval. A blocked logout preserves the session, cookie, actor-session descriptor, raw Idempotency-Key, Callback state, Consume state, and sealed material.
+This specification proposes blocking ordinary user-requested logout while that active pending condition holds so browser recovery authority is not destroyed. Human product/security approval remains REQUIRED before Runtime implementation; this document does not represent that approval. A blocked Phase L preserves the session, cookie, actor-session descriptor, raw Idempotency-Key, active unexpired Callback recovery state and material, Consume state, Account-Switch state, and Auth continuation state. It cannot undo Phase M: expired rows remain expired, `recovery_expired_at` and the one-time version increment remain committed, and destroyed sealed material stays unusable.
 
 # FORCED SECURITY LOGOUT AND ADMINISTRATIVE TERMINATION
 
-Authorized server-side processes acquire the container guard first, the termination/logout-compatible guard, then Callback-operation guards, Handoff locks, session-family rows, recovery/material rows, and canonical rows. They apply authoritative lazy expiry and reread blockers under the same container guard.
+Authorized server-side processes acquire the container guard first, the termination/logout-compatible guard, then Callback-operation guards, Handoff locks, session-family rows, recovery/material rows, and canonical rows. They apply authoritative expiry and reread blockers under the same container guard. Already expired rows remain expired and their sealed material is never restored.
 
-Forced security termination may override active pending recovery only under an explicit security-incident policy. Approval for that policy remains REQUIRED and is not represented here. When such an authorized override commits, it advances the epoch once, revokes/detaches the family and capabilities, destroys sealed reissue material immediately, transitions the recovery to terminal non-reissuable `recovery_expired` with an auditable non-secret forced-termination reason, and preserves the immutable outcome as non-authorizing evidence. It never releases or rebinds server coordination to another actor or logs secrets.
+Forced security termination may override active pending recovery only under an explicit security-incident policy. Approval for that policy remains REQUIRED and is not represented here. When such an authorized override commits, it advances the epoch once, revokes/detaches the family and capabilities, destroys pending sealed reissue material immediately, transitions the affected recovery to terminal non-reissuable `recovery_expired` with an auditable non-secret forced-termination reason, and preserves the immutable outcome as non-authorizing evidence. It never restores expired material, releases or rebinds server coordination to another actor, or logs secrets. It does not depend on successful voluntary logout or Account Switch.
 
 Browser input cannot request forced mode. A later forced termination prevents stale provider results or committed Callback replay from creating a session or reissuing a cookie.
 
 # ATOMIC ACCOUNT-SWITCH GATE
 
-Account Switch uses two local database transactions. No sequence may increment the epoch, revoke/detach the old family, invalidate the actor-session descriptor, clear the cookie, or destroy recovery material before the authoritative blocker decision.
+Account Switch uses Phase M followed by Phase T-A and, only after successful Phase T-A commit, Phase T-B. Phase M is a separately committed Recovery Expiry Maintenance Transaction; Phase T-A is the atomic blocker gate and old-family termination transaction; Phase T-B is the retry-safe continuation-creation transaction. No sequence may increment the epoch, revoke/detach the old family, invalidate the actor-session descriptor, clear the cookie, or destroy active pending recovery material before the authoritative Phase T-A blocker decision.
 
 ## Durable Account-Switch Transition
 
@@ -719,19 +913,27 @@ Allowed states are exactly:
 - `continuation_created`;
 - `terminal_failure`.
 
-The transition ID is server-generated, opaque, unique, and cannot be selected by browser input. It is the stable idempotency identity for every Phase B attempt.
+The transition ID is server-generated, opaque, unique, and cannot be selected by browser input. It is the stable idempotency identity for every Phase T-B attempt.
 
-## Phase A — Atomic gate and old-family termination
+## Phase M — Durable Recovery Expiry Maintenance
+
+1. acquire the required Phase M guard order;
+2. authoritatively reread every candidate Callback recovery for the container;
+3. expire every due recovery, destroy its sealed material, and preserve active pending recovery;
+4. commit Phase M and release its guards;
+5. begin no Account-Switch mutation in this transaction.
+
+## Phase T-A — Atomic blocker gate and old-family termination
 
 In one transaction:
 
-1. acquire `container_auth_transition_guard`;
-2. acquire the authenticated logout/Account-Switch guard;
+1. only after Phase M commits, reacquire `container_auth_transition_guard`;
+2. reacquire the authenticated logout/Account-Switch guard;
 3. establish transaction-local `account_switch_pending`;
 4. acquire required Callback-operation synchronization;
 5. acquire required Handoff advisory locks;
 6. read Callback and Consume operation rows in deterministic stable-key order;
-7. authoritatively reread every blocking Callback and Consume state;
+7. authoritatively reread every blocking Callback and Consume state after Phase M;
 8. classify whether blocking work exists while the same container guard remains held.
 
 ### Account-Switch Blocker Classification
@@ -748,7 +950,7 @@ For each committed Callback recovery, the guarded reread includes:
 - authoritative database time;
 - presence, validity, and committed version of sealed reissue material.
 
-Before blocker classification, Phase A applies the lazy authoritative expiry transition to pending recoveries whose deadline has arrived, destroys their sealed material, and then rereads or classifies the resulting state. If Phase A later rolls back because another blocker exists, all transaction-local expiry changes also roll back and pre-switch state remains unchanged; another guarded path will deterministically reapply expiry.
+Phase T-A never uses a blocker read taken before Phase M and does not own Phase M's expiry mutations. Due recoveries are already durably `recovery_expired`; active, unexpired pending recoveries remain unchanged and continue to block. Phase T-A rereads both categories plus every Callback and Consume blocker under its reacquired guards.
 
 Blocking work includes at minimum:
 
@@ -765,7 +967,7 @@ Blocking work includes at minimum:
 
 Account Switch does not treat `acknowledged`, `recovery_expired`, terminal failure without recoverable authentication, or historical non-authorizing outcomes as Callback recovery blockers. It never classifies every `session_committed` record as automatically blocking or automatically resolved.
 
-When blocking work exists, roll back the entire transaction. Do not increment the epoch; persist `account_switch_pending` or a transition row; revoke or detach the family; invalidate the logical session, cookie, descriptor, or earlier continuation; delete the raw Idempotency-Key; remove Callback/Consume state; clear recovery material; or create a new Auth continuation. Rollback leaves every pre-switch session and recovery state unchanged, including sealed material for active pending recovery.
+When blocking work exists, deny the switch and roll back Phase T-A only. Do not increment the epoch; persist `account_switch_pending` or a transition row; revoke or detach the family; invalidate the logical session, cookie, descriptor, or earlier continuation; delete the raw Idempotency-Key; remove Callback/Consume state; clear active pending recovery material; or create a new Auth continuation. The current session, family, cookie, descriptor, raw key, active pending Callback recovery, Consume recovery, transition state, and continuation state remain unchanged. Phase M expiry remains committed: no expired row returns to pending, no sealed material or reference is restored, `recovery_expired_at` remains unchanged, and `recovery_state_version` is not decremented.
 
 When no blocking work exists:
 
@@ -779,14 +981,14 @@ When no blocking work exists:
 8. invalidate old actor-session binding descriptors;
 9. invalidate older Auth continuations;
 10. clear only recovery material proven safe after the no-blocker determination;
-11. preserve the durable transition in `continuation_creation_pending` for Phase B;
+11. preserve the durable transition in `continuation_creation_pending` for Phase T-B;
 12. commit.
 
-The transition row, epoch advance, and old-family termination are atomic. An intermediate implementation may use `old_family_terminated` as a same-transaction checkpoint, but the chosen committed Phase A state is `continuation_creation_pending`. No new continuation is created inside Phase A, and cookie clearing occurs only after Phase A commit.
+The transition row, epoch advance, and old-family termination are atomic. An intermediate implementation may use `old_family_terminated` as a same-transaction checkpoint, but the chosen committed Phase T-A state is `continuation_creation_pending`. No new continuation is created inside Phase T-A, and cookie clearing occurs only after Phase T-A commit.
 
-## Phase B Continuation Recovery — Retry-safe continuation creation
+## Phase T-B — Retry-safe new continuation creation
 
-Phase B starts only after Phase A commits and uses the same `account_switch_transition_id`:
+Phase T-B starts only after Phase T-A commits and uses the same `account_switch_transition_id`:
 
 1. acquire `container_auth_transition_guard`;
 2. acquire the Account-Switch transition guard;
@@ -800,11 +1002,11 @@ Phase B starts only after Phase A commits and uses the same `account_switch_tran
 10. set state to `continuation_created`;
 11. commit.
 
-Phase B transaction failure or HTTP response loss never restores the old family, decrements or increments the epoch, or creates multiple continuations. The durable transition retains enough state to retry or determine whether continuation creation committed. A retry with the same transition ID returns the same continuation reference.
+Phase T-B transaction failure or HTTP response loss never restores the old family, decrements or increments the epoch, or creates multiple continuations. The durable transition retains enough state to retry or determine whether continuation creation committed. A retry with the same transition ID returns the same continuation reference.
 
-If Phase B reaches terminal unrecoverable failure, preserve the detached/revoked old-family state, set `terminal_failure`, return a generic authentication-flow error, and never silently reactivate the old family.
+If Phase T-B reaches terminal unrecoverable failure, preserve the detached/revoked old-family state, set `terminal_failure`, return a generic authentication-flow error, and never silently reactivate the old family.
 
-Old continuations fail with Auth Restart Required. A successor family may attach only through a later guarded first-session commit and is not part of either Account-Switch transaction.
+Old continuations fail with Auth Restart Required. A successor family may attach only through a later guarded first-session commit and is not part of Phase M, Phase T-A, or Phase T-B.
 
 # PROVIDER REFRESH AND EXISTING-SESSION REAUTHENTICATION
 
@@ -840,7 +1042,7 @@ Revision 10.4 rules remain normative:
 
 Consume acquires `container_auth_transition_guard` before its Handoff advisory lock whenever it reads current auth epoch/family state or creates recovery work bound to the actor/session. An `operation_bound` row with unresolved result, an unknown local commit, or pending idempotent recovery remains blocking until authoritative classification.
 
-Account Switch and voluntary logout reread these rows under the container guard and Handoff locks. A blocked transition cannot detach the family, invalidate the actor-session descriptor, or destroy the only capability that can reconcile the Consume result. Forced security termination may invalidate actor authorization but preserves immutable operation evidence and never rebinds it.
+After Phase M commits, Account Switch Phase T-A and voluntary logout Phase L reacquire the container guard and Handoff locks and reread these rows. A blocked transition cannot detach the family, invalidate the actor-session descriptor, or destroy the only capability that can reconcile the Consume result. Committed Phase M expiry remains durable. Forced security termination may invalidate actor authorization but preserves immutable operation evidence and never rebinds it.
 
 # RAW IDEMPOTENCY-KEY LIFECYCLE
 
@@ -859,13 +1061,13 @@ Zero callback operations resolves to Auth Restart Required:
 
 # UX AND RECOVERY
 
-- A blocked logout or Account Switch leaves the current session and recovery material intact and returns the applicable generic recovery-required class.
+- A blocked Phase L or Phase T-A leaves the current authentication state and active pending recovery material intact, preserves committed Phase M expiry and destruction, and returns the applicable generic recovery-required class.
 - After accepting the committed Callback result and cookie and persisting required non-secret state, the browser sends the architecture-level Delivery Acknowledgment; response loss triggers the same idempotent retry.
 - Acknowledgment or authoritative expiry ends cookie reissue for all tabs and releases the Callback recovery blocker without altering the active committed session.
 - While valid recovery remains pending, Account Switch and the proposed ordinary logout policy remain blocked; UI treatment and product/security approval remain Runtime blockers.
-- The browser does not clear its cookie, descriptor, or raw Idempotency-Key before a successful Phase A commit.
-- After Account-Switch Phase A, the old session stays revoked even if Phase B fails; retry uses the opaque transition flow and never asks the user to restore the old family.
-- Phase B response loss retrieves the same continuation rather than creating another.
+- The browser does not clear its cookie, descriptor, or raw Idempotency-Key before a successful Phase T-A or Phase L commit.
+- After Account-Switch Phase T-A, the old session stays revoked even if Phase T-B fails; retry uses the opaque transition flow and never asks the user to restore the old family.
+- Phase T-B response loss retrieves the same continuation rather than creating another.
 - Stale Callback recovery after a later epoch uses a generic authentication/session or flow-capability result and never reveals Invitation validity or state.
 - Browser copy must not describe a Callback replay, Account Switch, or this planning document as approved Runtime behavior.
 
@@ -913,7 +1115,7 @@ Tests 1–260 retain their previously specified architecture meaning.
 |---|---|---|---|
 | 290 | First-login provider-start serializes with voluntary logout | Both acquire container guard first. Provider-start-first makes logout observe a blocking callback; logout-first makes epoch mismatch prevent provider start. | No provider call starts after successful logout epoch increment. |
 | 291 | First-login session commit cannot recreate login after logout | Logout increments epoch and detaches/revokes family; later callback commit detects stale bound epoch. | No logical session, family, binding ID, digest, or Set-Cookie is created. |
-| 292 | Account Switch invalidates old continuation | Successful Phase A advances the epoch under container + authenticated guards only after the authoritative no-blocker reread. | Old continuation cannot start provider or attach/replace a family; a blocked switch changes nothing. |
+| 292 | Account Switch invalidates old continuation | Successful Phase T-A advances the epoch under container + authenticated guards only after Phase M commits and the authoritative no-blocker reread completes. | Old continuation cannot start provider or attach/replace a family; a blocked switch changes no authentication state and cannot undo Phase M. |
 | 293 | Forced security logout invalidates pending pre-auth continuation | Forced logout increments epoch under container guard. | Pending provider result cannot create session or cookie. |
 | 294 | Container guard precedes authenticated/pre-auth guards globally | Instrument every path requiring both domains and verify ordered acquisition. | No domain inversion or later container acquisition occurs. |
 | 295 | Provider success with stale container epoch creates no logical session | Provider succeeds, then logout/account switch changes epoch before commit; callback returns restart-required classification. | No family/session/binding/digest/cookie persists or emits. |
@@ -960,10 +1162,10 @@ Tests 1–260 retain their previously specified architecture meaning.
 
 ## Test 300 — Blocked Account Switch rolls back epoch and pending state
 
-- Purpose: Prove that Phase A is atomic and cannot partially advance authentication state when blocking work exists.
+- Purpose: Prove that Phase T-A is atomic and cannot partially advance authentication state when blocking work exists, while separately committed Phase M state is outside its rollback domain.
 - Setup: An active attached family plus a blocking Callback or Consume operation; capture the current epoch and absence of an Account-Switch transition.
-- Execution: Invoke Account-Switch Phase A through the complete lock order and authoritative blocker reread.
-- Required assertions: The blocker is observed; Phase A rolls back; the epoch is unchanged; `account_switch_pending` is not persisted; no Account-Switch transition row is committed.
+- Execution: Commit Phase M, then invoke Account-Switch Phase T-A through the reacquired complete lock order and authoritative blocker reread.
+- Required assertions: The blocker is observed; Phase T-A rolls back; the epoch is unchanged; `account_switch_pending` is not persisted; no Account-Switch transition row is committed; any committed Phase M expiry remains durable.
 - Negative assertions: No revoke, detach, descriptor invalidation, cookie clearing, recovery-material removal, or continuation creation occurs.
 - Required evidence: Transaction rollback trace, ordered lock trace, before/after container and transition rows, and blocker classification.
 - Shared-CI suitability: Deterministic local transaction test with seeded Callback and Consume variants.
@@ -972,7 +1174,7 @@ Tests 1–260 retain their previously specified architecture meaning.
 
 - Purpose: Prove that a rejected switch does not destroy the authority needed to finish existing work.
 - Setup: An active session/family/cookie/descriptor, raw Idempotency-Key, active unexpired pending Callback recovery, Consume recovery state, and a blocker.
-- Execution: Attempt Phase A and then exercise the still-authorized existing recovery path.
+- Execution: Commit Phase M, attempt Phase T-A, and then exercise the still-authorized existing recovery path.
 - Required assertions: The old session remains active; the family remains attached; current cookie and descriptor remain valid; raw Idempotency-Key remains; Callback and Consume recovery state remain; no new continuation exists.
 - Negative assertions: No old-state artifact is revoked, detached, deleted, cleared, rebound, or replaced.
 - Required evidence: Before/after row and digest snapshots, browser-state fixture, raw-key presence proof, recovery result, and continuation count.
@@ -982,7 +1184,7 @@ Tests 1–260 retain their previously specified architecture meaning.
 
 - Purpose: Prove the no-race atomic gate and global lock hierarchy.
 - Setup: Active old family with nonblocking terminal operation rows, plus instrumented concurrent Callback and Consume attempts.
-- Execution: Run Phase A while recording lock acquisition, deterministic row reread, no-blocker classification, epoch advance, and family detach.
+- Execution: Commit Phase M, then run Phase T-A while recording reacquired locks, deterministic post-Phase-M reread, no-blocker classification, epoch advance, and family detach.
 - Required assertions: `container_auth_transition_guard` and authenticated logout/Account-Switch guard are acquired first; Callback, Handoff, and session rows follow the global lock matrix; recovery state/deadline/material and all blocking rows are reread; no blocker exists; only then are the epoch advanced and family detached.
 - Negative assertions: No Callback or Consume path uses reverse order `Handoff or Callback lock → container_auth_transition_guard`; no new blocker appears between final reread and epoch advancement.
 - Required evidence: Complete ordered lock trace, barrier-controlled race trace, authoritative reread snapshot, epoch write timestamp/order, and family attachment history.
@@ -990,11 +1192,11 @@ Tests 1–260 retain their previously specified architecture meaning.
 
 ## Test 303 — New Account-Switch continuation is created only after old-family termination commits
 
-- Purpose: Prove transaction separation and retry-safe Phase B continuation creation.
-- Setup: A switchable old family and deterministic failure/response-loss injection around Phase A commit and Phase B commit/response.
-- Execution: Commit Transaction 1 with epoch advancement and old-family revoke/detach; run Transaction 2 using the same transition ID; inject one Phase B transaction failure and one lost Phase B HTTP response, then retry/retrieve.
-- Required assertions: Transaction 1 commits before continuation creation; Transaction 2 creates or retrieves the new continuation; the same transition ID makes Phase B idempotent; transaction failure is retryable; HTTP response loss retrieves the same continuation; exactly one new continuation exists; Phase B never increments the epoch again.
-- Negative assertions: No continuation exists before Phase A commit; Phase B failure never restores the old family; duplicate Phase B requests never create multiple continuations.
+- Purpose: Prove transaction separation and retry-safe Phase T-B continuation creation.
+- Setup: A switchable old family and deterministic failure/response-loss injection around Phase T-A commit and Phase T-B commit/response.
+- Execution: Commit Phase T-A with epoch advancement and old-family revoke/detach; run Phase T-B using the same transition ID; inject one Phase T-B transaction failure and one lost Phase T-B HTTP response, then retry/retrieve.
+- Required assertions: Phase T-A commits before continuation creation; Phase T-B creates or retrieves the new continuation; the same transition ID makes Phase T-B idempotent; transaction failure is retryable; HTTP response loss retrieves the same continuation; exactly one new continuation exists; Phase T-B never increments the epoch again.
+- Negative assertions: No continuation exists before Phase T-A commit; Phase T-B failure never restores the old family; duplicate Phase T-B requests never create multiple continuations.
 - Required evidence: Separate transaction commit records, durable transition state history, stable continuation reference, continuation row count, epoch history, old-family state, and retry/response-loss traces.
 - Shared-CI suitability: Deterministic local two-transaction fixture with explicit fault injection and no live provider.
 
@@ -1020,23 +1222,23 @@ Tests 1–260 retain their previously specified architecture meaning.
 
 ## Test 306 — Recovery expiry destroys material and releases Account-Switch blocker
 
-- Purpose: Prove authoritative, non-sliding expiry permanently ends cookie reissue and pending blocker authority.
-- Setup: `session_committed`; `recovery_pending`; sealed material present; authoritative database time reaches the persisted deadline.
-- Execution: Invoke Terminal Callback reconciliation, Account-Switch classification, or governed cleanup and concurrently attempt a late acknowledgment.
-- Required assertions: State becomes `recovery_expired`; `recovery_expired_at` is set from database time; recovery version advances once; sealed material is destroyed; the old Callback cannot reissue the cookie; Account Switch no longer treats the record as blocking; acknowledgment cannot win at or after the deadline.
-- Negative assertions: No deadline extension; no restoration of `recovery_pending`; no sealed-material recreation; no session restoration through Callback; no browser-clock authority.
-- Required evidence: Persisted deadline, authoritative clock trace, ordered guards/row lock, deterministic concurrency winner, recovery/material before/after state, reissue denial, and Account-Switch result.
-- Shared-CI suitability: Fixed-clock local concurrency fixture with explicit barrier control rather than timing-only assertions.
+- Purpose: Prove authoritative, non-sliding expiry permanently ends cookie reissue and remains durable when an independent blocker denies Account Switch or ordinary logout.
+- Setup: Recovery A is `session_committed`; A is `recovery_pending`; A is at or after its authoritative deadline; independent operation B remains a valid Callback or Consume blocker; current epoch, logical session, session family, cookie, and descriptor remain valid.
+- Execution: Start Account Switch or ordinary logout; execute Phase M; Phase M expires A and destroys A's sealed material; Phase M commits; execute Phase T-A or Phase L; B causes that transaction to deny the requested authentication transition. Include the existing deterministic late-acknowledgment case at or after the deadline.
+- Required assertions: A remains durably `recovery_expired` after transition denial; A.`recovery_expired_at` remains committed; A's `recovery_state_version` increments exactly once; A's sealed material remains destroyed or unusable; A no longer blocks future transitions; B remains unchanged and remains a blocker; epoch remains unchanged; current family remains attached; current logical session remains active; cookie and descriptor remain valid; raw Idempotency-Key remains; no switch transition exists; no continuation exists; acknowledgment cannot win at or after the deadline.
+- Negative assertions: Phase T-A or Phase L rollback does not restore A to `recovery_pending`; sealed material is not recreated; `recovery_expired_at` is not cleared; `recovery_state_version` is not decremented; no authentication-transition mutation leaks from the denied transaction; no deadline extension or browser-clock authority exists.
+- Required evidence: Committed Phase M transaction evidence; denied Phase T-A or Phase L rollback evidence; durable post-denial row state; sealed-material absence proof; unchanged authentication-state snapshot; persisted deadline; authoritative clock and ordered guard traces.
+- Shared-CI suitability: Shared parametrized fixed-clock local transaction/concurrency fixture for Account Switch and ordinary logout, using explicit barriers rather than timing-only assertions.
 
 ## Test 307 — Account Switch cannot pass while recovery_pending
 
-- Purpose: Prove exact committed-recovery blocker classification before and after acknowledgment or authoritative expiry.
-- Setup: Valid committed epoch/family/session; `session_committed`; `recovery_pending`; deadline unexpired; sealed material valid.
-- Execution: Start Account-Switch Phase A, then repeat after acknowledgment and in a separate case after authoritative expiry.
-- Required assertions: Initially the blocker is authoritatively detected; Phase A rolls back; epoch remains unchanged; family/session remain active and attached; recovery state and sealed material remain; no transition or continuation commits. After acknowledgment or expiry, the Callback is no longer a recovery blocker and Account Switch may continue when no other blocker exists.
-- Negative assertions: No switch passes during active pending recovery; no blanket blocking of `acknowledged` or `recovery_expired`; no automatic resolution based only on `session_committed`; no cleanup of pending material on rollback.
-- Required evidence: Complete guarded reread tuple, database-time/deadline comparison, rollback snapshot, transition/continuation counts, post-ack and post-expiry classifications, and epoch/family history.
-- Shared-CI suitability: Table-driven local transaction fixture covering pending, acknowledged, expired, invalid-relation, and other-blocker cases.
+- Purpose: Prove active pending recovery remains the authoritative blocker and Phase M maintains only expired rows.
+- Setup: Preserve the active pending case with valid committed epoch/family/session, `session_committed`, `recovery_pending`, an unexpired deadline, and valid sealed material. Add a mixed-state case in the same container: Recovery A is due for expiry, while Recovery B is active, unexpired `recovery_pending` with intact sealed material.
+- Execution: In the active-only case, commit Phase M and start Account-Switch Phase T-A. In the mixed-state case, Phase M expires A and commits; Phase T-A reacquires all guards and rereads A and B; B blocks Account Switch. Execute an ordinary logout Phase M/Phase L equivalent through the same parametrized fixture.
+- Required assertions: Only expired rows are maintained by Phase M; active pending rows remain intact with unchanged deadline, state, state version, and sealed material; the denied switch or logout rolls back only Phase T-A or Phase L transition mutations; A's Phase M expiry survives; B remains pending and unchanged and is the authoritative blocker; epoch, family, session, cookie, descriptor, raw Idempotency-Key, transition state, and continuation state remain unchanged.
+- Negative assertions: No switch or logout passes during active pending recovery; Phase M does not acknowledge or expire B; no blanket blocking of `acknowledged` or `recovery_expired`; no automatic resolution based only on `session_committed`; denial does not undo A's expiry or destroy B's pending material.
+- Required evidence: Complete Phase M and Phase T-A/Phase L guarded reread tuples; database-time/deadline comparisons for A and B; Phase M commit and transition rollback snapshots; material presence/absence proof; transition/continuation counts; epoch/family/session history; shared Account-Switch and ordinary-logout parametrized results.
+- Shared-CI suitability: Table-driven local transaction fixture covering active pending, mixed expired/pending, acknowledged, expired, invalid-relation, other-blocker, Account-Switch, and ordinary-logout cases.
 
 ## Test 308 — Terminal Callback reissue uses the single approved lock order
 
@@ -1055,7 +1257,7 @@ Tests 1–260 retain their previously specified architecture meaning.
 - callback state and provider-call counts;
 - family attach/detach history;
 - committed outcome and exact-cookie reissue equivalence evidence, capability-digest, sealed-material lifecycle, and `Set-Cookie` ordering;
-- blocked Account-Switch rollback plus durable Phase B retry/response-loss evidence;
+- committed Phase M expiry plus denied Phase T-A/Phase L rollback evidence and durable Phase T-B retry/response-loss evidence;
 - recovery-state/version transitions, all deadline bounds, authoritative database-time comparisons, and non-sliding proofs;
 - idempotent acknowledgment response-loss retry and sealed-material destruction evidence;
 - machine-checked single Terminal Callback/provider-refresh/logout lock graph;
@@ -1067,27 +1269,18 @@ Tests 1–260 retain their previously specified architecture meaning.
 |---|---|---|---|---|---|---|---|
 | INT-ARCH-10.4-P0-01 | Container authentication transitions lacked one authoritative epoch and global lock order. | Container Auth Epoch Model; Global Auth Guard and Lock Order; First-Login Provider-Start; First Logical-Session Commit; Atomic Voluntary Logout; Forced Termination; Account Switch | 290–295 | ADDRESSED | REQUIRED | REQUIRED | VALIDATION REQUIRED |
 | INT-ARCH-10.5-P0-01 | Successful Callback terminal recovery lacked the committed dual-epoch, session-family, logical-session and outcome model. | Terminal Callback Recovery; First Logical-Session Commit; Callback Reconciliation; Exact Cookie-Capability Reissue; Container Auth Epoch | 296–299 | ADDRESSED | REQUIRED | REQUIRED | INTERMEDIATE REVIEW REQUIRED |
-| INT-ARCH-10.5-P0-02 | Account Switch advanced authentication state before atomically proving that no blocking Callback or Consume recovery existed. | Atomic Account-Switch Gate; Durable Account-Switch Transition; Global Auth Guard and Lock Order; Phase B Continuation Recovery | 300–303 | ADDRESSED | REQUIRED | REQUIRED | INTERMEDIATE REVIEW REQUIRED |
-| INT-ARCH-10.6-P0-01 | The specification lacked an authoritative durable state for determining whether a `session_committed` Callback response-loss recovery remained pending, was acknowledged, or had expired. | Callback Recovery Lifecycle; Delivery Acknowledgment; Recovery Expiry; Account-Switch Blocker Classification; Sealed Reissue Material Lifecycle | 304–307 | ADDRESSED | REQUIRED | REQUIRED WHERE APPLICABLE | INTERMEDIATE REVIEW REQUIRED |
+| INT-ARCH-10.5-P0-02 | Account Switch advanced authentication state before atomically proving that no blocking Callback or Consume recovery existed. | Atomic Account-Switch Gate; Durable Account-Switch Transition; Global Auth Guard and Lock Order; Phase T-B | 300–303 | ADDRESSED | REQUIRED | REQUIRED | INTERMEDIATE REVIEW REQUIRED |
+| INT-ARCH-10.6-P0-01 | The durable Callback recovery lifecycle was specified, but its remaining prior-revision expiry-commit contradiction allowed an authentication-transition denial to undo authoritative expiry maintenance. The contradiction is addressed here; closure still depends on review and repository validation. | Callback Recovery Lifecycle; Delivery Acknowledgment; Recovery Expiry Transaction; Durable Recovery Expiry Maintenance; Account-Switch Blocker Classification; Sealed Reissue Material Lifecycle | 304–307 | ADDRESSED | REQUIRED | REQUIRED WHERE APPLICABLE | INTERMEDIATE REVIEW REQUIRED |
 | INT-ARCH-10.6-P1-01 | Terminal Callback cookie reissue had contradictory authenticated logout guard requirements. | Terminal Callback Recovery; Authenticated Logout Guard; Global Auth Guard and Lock Order; Provider Refresh; Logout | 308 | ADDRESSED | REQUIRED | REQUIRED WHERE APPLICABLE | INTERMEDIATE REVIEW REQUIRED |
+| INT-ARCH-10.7-P0-01 | Authoritative recovery expiry and sealed-material destruction could be rolled back when an independent blocker denied Account Switch or ordinary logout. | Durable Recovery Expiry Maintenance; Recovery Expiry Transaction; Atomic Account-Switch Gate; Atomic Voluntary Logout; Crash and Response-Loss Handling; Concurrency Rules | 306–307 | ADDRESSED | REQUIRED | REQUIRED WHERE APPLICABLE | INTERMEDIATE REVIEW REQUIRED |
 
 # INTERMEDIATE ARCHITECTURE REVIEW GATE
 
-Revision 10.7 is submitted only for Intermediate Architecture Review.
+Revision 10.8 is submitted only for Intermediate Architecture Review. Its review status is `NOT YET REVIEWED`.
 
-Allowed outcomes:
+The independent reviewer may require another architecture revision or may explicitly authorize later contract-finalization planning. This specification records neither outcome and requests no approval.
 
-```text
-ARCHITECTURE READY FOR CONTRACT FINALIZATION
-```
-
-or:
-
-```text
-ARCHITECTURE REVISION REQUIRED
-```
-
-Even an architecture-ready result:
+Even a future favorable review result:
 
 - does not authorize Runtime implementation;
 - does not authorize an implementation branch;
@@ -1096,7 +1289,7 @@ Even an architecture-ready result:
 
 # REVISION 11 RESERVED FINALIZATION
 
-Revision 11 may begin only after an Intermediate Architecture Review returns `ARCHITECTURE READY FOR CONTRACT FINALIZATION`.
+Revision 11 may begin only after an Intermediate Architecture Review explicitly authorizes contract-finalization planning. No such authorization is represented here, and Revision 11 has not started.
 
 Revision 11 will finalize HTTP header profiles, CORS, Correlation-ID precedence, imported PR-02 fixture integration, exact bytes, Content-Length, newline/compression, governance, remediation closure, package, manifest, ZIP, sidecars, and formal independent-review readiness.
 
@@ -1104,27 +1297,30 @@ The current specification remediations remain subject to repository validation a
 
 # CLEAN DOCUMENT ASSERTIONS
 
-Revision 10.7 contains:
+Revision 10.8 contains:
 
-- one Revision 10.7 title;
-- one Callback Recovery Lifecycle and Lock-Order Closure Edition heading;
+- one Revision 10.8 title;
+- one Durable Recovery Expiry Maintenance Closure Edition heading;
 - D001–D030 exactly once;
 - one container-auth epoch model;
 - one durable Callback recovery lifecycle;
 - one architecture-level idempotent Delivery Acknowledgment;
 - one authoritative non-sliding recovery expiry algorithm;
+- one Durable Recovery Expiry Maintenance section with a separately committed Phase M;
+- one post-Phase-M authentication-transition model that rereads blockers and cannot undo Phase M;
 - one sealed reissue-material lifecycle;
 - one global container-auth guard/lock-order matrix with one Terminal Callback reissue order;
 - one first-login provider-start algorithm;
 - one first logical-session commit algorithm;
 - one atomic voluntary logout algorithm;
 - one forced termination model;
-- one two-transaction durable Account-Switch model;
+- one Account-Switch model ordered as Phase M, Phase T-A, then Phase T-B;
 - one exact same committed cookie-capability recovery rule;
 - Tests 1–308 represented, with Tests 296–303 and Tests 304–308 specified once each;
 - one Architecture Remediation Matrix;
 - one Intermediate Architecture Review Gate;
+- Runtime implementation remains `BLOCKED`;
 - no Runtime, SQL, migration, RPC, Edge, or UI implementation;
 - no Revision 11 HTTP-header, CORS, exact-byte, package, manifest, ZIP, or sidecar finalization.
 
-SUBMIT REVISION 10.7 FOR INTERMEDIATE ARCHITECTURE REVIEW
+SUBMIT REVISION 10.8 FOR INTERMEDIATE ARCHITECTURE REVIEW
