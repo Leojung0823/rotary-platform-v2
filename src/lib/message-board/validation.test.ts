@@ -67,7 +67,7 @@ describe("opaque board cursor", () => {
   });
 
   it("rejects malformed, oversized, unknown-field, and unknown-version cursors", () => {
-    expect(() => decodeBoardCursor("%%%")) .toThrow("invalid_cursor");
+    expect(() => decodeBoardCursor("%%%")).toThrow("invalid_cursor");
     expect(() => decodeBoardCursor("a".repeat(BOARD_CURSOR_MAX_LENGTH + 1))).toThrow("invalid_cursor");
     const unknownField = Buffer.from(JSON.stringify({ v: 1, created_at: "2026-07-27T08:00:00.000Z", id: postId, author: "x" })).toString("base64url");
     expect(() => decodeBoardCursor(unknownField)).toThrow("invalid_cursor");
