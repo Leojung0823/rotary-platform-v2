@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   cookieSet: vi.fn(),
   exchangeLineCode: vi.fn(),
   generateLink: vi.fn(),
+  deleteUser: vi.fn(),
   verifyOtp: vi.fn(),
   rpc: vi.fn(),
   signOut: vi.fn(),
@@ -56,7 +57,7 @@ vi.mock("../../../../../lib/line/provider", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createTrustedAdminClient: () => ({
     from: mocks.adminFrom,
-    auth: { admin: { generateLink: mocks.generateLink, createUser: vi.fn() } },
+    auth: { admin: { generateLink: mocks.generateLink, createUser: vi.fn(), deleteUser: mocks.deleteUser } },
   }),
 }));
 
@@ -120,6 +121,7 @@ describe("GET /api/auth/line/callback", () => {
       data: { properties: { hashed_token: "hashed-magic-link-token" } },
       error: null,
     });
+    mocks.deleteUser.mockReset().mockResolvedValue({ data: {}, error: null });
     mocks.verifyOtp.mockReset().mockResolvedValue({ error: null });
     mocks.rpc.mockReset().mockResolvedValue({ data: "device-id", error: null });
     mocks.signOut.mockReset().mockResolvedValue({ error: null });
@@ -148,7 +150,14 @@ describe("GET /api/auth/line/callback", () => {
         });
       }
       if (table === "member_invitations") {
-        return query({ data: { person_id: "person-id" }, error: null });
+        return query({
+          data: {
+            person_id: "person-id",
+            invitation_status: "sent",
+            expires_at: new Date(Date.now() + 300_000).toISOString(),
+          },
+          error: null,
+        });
       }
       return query({ data: null, error: null });
     });
