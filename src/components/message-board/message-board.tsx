@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element, react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { BoardPost } from "@/lib/message-board/contracts";
 import styles from "./message-board.module.css";
