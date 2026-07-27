@@ -26,13 +26,42 @@ export function resolveLineOaWebhookSecret(credentialRef: string) {
   return secret;
 }
 
-export async function sendLineOaMessage(
+export function sendLineOaMessage(
   credentialRef: string,
   kind: PushKind,
   recipients: string[],
   messages: MessagePayload[],
   replyToken?: string,
+): Promise<{ status: "mocked" | "sent"; requestId?: string }>;
+
+/**
+ * Compatibility signature for stale callers. It deliberately fails closed at
+ * runtime because no account credential reference is available.
+ */
+export function sendLineOaMessage(
+  kind: PushKind,
+  recipients: string[],
+  messages: MessagePayload[],
+  replyToken?: string,
+): Promise<never>;
+
+export async function sendLineOaMessage(
+  credentialRefOrKind: string,
+  kindOrRecipients: PushKind | string[],
+  recipientsOrMessages: string[] | MessagePayload[],
+  messagesOrReplyToken?: MessagePayload[] | string,
+  maybeReplyToken?: string,
 ) {
+  if (Array.isArray(kindOrRecipients)) {
+    throw new Error("LINE OA account credential reference is required.");
+  }
+
+  const credentialRef = credentialRefOrKind;
+  const kind = kindOrRecipients;
+  const recipients = recipientsOrMessages as string[];
+  const messages = messagesOrReplyToken as MessagePayload[];
+  const replyToken = maybeReplyToken;
+
   const mode = process.env.LINE_OA_MODE ?? "mock";
   if (mode === "mock") {
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
