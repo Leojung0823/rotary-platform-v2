@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 function source(path: string) {
-  return readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
+  return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 }
 
 describe("message board rendering boundary", () => {
