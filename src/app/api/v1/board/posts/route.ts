@@ -11,6 +11,7 @@ import {
 import {
   decodeBoardCursor,
   encodeBoardCursor,
+  parseBoardClubId,
   parseBoardContentBody,
   parseBoardLimit,
 } from "@/lib/message-board/validation";
@@ -20,9 +21,11 @@ export async function GET(request: NextRequest) {
   if (!user) return boardFailure(401);
 
   try {
+    const clubId = parseBoardClubId(request.nextUrl.searchParams.get("club_id"));
     const limit = parseBoardLimit(request.nextUrl.searchParams.get("limit"));
     const cursor = decodeBoardCursor(request.nextUrl.searchParams.get("cursor"));
     const { data, error } = await client.rpc("list_board_posts", {
+      p_club_id: clubId,
       p_cursor_created_at: cursor?.createdAt ?? null,
       p_cursor_id: cursor?.id ?? null,
       p_limit: limit,
@@ -45,8 +48,12 @@ export async function POST(request: NextRequest) {
   if (!user) return boardFailure(401);
 
   try {
+    const clubId = parseBoardClubId(request.nextUrl.searchParams.get("club_id"));
     const body = parseBoardContentBody(await readBoardJson(request));
-    const { data, error } = await client.rpc("create_board_post", { p_content: body.content });
+    const { data, error } = await client.rpc("create_board_post", {
+      p_club_id: clubId,
+      p_content: body.content,
+    });
     if (error) return boardRpcFailure(error);
     return boardSuccess(parseBoardPostProjection(data), 201);
   } catch {
