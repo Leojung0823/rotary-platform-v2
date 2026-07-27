@@ -2,6 +2,7 @@ begin;
 
 create table public.board_posts (
   id uuid primary key default extensions.gen_random_uuid(),
+  club_id uuid not null references public.clubs(id) on delete restrict,
   author_app_account_id uuid not null references public.app_accounts(id) on delete restrict,
   content text not null,
   status text not null default 'active',
@@ -18,14 +19,14 @@ create table public.board_posts (
 );
 
 comment on table public.board_posts is
-  'Authenticated plain-text message board posts. Authors and timestamps are database controlled.';
+  'Club-scoped authenticated plain-text message board posts. Club, author and timestamps are database controlled.';
 
-create index board_posts_active_pagination_idx
-  on public.board_posts (created_at desc, id desc)
+create index board_posts_club_active_pagination_idx
+  on public.board_posts (club_id, created_at desc, id desc)
   where status = 'active';
 
-create index board_posts_author_status_idx
-  on public.board_posts (author_app_account_id, status, created_at desc, id desc);
+create index board_posts_club_author_status_idx
+  on public.board_posts (club_id, author_app_account_id, status, created_at desc, id desc);
 
 create or replace function public.normalize_board_post_content(p_content text)
 returns text
@@ -44,12 +45,53 @@ as $$
   )
 $$;
 
+create or replace function public.current_has_active_board_membership(p_club_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog, public, auth
+as $$
+  select exists (
+    select 1
+    from public.app_accounts as account
+    join public.club_memberships as membership
+      on membership.person_id = account.person_id
+    where account.auth_user_id = auth.uid()
+      and account.account_status = 'active'
+      and membership.club_id = p_club_id
+      and membership.membership_status = 'active'
+  )
+$$;
+
+create or replace function public.list_my_board_clubs()
+returns table (club_id uuid, club_code text, club_name text)
+language sql
+stable
+security definer
+set search_path = pg_catalog, public, auth
+as $$
+  select club.id, club.club_code, club.club_name
+  from public.app_accounts as account
+  join public.club_memberships as membership
+    on membership.person_id = account.person_id
+   and membership.membership_status = 'active'
+  join public.clubs as club on club.id = membership.club_id
+  where account.auth_user_id = auth.uid()
+    and account.account_status = 'active'
+  order by club.club_name, club.id
+$$;
+
 create or replace function public.protect_board_post_update()
 returns trigger
 language plpgsql
 set search_path = pg_catalog, public
 as $$
 begin
+  if old.club_id is distinct from new.club_id then
+    raise exception using errcode = '23514', message = 'board_post_club_immutable';
+  end if;
+
   if old.author_app_account_id is distinct from new.author_app_account_id then
     raise exception using errcode = '23514', message = 'board_post_author_immutable';
   end if;
@@ -96,6 +138,7 @@ alter table public.board_posts enable row level security;
 revoke all on table public.board_posts from public, anon, authenticated;
 
 create or replace function public.list_board_posts(
+  p_club_id uuid,
   p_cursor_created_at timestamptz default null,
   p_cursor_id uuid default null,
   p_limit integer default 20
@@ -110,8 +153,8 @@ declare
   actor_id uuid := public.current_app_account_id();
   result jsonb;
 begin
-  if actor_id is null then
-    raise exception using errcode = '42501', message = 'authenticated_account_required';
+  if actor_id is null or not public.current_has_active_board_membership(p_club_id) then
+    raise exception using errcode = '42501', message = 'active_club_membership_required';
   end if;
 
   if p_limit is null or p_limit < 1 or p_limit > 50 then
@@ -126,6 +169,7 @@ begin
     select 1
     from public.board_posts as cursor_post
     where cursor_post.id = p_cursor_id
+      and cursor_post.club_id = p_club_id
       and cursor_post.created_at = p_cursor_created_at
       and cursor_post.status = 'active'
   ) then
@@ -141,7 +185,8 @@ begin
     from public.board_posts as post
     join public.app_accounts as account on account.id = post.author_app_account_id
     join public.people as person on person.id = account.person_id
-    where post.status = 'active'
+    where post.club_id = p_club_id
+      and post.status = 'active'
       and (
         p_cursor_created_at is null
         or post.created_at < p_cursor_created_at
@@ -185,7 +230,7 @@ begin
 end;
 $$;
 
-create or replace function public.create_board_post(p_content text)
+create or replace function public.create_board_post(p_club_id uuid, p_content text)
 returns jsonb
 language plpgsql
 security definer
@@ -197,16 +242,16 @@ declare
   created_post public.board_posts;
   result jsonb;
 begin
-  if actor_id is null then
-    raise exception using errcode = '42501', message = 'authenticated_account_required';
+  if actor_id is null or not public.current_has_active_board_membership(p_club_id) then
+    raise exception using errcode = '42501', message = 'active_club_membership_required';
   end if;
 
   if normalized_content is null or normalized_content = '' or char_length(normalized_content) > 1000 then
     raise exception using errcode = '22023', message = 'invalid_board_content';
   end if;
 
-  insert into public.board_posts (author_app_account_id, content)
-  values (actor_id, normalized_content)
+  insert into public.board_posts (club_id, author_app_account_id, content)
+  values (p_club_id, actor_id, normalized_content)
   returning * into created_post;
 
   select jsonb_build_object(
@@ -227,7 +272,7 @@ begin
 end;
 $$;
 
-create or replace function public.update_own_board_post(p_post_id uuid, p_content text)
+create or replace function public.update_own_board_post(p_club_id uuid, p_post_id uuid, p_content text)
 returns jsonb
 language plpgsql
 security definer
@@ -239,8 +284,8 @@ declare
   updated_post public.board_posts;
   result jsonb;
 begin
-  if actor_id is null then
-    raise exception using errcode = '42501', message = 'authenticated_account_required';
+  if actor_id is null or not public.current_has_active_board_membership(p_club_id) then
+    raise exception using errcode = '42501', message = 'active_club_membership_required';
   end if;
 
   if p_post_id is null or normalized_content is null or normalized_content = ''
@@ -251,6 +296,7 @@ begin
   update public.board_posts
   set content = normalized_content
   where id = p_post_id
+    and club_id = p_club_id
     and author_app_account_id = actor_id
     and status = 'active'
   returning * into updated_post;
@@ -277,7 +323,7 @@ begin
 end;
 $$;
 
-create or replace function public.delete_own_board_post(p_post_id uuid)
+create or replace function public.delete_own_board_post(p_club_id uuid, p_post_id uuid)
 returns void
 language plpgsql
 security definer
@@ -286,8 +332,8 @@ as $$
 declare
   actor_id uuid := public.current_app_account_id();
 begin
-  if actor_id is null then
-    raise exception using errcode = '42501', message = 'authenticated_account_required';
+  if actor_id is null or not public.current_has_active_board_membership(p_club_id) then
+    raise exception using errcode = '42501', message = 'active_club_membership_required';
   end if;
 
   if p_post_id is null then
@@ -297,6 +343,7 @@ begin
   update public.board_posts
   set status = 'deleted', deleted_at = now()
   where id = p_post_id
+    and club_id = p_club_id
     and author_app_account_id = actor_id
     and status = 'active';
 
@@ -307,16 +354,19 @@ end;
 $$;
 
 revoke all on function public.normalize_board_post_content(text) from public, anon, authenticated;
+revoke all on function public.current_has_active_board_membership(uuid) from public, anon, authenticated;
+revoke all on function public.list_my_board_clubs() from public, anon;
 revoke all on function public.protect_board_post_update() from public, anon, authenticated;
 revoke all on function public.prevent_board_post_hard_delete() from public, anon, authenticated;
-revoke all on function public.list_board_posts(timestamptz, uuid, integer) from public, anon, authenticated;
-revoke all on function public.create_board_post(text) from public, anon, authenticated;
-revoke all on function public.update_own_board_post(uuid, text) from public, anon, authenticated;
-revoke all on function public.delete_own_board_post(uuid) from public, anon, authenticated;
+revoke all on function public.list_board_posts(uuid, timestamptz, uuid, integer) from public, anon, authenticated;
+revoke all on function public.create_board_post(uuid, text) from public, anon, authenticated;
+revoke all on function public.update_own_board_post(uuid, uuid, text) from public, anon, authenticated;
+revoke all on function public.delete_own_board_post(uuid, uuid) from public, anon, authenticated;
 
-grant execute on function public.list_board_posts(timestamptz, uuid, integer) to authenticated;
-grant execute on function public.create_board_post(text) to authenticated;
-grant execute on function public.update_own_board_post(uuid, text) to authenticated;
-grant execute on function public.delete_own_board_post(uuid) to authenticated;
+grant execute on function public.list_my_board_clubs() to authenticated;
+grant execute on function public.list_board_posts(uuid, timestamptz, uuid, integer) to authenticated;
+grant execute on function public.create_board_post(uuid, text) to authenticated;
+grant execute on function public.update_own_board_post(uuid, uuid, text) to authenticated;
+grant execute on function public.delete_own_board_post(uuid, uuid) to authenticated;
 
 commit;
