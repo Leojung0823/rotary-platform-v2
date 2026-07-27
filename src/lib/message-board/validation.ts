@@ -50,9 +50,18 @@ export function parseBoardLimit(value: string | null) {
   return parsed;
 }
 
-export function parseBoardPostId(value: string) {
-  if (!uuidPattern.test(value)) throw new Error("invalid_post_id");
+function parseUuid(value: string, errorCode: string) {
+  if (!uuidPattern.test(value)) throw new Error(errorCode);
   return value.toLowerCase();
+}
+
+export function parseBoardClubId(value: string | null) {
+  if (!value) throw new Error("invalid_club_id");
+  return parseUuid(value, "invalid_club_id");
+}
+
+export function parseBoardPostId(value: string) {
+  return parseUuid(value, "invalid_post_id");
 }
 
 function parseCursorPayload(value: unknown): CursorPayload {
