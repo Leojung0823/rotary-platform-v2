@@ -23,3 +23,4 @@ run_sql() {
 run_sql supabase/verification/core_identity_baseline.sql
 run_sql supabase/verification/provisioning_security.sql
 run_sql supabase/verification/v03_identity_admin.sql
+run_sql supabase/verification/security_review_hardening.sql
