@@ -20,3 +20,32 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.84.2
+          github-token: ${{ github.token }}
+      - name: Start local Supabase database
+        run: supabase db start
+      - name: Reset database from migrations
+        run: supabase db reset --local
+      - name: Lint database schema
+        run: supabase db lint --local
+      - name: Verify core identity baseline
+        env:
+          PGPASSWORD: postgres
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql \
+            --host 127.0.0.1 \
+            --port 54322 \
+            --username postgres \
+            --dbname postgres \
+            --set ON_ERROR_STOP=1 \
+            --file supabase/verification/core_identity_baseline.sql
