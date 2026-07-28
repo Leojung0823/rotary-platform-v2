@@ -31,3 +31,4 @@ run_sql supabase/verification/message_board_security.sql
 run_sql supabase/verification/message_board_access_hardening.sql
 run_sql supabase/verification/event_registration_security.sql
 run_sql supabase/verification/event_registration_tenant_integrity.sql
+run_sql supabase/verification/event_registration_lifecycle_hardening.sql
