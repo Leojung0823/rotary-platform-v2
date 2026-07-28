@@ -24,4 +24,3 @@ run_sql supabase/verification/core_identity_baseline.sql
 run_sql supabase/verification/provisioning_security.sql
 run_sql supabase/verification/operator_expiry_consistency.sql
 run_sql supabase/verification/invitation_selection.sql
-run_sql supabase/verification/v03_identity_admin.sql
