@@ -73,6 +73,7 @@ set search_path = pg_catalog, public
 as $$
 declare
   claimed public.line_webhooks;
+  normalized_event_id text := nullif(btrim(coalesce(p_provider_event_id, '')), '');
 begin
   if p_line_oa_account_id is null
      or p_club_id is null
@@ -91,7 +92,7 @@ begin
     raise exception using errcode = 'P0002', message = 'line_oa_account_not_available';
   end if;
 
-  if nullif(btrim(coalesce(p_provider_event_id, '')), '') is null then
+  if normalized_event_id is null then
     insert into public.line_webhooks (
       line_oa_account_id, club_id, event_type, provider_event_id,
       signature_valid, payload_hash, processing_status, failure_code
@@ -104,32 +105,30 @@ begin
     return;
   end if;
 
-  insert into public.line_webhooks (
-    line_oa_account_id, club_id, event_type, provider_event_id,
-    signature_valid, payload_hash, processing_status, failure_code
-  ) values (
-    p_line_oa_account_id, p_club_id, btrim(p_event_type), btrim(p_provider_event_id),
-    true, p_payload_hash, 'received', null
-  )
-  on conflict (line_oa_account_id, provider_event_id)
-    where provider_event_id is not null
-  do nothing
-  returning * into claimed;
-
-  if found then
-    return query select claimed.id, true;
-    return;
-  end if;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(p_line_oa_account_id::text || ':' || normalized_event_id, 0)
+  );
 
   select webhook.* into claimed
   from public.line_webhooks as webhook
   where webhook.line_oa_account_id = p_line_oa_account_id
-    and webhook.provider_event_id = btrim(p_provider_event_id)
+    and webhook.provider_event_id = normalized_event_id
+    and webhook.signature_valid
   for update;
 
   if not found then
-    raise exception using errcode = 'P0002', message = 'webhook_event_claim_missing';
+    insert into public.line_webhooks (
+      line_oa_account_id, club_id, event_type, provider_event_id,
+      signature_valid, payload_hash, processing_status, failure_code
+    ) values (
+      p_line_oa_account_id, p_club_id, btrim(p_event_type), normalized_event_id,
+      true, p_payload_hash, 'received', null
+    ) returning * into claimed;
+
+    return query select claimed.id, true;
+    return;
   end if;
+
   if claimed.club_id <> p_club_id or claimed.payload_hash <> p_payload_hash then
     raise exception using errcode = '22023', message = 'webhook_event_payload_mismatch';
   end if;
