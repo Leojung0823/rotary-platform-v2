@@ -55,7 +55,7 @@ describe("GET /api/auth/line/start", () => {
   it("sets all OAuth cookies with one ten-minute policy", async () => {
     await route.GET(new NextRequest("http://localhost:3000/api/auth/line/start"));
     const options = mocks.cookieSet.mock.calls.slice(0, 4).map((call) => call[2]);
-    expect(new Set(options.map(JSON.stringify)).size).toBe(1);
+    expect(new Set(options.map((option) => JSON.stringify(option))).size).toBe(1);
     expect(options[0]).toEqual({ httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 600 });
   });
 
