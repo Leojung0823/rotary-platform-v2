@@ -19,7 +19,9 @@ describe("event application boundary", () => {
     expect(page).toContain("{event.description}");
     expect(page).not.toContain("dangerouslySetInnerHTML");
     expect(actions).toContain("mapEventError(error.message)");
-    expect(actions).not.toMatch(/redirect\([^\n]*error\.message/u);
+    expect(actions).toContain('return "unexpected"');
+    expect(actions).not.toContain("redirect(error.message");
+    expect(actions).not.toContain("code: error.message");
   });
 
   it("uses RPCs rather than browser-side event table CRUD", () => {
