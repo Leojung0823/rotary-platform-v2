@@ -22,7 +22,8 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 
 function hasExactKeys(value: Record<string, unknown>, expected: string[]) {
   const keys = Object.keys(value).sort();
-  return keys.length === expected.length && keys.every((key, index) => key === [...expected].sort()[index]);
+  const sortedExpected = [...expected].sort();
+  return keys.length === sortedExpected.length && keys.every((key, index) => key === sortedExpected[index]);
 }
 
 export function boardContentLength(value: string) {
@@ -110,28 +111,43 @@ export function isJsonContentType(value: string | null) {
   return value?.split(";", 1)[0].trim().toLowerCase() === "application/json";
 }
 
+function trustedOrigin(value: string, production: boolean) {
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password
+      || url.pathname !== "/" || url.search || url.hash) {
+      return null;
+    }
+    if (production && url.protocol !== "https:") return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 export function isSameOriginMutation(input: {
   requestOrigin: string;
   origin: string | null;
   fetchSite: string | null;
   configuredSiteUrl?: string;
 }) {
-  const allowedOrigins = new Set([input.requestOrigin]);
-  if (input.configuredSiteUrl) {
-    try {
-      allowedOrigins.add(new URL(input.configuredSiteUrl).origin);
-    } catch {
-      return false;
-    }
+  const production = process.env.APP_ENV === "production" || process.env.NODE_ENV === "production";
+  const configured = input.configuredSiteUrl?.trim();
+  const expectedOrigin = configured
+    ? trustedOrigin(configured, production)
+    : production
+      ? null
+      : trustedOrigin(input.requestOrigin, false);
+
+  if (!expectedOrigin || !input.origin) return false;
+
+  let suppliedOrigin: string;
+  try {
+    suppliedOrigin = new URL(input.origin).origin;
+  } catch {
+    return false;
   }
 
-  if (input.origin) {
-    try {
-      return allowedOrigins.has(new URL(input.origin).origin);
-    } catch {
-      return false;
-    }
-  }
-
-  return input.fetchSite === "same-origin" || input.fetchSite === "none";
+  if (suppliedOrigin !== expectedOrigin) return false;
+  return !input.fetchSite || input.fetchSite === "same-origin";
 }
