@@ -31,12 +31,31 @@ export function parseEventText(
 }
 
 export function parseTaipeiDateTime(value: FormDataEntryValue | null) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/u.test(value)) {
+  if (typeof value !== "string") throw new Error("invalid_event_time");
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/u.exec(value);
+  if (!match) throw new Error("invalid_event_time");
+
+  const [, yearValue, monthValue, dayValue, hourValue, minuteValue] = match;
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  const day = Number(dayValue);
+  const hour = Number(hourValue);
+  const minute = Number(minuteValue);
+  const local = new Date(0);
+  local.setUTCFullYear(year, month - 1, day);
+  local.setUTCHours(hour, minute, 0, 0);
+
+  if (
+    local.getUTCFullYear() !== year
+    || local.getUTCMonth() !== month - 1
+    || local.getUTCDate() !== day
+    || local.getUTCHours() !== hour
+    || local.getUTCMinutes() !== minute
+  ) {
     throw new Error("invalid_event_time");
   }
-  const parsed = new Date(`${value}:00+08:00`);
-  if (!Number.isFinite(parsed.getTime())) throw new Error("invalid_event_time");
-  return parsed.toISOString();
+
+  return new Date(local.getTime() - 8 * 60 * 60 * 1000).toISOString();
 }
 
 export function parseOptionalCapacity(value: FormDataEntryValue | null) {
