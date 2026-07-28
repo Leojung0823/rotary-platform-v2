@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createLocalAdminClient } from "@/lib/supabase/admin";
 import { mapDatabaseError, parseClubInput, parseNewPassword, parseOperatorInput } from "@/lib/validation";
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function errorPath(path: string, code: string) {
   return `${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(code)}`;
 }
@@ -92,16 +94,23 @@ export async function inviteOperatorAction(formData: FormData) {
 }
 
 export async function acceptInvitationAction(formData: FormData) {
+  const inviteId = String(formData.get("inviteId") ?? "").trim();
+  if (!uuidPattern.test(inviteId)) redirect(errorPath("/invite/accept", "invite_not_found"));
+
   let password;
   try {
     password = parseNewPassword(formData);
   } catch (error) {
     redirect(errorPath("/invite/accept", error instanceof Error ? error.message : "invalid_password"));
   }
+
   const supabase = await createClient();
   const { error: passwordError } = await supabase.auth.updateUser({ password });
   if (passwordError) redirect(errorPath("/invite/accept", "invalid_password"));
-  const { data, error } = await supabase.rpc("accept_operator_invitation", { p_invite_id: null });
+
+  const { data, error } = await supabase.rpc("accept_selected_operator_invitation", {
+    p_invite_id: inviteId,
+  });
   if (error || !data) redirect(errorPath("/invite/accept", mapDatabaseError(error?.message ?? "")));
   const result = data as { club_id: string };
   redirect(`/clubs/${result.club_id}/operators?success=accepted`);
