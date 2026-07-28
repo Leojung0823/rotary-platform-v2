@@ -15,6 +15,8 @@ type LineEvent = {
   timestamp?: number;
 };
 
+type WebhookClaim = { log_id: number; should_process: boolean };
+
 async function readLimitedBody(request: NextRequest) {
   const declaredLength = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(declaredLength) && declaredLength > MAX_WEBHOOK_BYTES) {
@@ -116,28 +118,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const payloadHash = createHash("sha256").update(rawBody).digest("hex");
   for (const event of events) {
-    const log = await admin
-      .from("line_webhooks")
-      .insert({
-        line_oa_account_id: account.data.id,
-        club_id: clubId,
-        event_type: event.type ?? "unknown",
-        provider_event_id: event.webhookEventId ?? null,
-        signature_valid: true,
-        payload_hash: payloadHash,
-        processing_status: "received",
-        failure_code: null,
-      })
-      .select("id")
-      .maybeSingle();
+    const claim = await admin.rpc("claim_line_webhook_event", {
+      p_line_oa_account_id: account.data.id,
+      p_club_id: clubId,
+      p_event_type: event.type ?? "unknown",
+      p_provider_event_id: event.webhookEventId ?? null,
+      p_payload_hash: payloadHash,
+    });
+    if (claim.error) {
+      const mismatch = claim.error.message.includes("webhook_event_payload_mismatch");
+      return NextResponse.json(
+        { error: mismatch ? "event_payload_mismatch" : "webhook_persistence_failed" },
+        { status: mismatch ? 409 : 503 },
+      );
+    }
 
-    // A repeated provider event is already processed or in progress. The unique
-    // database constraint is the authoritative replay boundary.
-    if (log.error || !log.data) continue;
+    const claimData = claim.data as WebhookClaim[] | WebhookClaim | null;
+    const claimed = Array.isArray(claimData) ? claimData[0] : claimData;
+    if (!claimed) {
+      return NextResponse.json({ error: "webhook_persistence_failed" }, { status: 503 });
+    }
+    if (!claimed.should_process) continue;
 
     const userId = event.source?.userId;
+    let failureCode: string | null = null;
     if (event.type === "follow" && userId) {
-      await admin.from("line_oa_followers").upsert(
+      const follower = await admin.from("line_oa_followers").upsert(
         {
           line_oa_account_id: account.data.id,
           club_id: clubId,
@@ -148,18 +154,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         },
         { onConflict: "line_oa_account_id,oa_user_id" },
       );
+      if (follower.error) failureCode = "follower_upsert_failed";
     }
     if (event.type === "unfollow" && userId) {
-      await admin
+      const follower = await admin
         .from("line_oa_followers")
         .update({ follower_status: "unpaired", unpaired_at: new Date().toISOString() })
         .eq("line_oa_account_id", account.data.id)
         .eq("oa_user_id", userId);
+      if (follower.error) failureCode = "follower_update_failed";
     }
-    await admin
+
+    if (failureCode) {
+      await admin
+        .from("line_webhooks")
+        .update({ processing_status: "failed", failure_code: failureCode })
+        .eq("id", claimed.log_id);
+      return NextResponse.json({ error: "webhook_processing_failed" }, { status: 503 });
+    }
+
+    const completed = await admin
       .from("line_webhooks")
       .update({ processing_status: "processed", processed_at: new Date().toISOString() })
-      .eq("id", log.data.id);
+      .eq("id", claimed.log_id);
+    if (completed.error) {
+      return NextResponse.json({ error: "webhook_persistence_failed" }, { status: 503 });
+    }
   }
 
   return NextResponse.json({ ok: true });
