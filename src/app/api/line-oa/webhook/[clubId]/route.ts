@@ -4,6 +4,10 @@ import { verifyLineWebhookSignature } from "@/lib/line/messaging";
 import { readServerSecret } from "@/lib/line/oa-runtime";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
 
+const MAX_WEBHOOK_BYTES = 256 * 1024;
+const MAX_WEBHOOK_EVENTS = 100;
+const MAX_WEBHOOK_REQUESTS_PER_MINUTE = 120;
+
 type LineEvent = {
   type?: string;
   webhookEventId?: string;
@@ -11,9 +15,49 @@ type LineEvent = {
   timestamp?: number;
 };
 
+async function readLimitedBody(request: NextRequest) {
+  const declaredLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_WEBHOOK_BYTES) {
+    throw new Error("payload_too_large");
+  }
+  if (!request.body) return "";
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_WEBHOOK_BYTES) {
+        await reader.cancel();
+        throw new Error("payload_too_large");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const joined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    joined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(joined);
+}
+
 export async function POST(request: NextRequest, { params }: { params: Promise<{ clubId: string }> }) {
+  let rawBody: string;
+  try {
+    rawBody = await readLimitedBody(request);
+  } catch {
+    return NextResponse.json({ error: "payload_too_large" }, { status: 413 });
+  }
+
   const { clubId } = await params;
-  const rawBody = await request.text();
   const admin = createTrustedAdminClient();
   const account = await admin
     .from("line_oa_accounts")
@@ -38,19 +82,40 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     request.headers.get("x-line-signature"),
     webhookSecret,
   );
-  let payload: { events?: LineEvent[] } = {};
-  let validJson = true;
+  if (!signatureValid) {
+    // Invalid unauthenticated traffic must be limited at the edge or reverse proxy.
+    // It does not consume the valid OA quota and does not create per-event rows.
+    return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
+  }
+
+  const rateLimit = await admin.rpc("consume_line_webhook_rate_limit", {
+    p_line_oa_account_id: account.data.id,
+    p_limit: MAX_WEBHOOK_REQUESTS_PER_MINUTE,
+  });
+  if (rateLimit.error) {
+    return NextResponse.json({ error: "rate_limit_unavailable" }, { status: 503 });
+  }
+  if (rateLimit.data !== true) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "retry-after": "60" } },
+    );
+  }
+
+  let payload: { events?: LineEvent[] };
   try {
     payload = JSON.parse(rawBody) as { events?: LineEvent[] };
   } catch {
-    validJson = false;
+    return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
   }
 
-  const events = payload.events?.length ? payload.events : [{ type: validJson ? "verify" : "invalid_json" }];
-  const payloadHash = createHash("sha256").update(rawBody).digest("hex");
+  const events = payload.events ?? [];
+  if (!Array.isArray(events) || events.length > MAX_WEBHOOK_EVENTS) {
+    return NextResponse.json({ error: "too_many_events" }, { status: 413 });
+  }
 
+  const payloadHash = createHash("sha256").update(rawBody).digest("hex");
   for (const event of events) {
-    const accepted = signatureValid && validJson;
     const log = await admin
       .from("line_webhooks")
       .insert({
@@ -58,15 +123,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         club_id: clubId,
         event_type: event.type ?? "unknown",
         provider_event_id: event.webhookEventId ?? null,
-        signature_valid: signatureValid,
+        signature_valid: true,
         payload_hash: payloadHash,
-        processing_status: accepted ? "received" : "ignored",
-        failure_code: !signatureValid ? "invalid_signature" : validJson ? null : "invalid_json",
+        processing_status: "received",
+        failure_code: null,
       })
       .select("id")
       .maybeSingle();
 
-    if (!accepted || log.error) continue;
+    // A repeated provider event is already processed or in progress. The unique
+    // database constraint is the authoritative replay boundary.
+    if (log.error || !log.data) continue;
+
     const userId = event.source?.userId;
     if (event.type === "follow" && userId) {
       await admin.from("line_oa_followers").upsert(
@@ -91,10 +159,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await admin
       .from("line_webhooks")
       .update({ processing_status: "processed", processed_at: new Date().toISOString() })
-      .eq("id", log.data?.id);
+      .eq("id", log.data.id);
   }
 
-  if (!signatureValid) return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
-  if (!validJson) return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
   return NextResponse.json({ ok: true });
 }
