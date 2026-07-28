@@ -54,31 +54,28 @@ export default async function DashboardPage() {
               <h2>我的扶輪社</h2>
             </div>
             {clubs.length === 0 ? (
-              <EmptyState title="尚無可管理的扶輪社" body="接受扶輪社邀請後，扶輪社會出現在這裡。" />
+              <EmptyState
+                title="尚無可管理的扶輪社"
+                body="接受執行秘書邀請後，扶輪社會出現在這裡。"
+              />
             ) : (
               <div className="club-grid">
-                {clubs.map((club) => {
-                  const canManageIdentity =
-                    club.permission_level === "platform_admin" || club.permission_level === "club_manager";
-                  return (
-                    <Link
-                      key={club.club_id}
-                      href={canManageIdentity ? `/clubs/${club.club_id}/identity` : `/club/${club.club_id}`}
-                      className="club-card"
-                    >
-                      <div>
-                        <span className="club-code">{club.club_code}</span>
-                        <h3>{club.club_name}</h3>
-                      </div>
-                      <Badge tone={club.club_status === "active" ? "success" : "warning"}>
-                        {club.club_status === "active" ? "已啟用" : "建置中"}
-                      </Badge>
-                      <span className="card-link">
-                        {canManageIdentity ? "開啟身份管理 →" : "進入扶輪社首頁 →"}
-                      </span>
-                    </Link>
-                  );
-                })}
+                {clubs.map((club) => (
+                  <Link
+                    key={club.club_id}
+                    href={`/clubs/${club.club_id}/operators`}
+                    className="club-card"
+                  >
+                    <div>
+                      <span className="club-code">{club.club_code}</span>
+                      <h3>{club.club_name}</h3>
+                    </div>
+                    <Badge tone={club.club_status === "active" ? "success" : "warning"}>
+                      {club.club_status === "active" ? "已啟用" : "建置中"}
+                    </Badge>
+                    <span className="card-link">管理執行秘書 →</span>
+                  </Link>
+                ))}
               </div>
             )}
           </section>
