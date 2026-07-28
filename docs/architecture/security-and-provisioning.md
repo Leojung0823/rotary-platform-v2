@@ -23,6 +23,8 @@
 
 member/operator 全域互斥透過兩個 trigger 與 person-scoped advisory transaction lock 保護，涵蓋兩個寫入方向及 concurrent transactions。撤銷保留 permission row，邀請接受及社啟用在同一 transaction 中完成。
 
+到期的 operator assignment 會在授權判斷、有效人數統計、社員／operator 互斥及重新指派流程中一致視為無效；重新指派前會先將自然到期的舊 assignment 正規化為 `expired`。
+
 ## 稽核
 
 扶輪社建立、邀請建立/寄出/接受、operator 撤銷都新增 `audit_logs`。應用角色沒有 audit table 的 UPDATE 或 DELETE 權限，因此 log 對 client 是 append-only；service role 與資料庫 owner 仍屬本機受信任維運邊界。
@@ -30,3 +32,9 @@ member/operator 全域互斥透過兩個 trigger 與 person-scoped advisory tran
 ## 驗證範圍
 
 `supabase/verification/provisioning_security.sql` 在 rollback transaction 內建立多個 Auth identity 與兩個社，證明：anonymous denial、ordinary user denial、跨社 read/write denial、多 operator、雙向身份互斥、同社 membership 唯一性、跨社 membership 合法、last-operator 保護、接受冪等與 audit rows。
+
+`supabase/verification/operator_expiry_consistency.sql` 驗證：自然到期的 assignment 不再授權、到期 operator 可轉為社員、重新指派會清理舊 assignment、有效 operator 統計排除到期資料，以及最後一位真正有效 operator 仍受撤銷保護。
+
+## 合併後重新驗證
+
+PR #2 已於 2026-07-28 以一般 merge commit 合併至 `main`。PR #5 隨後改以 `main` 為 base；本文件更新用於觸發 retarget 後的 CI、Quality 與完整 local Supabase verification suite，確保審查依據對應目前的主線基礎。
