@@ -24,7 +24,10 @@ describe("event application boundary", () => {
     expect(actions).not.toContain("code: error.message");
   });
 
-  it("uses RPCs rather than browser-side event table CRUD", () => {
+  it("keeps event authorization self-contained and uses RPC-only mutations", () => {
+    expect(page).toContain('rpc("list_my_event_clubs")');
+    expect(page).toContain("selectedClub.can_register");
+    expect(page).not.toContain("list_my_board_clubs");
     for (const rpc of [
       "create_club_event",
       "publish_club_event",
@@ -40,6 +43,8 @@ describe("event application boundary", () => {
 
 describe("event database boundary", () => {
   const migration = source("../supabase/migrations/20260729000100_event_registration_mvp.sql");
+  const integrity = source("../supabase/migrations/20260729000110_event_registration_tenant_integrity.sql");
+  const access = source("../supabase/migrations/20260729000120_event_access_projection.sql");
 
   it("denies direct browser table access and grants only controlled RPCs", () => {
     expect(migration).toContain(
@@ -53,6 +58,18 @@ describe("event database boundary", () => {
     expect(migration).toMatch(/where id = p_event_id and club_id = p_club_id for update/u);
     expect(migration).toContain("registration.app_account_id <> actor_id");
     expect(migration).toContain("event_capacity_full");
+  });
+
+  it("enforces relational tenant integrity and immutable identifiers", () => {
+    expect(integrity).toContain("foreign key (event_id, club_id)");
+    expect(integrity).toContain("references public.club_events (id, club_id)");
+    expect(integrity.match(/old\.id is distinct from new\.id/gu)).toHaveLength(2);
+  });
+
+  it("projects management and registration access from the event module", () => {
+    expect(access).toContain("can_manage boolean");
+    expect(access).toContain("can_register boolean");
+    expect(access).toContain("public.current_has_active_event_membership(club.id) as can_register");
   });
 
   it("requires active tenant lifecycle and writes audit records", () => {
