@@ -49,6 +49,9 @@ insert into public.club_role_assignments (
   'president', 'active', '34000000-0000-0000-0000-000000000001'
 );
 
+create temporary table event_test_state (event_id uuid not null);
+grant select, insert, update on event_test_state to authenticated;
+
 -- Manager creates a draft, cannot cross tenants, and publishes the event.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '14000000-0000-0000-0000-000000000001', true);
@@ -67,6 +70,7 @@ begin
     now() + interval '2 days', 2, true
   );
   event_id := (created->>'event_id')::uuid;
+  insert into event_test_state (event_id) values (event_id);
   if created->>'status' <> 'draft' then raise exception 'event was not created as draft'; end if;
 
   begin
@@ -97,7 +101,7 @@ declare
   listed jsonb;
   saved jsonb;
 begin
-  select id into event_id from public.club_events where title = '例會暨新社員歡迎';
+  select state.event_id into event_id from event_test_state as state;
 
   begin
     perform public.create_club_event(
@@ -138,7 +142,7 @@ select set_config('request.jwt.claim.sub', '14000000-0000-0000-0000-000000000003
 do $$
 declare event_id uuid; saved jsonb;
 begin
-  select id into event_id from public.club_events where title = '例會暨新社員歡迎';
+  select state.event_id into event_id from event_test_state as state;
   begin
     perform public.set_my_event_registration(
       '54000000-0000-4000-8000-000000000001', event_id, 'attending', 0, ''
@@ -160,7 +164,7 @@ select set_config('request.jwt.claim.sub', '14000000-0000-0000-0000-000000000004
 do $$
 declare event_id uuid;
 begin
-  select id into event_id from public.club_events where title = '例會暨新社員歡迎';
+  select state.event_id into event_id from event_test_state as state;
   begin
     perform public.list_club_events('54000000-0000-4000-8000-000000000001');
     raise exception 'cross-club member listed events';
@@ -181,7 +185,7 @@ select set_config('request.jwt.claim.sub', '14000000-0000-0000-0000-000000000005
 do $$
 declare event_id uuid; clubs integer;
 begin
-  select id into event_id from public.club_events where title = '例會暨新社員歡迎';
+  select state.event_id into event_id from event_test_state as state;
   select count(*) into clubs from public.list_my_event_clubs();
   if clubs <> 0 then raise exception 'suspended account received an event club'; end if;
   begin
