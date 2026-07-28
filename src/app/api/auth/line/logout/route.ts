@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
-import { clearLineMvpCookies, isSameOriginLineRequest } from "@/lib/line/security";
+import { clearLineMvpCookies, isSameOriginLineRequest } from "../../../../../lib/line/security";
 import { createClient } from "@/lib/supabase/server";
 
 function logoutResponse(success: boolean, status = 200) {
