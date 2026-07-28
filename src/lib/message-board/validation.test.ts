@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BOARD_CONTENT_MAX_CODE_POINTS,
   BOARD_CURSOR_MAX_LENGTH,
@@ -82,16 +82,70 @@ describe("opaque board cursor", () => {
 });
 
 describe("mutation request boundary", () => {
+  beforeEach(() => {
+    vi.stubEnv("APP_ENV", "local");
+    vi.stubEnv("NODE_ENV", "test");
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+
   it("accepts JSON media types only", () => {
     expect(isJsonContentType("application/json")).toBe(true);
     expect(isJsonContentType("application/json; charset=utf-8")).toBe(true);
     expect(isJsonContentType("text/plain")).toBe(false);
   });
 
-  it("accepts same-origin and rejects cross-origin requests", () => {
-    expect(isSameOriginMutation({ requestOrigin: "https://app.example", origin: "https://app.example", fetchSite: "same-origin" })).toBe(true);
-    expect(isSameOriginMutation({ requestOrigin: "https://app.example", origin: "https://evil.example", fetchSite: "cross-site" })).toBe(false);
-    expect(isSameOriginMutation({ requestOrigin: "https://app.example", origin: null, fetchSite: "cross-site" })).toBe(false);
-    expect(isSameOriginMutation({ requestOrigin: "https://app.example", origin: null, fetchSite: null })).toBe(false);
+  it("accepts an exact local origin and rejects cross-origin or missing-origin requests", () => {
+    expect(isSameOriginMutation({ requestOrigin: "http://localhost:3000", origin: "http://localhost:3000", fetchSite: "same-origin" })).toBe(true);
+    expect(isSameOriginMutation({ requestOrigin: "http://localhost:3000", origin: "https://evil.example", fetchSite: "cross-site" })).toBe(false);
+    expect(isSameOriginMutation({ requestOrigin: "http://localhost:3000", origin: null, fetchSite: "same-origin" })).toBe(false);
+    expect(isSameOriginMutation({ requestOrigin: "http://localhost:3000", origin: "http://localhost:3000", fetchSite: "none" })).toBe(false);
+  });
+
+  it("requires the configured HTTPS origin in production instead of trusting request Host", () => {
+    vi.stubEnv("APP_ENV", "production");
+
+    expect(isSameOriginMutation({
+      requestOrigin: "https://attacker-controlled-host.example",
+      origin: "https://attacker-controlled-host.example",
+      fetchSite: "same-origin",
+    })).toBe(false);
+
+    expect(isSameOriginMutation({
+      requestOrigin: "https://attacker-controlled-host.example",
+      configuredSiteUrl: "https://rotary.example/",
+      origin: "https://rotary.example",
+      fetchSite: "same-origin",
+    })).toBe(true);
+
+    expect(isSameOriginMutation({
+      requestOrigin: "https://attacker-controlled-host.example",
+      configuredSiteUrl: "https://rotary.example/",
+      origin: "https://attacker-controlled-host.example",
+      fetchSite: "same-origin",
+    })).toBe(false);
+
+    expect(isSameOriginMutation({
+      requestOrigin: "http://rotary.example",
+      configuredSiteUrl: "http://rotary.example/",
+      origin: "http://rotary.example",
+      fetchSite: "same-origin",
+    })).toBe(false);
+  });
+
+  it("rejects configured origins containing path, query, credentials, or fragments", () => {
+    for (const configuredSiteUrl of [
+      "https://rotary.example/app",
+      "https://rotary.example/?x=1",
+      "https://user:password@rotary.example/",
+      "https://rotary.example/#fragment",
+    ]) {
+      expect(isSameOriginMutation({
+        requestOrigin: "http://localhost:3000",
+        configuredSiteUrl,
+        origin: "https://rotary.example",
+        fetchSite: "same-origin",
+      })).toBe(false);
+    }
   });
 });
