@@ -52,14 +52,22 @@ response = await operator.auth.verifyOtp({ token_hash: tokenHash, type: "invite"
 if (response.error) fail("Auth invite token could not be verified");
 response = await operator.auth.updateUser({ password: operatorPassword });
 if (response.error) fail("operator password could not be set");
-const accepted = await operator.rpc("accept_operator_invitation", { p_invite_id: null });
-if (accepted.error) fail("operator invitation RPC did not succeed");
-const acceptedAgain = await operator.rpc("accept_operator_invitation", { p_invite_id: null });
-if (acceptedAgain.error || !acceptedAgain.data.idempotent) fail("operator invitation acceptance was not idempotent");
+
+const available = await operator.rpc("list_current_operator_invitations");
+if (available.error || available.data.length !== 1 || available.data[0].invite_id !== creation.data.invite_id) fail("verified email did not receive the expected selectable invitation");
+
+const accepted = await operator.rpc("accept_selected_operator_invitation", { p_invite_id: creation.data.invite_id });
+if (accepted.error) fail("selected operator invitation RPC did not succeed");
+const acceptedAgain = await operator.rpc("accept_selected_operator_invitation", { p_invite_id: creation.data.invite_id });
+if (acceptedAgain.error || !acceptedAgain.data.idempotent) fail("selected invitation acceptance was not idempotent");
+
+const legacy = await operator.rpc("accept_operator_invitation", { p_invite_id: null });
+if (!legacy.error) fail("legacy ambiguous invitation acceptance remained browser-executable");
+
 await operator.auth.signOut();
 response = await operator.auth.signInWithPassword({ email: operatorEmail, password: operatorPassword });
 if (response.error) fail("operator password login did not succeed");
 const clubs = await operator.rpc("list_manageable_clubs");
-if (clubs.error || clubs.data.length !== 1 || clubs.data[0].club_code !== clubCode || clubs.data[0].club_id !== accepted.data.club_id) fail("operator tenant visibility did not match one invited club");
+if (clubs.error || clubs.data.length !== 1 || clubs.data[0].club_code !== clubCode || clubs.data[0].club_id !== accepted.data.club_id) fail("operator tenant visibility did not match one explicitly selected club");
 
-console.log("Local Mailpit invite, Auth acceptance, password login, idempotency, and tenant visibility passed. No tokens or credentials were printed.");
+console.log("Local Mailpit invite, explicit selection, Auth acceptance, password login, idempotency, and tenant visibility passed. No tokens or credentials were printed.");
