@@ -15,6 +15,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div className="brand"><span className="brand-mark">R</span><span>扶輪管理平台<small>ROTARY PLATFORM V2</small></span></div>
       <div className="auth-copy"><p className="eyebrow">安全的多社管理</p><h1>歡迎回來</h1><p>請使用您的個人帳號登入。每一項平台與社務操作都會留下可稽核紀錄。</p></div>
       {message && <Notice tone="error">{message}</Notice>}
+      <a className="button line-button" href="/api/auth/line/start">使用 LINE 登入</a>
+      <div className="divider"><span>或使用平台密碼</span></div>
       <form action={loginAction} className="form-stack">
         <Field label="電子郵件"><Input name="email" type="email" autoComplete="email" required placeholder="name@example.com" /></Field>
         <Field label="密碼"><Input name="password" type="password" autoComplete="current-password" required minLength={8} /></Field>
