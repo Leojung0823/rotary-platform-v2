@@ -185,14 +185,13 @@ export async function GET(request: NextRequest) {
     }
 
     const requestHeaders = await headers();
-    const recorded = await supabase.rpc("record_login_and_device", {
+    await supabase.rpc("record_login_and_device", {
       p_provider_key: lineMode() === "mock" ? "line_mock" : "line",
       p_device_fingerprint_hash: digest(deviceCookie),
       p_device_name: "Web 瀏覽器",
       p_user_agent: requestHeaders.get("user-agent") ?? null,
       p_ip_address: null,
     });
-    if (recorded.error) throw recorded.error;
 
     clear();
     const destination = invitationToken ? `/join?token=${encodeURIComponent(invitationToken)}` : returnTo;
