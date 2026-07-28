@@ -20,3 +20,67 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.84.2
+          github-token: ${{ github.token }}
+      - name: Start local Supabase database
+        run: |
+          supabase db start > /tmp/supabase-start.log 2>&1 || {
+            cat /tmp/supabase-start.log
+            exit 1
+          }
+      - name: Reset database from migrations
+        run: |
+          supabase db reset --local > /tmp/supabase-reset.log 2>&1 || {
+            cat /tmp/supabase-reset.log
+            exit 1
+          }
+      - name: Lint database schema
+        run: supabase db lint --local
+      - name: Verify identity and provisioning invariants
+        id: verify_database
+        continue-on-error: true
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -o pipefail
+          (
+            set -e
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+            for file in \
+              supabase/verification/core_identity_baseline.sql \
+              supabase/verification/provisioning_security.sql \
+              supabase/verification/operator_expiry_consistency.sql \
+              supabase/verification/invitation_selection.sql \
+              supabase/verification/v03_identity_admin_security.sql \
+              supabase/verification/v03_tenant_mutation_security.sql
+            do
+              echo "Verifying $file"
+              psql \
+                --host 127.0.0.1 \
+                --port 54322 \
+                --username postgres \
+                --dbname postgres \
+                --set ON_ERROR_STOP=1 \
+                --file "$file"
+            done
+          ) 2>&1 | tee /tmp/database-verification.log
+      - name: Upload failed database verification log
+        if: steps.verify_database.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-verification-log
+          path: /tmp/database-verification.log
+          if-no-files-found: error
+          retention-days: 7
+      - name: Fail when database verification failed
+        if: steps.verify_database.outcome == 'failure'
+        run: exit 1
