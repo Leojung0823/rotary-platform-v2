@@ -1,6 +1,6 @@
 # Rotary Platform V2
 
-扶輪社多租戶管理平台的本機開發版本。V0.3 完成 invitation-first 身份核心：LINE Login、社員確認加入、資料驅動 RBAC、秘書後台、每社獨立 LINE OA 管理、裝置與登入紀錄、RLS、audit log 及版本化 API。
+扶輪社多租戶管理平台的本機開發版本。身份核心採 invitation-first：LINE Login、社員確認加入、資料驅動 RBAC、秘書後台、每社獨立 LINE OA 管理、裝置與登入紀錄、RLS、audit log 及版本化 API。社員功能目前包含社內留言板，以及 V0.4 活動建立、發布與報名 MVP。
 
 目前驗證邊界是 Supabase local stack；不包含 staging、Lovable 正式環境、正式 LINE Console 或正式資料。
 
@@ -53,7 +53,7 @@ npm run dev
 
 Bootstrap 預設只接受 `localhost`、`127.0.0.1` 或 `::1` 的 Supabase URL。日常開發與本地驗證不得使用非本機 override。
 
-## V0.3 本機垂直流程
+## 身份與 LINE 本機垂直流程
 
 1. 以 bootstrap 建立的帳號登入 `/login`。
 2. 建立扶輪社與第一位執行秘書邀請。
@@ -68,6 +68,20 @@ Bootstrap 預設只接受 `localhost`、`127.0.0.1` 或 `::1` 的 Supabase URL�
 陌生 LINE 使用者沒有邀請、也沒有既有 active LINE identity 時，不能自行建立平台帳號。
 
 詳細設定與上線檢查表請見 [V0.3 身份與 LINE 架構](docs/architecture/v03-identity-and-line.md)。
+
+## 活動與報名 MVP
+
+1. 具 `event.manage` 權限的社長、秘書或平台管理員進入 `/events` 建立活動草稿。
+2. 活動包含類型、名稱、說明、地點、開始／結束時間、報名截止、名額及是否計入出席率。
+3. 發布前資料庫再次確認管理權限、active club、未來的活動與截止時間。
+4. active 社員可查看同社已發布活動，選擇參加、不參加或待確認，並填寫攜伴與備註。
+5. 名額以社員本人加攜伴計算；資料庫會鎖定活動並在同一交易內防止超額。
+6. 活動開始或報名截止後，資料庫拒絕新增及修改報名。
+7. 建立、發布、取消與報名更新都寫入 append-only `audit_logs`。
+8. 報名的 `(event_id, club_id)` 以 composite foreign key 綁定活動，資料庫本身不能產生跨社報名。
+9. 停權帳號、停權社籍與停權扶輪社均不能查看、報名或執行活動管理 mutation。
+
+本切片不包含 QR／GPS 簽到、人工補登與出席率統計；詳細範圍見 [活動報名 MVP 範圍](docs/mvp/EVENT_REGISTRATION_MVP_SCOPE.md)。
 
 ## 每社 LINE OA 憑證
 
@@ -101,6 +115,12 @@ npm run verify:auth
 - `invitation_selection.sql`
 - `v03_identity_admin_security.sql`
 - `v03_tenant_mutation_security.sql`
+- `line_webhook_ingress_limits.sql`
+- `message_board_security.sql`
+- `message_board_access_hardening.sql`
+- `event_registration_security.sql`
+- `event_registration_tenant_integrity.sql`
+- `event_registration_lifecycle_hardening.sql`
 
 所有 SQL fixture 都包在 transaction 中並於結尾 rollback。驗證範圍包含：
 
@@ -111,15 +131,19 @@ npm run verify:auth
 - invitation-first callback 與 trusted binding
 - active membership／角色一致性
 - 跨社共用真人資料與 LINE 解綁保護
-- 每社 OA 憑證、webhook 簽章與有效事件去重
+- 每社 OA 憑證、webhook 簽章、限流與原子事件 claim
 - OA follower 只能配對同社 active 社員
+- 留言板 direct table denial、本人編輯、跨社 cursor 與生命週期
+- 活動管理權限、跨社隔離、本人報名、名額交易與截止時間
+- 活動／報名 immutable ID 與 `(event_id, club_id)` relational tenant integrity
+- 活動帳號、社籍與扶輪社 lifecycle gate
 
 `npm run verify:auth` 只使用 local Mailpit 與 local Supabase，驗證密碼登入、邀請接受、冪等與 tenant visibility。
 
 ## 安全模型
 
 - `people` 是跨社共用真人身份；`app_accounts` 是登入帳號；`club_memberships` 是各社社籍。
-- `anon` 與 `authenticated` 沒有直接 table CRUD；應用透過最小授權、固定 `search_path` 的 RPC。
+- `anon` 與 `authenticated` 沒有敏感資料表直接 CRUD；應用透過最小授權、固定 `search_path` 的 RPC。
 - 社級權限需要 active account 與 active membership；V0.2 operator 還必須位於有效時間區間。
 - 角色只能指派給同社 active 社員。
 - 普通社級管理員不能修改或解除其他社共用的全域身份。
@@ -127,6 +151,10 @@ npm run verify:auth
 - LINE OAuth 使用 state、nonce、一次性資料庫交易及 ID token 驗證；身份成功綁定後才建立 session。
 - Browser role 無法直接呼叫 trusted LINE binding RPC。
 - LINE OA webhook 先以該社 secret 驗證 raw body；無效簽章事件不能占用正式 provider event id。
+- 留言板與活動都使用不可變 `club_id`，且 browser roles 無法直接操作底層資料表。
+- 活動名額在鎖定活動列的交易中計算，避免並行報名超額。
+- 活動報名以 composite foreign key 綁定所屬活動與扶輪社，避免任何未來程式路徑寫入不一致 tenant 資料。
+- 活動管理 mutation 需要 active club；停權扶輪社即使保留歷史角色也不能建立、發布或取消活動。
 - Excel 匯入先驗證 session 與 permission，再解析 multipart body 和 workbook。
 - Service role 只存在 server-only trusted boundary；非本機環境需要兩個明確 production guard。
 - 所有 privileged mutation 寫入 append-only `audit_logs`。

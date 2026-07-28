@@ -27,3 +27,8 @@ run_sql supabase/verification/invitation_selection.sql
 run_sql supabase/verification/v03_identity_admin_security.sql
 run_sql supabase/verification/v03_tenant_mutation_security.sql
 run_sql supabase/verification/line_webhook_ingress_limits.sql
+run_sql supabase/verification/message_board_security.sql
+run_sql supabase/verification/message_board_access_hardening.sql
+run_sql supabase/verification/event_registration_security.sql
+run_sql supabase/verification/event_registration_tenant_integrity.sql
+run_sql supabase/verification/event_registration_lifecycle_hardening.sql
