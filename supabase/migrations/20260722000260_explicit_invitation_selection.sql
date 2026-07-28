@@ -12,6 +12,12 @@ as $$
   where user_record.id = auth.uid()
     and user_record.email_confirmed_at is not null
     and btrim(coalesce(user_record.email, '')) <> ''
+    and not exists (
+      select 1
+      from public.app_accounts as account
+      where account.auth_user_id = user_record.id
+        and account.account_status <> 'active'
+    )
 $$;
 
 create or replace function public.list_current_operator_invitations()
@@ -32,7 +38,7 @@ declare
   verified_email text := public.current_verified_auth_email();
 begin
   if verified_email is null then
-    raise exception using errcode = '42501', message = 'verified_email_required';
+    raise exception using errcode = '42501', message = 'eligible_verified_email_required';
   end if;
 
   return query
@@ -62,7 +68,7 @@ declare
   verified_email text := public.current_verified_auth_email();
 begin
   if verified_email is null then
-    raise exception using errcode = '42501', message = 'verified_email_required';
+    raise exception using errcode = '42501', message = 'eligible_verified_email_required';
   end if;
   if p_invite_id is null then
     raise exception using errcode = '22023', message = 'invitation_selection_required';
