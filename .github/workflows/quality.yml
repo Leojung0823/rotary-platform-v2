@@ -12,7 +12,23 @@ jobs:
       - run: npm ci
       - run: npm run check:migrations
       - run: npm run lint
-      - run: npm run typecheck
+      - name: Run TypeScript typecheck
+        id: typecheck
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tee /tmp/typecheck.log
+      - name: Upload failed typecheck log
+        if: steps.typecheck.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: typecheck-log
+          path: /tmp/typecheck.log
+          if-no-files-found: error
+          retention-days: 7
+      - name: Fail when typecheck failed
+        if: steps.typecheck.outcome == 'failure'
+        run: exit 1
       - name: Run unit tests
         id: unit_tests
         continue-on-error: true
