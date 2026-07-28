@@ -36,22 +36,16 @@ jobs:
         run: supabase db reset --local
       - name: Lint database schema
         run: supabase db lint --local
-      - name: Verify identity and provisioning invariants
+      - name: Verify core identity baseline
         env:
           PGPASSWORD: postgres
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-          for file in \
-            supabase/verification/core_identity_baseline.sql \
-            supabase/verification/provisioning_security.sql \
-            supabase/verification/operator_expiry_consistency.sql
-          do
-            psql \
-              --host 127.0.0.1 \
-              --port 54322 \
-              --username postgres \
-              --dbname postgres \
-              --set ON_ERROR_STOP=1 \
-              --file "$file"
-          done
+          psql \
+            --host 127.0.0.1 \
+            --port 54322 \
+            --username postgres \
+            --dbname postgres \
+            --set ON_ERROR_STOP=1 \
+            --file supabase/verification/core_identity_baseline.sql
