@@ -61,7 +61,8 @@ jobs:
               supabase/verification/operator_expiry_consistency.sql \
               supabase/verification/invitation_selection.sql \
               supabase/verification/v03_identity_admin_security.sql \
-              supabase/verification/v03_tenant_mutation_security.sql
+              supabase/verification/v03_tenant_mutation_security.sql \
+              supabase/verification/line_webhook_ingress_limits.sql
             do
               echo "Verifying $file"
               psql \
