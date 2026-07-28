@@ -79,6 +79,7 @@ Bootstrap 預設只接受 `localhost`、`127.0.0.1` 或 `::1` 的 Supabase URL�
 6. 活動開始或報名截止後，資料庫拒絕新增及修改報名。
 7. 建立、發布、取消與報名更新都寫入 append-only `audit_logs`。
 8. 報名的 `(event_id, club_id)` 以 composite foreign key 綁定活動，資料庫本身不能產生跨社報名。
+9. 停權帳號、停權社籍與停權扶輪社均不能查看、報名或執行活動管理 mutation。
 
 本切片不包含 QR／GPS 簽到、人工補登與出席率統計；詳細範圍見 [活動報名 MVP 範圍](docs/mvp/EVENT_REGISTRATION_MVP_SCOPE.md)。
 
@@ -119,6 +120,7 @@ npm run verify:auth
 - `message_board_access_hardening.sql`
 - `event_registration_security.sql`
 - `event_registration_tenant_integrity.sql`
+- `event_registration_lifecycle_hardening.sql`
 
 所有 SQL fixture 都包在 transaction 中並於結尾 rollback。驗證範圍包含：
 
@@ -134,6 +136,7 @@ npm run verify:auth
 - 留言板 direct table denial、本人編輯、跨社 cursor 與生命週期
 - 活動管理權限、跨社隔離、本人報名、名額交易與截止時間
 - 活動／報名 immutable ID 與 `(event_id, club_id)` relational tenant integrity
+- 活動帳號、社籍與扶輪社 lifecycle gate
 
 `npm run verify:auth` 只使用 local Mailpit 與 local Supabase，驗證密碼登入、邀請接受、冪等與 tenant visibility。
 
@@ -151,6 +154,7 @@ npm run verify:auth
 - 留言板與活動都使用不可變 `club_id`，且 browser roles 無法直接操作底層資料表。
 - 活動名額在鎖定活動列的交易中計算，避免並行報名超額。
 - 活動報名以 composite foreign key 綁定所屬活動與扶輪社，避免任何未來程式路徑寫入不一致 tenant 資料。
+- 活動管理 mutation 需要 active club；停權扶輪社即使保留歷史角色也不能建立、發布或取消活動。
 - Excel 匯入先驗證 session 與 permission，再解析 multipart body 和 workbook。
 - Service role 只存在 server-only trusted boundary；非本機環境需要兩個明確 production guard。
 - 所有 privileged mutation 寫入 append-only `audit_logs`。
