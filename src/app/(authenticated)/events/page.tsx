@@ -13,6 +13,7 @@ type EventClub = {
   club_code: string;
   club_name: string;
   can_manage: boolean;
+  can_register: boolean;
 };
 
 type ClubEvent = {
@@ -82,7 +83,8 @@ function isEventClub(value: unknown): value is EventClub {
   return typeof club.club_id === "string"
     && typeof club.club_code === "string"
     && typeof club.club_name === "string"
-    && typeof club.can_manage === "boolean";
+    && typeof club.can_manage === "boolean"
+    && typeof club.can_register === "boolean";
 }
 
 function isClubEvent(value: unknown): value is ClubEvent {
@@ -155,10 +157,7 @@ export default async function EventsPage({
   await requireIdentity();
   const params = await searchParams;
   const supabase = await createClient();
-  const [clubsResult, membershipClubsResult] = await Promise.all([
-    supabase.rpc("list_my_event_clubs"),
-    supabase.rpc("list_my_board_clubs"),
-  ]);
+  const clubsResult = await supabase.rpc("list_my_event_clubs");
 
   const clubRows = clubsResult.data ?? [];
   if (clubsResult.error || !Array.isArray(clubRows) || !clubRows.every(isEventClub)) {
@@ -169,14 +168,6 @@ export default async function EventsPage({
   }
 
   const selectedClub = clubRows.find((club) => club.club_id === params.clubId) ?? clubRows[0] ?? null;
-  const membershipClubIds = new Set(
-    Array.isArray(membershipClubsResult.data)
-      ? membershipClubsResult.data
-        .filter((row): row is { club_id: string } => Boolean(row) && typeof row === "object" && typeof (row as { club_id?: unknown }).club_id === "string")
-        .map((row) => row.club_id)
-      : [],
-  );
-  const canRegister = selectedClub ? membershipClubIds.has(selectedClub.club_id) : false;
 
   let events: ClubEvent[] = [];
   let eventsUnavailable = false;
@@ -303,7 +294,7 @@ export default async function EventsPage({
             </div>
           </div>
 
-          {event.status === "published" && event.registration_open && canRegister && <form action={registerEventAction} className="form-stack">
+          {event.status === "published" && event.registration_open && selectedClub.can_register && <form action={registerEventAction} className="form-stack">
             <input type="hidden" name="clubId" value={selectedClub.club_id} />
             <input type="hidden" name="eventId" value={event.id} />
             <div className="form-grid">
@@ -325,7 +316,7 @@ export default async function EventsPage({
           </form>}
 
           {event.status === "published" && !event.registration_open && <div className="notice notice-info">活動已開始或報名已截止，目前不能修改報名。</div>}
-          {event.status === "published" && event.registration_open && !canRegister && <div className="notice notice-info">此帳號可管理活動，但不是該社有效社員，因此不能占用社員報名名額。</div>}
+          {event.status === "published" && event.registration_open && !selectedClub.can_register && <div className="notice notice-info">此帳號可管理活動，但不是該社有效社員，因此不能占用社員報名名額。</div>}
 
           {selectedClub.can_manage && event.status === "draft" && <form action={publishEventAction} className="form-actions">
             <input type="hidden" name="clubId" value={selectedClub.club_id} />
