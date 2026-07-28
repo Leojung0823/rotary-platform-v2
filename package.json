@@ -10,7 +10,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bootstrap:superadmin": "node scripts/bootstrap-superadmin.mjs",
+    "verify:db": "bash scripts/verify-local-database.sh",
+    "verify:auth": "node scripts/verify-local-auth-flow.mjs",
+    "check:migrations": "bash scripts/check-migration-history.sh"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.3",
@@ -27,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }
