@@ -1,0 +1,6 @@
+-- Local-only development seed entrypoint.
+--
+-- Keep production member data and credentials out of this file.
+-- Fake clubs, people, accounts, and invitations will be added only after the
+-- provisioning RPCs are available, so seed data exercises the same paths as
+-- the application.
