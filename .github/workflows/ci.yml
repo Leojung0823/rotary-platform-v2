@@ -44,7 +44,7 @@ jobs:
           }
       - name: Lint database schema
         run: supabase db lint --local
-      - name: Verify identity and provisioning invariants
+      - name: Verify database security invariants
         id: verify_database
         continue-on-error: true
         env:
@@ -61,7 +61,10 @@ jobs:
               supabase/verification/operator_expiry_consistency.sql \
               supabase/verification/invitation_selection.sql \
               supabase/verification/v03_identity_admin_security.sql \
-              supabase/verification/v03_tenant_mutation_security.sql
+              supabase/verification/v03_tenant_mutation_security.sql \
+              supabase/verification/line_webhook_ingress_limits.sql \
+              supabase/verification/message_board_security.sql \
+              supabase/verification/message_board_access_hardening.sql
             do
               echo "Verifying $file"
               psql \
