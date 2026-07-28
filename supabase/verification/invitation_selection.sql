@@ -9,20 +9,32 @@ insert into auth.users (
 ) values
   ('00000000-0000-0000-0000-000000000000', '11000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'selection-admin@example.test', '', now(), '{}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '11000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'multi-invite@example.test', '', now(), '{}', '{}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '11000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'unconfirmed@example.test', '', null, '{}', '{}', now(), now());
+  ('00000000-0000-0000-0000-000000000000', '11000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'unconfirmed@example.test', '', null, '{}', '{}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '11000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'suspended@example.test', '', now(), '{}', '{}', now(), now());
 
-insert into public.people (id, canonical_name, primary_email)
-values ('21000000-0000-0000-0000-000000000001', '邀請選擇管理員', 'selection-admin@example.test');
+insert into public.people (id, canonical_name, primary_email) values
+  ('21000000-0000-0000-0000-000000000001', '邀請選擇管理員', 'selection-admin@example.test'),
+  ('21000000-0000-0000-0000-000000000004', '已停權帳號', 'suspended@example.test');
 
 insert into public.app_accounts (
-  id, auth_user_id, person_id, login_email, account_display_name
-) values (
-  '31000000-0000-0000-0000-000000000001',
-  '11000000-0000-0000-0000-000000000001',
-  '21000000-0000-0000-0000-000000000001',
-  'selection-admin@example.test',
-  '邀請選擇管理員'
-);
+  id, auth_user_id, person_id, login_email, account_display_name, account_status
+) values
+  (
+    '31000000-0000-0000-0000-000000000001',
+    '11000000-0000-0000-0000-000000000001',
+    '21000000-0000-0000-0000-000000000001',
+    'selection-admin@example.test',
+    '邀請選擇管理員',
+    'active'
+  ),
+  (
+    '31000000-0000-0000-0000-000000000004',
+    '11000000-0000-0000-0000-000000000004',
+    '21000000-0000-0000-0000-000000000004',
+    'suspended@example.test',
+    '已停權帳號',
+    'suspended'
+  );
 
 insert into public.platform_roles (app_account_id, role_key)
 values ('31000000-0000-0000-0000-000000000001', 'superadmin');
@@ -37,6 +49,9 @@ select public.create_club_with_initial_operator_invitation(
 );
 select public.create_club_with_initial_operator_invitation(
   'SELECT-C', '邀請選擇測試社 C', 'unconfirmed@example.test', '未驗證使用者', 'selection-club-c'
+);
+select public.create_club_with_initial_operator_invitation(
+  'SELECT-D', '邀請選擇測試社 D', 'suspended@example.test', '已停權使用者', 'selection-club-d'
 );
 reset role;
 
@@ -141,7 +156,7 @@ begin
 end;
 $$;
 
--- An Auth identity without a confirmed email cannot enumerate or accept invitations.
+-- An Auth identity without a confirmed email cannot enumerate invitations.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '11000000-0000-0000-0000-000000000003', true);
 do $$
@@ -149,6 +164,21 @@ begin
   begin
     perform * from public.list_current_operator_invitations();
     raise exception 'Unconfirmed email enumerated invitations.';
+  exception when insufficient_privilege then
+    null;
+  end;
+end;
+$$;
+reset role;
+
+-- A confirmed but suspended application account cannot enumerate invitations.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '11000000-0000-0000-0000-000000000004', true);
+do $$
+begin
+  begin
+    perform * from public.list_current_operator_invitations();
+    raise exception 'Suspended account enumerated invitations.';
   exception when insufficient_privilege then
     null;
   end;
