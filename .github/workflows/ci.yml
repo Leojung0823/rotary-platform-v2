@@ -31,23 +31,32 @@ jobs:
           version: 2.84.2
           github-token: ${{ github.token }}
       - name: Start local Supabase database
-        run: supabase db start
+        run: |
+          supabase db start > /tmp/supabase-start.log 2>&1 || {
+            cat /tmp/supabase-start.log
+            exit 1
+          }
       - name: Reset database from migrations
-        run: supabase db reset --local
+        run: |
+          supabase db reset --local > /tmp/supabase-reset.log 2>&1 || {
+            cat /tmp/supabase-reset.log
+            exit 1
+          }
       - name: Lint database schema
         run: supabase db lint --local
       - name: Verify identity and provisioning invariants
         env:
           PGPASSWORD: postgres
         run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
           for file in \
             supabase/verification/core_identity_baseline.sql \
             supabase/verification/provisioning_security.sql \
             supabase/verification/operator_expiry_consistency.sql \
             supabase/verification/invitation_selection.sql
           do
+            echo "Verifying $file"
             psql \
               --host 127.0.0.1 \
               --port 54322 \
