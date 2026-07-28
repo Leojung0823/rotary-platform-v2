@@ -20,9 +20,11 @@ describe("event validation", () => {
     expect(() => parseEventText("12345", 4)).toThrow("invalid_event_text");
   });
 
-  it("converts a Taipei datetime-local value to an ISO instant", () => {
+  it("converts a valid Taipei datetime-local value without normalizing invalid dates", () => {
     expect(parseTaipeiDateTime("2026-08-01T18:30")).toBe("2026-08-01T10:30:00.000Z");
     expect(() => parseTaipeiDateTime("2026/08/01 18:30")).toThrow("invalid_event_time");
+    expect(() => parseTaipeiDateTime("2026-02-30T18:30")).toThrow("invalid_event_time");
+    expect(() => parseTaipeiDateTime("2026-08-01T24:00")).toThrow("invalid_event_time");
   });
 
   it("validates optional capacity", () => {
