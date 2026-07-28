@@ -9,6 +9,24 @@ type BoardClub = {
   club_name: string;
 };
 
+function isBoardClub(value: unknown): value is BoardClub {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const club = value as Record<string, unknown>;
+  return typeof club.club_id === "string"
+    && typeof club.club_code === "string"
+    && typeof club.club_name === "string";
+}
+
+function BoardHeader() {
+  return <header className="page-header">
+    <div>
+      <p className="eyebrow">社員交流</p>
+      <h1>留言板</h1>
+      <p>每個扶輪社的留言彼此隔離，僅該社有效社員可以查看與發表。</p>
+    </div>
+  </header>;
+}
+
 export default async function BoardPage({
   searchParams,
 }: {
@@ -16,19 +34,25 @@ export default async function BoardPage({
 }) {
   await requireIdentity();
   const supabase = await createClient();
-  const { data } = await supabase.rpc("list_my_board_clubs");
-  const clubs = (data ?? []) as BoardClub[];
+  const { data, error } = await supabase.rpc("list_my_board_clubs");
+  const rows = data ?? [];
+
+  if (error || !Array.isArray(rows) || !rows.every(isBoardClub)) {
+    return <div className="page-stack">
+      <BoardHeader />
+      <div className="empty-state" role="alert">
+        <h2>無法載入留言板社別</h2>
+        <p>目前無法確認您的社籍與留言板權限，請稍後重新整理。系統不會把權限或資料庫錯誤當成空資料。</p>
+      </div>
+    </div>;
+  }
+
+  const clubs = rows;
   const requested = (await searchParams).clubId;
   const selectedClub = clubs.find((club) => club.club_id === requested) ?? clubs[0] ?? null;
 
   return <div className="page-stack">
-    <header className="page-header">
-      <div>
-        <p className="eyebrow">社員交流</p>
-        <h1>留言板</h1>
-        <p>每個扶輪社的留言彼此隔離，僅該社有效社員可以查看與發表。</p>
-      </div>
-    </header>
+    <BoardHeader />
 
     {clubs.length > 1 && <section>
       <div className="section-heading"><h2>選擇扶輪社</h2></div>
@@ -46,7 +70,7 @@ export default async function BoardPage({
     </section>}
 
     {!selectedClub
-      ? <div className="empty-state"><h2>目前沒有可使用的社內留言板</h2><p>只有具有效社員身分的扶輪社會顯示在這裡。</p></div>
+      ? <div className="empty-state"><h2>目前沒有可使用的社內留言板</h2><p>只有啟用中的扶輪社與有效社員身分會顯示在這裡。</p></div>
       : <>
         <section className="section-heading">
           <div><p className="eyebrow">目前社別</p><h2>{selectedClub.club_name}</h2></div>
