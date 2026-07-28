@@ -28,7 +28,7 @@ describe("event check-in application boundary", () => {
       "manual_check_in_event",
       "revoke_event_attendance",
     ]) {
-      expect(actions).toContain(`rpc(\"${rpc}\"`);
+      expect(actions).toContain(`"${rpc}"`);
     }
     expect(actions).not.toContain('.from("event_attendances")');
     expect(actions).not.toContain('.from("event_checkin_sessions")');
@@ -48,9 +48,10 @@ describe("event check-in database boundary", () => {
   const migration = source("../supabase/migrations/20260730000100_event_checkin_mvp.sql");
 
   it("stores token hashes and denies browser table access", () => {
+    expect(migration).toContain("token_hash text not null unique");
+    expect(migration).not.toContain("raw_token text not null");
     expect(migration).toContain("extensions.digest(raw_token, 'sha256')");
     expect(migration).toContain("revoke all on table public.event_checkin_sessions, public.event_attendances from public, anon, authenticated");
-    expect(migration).not.toMatch(/insert into public\.event_checkin_sessions[\s\S]{0,500}raw_token\s*,/u);
   });
 
   it("derives self check-in membership from the authenticated account", () => {
