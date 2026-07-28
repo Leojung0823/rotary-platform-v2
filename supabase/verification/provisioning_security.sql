@@ -85,18 +85,25 @@ create temporary table verification_ids (key text primary key, id uuid not null)
 insert into verification_ids (key, id)
 select 'club-a', id from public.clubs where club_code = 'CLUB-A'
 union all
-select 'club-b', id from public.clubs where club_code = 'CLUB-B';
+select 'club-b', id from public.clubs where club_code = 'CLUB-B'
+union all
+select 'invite-a', id from public.club_operator_invites where email_normalized = 'operator-a@example.test';
 grant select on verification_ids to authenticated;
 
 -- First invite acceptance creates identity, permission, audit, and activates Club A.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
-select public.accept_operator_invitation(null);
+select public.accept_selected_operator_invitation(
+  (select id from verification_ids where key = 'invite-a')
+);
 do $$
-declare first_result jsonb; second_result jsonb;
+declare
+  first_result jsonb;
+  second_result jsonb;
+  invite_id uuid := (select id from verification_ids where key = 'invite-a');
 begin
-  first_result := public.accept_operator_invitation(null);
-  second_result := public.accept_operator_invitation(null);
+  first_result := public.accept_selected_operator_invitation(invite_id);
+  second_result := public.accept_selected_operator_invitation(invite_id);
   if first_result->>'permission_id' is distinct from second_result->>'permission_id'
      or (second_result->>'idempotent')::boolean is not true then
     raise exception 'invite acceptance is not idempotent';
@@ -129,9 +136,16 @@ select public.invite_additional_operator(
   'operator-a2@example.test', '執行秘書 A2', 'verify-club-a-second-operator'
 );
 reset role;
+
+insert into verification_ids (key, id)
+select 'invite-a2', id from public.club_operator_invites
+where email_normalized = 'operator-a2@example.test';
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000003', true);
-select public.accept_operator_invitation(null);
+select public.accept_selected_operator_invitation(
+  (select id from verification_ids where key = 'invite-a2')
+);
 reset role;
 
 insert into verification_ids (key, id)
