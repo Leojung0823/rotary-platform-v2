@@ -30,3 +30,4 @@ run_sql supabase/verification/line_webhook_ingress_limits.sql
 run_sql supabase/verification/message_board_security.sql
 run_sql supabase/verification/message_board_access_hardening.sql
 run_sql supabase/verification/event_registration_security.sql
+run_sql supabase/verification/event_registration_tenant_integrity.sql
