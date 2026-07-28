@@ -45,7 +45,8 @@ jobs:
           for file in \
             supabase/verification/core_identity_baseline.sql \
             supabase/verification/provisioning_security.sql \
-            supabase/verification/operator_expiry_consistency.sql
+            supabase/verification/operator_expiry_consistency.sql \
+            supabase/verification/invitation_selection.sql
           do
             psql \
               --host 127.0.0.1 \
