@@ -63,7 +63,7 @@ jobs:
               supabase/verification/v03_identity_admin_security.sql \
               supabase/verification/v03_tenant_mutation_security.sql \
               supabase/verification/line_webhook_ingress_limits.sql \
-              supabase/verification/message_board_mvp.sql \
+              supabase/verification/message_board_security.sql \
               supabase/verification/message_board_access_hardening.sql
             do
               echo "Verifying $file"
