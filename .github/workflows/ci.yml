@@ -65,7 +65,8 @@ jobs:
               supabase/verification/line_webhook_ingress_limits.sql \
               supabase/verification/message_board_security.sql \
               supabase/verification/message_board_access_hardening.sql \
-              supabase/verification/event_registration_security.sql
+              supabase/verification/event_registration_security.sql \
+              supabase/verification/event_registration_tenant_integrity.sql
             do
               echo "Verifying $file"
               psql \
