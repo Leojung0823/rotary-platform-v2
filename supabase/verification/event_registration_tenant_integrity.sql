@@ -6,24 +6,37 @@ begin;
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
-) values (
-  '00000000-0000-0000-0000-000000000000',
-  '15000000-0000-0000-0000-000000000001',
-  'authenticated', 'authenticated', 'event-integrity@example.test', '', now(), '{}', '{}', now(), now()
-);
+) values
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '15000000-0000-0000-0000-000000000001',
+    'authenticated', 'authenticated', 'event-integrity@example.test', '', now(), '{}', '{}', now(), now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '15000000-0000-0000-0000-000000000002',
+    'authenticated', 'authenticated', 'event-integrity-second@example.test', '', now(), '{}', '{}', now(), now()
+  );
 
-insert into public.people (id, canonical_name, primary_email) values (
-  '25000000-0000-0000-0000-000000000001', '活動完整性測試帳號', 'event-integrity@example.test'
-);
+insert into public.people (id, canonical_name, primary_email) values
+  ('25000000-0000-0000-0000-000000000001', '活動完整性測試帳號', 'event-integrity@example.test'),
+  ('25000000-0000-0000-0000-000000000002', '活動完整性第二帳號', 'event-integrity-second@example.test');
 
 insert into public.app_accounts (
   id, auth_user_id, person_id, login_email, account_display_name, account_status
-) values (
-  '35000000-0000-0000-0000-000000000001',
-  '15000000-0000-0000-0000-000000000001',
-  '25000000-0000-0000-0000-000000000001',
-  'event-integrity@example.test', '活動完整性測試帳號', 'active'
-);
+) values
+  (
+    '35000000-0000-0000-0000-000000000001',
+    '15000000-0000-0000-0000-000000000001',
+    '25000000-0000-0000-0000-000000000001',
+    'event-integrity@example.test', '活動完整性測試帳號', 'active'
+  ),
+  (
+    '35000000-0000-0000-0000-000000000002',
+    '15000000-0000-0000-0000-000000000002',
+    '25000000-0000-0000-0000-000000000002',
+    'event-integrity-second@example.test', '活動完整性第二帳號', 'active'
+  );
 
 insert into public.clubs (id, club_code, club_name, club_status, activated_at) values
   ('55000000-0000-4000-8000-000000000001', 'EVENT-INTEGRITY-A', '活動完整性甲社', 'active', now()),
@@ -72,7 +85,7 @@ begin
       '95000000-0000-4000-8000-000000000002',
       '55000000-0000-4000-8000-000000000002',
       '85000000-0000-4000-8000-000000000001',
-      '35000000-0000-0000-0000-000000000001',
+      '35000000-0000-0000-0000-000000000002',
       'declined', 0, '', now()
     );
     raise exception 'mismatched event and club registration was inserted';
