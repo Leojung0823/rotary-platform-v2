@@ -45,6 +45,7 @@ describe("event database boundary", () => {
   const migration = source("../supabase/migrations/20260729000100_event_registration_mvp.sql");
   const integrity = source("../supabase/migrations/20260729000110_event_registration_tenant_integrity.sql");
   const access = source("../supabase/migrations/20260729000120_event_access_projection.sql");
+  const lifecycle = source("../supabase/migrations/20260729000130_event_active_club_hardening.sql");
 
   it("denies direct browser table access and grants only controlled RPCs", () => {
     expect(migration).toContain(
@@ -70,6 +71,15 @@ describe("event database boundary", () => {
     expect(access).toContain("can_manage boolean");
     expect(access).toContain("can_register boolean");
     expect(access).toContain("public.current_has_active_event_membership(club.id) as can_register");
+  });
+
+  it("requires an active club for privileged event mutations", () => {
+    expect(lifecycle).toContain("current_can_manage_active_club_events");
+    expect(lifecycle).toContain("club.club_status = 'active'");
+    expect(lifecycle.match(/not public\.current_can_manage_active_club_events\(p_club_id\)/gu)).toHaveLength(2);
+    expect(lifecycle).toContain(
+      "revoke all on function public.current_can_manage_active_club_events(uuid) from public, anon, authenticated",
+    );
   });
 
   it("requires active tenant lifecycle and writes audit records", () => {
