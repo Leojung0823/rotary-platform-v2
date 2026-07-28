@@ -1,13 +1,13 @@
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
-import { createLineAuthorizationUrl, createOAuthSecrets } from "@/lib/line/provider";
+import { createLineAuthorizationUrl, createOAuthSecrets } from "../../../../../lib/line/provider";
 import {
   clearLineOAuthCookies,
   lineLoginFailureUrl,
   safeLineRedirectPath,
   setLineOAuthCookies,
-} from "@/lib/line/security";
+} from "../../../../../lib/line/security";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
 
 const invitationPattern = /^[0-9a-f]{64}$/i;
