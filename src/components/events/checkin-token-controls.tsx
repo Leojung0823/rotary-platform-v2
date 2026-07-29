@@ -6,6 +6,7 @@ import {
   rotateCheckinTokenAction,
   type CheckinTokenActionState,
 } from "@/app/checkin-actions";
+import { CheckinQrCode } from "@/components/events/checkin-qr-code";
 
 const initialState: CheckinTokenActionState = { status: "idle" };
 
@@ -37,14 +38,21 @@ function TokenResult({ state }: { state: CheckinTokenActionState }) {
     hour12: false,
   }).format(new Date(state.expiresAt));
 
-  return <div className="notice notice-success" role="status">
-    <strong>{state.operation === "opened" ? "簽到 token 已開啟" : "簽到 token 已旋轉"}</strong>
-    <p>原始 token 只顯示這一次，到期時間：{expiresAt}。請在離開頁面前複製。</p>
-    <label className="field">
-      <span className="label">一次性顯示的 QR token</span>
-      <textarea className="input token-value" value={state.token} readOnly rows={3} aria-label="一次性簽到 token" />
-    </label>
-    <span className="hint">識別前綴：{state.tokenPrefix}。資料庫只保存 SHA-256 hash，不保存此明文。</span>
+  return <div className="notice notice-success form-stack" role="status">
+    <div>
+      <strong>{state.operation === "opened" ? "簽到 QR 已開啟" : "簽到 QR 已旋轉"}</strong>
+      <p>原始 token 與 QR 只顯示這一次，到期時間：{expiresAt}。旋轉後舊 QR 已失效並從畫面移除。</p>
+    </div>
+    <div className="token-panel">
+      <CheckinQrCode token={state.token} />
+      <div className="form-stack">
+        <label className="field">
+          <span className="label">一次性顯示的 QR token</span>
+          <textarea className="input token-value" value={state.token} readOnly rows={3} aria-label="一次性簽到 token" />
+        </label>
+        <span className="hint">識別前綴：{state.tokenPrefix}。QR 只在目前瀏覽器記憶體產生；資料庫只保存 SHA-256 hash。</span>
+      </div>
+    </div>
   </div>;
 }
 
@@ -69,9 +77,9 @@ export function CheckinTokenControls({
         <span className="label">有效分鐘</span>
         <input className="input" type="number" name="duration" min={5} max={240} defaultValue={30} required />
       </label>
-      <span className="hint">開啟後只顯示一次原始 token。</span>
+      <span className="hint">開啟後只顯示一次原始 token 與 QR。</span>
       <button className="button" type="submit" disabled={openPending}>
-        {openPending ? "產生中…" : "開啟簽到"}
+        {openPending ? "產生中…" : "開啟簽到 QR"}
       </button>
     </form>}
 
@@ -82,9 +90,9 @@ export function CheckinTokenControls({
         <span className="label">新 token 有效分鐘</span>
         <input className="input" type="number" name="duration" min={5} max={240} defaultValue={30} required />
       </label>
-      <span className="hint">旋轉後舊 token 立即失效。</span>
+      <span className="hint">旋轉後舊 token 與舊 QR 立即失效。</span>
       <button className="button button-secondary" type="submit" disabled={rotatePending}>
-        {rotatePending ? "旋轉中…" : "旋轉 token"}
+        {rotatePending ? "旋轉中…" : "旋轉簽到 QR"}
       </button>
     </form>}
 
