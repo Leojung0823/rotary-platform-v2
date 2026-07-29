@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import styles from "./checkin-scanner.module.css";
 
 export function CheckinQrCode({ token }: { token: string }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
@@ -25,16 +26,15 @@ export function CheckinQrCode({ token }: { token: string }) {
 
     return () => {
       active = false;
-      setDataUrl(null);
     };
   }, [token]);
 
   if (failed) {
-    return <div className="qr-placeholder" role="alert">QR 圖片產生失敗，仍可使用右側一次性 token。</div>;
+    return <div className={styles.qrPlaceholder} role="alert">QR 圖片產生失敗，仍可使用右側一次性 token。</div>;
   }
 
   if (!dataUrl) {
-    return <div className="qr-placeholder" role="status">正在產生 QR…</div>;
+    return <div className={styles.qrPlaceholder} role="status">正在產生 QR…</div>;
   }
 
   return <img src={dataUrl} alt="活動簽到 QR code" draggable={false} />;
