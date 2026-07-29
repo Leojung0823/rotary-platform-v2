@@ -21,11 +21,15 @@ export async function requireIdentity(): Promise<Identity> {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/login");
 
-  const { data, error } = await supabase.rpc("resolve_current_app_account");
+  const [{ data, error }, access] = await Promise.all([
+    supabase.rpc("resolve_current_app_account"),
+    supabase.rpc("current_account_has_active_access"),
+  ]);
   if (error || !data) redirect("/invite/accept");
 
   const identity = data as Identity;
-  if (identity.status !== "active") redirect("/access-denied");
+  if (identity.status !== "active") redirect("/access-denied?reason=account_inactive");
+  if (access.error || access.data !== true) redirect("/access-denied?reason=no_active_access");
   return identity;
 }
 
