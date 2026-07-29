@@ -41,7 +41,7 @@ function TokenResult({ state }: { state: CheckinTokenActionState }) {
   return <div className="notice notice-success form-stack" role="status">
     <div>
       <strong>{state.operation === "opened" ? "簽到 QR 已開啟" : "簽到 QR 已旋轉"}</strong>
-      <p>原始 token 與 QR 只顯示這一次，到期時間：{expiresAt}。旋轉後舊 QR 已失效並從畫面移除。</p>
+      <p>原始 token 只顯示這一次，QR 也只存在目前頁面；到期時間：{expiresAt}。旋轉後舊 QR 已失效並從畫面移除。</p>
     </div>
     <div className="token-panel">
       <CheckinQrCode token={state.token} />
