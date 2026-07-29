@@ -1,0 +1,14 @@
+.footer {
+  margin-top: auto;
+  padding-bottom: calc(56px + env(safe-area-inset-bottom));
+}
+
+.footer form {
+  margin-top: 6px;
+}
+
+@media (max-width: 840px) {
+  .footer {
+    display: none;
+  }
+}

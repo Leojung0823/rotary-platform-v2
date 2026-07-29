@@ -3,7 +3,7 @@ import { Badge, Card, EmptyState, Notice } from "@/components/ui";
 import { hasPlatformAccess, requireIdentity } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-type Club = {
+ type Club = {
   club_id: string;
   club_code: string;
   club_name: string;
@@ -25,12 +25,29 @@ export default async function DashboardPage() {
           <h1>{identity.display_name}，您好</h1>
           <p>您目前可管理 {error ? "—" : clubs.length} 個扶輪社。</p>
         </div>
-        {hasPlatformAccess(identity) && (
-          <Link className="button" href="/platform/clubs/new">
-            建立扶輪社
+        <div className="form-actions">
+          <Link className="button button-secondary" href="/features">
+            功能總覽
           </Link>
-        )}
+          {hasPlatformAccess(identity) && (
+            <Link className="button" href="/platform/clubs/new">
+              建立扶輪社
+            </Link>
+          )}
+        </div>
       </header>
+
+      <Card>
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">下一階段</p>
+            <h2>V0.7 社員系統與可上線前端骨架</h2>
+          </div>
+          <Badge tone="warning">開發中</Badge>
+        </div>
+        <p>優先完善社員名冊、個人資料、邀請與登入流程，再建立 Hosted Supabase／HTTPS 測試站。其他預定功能已先放入功能地圖並清楚標示開發狀態。</p>
+        <Link className="card-link" href="/features">查看完整功能地圖 →</Link>
+      </Card>
 
       {error ? (
         <Notice tone="error">目前無法讀取可管理的扶輪社，請稍後重新整理。</Notice>
