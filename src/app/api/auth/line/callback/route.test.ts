@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   createUser: vi.fn(),
   deleteUser: vi.fn(),
   generateLink: vi.fn(),
+  getUser: vi.fn(),
   verifyOtp: vi.fn(),
   sessionRpc: vi.fn(),
   signOut: vi.fn(),
@@ -19,6 +20,8 @@ let cookieValues: Record<string, string>;
 let stateCalls: number;
 let identityResult: { data: Record<string, unknown> | null; error: unknown };
 let accountResult: { data: Record<string, unknown> | null; error: unknown };
+let invitationKind: "member_join" | "line_rebind";
+let accountHasAccess: boolean;
 
 function query(result: unknown) {
   const chain = {
@@ -57,7 +60,7 @@ vi.mock("@/lib/line/provider", () => ({
 
 vi.mock("@/lib/line/security", () => ({
   clearLineOAuthCookies: (store: { set: typeof mocks.cookieSet }) => {
-    for (const name of ["line_oauth_state", "line_oauth_nonce", "line_invitation", "line_return_to"]) {
+    for (const name of ["line_oauth_state", "line_oauth_nonce", "line_invitation", "line_return_to", "line_flow"]) {
       store.set(name, "", { maxAge: 0 });
     }
   },
@@ -83,7 +86,11 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
-    auth: { verifyOtp: mocks.verifyOtp, signOut: mocks.signOut },
+    auth: {
+      getUser: mocks.getUser,
+      verifyOtp: mocks.verifyOtp,
+      signOut: mocks.signOut,
+    },
     rpc: mocks.sessionRpc,
   }),
 }));
@@ -107,8 +114,11 @@ describe("GET /api/auth/line/callback", () => {
       line_oauth_nonce: "expected-nonce",
       line_invitation: "",
       line_return_to: "/dashboard",
+      line_flow: "login",
     };
     stateCalls = 0;
+    invitationKind = "member_join";
+    accountHasAccess = true;
     identityResult = { data: { app_account_id: "account-id" }, error: null };
     accountResult = {
       data: {
@@ -133,10 +143,20 @@ describe("GET /api/auth/line/callback", () => {
       data: { properties: { hashed_token: "hashed-magic-link-token" } },
       error: null,
     });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "auth-user-id" } } });
     mocks.verifyOtp.mockResolvedValue({ error: null });
-    mocks.adminRpc.mockResolvedValue({ data: {}, error: null });
     mocks.sessionRpc.mockResolvedValue({ data: "device-id", error: null });
     mocks.signOut.mockResolvedValue({ error: null });
+    mocks.adminRpc.mockImplementation(async (name: string) => {
+      if (name === "account_has_active_access") return { data: accountHasAccess, error: null };
+      if (name === "bind_line_identity_from_invitation_trusted") {
+        return { data: { invitation_kind: invitationKind, invitation_completed: invitationKind === "line_rebind" }, error: null };
+      }
+      if (name === "bind_line_identity_to_existing_account_trusted") {
+        return { data: { line_identity_id: "line-id" }, error: null };
+      }
+      return { data: {}, error: null };
+    });
 
     mocks.adminFrom.mockImplementation((table: string) => {
       if (table === "line_oauth_states") {
@@ -148,6 +168,8 @@ describe("GET /api/auth/line/callback", () => {
               nonce_hash: digest("expected-nonce"),
               invitation_token_hash: cookieValues.line_invitation ? digest(cookieValues.line_invitation) : null,
               return_path: cookieValues.line_return_to,
+              flow_kind: cookieValues.line_flow,
+              initiating_auth_user_id: cookieValues.line_flow === "bind" ? "auth-user-id" : null,
               expires_at: new Date(Date.now() + 300_000).toISOString(),
               consumed_at: null,
             },
@@ -162,6 +184,7 @@ describe("GET /api/auth/line/callback", () => {
         return query({
           data: {
             person_id: "person-id",
+            invitation_kind: invitationKind,
             invitation_status: "sent",
             expires_at: new Date(Date.now() + 300_000).toISOString(),
           },
@@ -177,12 +200,19 @@ describe("GET /api/auth/line/callback", () => {
     vi.restoreAllMocks();
   });
 
-  it("logs in an existing active LINE identity without creating a new Auth user", async () => {
+  it("logs in an existing active LINE identity with active platform access", async () => {
     const response = await GET(callback("state=expected-state&code=signed-code"));
     expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard");
+    expect(mocks.adminRpc).toHaveBeenCalledWith("account_has_active_access", { p_app_account_id: "account-id" });
     expect(mocks.createUser).not.toHaveBeenCalled();
-    expect(mocks.adminRpc).not.toHaveBeenCalled();
     expect(mocks.verifyOtp).toHaveBeenCalled();
+  });
+
+  it("rejects an existing LINE identity after all active access is removed", async () => {
+    accountHasAccess = false;
+    const response = await GET(callback("state=expected-state&code=signed-code"));
+    expect(response.headers.get("location")).toContain("line_login_failed");
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
   });
 
   it("rejects an unknown LINE identity without creating an account", async () => {
@@ -193,9 +223,10 @@ describe("GET /api/auth/line/callback", () => {
     expect(mocks.verifyOtp).not.toHaveBeenCalled();
   });
 
-  it("completes trusted invitation binding before establishing the session", async () => {
+  it("completes trusted member invitation binding before establishing the session", async () => {
     cookieValues.line_invitation = "a".repeat(64);
     cookieValues.line_return_to = "/join";
+    cookieValues.line_flow = "invitation";
     accountResult = { data: null, error: null };
     const response = await GET(callback("state=expected-state&code=signed-code"));
 
@@ -208,11 +239,47 @@ describe("GET /api/auth/line/callback", () => {
     expect(response.headers.get("location")).toContain("/join?token=");
   });
 
-  it("deletes a newly created Auth user when trusted binding fails", async () => {
+  it("completes a rebind invitation without returning to the member join form", async () => {
+    invitationKind = "line_rebind";
     cookieValues.line_invitation = "b".repeat(64);
     cookieValues.line_return_to = "/join";
+    cookieValues.line_flow = "invitation";
+    const response = await GET(callback("state=expected-state&code=signed-code"));
+    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("http://localhost:3000/me?success=line_rebound");
+  });
+
+  it("binds LINE to the currently authenticated account without replacing its session", async () => {
+    cookieValues.line_flow = "bind";
+    cookieValues.line_return_to = "/me";
+    const response = await GET(callback("state=expected-state&code=signed-code"));
+    expect(mocks.adminRpc).toHaveBeenCalledWith("bind_line_identity_to_existing_account_trusted", expect.objectContaining({
+      p_auth_user_id: "auth-user-id",
+      p_provider_subject: "Utest12345678",
+    }));
+    expect(mocks.generateLink).not.toHaveBeenCalled();
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("http://localhost:3000/me?success=line_bound");
+  });
+
+  it("rejects a bind callback after the initiating session changes", async () => {
+    cookieValues.line_flow = "bind";
+    cookieValues.line_return_to = "/me";
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "different-user" } } });
+    const response = await GET(callback("state=expected-state&code=signed-code"));
+    expect(response.headers.get("location")).toContain("line_login_failed");
+    expect(mocks.exchangeLineCode).not.toHaveBeenCalled();
+  });
+
+  it("deletes a newly created Auth user when trusted invitation binding fails", async () => {
+    cookieValues.line_invitation = "c".repeat(64);
+    cookieValues.line_return_to = "/join";
+    cookieValues.line_flow = "invitation";
     accountResult = { data: null, error: null };
-    mocks.adminRpc.mockResolvedValue({ data: null, error: { message: "binding-failed" } });
+    mocks.adminRpc.mockImplementation(async (name: string) => {
+      if (name === "bind_line_identity_from_invitation_trusted") return { data: null, error: { message: "binding-failed" } };
+      return { data: true, error: null };
+    });
 
     await GET(callback("state=expected-state&code=signed-code"));
     expect(mocks.deleteUser).toHaveBeenCalledWith("new-auth-user-id");
