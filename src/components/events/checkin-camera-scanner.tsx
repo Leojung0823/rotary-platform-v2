@@ -18,11 +18,13 @@ export function CheckinCameraScanner() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanTimerRef = useRef<number | null>(null);
+  const cameraRequestRef = useRef(0);
   const activeRef = useRef(false);
   const [status, setStatus] = useState<ScannerStatus>("idle");
   const [isPending, startTransition] = useTransition();
 
   const stopCamera = useCallback(() => {
+    cameraRequestRef.current += 1;
     activeRef.current = false;
     if (scanTimerRef.current !== null) {
       window.clearTimeout(scanTimerRef.current);
@@ -35,7 +37,7 @@ export function CheckinCameraScanner() {
 
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState !== "visible" && activeRef.current) {
+      if (document.visibilityState !== "visible") {
         stopCamera();
         setStatus("idle");
       }
@@ -59,6 +61,7 @@ export function CheckinCameraScanner() {
 
   const startCamera = useCallback(async () => {
     stopCamera();
+    const requestId = cameraRequestRef.current;
     const Detector = browserBarcodeDetector();
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !Detector) {
       setStatus("unsupported");
@@ -75,6 +78,11 @@ export function CheckinCameraScanner() {
           height: { ideal: 720 },
         },
       });
+      if (requestId !== cameraRequestRef.current || document.visibilityState !== "visible") {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       const video = videoRef.current;
       if (!video) {
         stream.getTracks().forEach((track) => track.stop());
@@ -86,6 +94,10 @@ export function CheckinCameraScanner() {
       streamRef.current = stream;
       video.srcObject = stream;
       await video.play();
+      if (requestId !== cameraRequestRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       activeRef.current = true;
       setStatus("scanning");
 
@@ -95,6 +107,7 @@ export function CheckinCameraScanner() {
         if (currentVideo && currentVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
           try {
             const results = await detector.detect(currentVideo);
+            if (!activeRef.current || requestId !== cameraRequestRef.current) return;
             for (const result of results) {
               if (result.format && result.format !== "qr_code") continue;
               const token = normalizeScannedCheckinToken(result.rawValue);
@@ -104,18 +117,20 @@ export function CheckinCameraScanner() {
               }
             }
           } catch {
+            if (!activeRef.current || requestId !== cameraRequestRef.current) return;
             stopCamera();
             setStatus("error");
             return;
           }
         }
-        if (activeRef.current) {
+        if (activeRef.current && requestId === cameraRequestRef.current) {
           scanTimerRef.current = window.setTimeout(() => void scan(), 250);
         }
       };
 
       void scan();
     } catch (error) {
+      if (requestId !== cameraRequestRef.current) return;
       stopCamera();
       const name = error instanceof DOMException ? error.name : "";
       setStatus(name === "NotAllowedError" || name === "SecurityError" ? "denied" : "error");
