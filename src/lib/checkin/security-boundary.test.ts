@@ -19,6 +19,11 @@ describe("event check-in application boundary", () => {
     expect(tokenControls).toContain("原始 token 只顯示這一次");
   });
 
+  it("removes the invalidated token from the page after a successful rotation", () => {
+    expect(tokenControls).toContain('rotateState.status !== "success" && <TokenResult state={openState} />');
+    expect(tokenControls).toContain("<TokenResult state={rotateState} />");
+  });
+
   it("uses controlled RPCs rather than direct attendance table CRUD", () => {
     for (const rpc of [
       "open_event_checkin",
