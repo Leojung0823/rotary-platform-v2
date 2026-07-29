@@ -7,7 +7,7 @@ create table public.checkin_test_state (
   key text primary key,
   value text not null
 );
-grant select on public.checkin_test_state to authenticated;
+grant select, insert on public.checkin_test_state to authenticated;
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -17,15 +17,17 @@ insert into auth.users (
   ('00000000-0000-0000-0000-000000000000', '16000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'checkin-member-a@example.test', '', now(), '{}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '16000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'checkin-member-b@example.test', '', now(), '{}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '16000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'checkin-outsider@example.test', '', now(), '{}', '{}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '16000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'checkin-suspended@example.test', '', now(), '{}', '{}', now(), now());
+  ('00000000-0000-0000-0000-000000000000', '16000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'checkin-suspended-account@example.test', '', now(), '{}', '{}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '16000000-0000-0000-0000-000000000006', 'authenticated', 'authenticated', 'checkin-suspended-membership@example.test', '', now(), '{}', '{}', now(), now());
 
 insert into public.people (id, canonical_name, primary_email) values
   ('26000000-0000-0000-0000-000000000001', '簽到管理者', 'checkin-manager@example.test'),
   ('26000000-0000-0000-0000-000000000002', '簽到社員甲', 'checkin-member-a@example.test'),
   ('26000000-0000-0000-0000-000000000003', '簽到社員乙', 'checkin-member-b@example.test'),
   ('26000000-0000-0000-0000-000000000004', '外社簽到社員', 'checkin-outsider@example.test'),
-  ('26000000-0000-0000-0000-000000000005', '停權簽到社員', 'checkin-suspended@example.test'),
-  ('26000000-0000-0000-0000-000000000006', '未綁定帳號社員', null);
+  ('26000000-0000-0000-0000-000000000005', '停權帳號社員', 'checkin-suspended-account@example.test'),
+  ('26000000-0000-0000-0000-000000000006', '未綁定帳號社員', null),
+  ('26000000-0000-0000-0000-000000000007', '停權社籍社員', 'checkin-suspended-membership@example.test');
 
 insert into public.app_accounts (
   id, auth_user_id, person_id, login_email, account_display_name, account_status
@@ -34,11 +36,13 @@ insert into public.app_accounts (
   ('36000000-0000-0000-0000-000000000002', '16000000-0000-0000-0000-000000000002', '26000000-0000-0000-0000-000000000002', 'checkin-member-a@example.test', '簽到社員甲', 'active'),
   ('36000000-0000-0000-0000-000000000003', '16000000-0000-0000-0000-000000000003', '26000000-0000-0000-0000-000000000003', 'checkin-member-b@example.test', '簽到社員乙', 'active'),
   ('36000000-0000-0000-0000-000000000004', '16000000-0000-0000-0000-000000000004', '26000000-0000-0000-0000-000000000004', 'checkin-outsider@example.test', '外社簽到社員', 'active'),
-  ('36000000-0000-0000-0000-000000000005', '16000000-0000-0000-0000-000000000005', '26000000-0000-0000-0000-000000000005', 'checkin-suspended@example.test', '停權簽到社員', 'suspended');
+  ('36000000-0000-0000-0000-000000000005', '16000000-0000-0000-0000-000000000005', '26000000-0000-0000-0000-000000000005', 'checkin-suspended-account@example.test', '停權帳號社員', 'suspended'),
+  ('36000000-0000-0000-0000-000000000006', '16000000-0000-0000-0000-000000000006', '26000000-0000-0000-0000-000000000007', 'checkin-suspended-membership@example.test', '停權社籍社員', 'active');
 
-insert into public.clubs (id, club_code, club_name, club_status, activated_at) values
-  ('56000000-0000-4000-8000-000000000001', 'CHECKIN-A', '簽到測試甲社', 'active', now()),
-  ('56000000-0000-4000-8000-000000000002', 'CHECKIN-B', '簽到測試乙社', 'active', now());
+insert into public.clubs (id, club_code, club_name, club_status, activated_at, suspended_at) values
+  ('56000000-0000-4000-8000-000000000001', 'CHECKIN-A', '簽到測試甲社', 'active', now(), null),
+  ('56000000-0000-4000-8000-000000000002', 'CHECKIN-B', '簽到測試乙社', 'active', now(), null),
+  ('56000000-0000-4000-8000-000000000003', 'CHECKIN-C', '停權簽到測試社', 'suspended', now() - interval '1 day', now());
 
 insert into public.club_memberships (id, club_id, person_id, membership_status) values
   ('66000000-0000-4000-8000-000000000001', '56000000-0000-4000-8000-000000000001', '26000000-0000-0000-0000-000000000001', 'active'),
@@ -46,32 +50,41 @@ insert into public.club_memberships (id, club_id, person_id, membership_status) 
   ('66000000-0000-4000-8000-000000000003', '56000000-0000-4000-8000-000000000001', '26000000-0000-0000-0000-000000000003', 'active'),
   ('66000000-0000-4000-8000-000000000004', '56000000-0000-4000-8000-000000000002', '26000000-0000-0000-0000-000000000004', 'active'),
   ('66000000-0000-4000-8000-000000000005', '56000000-0000-4000-8000-000000000001', '26000000-0000-0000-0000-000000000005', 'active'),
-  ('66000000-0000-4000-8000-000000000006', '56000000-0000-4000-8000-000000000001', '26000000-0000-0000-0000-000000000006', 'active');
+  ('66000000-0000-4000-8000-000000000006', '56000000-0000-4000-8000-000000000001', '26000000-0000-0000-0000-000000000006', 'active'),
+  ('66000000-0000-4000-8000-000000000007', '56000000-0000-4000-8000-000000000001', '26000000-0000-0000-0000-000000000007', 'suspended'),
+  ('66000000-0000-4000-8000-000000000008', '56000000-0000-4000-8000-000000000003', '26000000-0000-0000-0000-000000000001', 'active');
 
 insert into public.club_role_assignments (
   id, club_id, app_account_id, role_key, assignment_status, granted_by_app_account_id
-) values (
-  '76000000-0000-4000-8000-000000000001',
-  '56000000-0000-4000-8000-000000000001',
-  '36000000-0000-0000-0000-000000000001',
-  'president', 'active', '36000000-0000-0000-0000-000000000001'
-);
+) values
+  ('76000000-0000-4000-8000-000000000001', '56000000-0000-4000-8000-000000000001', '36000000-0000-0000-0000-000000000001', 'president', 'active', '36000000-0000-0000-0000-000000000001'),
+  ('76000000-0000-4000-8000-000000000002', '56000000-0000-4000-8000-000000000003', '36000000-0000-0000-0000-000000000001', 'president', 'active', '36000000-0000-0000-0000-000000000001');
 
 insert into public.club_events (
   id, club_id, event_type, title, starts_at, ends_at, registration_deadline,
   counts_for_attendance, event_status, created_by_app_account_id,
   updated_by_app_account_id, published_at
-) values (
-  '86000000-0000-4000-8000-000000000001',
-  '56000000-0000-4000-8000-000000000001',
-  'regular_meeting', '安全簽到測試例會',
-  now() + interval '1 hour', now() + interval '3 hours', now() + interval '30 minutes',
-  true, 'published',
-  '36000000-0000-0000-0000-000000000001',
-  '36000000-0000-0000-0000-000000000001', now()
-);
+) values
+  (
+    '86000000-0000-4000-8000-000000000001',
+    '56000000-0000-4000-8000-000000000001',
+    'regular_meeting', '安全簽到測試例會',
+    now() + interval '1 hour', now() + interval '3 hours', now() + interval '30 minutes',
+    true, 'published',
+    '36000000-0000-0000-0000-000000000001',
+    '36000000-0000-0000-0000-000000000001', now()
+  ),
+  (
+    '86000000-0000-4000-8000-000000000002',
+    '56000000-0000-4000-8000-000000000003',
+    'regular_meeting', '停權社簽到測試例會',
+    now() + interval '1 hour', now() + interval '3 hours', now() + interval '30 minutes',
+    true, 'published',
+    '36000000-0000-0000-0000-000000000001',
+    '36000000-0000-0000-0000-000000000001', now()
+  );
 
--- Manager opens a short-lived session. Only the raw token returned by the RPC is stored in test state.
+-- Manager opens a short-lived session; a suspended club remains unusable even with a retained role.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000001', true);
 do $$
@@ -96,10 +109,20 @@ begin
     raise exception 'second active check-in session was opened';
   exception when unique_violation then null;
   end;
+
+  begin
+    perform public.open_event_checkin(
+      '56000000-0000-4000-8000-000000000003',
+      '86000000-0000-4000-8000-000000000002',
+      30
+    );
+    raise exception 'suspended club opened a check-in session';
+  exception when insufficient_privilege then null;
+  end;
 end $$;
 reset role;
 
--- Database stores only the hash, never the raw token.
+-- Database stores only the SHA-256 hash and relational tenant keys fail closed.
 do $$
 declare raw_token text; stored_hash text;
 begin
@@ -109,6 +132,20 @@ begin
   if stored_hash = raw_token or length(stored_hash) <> 64 then
     raise exception 'raw token was stored or token hash is malformed';
   end if;
+
+  begin
+    insert into public.event_attendances (
+      club_id, event_id, membership_id, checkin_method,
+      checked_in_by_app_account_id, checkin_note
+    ) values (
+      '56000000-0000-4000-8000-000000000002',
+      '86000000-0000-4000-8000-000000000001',
+      '66000000-0000-4000-8000-000000000004',
+      'manual', '36000000-0000-0000-0000-000000000001', '跨社 fixture'
+    );
+    raise exception 'cross-tenant attendance row was inserted';
+  exception when foreign_key_violation then null;
+  end;
 end $$;
 
 -- Ordinary member cannot manage sessions, can self check in, and duplicate scans are idempotent.
@@ -149,7 +186,7 @@ begin
 end $$;
 reset role;
 
--- Cross-club and suspended accounts cannot consume a valid token.
+-- Cross-club, suspended-account, and suspended-membership callers cannot consume a valid token.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000004', true);
 do $$
@@ -178,7 +215,21 @@ begin
 end $$;
 reset role;
 
--- Rotation invalidates the old token immediately and returns a new one only once.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000006', true);
+do $$
+declare raw_token text;
+begin
+  select value into raw_token from public.checkin_test_state where key = 'old_token';
+  begin
+    perform public.check_in_to_event(raw_token);
+    raise exception 'suspended membership checked in';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+
+-- Rotation invalidates the old token immediately and returns a new token only once.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000001', true);
 do $$
@@ -190,35 +241,72 @@ begin
     45
   );
   insert into public.checkin_test_state (key, value) values
-    ('new_token', rotated->>'token'),
-    ('new_session_id', rotated->>'session_id');
+    ('rotated_token', rotated->>'token'),
+    ('rotated_session_id', rotated->>'session_id');
 end $$;
 reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000003', true);
 do $$
-declare old_token text; new_token text; checked jsonb;
+declare old_token text; rotated_token text; checked jsonb;
 begin
   select value into old_token from public.checkin_test_state where key = 'old_token';
-  select value into new_token from public.checkin_test_state where key = 'new_token';
+  select value into rotated_token from public.checkin_test_state where key = 'rotated_token';
   begin
     perform public.check_in_to_event(old_token);
     raise exception 'rotated token remained valid';
   exception when invalid_parameter_value then null;
   end;
-  checked := public.check_in_to_event(new_token);
+  checked := public.check_in_to_event(rotated_token);
   if checked->>'event_id' <> '86000000-0000-4000-8000-000000000001' then
-    raise exception 'new token did not check in the intended event';
+    raise exception 'rotated token did not check in the intended event';
   end if;
 end $$;
 reset role;
 
--- Manager can manually check in an active member without an app account, cannot target another club, and can revoke without deleting history.
+-- Explicit close invalidates the rotated token, and a new session can be opened afterward.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000001', true);
 do $$
-declare manual_result jsonb; attendance_id uuid; original_time timestamptz;
+declare reopened jsonb;
+begin
+  perform public.close_event_checkin(
+    '56000000-0000-4000-8000-000000000001',
+    '86000000-0000-4000-8000-000000000001',
+    '測試結束簽到'
+  );
+
+  reopened := public.open_event_checkin(
+    '56000000-0000-4000-8000-000000000001',
+    '86000000-0000-4000-8000-000000000001',
+    30
+  );
+  insert into public.checkin_test_state (key, value) values
+    ('final_token', reopened->>'token'),
+    ('final_session_id', reopened->>'session_id');
+end $$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000002', true);
+do $$
+declare rotated_token text;
+begin
+  select value into rotated_token from public.checkin_test_state where key = 'rotated_token';
+  begin
+    perform public.check_in_to_event(rotated_token);
+    raise exception 'explicitly closed token remained valid';
+  exception when invalid_parameter_value then null;
+  end;
+end $$;
+reset role;
+
+-- Manager can manually check in an active member without an app account and revoke without deleting history.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000001', true);
+do $$
+declare manual_result jsonb; attendance_id uuid;
 begin
   manual_result := public.manual_check_in_event(
     '56000000-0000-4000-8000-000000000001',
@@ -227,7 +315,9 @@ begin
     '現場核對社員名冊'
   );
   attendance_id := (manual_result->>'attendance_id')::uuid;
-  select checked_in_at into original_time from public.event_attendances where id = attendance_id;
+  insert into public.checkin_test_state (key, value) values
+    ('manual_attendance_id', attendance_id::text),
+    ('manual_checked_in_at', manual_result->>'checked_in_at');
 
   begin
     perform public.manual_check_in_event(
@@ -246,6 +336,21 @@ begin
     '現場確認誤登'
   );
 
+  begin
+    delete from public.event_attendances where id = attendance_id;
+    raise exception 'authenticated role directly deleted attendance history';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+
+-- Revocation preserves the immutable original row and hard delete remains forbidden even to table owners.
+do $$
+declare attendance_id uuid; original_time timestamptz;
+begin
+  select value::uuid into attendance_id from public.checkin_test_state where key = 'manual_attendance_id';
+  select value::timestamptz into original_time from public.checkin_test_state where key = 'manual_checked_in_at';
+
   if not exists (
     select 1 from public.event_attendances
     where id = attendance_id
@@ -258,14 +363,21 @@ begin
   end if;
 
   begin
+    update public.event_attendances
+    set club_id = '56000000-0000-4000-8000-000000000002'
+    where id = attendance_id;
+    raise exception 'attendance tenant identity was mutable';
+  exception when check_violation then null;
+  end;
+
+  begin
     delete from public.event_attendances where id = attendance_id;
     raise exception 'attendance history was hard deleted';
   exception when insufficient_privilege then null;
   end;
 end $$;
-reset role;
 
--- Cancelling the event automatically closes the active session and keeps all attendance rows.
+-- Cancelling the event closes the final active session and keeps all attendance rows.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '16000000-0000-0000-0000-000000000001', true);
 do $$
@@ -279,6 +391,7 @@ end $$;
 reset role;
 
 do $$
+declare required_action text;
 begin
   if exists (
     select 1 from public.event_checkin_sessions
@@ -287,26 +400,50 @@ begin
   ) then
     raise exception 'terminal event retained an active check-in session';
   end if;
+
   if not exists (
     select 1 from public.event_checkin_sessions
-    where id = (select value::uuid from public.checkin_test_state where key = 'new_session_id')
+    where id = (select value::uuid from public.checkin_test_state where key = 'old_session_id')
+      and session_status = 'closed'
+      and close_reason = 'rotated'
+  ) then
+    raise exception 'rotation did not close the previous session';
+  end if;
+
+  if not exists (
+    select 1 from public.event_checkin_sessions
+    where id = (select value::uuid from public.checkin_test_state where key = 'rotated_session_id')
+      and session_status = 'closed'
+      and close_reason = '測試結束簽到'
+  ) then
+    raise exception 'explicit close did not preserve its reason';
+  end if;
+
+  if not exists (
+    select 1 from public.event_checkin_sessions
+    where id = (select value::uuid from public.checkin_test_state where key = 'final_session_id')
       and session_status = 'closed'
       and close_reason = 'event_terminal'
   ) then
-    raise exception 'event cancellation did not close the session with terminal reason';
+    raise exception 'event cancellation did not close the final session';
   end if;
+
   if (select count(*) from public.event_attendances where event_id = '86000000-0000-4000-8000-000000000001') < 3 then
     raise exception 'event cancellation removed attendance history';
   end if;
-  if not exists (
-    select 1 from public.audit_logs
-    where action_key in (
-      'attendance.session_opened', 'attendance.session_rotated',
-      'attendance.self_checked_in', 'attendance.manual_checked_in', 'attendance.revoked'
-    )
-  ) then
-    raise exception 'attendance audit records were not written';
-  end if;
+
+  foreach required_action in array array[
+    'attendance.session_opened',
+    'attendance.session_rotated',
+    'attendance.session_closed',
+    'attendance.self_checked_in',
+    'attendance.manual_checked_in',
+    'attendance.revoked'
+  ] loop
+    if not exists (select 1 from public.audit_logs where action_key = required_action) then
+      raise exception 'required attendance audit record is missing: %', required_action;
+    end if;
+  end loop;
 end $$;
 
 rollback;
