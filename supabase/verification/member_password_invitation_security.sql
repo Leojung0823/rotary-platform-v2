@@ -14,9 +14,8 @@ insert into public.people (id, canonical_name, primary_email, primary_phone, bir
   ('25000000-0000-4000-8000-000000000002', '密碼受邀社員', 'password-member@example.test', '0911222333', '1985-06-01'),
   ('25000000-0000-4000-8000-000000000003', '錯誤信箱受邀社員', 'expected-member@example.test', '0922333444', '1988-08-08');
 
-insert into public.app_accounts (
-  id, auth_user_id, person_id, login_email, account_display_name
-) values (
+insert into public.app_accounts (id, auth_user_id, person_id, login_email, account_display_name)
+values (
   '35000000-0000-4000-8000-000000000001',
   '15000000-0000-4000-8000-000000000001',
   '25000000-0000-4000-8000-000000000001',
@@ -27,9 +26,8 @@ insert into public.app_accounts (
 insert into public.platform_roles (app_account_id, role_key)
 values ('35000000-0000-4000-8000-000000000001', 'superadmin');
 
-insert into public.clubs (
-  id, club_code, club_name, club_status, created_by_app_account_id, activated_at
-) values (
+insert into public.clubs (id, club_code, club_name, club_status, created_by_app_account_id, activated_at)
+values (
   '45000000-0000-4000-8000-000000000001',
   'PASSWORD-A',
   '密碼邀請測試扶輪社',
@@ -50,27 +48,18 @@ insert into public.member_invitations (
   idempotency_key, sent_at
 ) values
   (
-    '65000000-0000-4000-8000-000000000002',
-    '45000000-0000-4000-8000-000000000001',
-    '25000000-0000-4000-8000-000000000002',
-    '55000000-0000-4000-8000-000000000002',
-    'member_join', 'email',
-    encode(extensions.digest(repeat('a', 64), 'sha256'), 'hex'),
-    'aaaaaaaa', 'sent', '35000000-0000-4000-8000-000000000001',
-    'password-invite-matching', now()
+    '65000000-0000-4000-8000-000000000002', '45000000-0000-4000-8000-000000000001',
+    '25000000-0000-4000-8000-000000000002', '55000000-0000-4000-8000-000000000002',
+    'member_join', 'email', encode(extensions.digest(repeat('a', 64), 'sha256'), 'hex'),
+    'aaaaaaaa', 'sent', '35000000-0000-4000-8000-000000000001', 'password-invite-matching', now()
   ),
   (
-    '65000000-0000-4000-8000-000000000003',
-    '45000000-0000-4000-8000-000000000001',
-    '25000000-0000-4000-8000-000000000003',
-    '55000000-0000-4000-8000-000000000003',
-    'member_join', 'email',
-    encode(extensions.digest(repeat('b', 64), 'sha256'), 'hex'),
-    'bbbbbbbb', 'sent', '35000000-0000-4000-8000-000000000001',
-    'password-invite-mismatch', now()
+    '65000000-0000-4000-8000-000000000003', '45000000-0000-4000-8000-000000000001',
+    '25000000-0000-4000-8000-000000000003', '55000000-0000-4000-8000-000000000003',
+    'member_join', 'email', encode(extensions.digest(repeat('b', 64), 'sha256'), 'hex'),
+    'bbbbbbbb', 'sent', '35000000-0000-4000-8000-000000000001', 'password-invite-mismatch', now()
   );
 
--- Public preview discloses only that an Email path exists, not the address itself.
 set local role anon;
 do $$
 declare preview jsonb;
@@ -95,7 +84,6 @@ end;
 $$;
 reset role;
 
--- A browser session cannot invoke the trusted binder directly.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '15000000-0000-4000-8000-000000000002', true);
 do $$
@@ -112,46 +100,35 @@ end;
 $$;
 reset role;
 
--- Trusted server binds only the Auth user whose verified Email matches the invited person.
 set local role service_role;
 select public.bind_password_account_from_invitation_trusted(
   repeat('a', 64), '15000000-0000-4000-8000-000000000002'
 );
 reset role;
 
--- The newly bound account can inspect and accept its invitation without a LINE identity.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '15000000-0000-4000-8000-000000000002', true);
 do $$
-declare
-  preview jsonb;
-  completed jsonb;
-  replay jsonb;
+declare preview jsonb; completed jsonb; replay jsonb;
 begin
   preview := public.get_member_invitation_preview(repeat('a', 64));
   if preview->>'email' <> 'password-member@example.test'
      or preview->>'phone' <> '0911222333'
      or preview->>'birth_date' <> '1985-06-01' then
-    raise exception 'Bound password account could not inspect its own invitation profile.';
+    raise exception 'Bound password account could not inspect its invitation profile.';
   end if;
 
   completed := public.complete_member_invitation(
-    repeat('a', 64),
-    '密碼受邀社員',
-    '0911-222-333',
-    'PASSWORD-MEMBER@example.test',
-    '1985-06-01'
+    repeat('a', 64), '密碼受邀社員', '0911-222-333',
+    'PASSWORD-MEMBER@example.test', '1985-06-01'
   );
   if (completed->>'idempotent')::boolean then
     raise exception 'First password invitation completion was idempotent.';
   end if;
 
   replay := public.complete_member_invitation(
-    repeat('a', 64),
-    '密碼受邀社員',
-    '0911222333',
-    'password-member@example.test',
-    '1985-06-01'
+    repeat('a', 64), '密碼受邀社員', '0911222333',
+    'password-member@example.test', '1985-06-01'
   );
   if not (replay->>'idempotent')::boolean then
     raise exception 'Accepted password invitation did not replay idempotently.';
@@ -163,18 +140,16 @@ reset role;
 do $$
 begin
   if not exists (
-    select 1
-    from public.app_accounts
+    select 1 from public.app_accounts
     where auth_user_id = '15000000-0000-4000-8000-000000000002'
       and person_id = '25000000-0000-4000-8000-000000000002'
       and account_status = 'active'
   ) then
-    raise exception 'Password invitation did not create the immutable app account link.';
+    raise exception 'Password invitation did not create the app account link.';
   end if;
 
   if not exists (
-    select 1
-    from public.club_memberships
+    select 1 from public.club_memberships
     where id = '55000000-0000-4000-8000-000000000002'
       and membership_status = 'active'
   ) then
@@ -182,8 +157,7 @@ begin
   end if;
 
   if not exists (
-    select 1
-    from public.member_invitations
+    select 1 from public.member_invitations
     where id = '65000000-0000-4000-8000-000000000002'
       and invitation_status = 'accepted'
   ) then
@@ -191,8 +165,7 @@ begin
   end if;
 
   if not exists (
-    select 1
-    from public.audit_logs
+    select 1 from public.audit_logs
     where action_key = 'password_identity.bound'
       and actor_app_account_id = (
         select id from public.app_accounts
@@ -203,8 +176,7 @@ begin
   end if;
 
   if not exists (
-    select 1
-    from public.audit_logs
+    select 1 from public.audit_logs
     where action_key = 'member_invitation.accepted'
       and metadata->>'auth_method' = 'password'
       and subject_id = '55000000-0000-4000-8000-000000000002'
@@ -214,7 +186,6 @@ begin
 end;
 $$;
 
--- A verified Auth Email that does not match the invited person must fail closed.
 set local role service_role;
 do $$
 begin
@@ -229,9 +200,5 @@ begin
 end;
 $$;
 reset role;
-
-if false then
-  null;
-end if;
 
 rollback;
