@@ -1,11 +1,13 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { parseNewPassword, safeRedirectPath } from "@/lib/validation";
 
 const invitationTokenPattern = /^[0-9a-f]{64}$/i;
+const recoveryMarkerPattern = /^[0-9a-f]{48}$/i;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function siteUrl() {
@@ -56,6 +58,10 @@ export async function requestPasswordResetAction(formData: FormData) {
 }
 
 export async function resetPasswordAction(formData: FormData) {
+  const store = await cookies();
+  const recoveryMarker = store.get("rotary_recovery")?.value ?? "";
+  if (!recoveryMarkerPattern.test(recoveryMarker)) redirect("/login?error=recovery_invalid");
+
   let password: string;
   try {
     password = parseNewPassword(formData);
@@ -70,6 +76,7 @@ export async function resetPasswordAction(formData: FormData) {
   const { error } = await supabase.auth.updateUser({ password });
   if (error) redirect("/reset-password?error=invalid_password");
 
+  store.delete("rotary_recovery");
   await supabase.auth.signOut({ scope: "global" });
   redirect("/login?success=password_updated");
 }
