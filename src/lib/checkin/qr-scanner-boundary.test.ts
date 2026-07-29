@@ -41,13 +41,21 @@ describe("check-in camera boundary", () => {
     expect(scanner).toContain("getTracks().forEach((track) => track.stop())");
     expect(scanner).toContain('document.addEventListener("visibilitychange"');
     expect(scanner).toContain("stopCamera();\n    setStatus(\"submitting\")");
+    expect(scanner).toContain("cameraRequestRef.current += 1");
     expect(scanner).toContain("return () => {");
+  });
+
+  it("ignores camera or detector results that resolve after the user stopped", () => {
+    expect(scanner).toContain("const requestId = cameraRequestRef.current");
+    expect(scanner).toContain("requestId !== cameraRequestRef.current || document.visibilityState !== \"visible\"");
+    expect(scanner).toContain("if (!activeRef.current || requestId !== cameraRequestRef.current) return;");
+    expect(scanner).toContain("activeRef.current && requestId === cameraRequestRef.current");
   });
 
   it("submits through the existing server action without token URLs or browser persistence", () => {
     expect(scanner).toContain('formData.set("token", token)');
     expect(scanner).toContain("selfCheckinAction(formData)");
-    for (const forbidden of ["fetch(", "localStorage", "sessionStorage", "console.", 'params.set("token"', "location.href"] ) {
+    for (const forbidden of ["fetch(", "localStorage", "sessionStorage", "console.", 'params.set("token"', "location.href"]) {
       expect(scanner).not.toContain(forbidden);
     }
     expect(page).toContain("<CheckinCameraScanner />");
