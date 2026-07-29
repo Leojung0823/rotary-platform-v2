@@ -30,6 +30,13 @@ export async function loginWithPasswordAction(formData: FormData) {
   redirect(returnTo);
 }
 
+export async function signOutToLoginAction(formData: FormData) {
+  const returnTo = safeRedirectPath(String(formData.get("returnTo") ?? ""), "/dashboard");
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "local" });
+  redirect(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+}
+
 export async function requestPasswordResetAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
