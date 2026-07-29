@@ -34,3 +34,4 @@ run_sql supabase/verification/event_registration_tenant_integrity.sql
 run_sql supabase/verification/event_registration_lifecycle_hardening.sql
 run_sql supabase/verification/event_checkin_security.sql
 run_sql supabase/verification/member_directory_self_profile_security.sql
+run_sql supabase/verification/member_profile_validation.sql
