@@ -11,6 +11,7 @@ jobs:
         with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npm run check:migrations
+      - run: npm run check:db-verifications
       - run: npm run lint
       - name: Run TypeScript typecheck
         id: typecheck
