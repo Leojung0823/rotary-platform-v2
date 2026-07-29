@@ -16,6 +16,7 @@ export function AppShell({ identity, children }: { identity: Identity; children:
       <nav aria-label="主要導覽">
         <Link href="/dashboard">總覽</Link>
         <Link href="/features">功能總覽</Link>
+        <Link href="/directory">社員名冊</Link>
         <Link href="/events">活動</Link>
         <Link href="/board">留言板</Link>
         <Link href="/me">會員中心</Link>
@@ -27,6 +28,6 @@ export function AppShell({ identity, children }: { identity: Identity; children:
       </div>
     </aside>
     <main id="main" className="content">{children}</main>
-    <nav className="mobile-nav" aria-label="行動版導覽"><Link href="/dashboard">總覽</Link><Link href="/features">功能</Link><Link href="/events">活動</Link><Link href="/board">留言板</Link><Link href="/me">我的</Link>{isPlatform && <Link href="/platform/clubs">平台</Link>}</nav>
+    <nav className="mobile-nav" aria-label="行動版導覽"><Link href="/dashboard">總覽</Link><Link href="/features">功能</Link><Link href="/directory">名冊</Link><Link href="/events">活動</Link><Link href="/board">留言板</Link><Link href="/me">我的</Link>{isPlatform && <Link href="/platform/clubs">平台</Link>}</nav>
   </div>;
 }
