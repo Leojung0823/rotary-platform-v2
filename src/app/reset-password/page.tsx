@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { resetPasswordAction } from "@/app/auth-actions";
@@ -12,8 +13,10 @@ export default async function ResetPasswordPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const store = await cookies();
+  const recoveryMarker = store.get("rotary_recovery")?.value ?? "";
   const user = await getAuthenticatedUser();
-  if (!user) redirect("/login?error=recovery_invalid");
+  if (!user || !/^[0-9a-f]{48}$/i.test(recoveryMarker)) redirect("/login?error=recovery_invalid");
 
   const query = await searchParams;
   const message = safeMessage(query.error);
