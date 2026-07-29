@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -39,5 +40,15 @@ export async function GET(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
   if (!data.user) return failure(request);
 
-  return NextResponse.redirect(new URL(next, request.url));
+  const response = NextResponse.redirect(new URL(next, request.url));
+  if (next === "/reset-password") {
+    response.cookies.set("rotary_recovery", randomBytes(24).toString("hex"), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: request.nextUrl.protocol === "https:",
+      path: "/",
+      maxAge: 15 * 60,
+    });
+  }
+  return response;
 }
