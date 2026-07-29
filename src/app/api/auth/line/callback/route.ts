@@ -9,6 +9,7 @@ import {
   lineOAuthCookieOptions,
   safeLineRedirectPath,
   trustedLineRedirectUrl,
+  type LineOAuthFlow,
 } from "@/lib/line/security";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +26,11 @@ type Account = {
   account_status: string;
 };
 
+type InvitationBinding = {
+  invitation_kind?: string;
+  invitation_completed?: boolean;
+};
+
 function loginFailure() {
   try {
     return NextResponse.redirect(lineLoginFailureUrl());
@@ -34,6 +40,11 @@ function loginFailure() {
       headers: { "cache-control": "no-store" },
     });
   }
+}
+
+function parseFlow(value: string): LineOAuthFlow {
+  if (value === "login" || value === "invitation" || value === "bind") return value;
+  throw new Error("LINE Login flow is invalid.");
 }
 
 export async function GET(request: NextRequest) {
@@ -55,20 +66,24 @@ export async function GET(request: NextRequest) {
     const expectedState = store.get("line_oauth_state")?.value ?? "";
     const nonce = store.get("line_oauth_nonce")?.value ?? "";
     const invitationToken = store.get("line_invitation")?.value ?? "";
+    const flow = parseFlow(store.get("line_flow")?.value ?? "");
     const returnTo = safeLineRedirectPath(
       store.get("line_return_to")?.value,
-      invitationToken ? "/join" : "/dashboard",
+      flow === "invitation" ? "/join" : flow === "bind" ? "/me" : "/dashboard",
     );
 
     if (!state || state.length > 512 || !expectedState || expectedState.length > 512
       || !nonce || nonce.length > 512 || !constantTimeEqual(state, expectedState)) {
       throw new Error("LINE Login authorization response is invalid.");
     }
+    if ((flow === "invitation") !== Boolean(invitationToken)) {
+      throw new Error("LINE Login flow does not match invitation state.");
+    }
 
     const admin = createTrustedAdminClient();
     const stateResult = await admin
       .from("line_oauth_states")
-      .select("id, nonce_hash, invitation_token_hash, return_path, expires_at, consumed_at")
+      .select("id, nonce_hash, invitation_token_hash, return_path, flow_kind, initiating_auth_user_id, expires_at, consumed_at")
       .eq("state_hash", digest(state))
       .maybeSingle();
     const persistedState = stateResult.data;
@@ -77,8 +92,19 @@ export async function GET(request: NextRequest) {
       || new Date(persistedState.expires_at).getTime() <= now.getTime()
       || !constantTimeEqual(persistedState.nonce_hash, digest(nonce))
       || persistedState.invitation_token_hash !== (invitationToken ? digest(invitationToken) : null)
+      || persistedState.flow_kind !== flow
       || safeLineRedirectPath(persistedState.return_path, "") !== returnTo) {
       throw new Error("LINE Login authorization state is invalid.");
+    }
+
+    sessionClient = await createClient();
+    if (flow === "bind") {
+      const { data: currentUser } = await sessionClient.auth.getUser();
+      if (!currentUser.user || currentUser.user.id !== persistedState.initiating_auth_user_id) {
+        throw new Error("LINE binding session no longer matches its initiator.");
+      }
+    } else if (persistedState.initiating_auth_user_id) {
+      throw new Error("Unexpected LINE Login initiator state.");
     }
 
     const consumed = await admin
@@ -97,12 +123,28 @@ export async function GET(request: NextRequest) {
     }
 
     const profile = await exchangeLineCode(code, nonce);
-    let account: Account | null = null;
 
-    if (invitationToken) {
+    if (flow === "bind") {
+      const bound = await admin.rpc("bind_line_identity_to_existing_account_trusted", {
+        p_auth_user_id: persistedState.initiating_auth_user_id,
+        p_provider_subject: profile.subject,
+        p_display_name: profile.displayName,
+        p_picture_url: profile.pictureUrl ?? null,
+        p_email: profile.email ?? null,
+      });
+      if (bound.error) throw new Error("LINE Login existing-account binding failed.");
+
+      clearLineOAuthCookies(store);
+      return NextResponse.redirect(trustedLineRedirectUrl("/me?success=line_bound"));
+    }
+
+    let account: Account | null = null;
+    let invitationKind: string | null = null;
+
+    if (flow === "invitation") {
       const invitation = await admin
         .from("member_invitations")
-        .select("person_id, invitation_status, expires_at")
+        .select("person_id, invitation_kind, invitation_status, expires_at")
         .eq("token_hash", digest(invitationToken))
         .maybeSingle();
       if (invitation.error || !invitation.data
@@ -110,6 +152,7 @@ export async function GET(request: NextRequest) {
         || new Date(invitation.data.expires_at).getTime() <= Date.now()) {
         throw new Error("LINE Login invitation is invalid or expired.");
       }
+      invitationKind = invitation.data.invitation_kind;
 
       const accountResult = await admin
         .from("app_accounts")
@@ -120,6 +163,9 @@ export async function GET(request: NextRequest) {
       account = accountResult.data;
       if (account && account.account_status !== "active") {
         throw new Error("LINE Login account is not active.");
+      }
+      if (invitationKind === "line_rebind" && (!account?.auth_user_id || !account.login_email)) {
+        throw new Error("LINE Login rebind requires an existing account.");
       }
     } else {
       const identity = await admin
@@ -142,12 +188,21 @@ export async function GET(request: NextRequest) {
         throw new Error("LINE Login account is not active.");
       }
       account = accountResult.data;
+
+      const access = await admin.rpc("account_has_active_access", {
+        p_app_account_id: account.id,
+      });
+      if (access.error || access.data !== true) {
+        throw new Error("LINE Login account has no active access.");
+      }
     }
 
     let authUserId = account?.auth_user_id ?? null;
     let loginEmail = account?.login_email ?? null;
     if (!authUserId) {
-      if (!invitationToken) throw new Error("Valid invitation is required to create an Auth user.");
+      if (flow !== "invitation" || invitationKind !== "member_join") {
+        throw new Error("Valid member invitation is required to create an Auth user.");
+      }
       loginEmail = `line-${digest(profile.subject).slice(0, 24)}@identity.local`;
       const created = await admin.auth.admin.createUser({
         email: loginEmail,
@@ -162,7 +217,7 @@ export async function GET(request: NextRequest) {
     }
     if (!loginEmail) throw new Error("LINE Login account email is unavailable.");
 
-    if (invitationToken) {
+    if (flow === "invitation") {
       const bound = await admin.rpc("bind_line_identity_from_invitation_trusted", {
         p_token: invitationToken,
         p_auth_user_id: authUserId,
@@ -173,6 +228,8 @@ export async function GET(request: NextRequest) {
       });
       if (bound.error) throw new Error("LINE Login invitation binding failed.");
       trustedBindingCompleted = true;
+      const binding = bound.data as InvitationBinding | null;
+      invitationKind = binding?.invitation_kind ?? invitationKind;
     } else {
       const refreshed = await admin
         .from("line_identities")
@@ -192,7 +249,6 @@ export async function GET(request: NextRequest) {
       throw new Error("LINE Login session link creation failed.");
     }
 
-    sessionClient = await createClient();
     const verified = await sessionClient.auth.verifyOtp({
       type: "magiclink",
       token_hash: link.data.properties.hashed_token,
@@ -216,9 +272,11 @@ export async function GET(request: NextRequest) {
     });
 
     clearLineOAuthCookies(store);
-    const destination = invitationToken
-      ? `/join?token=${encodeURIComponent(invitationToken)}`
-      : returnTo;
+    const destination = invitationKind === "line_rebind"
+      ? "/me?success=line_rebound"
+      : flow === "invitation"
+        ? `/join?token=${encodeURIComponent(invitationToken)}`
+        : returnTo;
     return NextResponse.redirect(trustedLineRedirectUrl(destination));
   } catch {
     if (sessionCreated && sessionClient) {
