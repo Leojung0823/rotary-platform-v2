@@ -144,8 +144,9 @@ function EventHeader() {
     <div>
       <p className="eyebrow">社務互動</p>
       <h1>活動與報名</h1>
-      <p>社員查看同社活動並回覆參加狀態；活動資料、名額與權限都由資料庫依社別驗證。</p>
+      <p>社員查看同社活動並回覆參加狀態；活動資料、名額、簽到與權限都由資料庫依社別驗證。</p>
     </div>
+    <Link className="button" href="/events/checkin">社員簽到</Link>
   </header>;
 }
 
@@ -242,7 +243,7 @@ export default async function EventsPage({
           </label>
           <label className="checkbox-row">
             <input type="checkbox" name="countsForAttendance" defaultChecked />
-            <span><strong>計入出席率</strong><br /><span className="hint">本 PR 只保存設定，統計會在後續簽到模組實作。</span></span>
+            <span><strong>計入出席</strong><br /><span className="hint">已發布且計入出席的活動可在活動前後 24 小時內開啟短效簽到 token。</span></span>
           </label>
         </div>
         <label className="field"><span className="label">活動說明</span>
@@ -318,6 +319,14 @@ export default async function EventsPage({
           {event.status === "published" && !event.registration_open && <div className="notice notice-info">活動已開始或報名已截止，目前不能修改報名。</div>}
           {event.status === "published" && event.registration_open && !selectedClub.can_register && <div className="notice notice-info">此帳號可管理活動，但不是該社有效社員，因此不能占用社員報名名額。</div>}
 
+          {event.status === "published" && event.counts_for_attendance && <div className="form-actions">
+            {selectedClub.can_register && <Link className="button button-secondary" href="/events/checkin">本人簽到</Link>}
+            {selectedClub.can_manage && <Link
+              className="button"
+              href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}`}
+            >管理簽到</Link>}
+          </div>}
+
           {selectedClub.can_manage && event.status === "draft" && <form action={publishEventAction} className="form-actions">
             <input type="hidden" name="clubId" value={selectedClub.club_id} />
             <input type="hidden" name="eventId" value={event.id} />
@@ -330,7 +339,7 @@ export default async function EventsPage({
             <label className="field"><span className="label">取消原因</span>
               <input className="input" name="reason" maxLength={500} required />
             </label>
-            <span className="hint">取消後不可恢復，並會留下稽核紀錄。</span>
+            <span className="hint">取消後不可恢復，並會關閉 active 簽到 token、保留簽到歷史。</span>
             <button className="button button-danger" type="submit">取消活動</button>
           </form>}
         </article>)}

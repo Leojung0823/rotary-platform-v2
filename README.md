@@ -1,6 +1,6 @@
 # Rotary Platform V2
 
-扶輪社多租戶管理平台的本機開發版本。身份核心採 invitation-first：LINE Login、社員確認加入、資料驅動 RBAC、秘書後台、每社獨立 LINE OA 管理、裝置與登入紀錄、RLS、audit log 及版本化 API。社員功能目前包含社內留言板，以及 V0.4 活動建立、發布與報名 MVP。
+扶輪社多租戶管理平台的本機開發版本。身份核心採 invitation-first：LINE Login、社員確認加入、資料驅動 RBAC、秘書後台、每社獨立 LINE OA 管理、裝置與登入紀錄、RLS、audit log 及版本化 API。社員功能目前包含社內留言板、活動建立與報名，以及 V0.5 短效 token 簽到 MVP。
 
 目前驗證邊界是 Supabase local stack；不包含 staging、Lovable 正式環境、正式 LINE Console 或正式資料。
 
@@ -72,7 +72,7 @@ Bootstrap 預設只接受 `localhost`、`127.0.0.1` 或 `::1` 的 Supabase URL�
 ## 活動與報名 MVP
 
 1. 具 `event.manage` 權限的社長、秘書或平台管理員進入 `/events` 建立活動草稿。
-2. 活動包含類型、名稱、說明、地點、開始／結束時間、報名截止、名額及是否計入出席率。
+2. 活動包含類型、名稱、說明、地點、開始／結束時間、報名截止、名額及是否計入出席。
 3. 發布前資料庫再次確認管理權限、active club、未來的活動與截止時間。
 4. active 社員可查看同社已發布活動，選擇參加、不參加或待確認，並填寫攜伴與備註。
 5. 名額以社員本人加攜伴計算；資料庫會鎖定活動並在同一交易內防止超額。
@@ -81,7 +81,22 @@ Bootstrap 預設只接受 `localhost`、`127.0.0.1` 或 `::1` 的 Supabase URL�
 8. 報名的 `(event_id, club_id)` 以 composite foreign key 綁定活動，資料庫本身不能產生跨社報名。
 9. 停權帳號、停權社籍與停權扶輪社均不能查看、報名或執行活動管理 mutation。
 
-本切片不包含 QR／GPS 簽到、人工補登與出席率統計；詳細範圍見 [活動報名 MVP 範圍](docs/mvp/EVENT_REGISTRATION_MVP_SCOPE.md)。
+詳細範圍見 [活動報名 MVP 範圍](docs/mvp/EVENT_REGISTRATION_MVP_SCOPE.md)。
+
+## 活動簽到 MVP
+
+1. 具 `attendance.manage` 權限的社長、秘書或平台管理員進入活動的「管理簽到」。
+2. 只有已發布、計入出席，且位於活動開始前 24 小時至結束後 24 小時的活動可開啟簽到。
+3. 管理者設定 5–240 分鐘有效期，資料庫產生 256-bit 隨機 token；原始 token 只在建立或旋轉當次回傳，資料庫只保存 SHA-256 hash。
+4. 同一活動同一時間只允許一個 active 簽到場次；旋轉後舊 token 立即失效。
+5. active 社員在 `/events/checkin` 輸入 token，資料庫從 `auth.uid()` 推導登入帳號及同社 active membership，只能為本人簽到。
+6. 重複輸入同一活動 token 採冪等回傳，不建立第二筆 active attendance。
+7. 管理者可為同社 active 社員人工補登；社員尚未完成 Auth／LINE 綁定也可依社籍補登。
+8. 撤銷簽到不 hard delete；原始簽到時間、方式與歷史永久保留，並記錄撤銷人、時間及原因。
+9. 活動取消或完成時，active 簽到 token 由資料庫 trigger 自動關閉。
+10. GPS、地理圍欄、相機掃描元件與出席率統計不在本切片。
+
+詳細範圍見 [活動簽到 MVP 範圍](docs/mvp/EVENT_CHECKIN_MVP_SCOPE.md)。
 
 ## 每社 LINE OA 憑證
 
@@ -121,6 +136,7 @@ npm run verify:auth
 - `event_registration_security.sql`
 - `event_registration_tenant_integrity.sql`
 - `event_registration_lifecycle_hardening.sql`
+- `event_checkin_security.sql`
 
 所有 SQL fixture 都包在 transaction 中並於結尾 rollback。驗證範圍包含：
 
@@ -137,6 +153,9 @@ npm run verify:auth
 - 活動管理權限、跨社隔離、本人報名、名額交易與截止時間
 - 活動／報名 immutable ID 與 `(event_id, club_id)` relational tenant integrity
 - 活動帳號、社籍與扶輪社 lifecycle gate
+- 簽到 token hash、短效時間窗、旋轉失效與單一 active session
+- 本人簽到、跨社／停權拒絕、重複掃描冪等
+- 人工補登、撤銷歷史、活動終止自動關閉 token 與 direct table denial
 
 `npm run verify:auth` 只使用 local Mailpit 與 local Supabase，驗證密碼登入、邀請接受、冪等與 tenant visibility。
 
@@ -151,10 +170,13 @@ npm run verify:auth
 - LINE OAuth 使用 state、nonce、一次性資料庫交易及 ID token 驗證；身份成功綁定後才建立 session。
 - Browser role 無法直接呼叫 trusted LINE binding RPC。
 - LINE OA webhook 先以該社 secret 驗證 raw body；無效簽章事件不能占用正式 provider event id。
-- 留言板與活動都使用不可變 `club_id`，且 browser roles 無法直接操作底層資料表。
+- 留言板、活動與簽到都使用不可變 `club_id`，且 browser roles 無法直接操作底層資料表。
 - 活動名額在鎖定活動列的交易中計算，避免並行報名超額。
 - 活動報名以 composite foreign key 綁定所屬活動與扶輪社，避免任何未來程式路徑寫入不一致 tenant 資料。
 - 活動管理 mutation 需要 active club；停權扶輪社即使保留歷史角色也不能建立、發布或取消活動。
+- 簽到 token 使用 256-bit 隨機值與 SHA-256 hash；明文不寫入 URL、資料庫、audit log 或錯誤訊息。
+- 本人簽到在 token 驗證、active membership 推導與 attendance 寫入的同一交易完成。
+- attendance 以 `(event_id, membership_id)` 單一 active partial index 保護；撤銷只改狀態並保留不可變歷史。
 - Excel 匯入先驗證 session 與 permission，再解析 multipart body 和 workbook。
 - Service role 只存在 server-only trusted boundary；非本機環境需要兩個明確 production guard。
 - 所有 privileged mutation 寫入 append-only `audit_logs`。
