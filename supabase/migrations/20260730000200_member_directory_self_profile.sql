@@ -185,6 +185,10 @@ begin
      or (normalized_email is not null and (
        char_length(normalized_email) > 320
        or normalized_email !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'
+     ))
+     or (p_birth_date is not null and (
+       p_birth_date < date '1900-01-01'
+       or p_birth_date > current_date
      )) then
     raise exception using errcode = '22023', message = 'invalid_self_profile_input';
   end if;
