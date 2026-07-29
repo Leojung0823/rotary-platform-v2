@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { selfCheckinAction } from "@/app/checkin-actions";
 import { normalizeScannedCheckinToken } from "@/lib/checkin/scan";
+import styles from "./checkin-scanner.module.css";
 
 type BarcodeResult = { rawValue?: string; format?: string };
 type BarcodeDetectorInstance = { detect(source: HTMLVideoElement): Promise<BarcodeResult[]> };
@@ -54,7 +55,7 @@ export function CheckinCameraScanner() {
     startTransition(() => {
       void selfCheckinAction(formData);
     });
-  }, [stopCamera]);
+  }, [startTransition, stopCamera]);
 
   const startCamera = useCallback(async () => {
     stopCamera();
@@ -134,12 +135,12 @@ export function CheckinCameraScanner() {
       <span>不保存影像</span>
     </div>
 
-    <div className="camera-frame" data-active={status === "scanning" ? "true" : "false"}>
+    <div className={styles.cameraFrame} data-active={status === "scanning" ? "true" : "false"}>
       <video ref={videoRef} muted playsInline aria-label="活動簽到相機預覽" />
-      {status !== "scanning" && <div className="camera-placeholder" aria-live="polite">
+      {status !== "scanning" && <div className={styles.cameraPlaceholder} aria-live="polite">
         {status === "starting" ? "正在啟動相機…" : status === "submitting" || isPending ? "已讀取 QR，正在完成簽到…" : "相機只會在您點擊後啟動"}
       </div>}
-      {status === "scanning" && <div className="camera-guide" aria-hidden="true" />}
+      {status === "scanning" && <div className={styles.cameraGuide} aria-hidden="true" />}
     </div>
 
     {status === "unsupported" && <div className="notice notice-info" role="status">
@@ -155,7 +156,7 @@ export function CheckinCameraScanner() {
       將現場 QR 放入框內。辨識成功後會先關閉相機，再提交本人簽到。
     </div>}
 
-    <div className="camera-actions">
+    <div className={styles.cameraActions}>
       {status !== "scanning" && <button className="button" type="button" onClick={() => void startCamera()} disabled={busy}>
         {busy ? "處理中…" : "啟動後鏡頭掃描"}
       </button>}
