@@ -1,12 +1,14 @@
 import { timingSafeEqual } from "node:crypto";
 
 export const LINE_OAUTH_TTL_SECONDS = 10 * 60;
+export type LineOAuthFlow = "login" | "invitation" | "bind";
 
 export const LINE_OAUTH_COOKIE_NAMES = [
   "line_oauth_state",
   "line_oauth_nonce",
   "line_invitation",
   "line_return_to",
+  "line_flow",
 ] as const;
 
 type CookieOptions = {
@@ -54,13 +56,20 @@ export function lineOAuthCookieOptions(maxAge = LINE_OAUTH_TTL_SECONDS): CookieO
 
 export function setLineOAuthCookies(
   store: LineCookieStore,
-  values: { state: string; nonce: string; invitation: string; returnTo: string },
+  values: {
+    state: string;
+    nonce: string;
+    invitation: string;
+    returnTo: string;
+    flow: LineOAuthFlow;
+  },
 ) {
   const options = lineOAuthCookieOptions();
   store.set("line_oauth_state", values.state, options);
   store.set("line_oauth_nonce", values.nonce, options);
   store.set("line_invitation", values.invitation, options);
   store.set("line_return_to", values.returnTo, options);
+  store.set("line_flow", values.flow, options);
 }
 
 export function clearLineOAuthCookies(store: LineCookieStore) {

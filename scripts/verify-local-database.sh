@@ -36,3 +36,4 @@ run_sql supabase/verification/event_checkin_security.sql
 run_sql supabase/verification/member_directory_self_profile_security.sql
 run_sql supabase/verification/member_profile_validation.sql
 run_sql supabase/verification/member_password_invitation_security.sql
+run_sql supabase/verification/member_line_account_lifecycle_security.sql

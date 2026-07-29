@@ -1,9 +1,16 @@
 import { revokeDeviceAction, updateIdentitySettingsAction } from "@/app/actions";
+import { unbindMyLineIdentityAction } from "@/app/identity-actions";
 import { updateMyProfileAction } from "@/app/profile-actions";
 import { Badge, Button, Card, Field, Input, Notice } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
+import { safeMessage } from "@/lib/validation";
 
 type Center = {
+  account: {
+    status: string;
+    has_active_access: boolean;
+    has_password_login: boolean;
+  };
   profile: {
     display_name: string;
     phone: string | null;
@@ -26,6 +33,7 @@ type Center = {
     trusted: boolean;
     last_seen_at: string;
     revoked_at: string | null;
+    is_current: boolean;
   }[];
   login_history: {
     provider: string;
@@ -41,6 +49,15 @@ const successMessages: Record<string, string> = {
   profile_updated: "個人基本資料已更新。",
   settings_saved: "通知與隱私設定已儲存。",
   device_revoked: "裝置已登出。",
+  line_bound: "LINE Login 已綁定，可使用 LINE 登入平台。",
+  line_rebound: "LINE Login 已重新綁定，舊的 LINE 身份與登入工作階段不再有效。",
+};
+
+const providerLabels: Record<string, string> = {
+  password: "平台密碼",
+  line: "LINE Login",
+  line_mock: "LINE 模擬登入",
+  invite: "邀請",
 };
 
 export default async function IdentityCenterPage({
@@ -75,11 +92,12 @@ export default async function IdentityCenterPage({
     </header>
 
     {query.success && successMessages[query.success] && <Notice tone="success">{successMessages[query.success]}</Notice>}
-    {query.error && <Notice tone="error">目前無法儲存設定，請檢查姓名、手機與 Email 格式後重試。</Notice>}
+    {query.error && <Notice tone="error">{safeMessage(query.error)}</Notice>}
 
     <div className="metric-grid">
       <Card><span className="metric-label">資料完成度</span><strong className="metric-value">{completed * 20}%</strong></Card>
       <Card><span className="metric-label">LINE Login</span><strong className="metric-value metric-text">{center.line_identity?.status === "active" ? "已綁定" : "未綁定"}</strong></Card>
+      <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>
     </div>
 
     <div className="two-column">
@@ -96,12 +114,23 @@ export default async function IdentityCenterPage({
       </Card>
 
       <Card>
-        <h2>LINE Login 狀態</h2>
-        {center.line_identity ? <>
+        <h2>LINE Login</h2>
+        {center.line_identity ? <div className="form-stack">
           <div className="status-pair"><Badge tone="success">已綁定</Badge><Badge tone="neutral">身份驗證</Badge></div>
-          <p>{center.line_identity.display_name}</p>
+          <p><strong>{center.line_identity.display_name}</strong></p>
           <p className="subtle">綁定：{new Intl.DateTimeFormat("zh-TW").format(new Date(center.line_identity.bound_at))}</p>
-        </> : <p>尚未綁定 LINE Login。正式綁定流程將在 V0.7 後續登入切片完成。</p>}
+          {center.account.has_password_login ? <>
+            <Notice tone="error">解除後會立即撤銷所有登入工作階段與裝置。下次只能使用平台密碼登入，或請秘書建立重新綁定邀請。</Notice>
+            <form action={unbindMyLineIdentityAction} className="form-stack">
+              <Field label="確認平台密碼"><Input name="password" type="password" required autoComplete="current-password" /></Field>
+              <Field label="解除原因"><Input name="reason" required maxLength={500} defaultValue="本人於會員中心解除 LINE Login" /></Field>
+              <Button type="submit" className="button-danger">確認解除 LINE Login</Button>
+            </form>
+          </> : <Notice>此帳號目前只有 LINE 登入方式，不能自行解除。請由秘書在社員管理中解除並產生重新綁定邀請。</Notice>}
+        </div> : <div className="form-stack">
+          <p>尚未綁定 LINE Login。綁定後可以用同一個 LINE 身份快速登入，不會建立第二個社員帳號。</p>
+          <a className="button" href="/api/auth/line/start?flow=bind&returnTo=%2Fme">綁定 LINE Login</a>
+        </div>}
       </Card>
     </div>
 
@@ -142,10 +171,10 @@ export default async function IdentityCenterPage({
       <div className="table-wrap"><table>
         <thead><tr><th>裝置</th><th>最近使用</th><th>狀態</th><th>操作</th></tr></thead>
         <tbody>{center.devices.map((device) => <tr key={device.id}>
-          <td>{device.name}</td>
+          <td><strong>{device.name}</strong>{device.is_current && <div><Badge tone="neutral">目前裝置</Badge></div>}</td>
           <td>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "short" }).format(new Date(device.last_seen_at))}</td>
           <td><Badge tone={device.revoked_at ? "danger" : "success"}>{device.revoked_at ? "已撤銷" : "有效"}</Badge></td>
-          <td>{!device.revoked_at && <form action={revokeDeviceAction}><input type="hidden" name="deviceId" value={device.id} /><Button type="submit" className="button-secondary">登出此裝置</Button></form>}</td>
+          <td>{!device.revoked_at && <form action={revokeDeviceAction}><input type="hidden" name="deviceId" value={device.id} /><Button type="submit" className="button-secondary">{device.is_current ? "登出目前裝置" : "登出此裝置"}</Button></form>}</td>
         </tr>)}</tbody>
       </table></div>
     </section>
@@ -156,8 +185,8 @@ export default async function IdentityCenterPage({
         <thead><tr><th>時間</th><th>方式</th><th>結果</th></tr></thead>
         <tbody>{center.login_history.map((history, index) => <tr key={`${history.created_at}-${index}`}>
           <td>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "medium" }).format(new Date(history.created_at))}</td>
-          <td>{history.provider}</td>
-          <td><Badge tone={history.outcome === "success" ? "success" : "danger"}>{history.outcome}</Badge></td>
+          <td>{providerLabels[history.provider] ?? history.provider}</td>
+          <td><Badge tone={history.outcome === "success" ? "success" : "danger"}>{history.outcome === "success" ? "成功" : history.outcome === "blocked" ? "已阻擋" : "失敗"}</Badge></td>
         </tr>)}</tbody>
       </table></div>
     </section>
