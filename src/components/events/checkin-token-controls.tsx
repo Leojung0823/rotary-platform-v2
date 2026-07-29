@@ -88,7 +88,7 @@ export function CheckinTokenControls({
       </button>
     </form>}
 
-    <TokenResult state={openState} />
+    {rotateState.status !== "success" && <TokenResult state={openState} />}
     <TokenResult state={rotateState} />
   </div>;
 }
