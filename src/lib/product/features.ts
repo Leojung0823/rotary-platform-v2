@@ -64,11 +64,12 @@ export const productFeatures: ProductFeature[] = [
   },
   {
     slug: "invitation-and-login",
-    title: "邀請、密碼與 LINE 登入",
-    summary: "完善邀請接受、忘記密碼、LINE 綁定與正式登入錯誤處理。",
+    title: "邀請、密碼與 LINE 身份",
+    summary: "支援 Email／LINE 邀請、忘記與重設密碼、LINE 綁定、解除、重新綁定及裝置撤銷。",
     category: "社員與身份",
-    status: "developing",
-    phase: "V0.7",
+    status: "available",
+    phase: "目前可測試",
+    href: "/me",
   },
   {
     slug: "events",
