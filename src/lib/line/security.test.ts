@@ -64,8 +64,10 @@ describe("LINE Login redirect and cookie security", () => {
       nonce: "nonce",
       invitation: "invitation",
       returnTo: "/join",
+      flow: "invitation",
     });
-    expect(set).toHaveBeenCalledTimes(4);
+    expect(set).toHaveBeenCalledTimes(5);
+    expect(set).toHaveBeenCalledWith("line_flow", "invitation", expect.any(Object));
     expect(new Set(set.mock.calls.map((call) => JSON.stringify(call[2]))).size).toBe(1);
 
     set.mockClear();
@@ -75,6 +77,7 @@ describe("LINE Login redirect and cookie security", () => {
       "line_oauth_nonce",
       "line_invitation",
       "line_return_to",
+      "line_flow",
     ]);
     expect(set.mock.calls.every((call) => call[1] === "" && call[2].maxAge === 0)).toBe(true);
   });
