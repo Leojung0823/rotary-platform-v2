@@ -2,8 +2,13 @@
 set -euo pipefail
 
 database_url="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-npx supabase db reset --local
-npx supabase db lint --local
+if command -v supabase >/dev/null 2>&1; then
+  supabase db reset --local
+  supabase db lint --local
+else
+  npx supabase db reset --local
+  npx supabase db lint --local
+fi
 
 run_sql() {
   local file="$1"
@@ -20,20 +25,9 @@ run_sql() {
   fi
 }
 
-run_sql supabase/verification/core_identity_baseline.sql
-run_sql supabase/verification/provisioning_security.sql
-run_sql supabase/verification/operator_expiry_consistency.sql
-run_sql supabase/verification/invitation_selection.sql
-run_sql supabase/verification/v03_identity_admin_security.sql
-run_sql supabase/verification/v03_tenant_mutation_security.sql
-run_sql supabase/verification/line_webhook_ingress_limits.sql
-run_sql supabase/verification/message_board_security.sql
-run_sql supabase/verification/message_board_access_hardening.sql
-run_sql supabase/verification/event_registration_security.sql
-run_sql supabase/verification/event_registration_tenant_integrity.sql
-run_sql supabase/verification/event_registration_lifecycle_hardening.sql
-run_sql supabase/verification/event_checkin_security.sql
-run_sql supabase/verification/member_directory_self_profile_security.sql
-run_sql supabase/verification/member_profile_validation.sql
-run_sql supabase/verification/member_password_invitation_security.sql
-run_sql supabase/verification/member_line_account_lifecycle_security.sql
+while IFS= read -r file || [[ -n "$file" ]]; do
+  [[ -z "$file" || "$file" == \#* ]] && continue
+  [[ -f "$file" ]] || { echo "Database verification file not found: $file"; exit 1; }
+  echo "Verifying $file"
+  run_sql "$file"
+done < scripts/database-verification-files.txt
