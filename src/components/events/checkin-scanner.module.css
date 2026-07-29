@@ -1,0 +1,91 @@
+.qrPlaceholder {
+  display: grid;
+  place-items: center;
+  width: 160px;
+  min-height: 160px;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  background: white;
+  text-align: center;
+  font-size: 13px;
+}
+
+.cameraFrame {
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 520px);
+  aspect-ratio: 4 / 3;
+  margin-inline: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #0b1822;
+}
+
+.cameraFrame video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cameraPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #dceaf2;
+  text-align: center;
+  background: linear-gradient(145deg, #0b1822, #173d59);
+  font-weight: 750;
+}
+
+.cameraGuide {
+  position: absolute;
+  inset: 14%;
+  border: 3px solid rgba(255, 255, 255, .9);
+  border-radius: 20px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, .22);
+  pointer-events: none;
+}
+
+.cameraGuide::after {
+  content: "QR";
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #102a41;
+  background: rgba(255, 255, 255, .92);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.cameraActions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+@media (max-width: 540px) {
+  .qrPlaceholder {
+    width: 100%;
+  }
+
+  .cameraFrame {
+    aspect-ratio: 1 / 1;
+  }
+
+  .cameraActions {
+    display: grid;
+  }
+
+  .cameraActions button {
+    width: 100%;
+  }
+}
