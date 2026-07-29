@@ -30,6 +30,15 @@ function clearedCookieNames() {
   return mocks.cookieSet.mock.calls.map((call) => call[0]);
 }
 
+const expectedClearedCookies = [
+  "line_oauth_state",
+  "line_oauth_nonce",
+  "line_invitation",
+  "line_return_to",
+  "line_flow",
+  "rotary_device",
+];
+
 describe("POST /api/auth/line/logout", () => {
   beforeEach(() => {
     vi.stubEnv("APP_ENV", "local");
@@ -45,13 +54,7 @@ describe("POST /api/auth/line/logout", () => {
     expect(await response.json()).toEqual({ success: true });
     expect(mocks.signOut).toHaveBeenCalledWith({ scope: "local" });
     expect(response.headers.get("cache-control")).toBe("no-store");
-    expect(clearedCookieNames()).toEqual([
-      "line_oauth_state",
-      "line_oauth_nonce",
-      "line_invitation",
-      "line_return_to",
-      "rotary_device",
-    ]);
+    expect(clearedCookieNames()).toEqual(expectedClearedCookies);
   });
 
   it("redirects the browser form to login after the same cleanup", async () => {
@@ -60,13 +63,7 @@ describe("POST /api/auth/line/logout", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/login");
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(mocks.signOut).toHaveBeenCalledWith({ scope: "local" });
-    expect(clearedCookieNames()).toEqual([
-      "line_oauth_state",
-      "line_oauth_nonce",
-      "line_invitation",
-      "line_return_to",
-      "rotary_device",
-    ]);
+    expect(clearedCookieNames()).toEqual(expectedClearedCookies);
   });
 
   it("is idempotent when repeated", async () => {
@@ -94,7 +91,7 @@ describe("POST /api/auth/line/logout", () => {
     const response = await route.POST(request("http://localhost:3000", "same-origin", true));
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe("http://localhost:3000/login?error=logout_failed");
-    expect(clearedCookieNames()).toHaveLength(5);
+    expect(clearedCookieNames()).toEqual(expectedClearedCookies);
   });
 
   it("exports no GET logout handler", () => {
