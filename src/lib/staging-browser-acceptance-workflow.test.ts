@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const workflow = readFileSync(".github/workflows/staging-browser-acceptance.yml", "utf8");
 const playwrightConfig = readFileSync("e2e/playwright.config.mjs", "utf8");
+const stagingTest = readFileSync("e2e/tests/staging-member-acceptance.e2e.mjs", "utf8");
 
 describe("staging browser acceptance workflow safety", () => {
   it("is manual, serialized and protected by the staging environment", () => {
@@ -46,5 +47,6 @@ describe("staging browser acceptance workflow safety", () => {
     expect(playwrightConfig).toContain('screenshot: sensitiveRun ? "off"');
     expect(playwrightConfig).toContain('video: sensitiveRun ? "off"');
     expect(playwrightConfig).toContain("webServer: remoteRun");
+    expect(stagingTest).toContain('test.skip(process.env.E2E_REMOTE !== "1"');
   });
 });
