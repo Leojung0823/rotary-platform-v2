@@ -32,6 +32,10 @@ function validateHttpsOrigin(errors, rawValue) {
   return parsed;
 }
 
+/**
+ * Validate a manually dispatched staging release without returning credential values.
+ * @param {NodeJS.ProcessEnv | Record<string, string | undefined>} input
+ */
 export function inspectStagingReleaseInput(input = process.env) {
   const errors = [];
   const eventName = text(input.GITHUB_EVENT_NAME);
@@ -67,6 +71,9 @@ export function inspectStagingReleaseInput(input = process.env) {
   };
 }
 
+/**
+ * @param {NodeJS.ProcessEnv | Record<string, string | undefined>} input
+ */
 export function assertStagingReleaseInput(input = process.env) {
   const result = inspectStagingReleaseInput(input);
   if (!result.ok) throw new Error(`Staging release input is invalid: ${result.errors.join(", ")}`);
