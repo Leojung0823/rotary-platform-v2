@@ -1,0 +1,78 @@
+name: Staging Browser Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Enter the exact 40-character main commit SHA deployed to staging"
+        required: true
+        type: string
+      confirmation:
+        description: "Enter TEST-STAGING"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-browser-acceptance
+  cancel-in-progress: false
+
+jobs:
+  acceptance:
+    name: Hosted staging member acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+    env:
+      STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      STAGING_ACCEPTANCE_CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
+      STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+      STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+      E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      E2E_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      E2E_REMOTE: "1"
+      E2E_SENSITIVE: "1"
+
+    steps:
+      - name: Check out the exact acceptance revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Validate manual acceptance inputs and protected test identity
+        run: node scripts/verify-staging-browser-acceptance-inputs.mjs
+
+      - name: Install isolated browser test dependencies
+        run: npm ci --prefix e2e
+
+      - name: Install Chromium and operating-system dependencies
+        run: npm --prefix e2e run install:chromium
+
+      - name: Run hosted staging member acceptance
+        run: npm --prefix e2e run test:staging
+
+      - name: Record successful staging acceptance
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Hosted staging browser acceptance passed"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Health environment and 12-character deployed revision matched."
+            echo "- Login, member directory, member center and logout passed."
+            echo "- No screenshots, video, trace or HTML report were retained."
+          } >> "$GITHUB_STEP_SUMMARY"
