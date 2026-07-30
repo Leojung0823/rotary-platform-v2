@@ -74,6 +74,33 @@ describe("deployment environment validation", () => {
     expect(report.errors).toContain("LINE_LOGIN_CALLBACK_URL_MISMATCH");
   });
 
+  it("rejects short credentials and credentials containing whitespace", () => {
+    const report = inspectDeploymentEnvironment({
+      ...stagingEnvironment,
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "short",
+      SUPABASE_SERVICE_ROLE_KEY: "service role key contains spaces",
+      LINE_LOGIN_CHANNEL_SECRET: "short",
+    });
+    expect(report.errors).toEqual(expect.arrayContaining([
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY_INVALID",
+      "SUPABASE_SERVICE_ROLE_KEY_INVALID",
+      "LINE_LOGIN_CHANNEL_SECRET_INVALID",
+    ]));
+  });
+
+  it("warns when local-only bootstrap credentials remain in hosted runtime", () => {
+    const report = inspectDeploymentEnvironment({
+      ...stagingEnvironment,
+      BOOTSTRAP_SUPERADMIN_PASSWORD: "temporary-hosted-bootstrap-password",
+      VERIFY_OPERATOR_PASSWORD: "local-verification-password",
+    });
+    expect(report.ok).toBe(true);
+    expect(report.warnings).toEqual(expect.arrayContaining([
+      "HOSTED_BOOTSTRAP_PASSWORD_REMOVE_AFTER_USE",
+      "HOSTED_VERIFY_OPERATOR_PASSWORD_LOCAL_ONLY",
+    ]));
+  });
+
   it("does not expose any credential values in its report", () => {
     const secret = "never-print-this-secret";
     const report = inspectDeploymentEnvironment({
