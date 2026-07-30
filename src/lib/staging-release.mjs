@@ -1,4 +1,5 @@
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+import { isPublicHostname } from "./public-hostname.mjs";
+
 const PROJECT_REF_PATTERN = /^[a-z0-9]{16,32}$/u;
 const COMMIT_SHA_PATTERN = /^[a-f0-9]{40}$/u;
 
@@ -28,7 +29,7 @@ function validateHttpsOrigin(errors, rawValue) {
     || parsed.hash) {
     errors.push("STAGING_BASE_URL_HTTPS_ORIGIN_REQUIRED");
   }
-  if (LOCAL_HOSTS.has(parsed.hostname)) errors.push("STAGING_BASE_URL_PUBLIC_HOST_REQUIRED");
+  if (!isPublicHostname(parsed.hostname)) errors.push("STAGING_BASE_URL_PUBLIC_HOST_REQUIRED");
   return parsed;
 }
 
