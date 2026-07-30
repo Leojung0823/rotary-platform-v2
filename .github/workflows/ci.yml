@@ -17,9 +17,13 @@ jobs:
         with:
           node-version: 24
       - run: npm install --no-audit --no-fund
+      - run: npm run check:db-verifications
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local-ci-placeholder
 
   database:
     runs-on: ubuntu-latest
@@ -55,21 +59,9 @@ jobs:
             set -e
             sudo apt-get update -qq
             sudo apt-get install -y -qq postgresql-client
-            for file in \
-              supabase/verification/core_identity_baseline.sql \
-              supabase/verification/provisioning_security.sql \
-              supabase/verification/operator_expiry_consistency.sql \
-              supabase/verification/invitation_selection.sql \
-              supabase/verification/v03_identity_admin_security.sql \
-              supabase/verification/v03_tenant_mutation_security.sql \
-              supabase/verification/line_webhook_ingress_limits.sql \
-              supabase/verification/message_board_security.sql \
-              supabase/verification/message_board_access_hardening.sql \
-              supabase/verification/event_registration_security.sql \
-              supabase/verification/event_registration_tenant_integrity.sql \
-              supabase/verification/event_registration_lifecycle_hardening.sql \
-              supabase/verification/event_checkin_security.sql
-            do
+            while IFS= read -r file || [[ -n "$file" ]]; do
+              [[ -z "$file" || "$file" == \#* ]] && continue
+              [[ -f "$file" ]] || { echo "Database verification file not found: $file"; exit 1; }
               echo "Verifying $file"
               psql \
                 --host 127.0.0.1 \
@@ -78,7 +70,7 @@ jobs:
                 --dbname postgres \
                 --set ON_ERROR_STOP=1 \
                 --file "$file"
-            done
+            done < scripts/database-verification-files.txt
           ) 2>&1 | tee /tmp/database-verification.log
       - name: Upload failed database verification log
         if: steps.verify_database.outcome == 'failure'

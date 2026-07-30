@@ -17,6 +17,7 @@ export default async function LoginPage({
   if (await getAuthenticatedUser()) redirect(returnTo);
 
   const message = safeMessage(query.error);
+  const local = process.env.APP_ENV !== "staging" && process.env.APP_ENV !== "production";
 
   return <main className="auth-page">
     <section className="auth-panel">
@@ -38,8 +39,11 @@ export default async function LoginPage({
 
       <div className="form-actions">
         <Link className="back-link" href="/forgot-password">忘記密碼？</Link>
+        <Link className="back-link" href="/status">系統狀態</Link>
       </div>
-      <p className="auth-footnote">本機開發的邀請信與密碼重設信可在 Mailpit 檢視。</p>
+      <p className="auth-footnote">
+        {local ? "本機邀請信與密碼重設信可在 Mailpit 檢視。" : "無法登入時，請聯絡所屬扶輪社的社務管理員。"}
+      </p>
     </section>
     <aside className="auth-art" aria-hidden="true"><div className="orb orb-one"/><div className="orb orb-two"/><blockquote>以清楚的身份、最小權限與跨社隔離，支援每一位獨立作業的執行秘書。</blockquote></aside>
   </main>;
