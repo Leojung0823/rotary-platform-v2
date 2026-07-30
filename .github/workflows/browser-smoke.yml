@@ -1,0 +1,117 @@
+name: Browser Smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  member-browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      E2E_ADMIN_EMAIL: admin@example.test
+      E2E_ADMIN_PASSWORD: Rotary-CI-Admin-2026!
+      E2E_BASE_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install application dependencies
+        run: npm ci
+
+      - name: Install isolated browser test dependencies
+        run: npm ci --prefix e2e
+
+      - name: Install Chromium and operating-system dependencies
+        run: npm --prefix e2e run install:chromium
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.84.2
+          github-token: ${{ github.token }}
+
+      - name: Start local Supabase
+        shell: bash
+        run: |
+          supabase start > /tmp/supabase-start.log 2>&1 || {
+            echo "Local Supabase failed to start."
+            tail -n 80 /tmp/supabase-start.log
+            exit 1
+          }
+
+      - name: Reset local database from migrations
+        shell: bash
+        run: |
+          supabase db reset --local > /tmp/supabase-reset.log 2>&1 || {
+            echo "Local database reset failed."
+            tail -n 120 /tmp/supabase-reset.log
+            exit 1
+          }
+
+      - name: Create isolated local application environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase status -o env > /tmp/supabase-status.env
+          set -a
+          source /tmp/supabase-status.env
+          set +a
+
+          api_url="${API_URL:-${SUPABASE_URL:-}}"
+          public_key="${PUBLISHABLE_KEY:-${ANON_KEY:-}}"
+          server_key="${SECRET_KEY:-${SERVICE_ROLE_KEY:-}}"
+
+          [[ -n "$api_url" ]] || { echo "Local Supabase API URL was not exported."; exit 1; }
+          [[ -n "$public_key" ]] || { echo "Local Supabase public key was not exported."; exit 1; }
+          [[ -n "$server_key" ]] || { echo "Local Supabase server key was not exported."; exit 1; }
+
+          umask 077
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=$api_url
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$public_key
+          SUPABASE_SERVICE_ROLE_KEY=$server_key
+          BOOTSTRAP_SUPERADMIN_EMAIL=$E2E_ADMIN_EMAIL
+          BOOTSTRAP_SUPERADMIN_PASSWORD=$E2E_ADMIN_PASSWORD
+          BOOTSTRAP_SUPERADMIN_NAME=平台管理員
+          VERIFY_OPERATOR_PASSWORD=Rotary-CI-Operator-2026!
+          NEXT_PUBLIC_SITE_URL=$E2E_BASE_URL
+          APP_ENV=local
+          TRUSTED_ADMIN_ENVIRONMENT=
+          LINE_LOGIN_MODE=mock
+          LINE_LOGIN_CHANNEL_ID=
+          LINE_LOGIN_CHANNEL_SECRET=
+          LINE_LOGIN_CALLBACK_URL=
+          LINE_MOCK_SIGNING_SECRET=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          LINE_OA_MODE=mock
+          EOF
+          echo "Local E2E environment created. Credential values were not printed."
+
+      - name: Bootstrap local superadmin
+        run: node --env-file=.env.local scripts/bootstrap-superadmin.mjs
+
+      - name: Build the application
+        run: npm run build
+
+      - name: Run desktop and Android browser smoke tests
+        run: npm --prefix e2e test
+
+      - name: Upload browser smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke-diagnostics
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          if-no-files-found: warn
+          retention-days: 7

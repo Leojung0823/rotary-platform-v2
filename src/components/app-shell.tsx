@@ -28,6 +28,17 @@ export function AppShell({ identity, children }: { identity: Identity; children:
       </div>
     </aside>
     <main id="main" className="content">{children}</main>
-    <nav className="mobile-nav" aria-label="行動版導覽"><Link href="/dashboard">總覽</Link><Link href="/features">功能</Link><Link href="/directory">名冊</Link><Link href="/events">活動</Link><Link href="/board">留言板</Link><Link href="/me">我的</Link>{isPlatform && <Link href="/platform/clubs">平台</Link>}</nav>
+    <nav className="mobile-nav" aria-label="行動版導覽">
+      <Link href="/dashboard">總覽</Link>
+      <Link href="/features">功能</Link>
+      <Link href="/directory">名冊</Link>
+      <Link href="/events">活動</Link>
+      <Link href="/board">留言板</Link>
+      <Link href="/me">我的</Link>
+      {isPlatform && <Link href="/platform/clubs">平台</Link>}
+      <form className={styles.mobileLogout} action="/api/auth/line/logout?redirect=1" method="post">
+        <button type="submit">登出</button>
+      </form>
+    </nav>
   </div>;
 }
