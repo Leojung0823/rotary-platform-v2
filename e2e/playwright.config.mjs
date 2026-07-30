@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
-const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000";
+const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   testDir: "./tests",
