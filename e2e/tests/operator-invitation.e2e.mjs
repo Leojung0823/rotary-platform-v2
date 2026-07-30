@@ -70,6 +70,7 @@ test("管理員建立扶輪社後，受邀執行秘書可從 Email 設定密碼�
   expect(invitationUrl.searchParams.get("token_hash")).toBeTruthy();
   expect(invitationUrl.searchParams.get("type")).toBe("invite");
 
+  // Use a separate browser context so the invited operator never inherits the administrator session.
   const operatorContext = await browser.newContext({ baseURL: new URL(page.url()).origin });
   const operatorPage = await operatorContext.newPage();
   await operatorPage.goto(invitationUrl.toString());
