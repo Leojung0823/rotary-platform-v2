@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isNonPublicHostname, isPublicHostname } from "./public-hostname.mjs";
+import {
+  hostnameResolvesPublicly,
+  isNonPublicHostname,
+  isPublicHostname,
+} from "./public-hostname.mjs";
 
 describe("public hostname validation", () => {
   it("accepts public DNS names and globally routable IP addresses", () => {
@@ -72,5 +76,16 @@ describe("public hostname validation", () => {
     ]) {
       expect(isPublicHostname(hostname), hostname).toBe(false);
     }
+  });
+
+  it("rejects public-looking DNS names that resolve to any non-public address", async () => {
+    const publicLookup = async () => [{ address: "8.8.8.8", family: 4 }];
+    const mixedLookup = async () => [
+      { address: "8.8.8.8", family: 4 },
+      { address: "10.0.0.8", family: 4 },
+    ];
+    expect(await hostnameResolvesPublicly("staging.rotary.org", publicLookup)).toBe(true);
+    expect(await hostnameResolvesPublicly("staging.rotary.org", mixedLookup)).toBe(false);
+    expect(await hostnameResolvesPublicly("staging.rotary.org", async () => [])).toBe(false);
   });
 });

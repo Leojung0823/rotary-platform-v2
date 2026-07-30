@@ -16,7 +16,8 @@ export type HealthSnapshot = {
 };
 
 function revision() {
-  const value = process.env.VERCEL_GIT_COMMIT_SHA
+  const value = process.env.APP_REVISION
+    ?? process.env.VERCEL_GIT_COMMIT_SHA
     ?? process.env.GITHUB_SHA
     ?? process.env.RENDER_GIT_COMMIT
     ?? "";

@@ -18,7 +18,7 @@ function validInput() {
     STAGING_EXPECTED_CLUB_NAME: "測試扶輪社",
     SUPABASE_ACCESS_TOKEN: "s".repeat(40),
     SUPABASE_DB_PASSWORD: "database-password-2026",
-    STAGING_DEPLOY_HOOK_URL: "https://api.deploy.rotary.org/hooks/project-token?branch=main",
+    STAGING_DEPLOY_HOOK: "https://api.deploy.rotary.org/hooks/project-token?branch=main",
     STAGING_TEST_MEMBER_EMAIL: "member@example.test",
     STAGING_TEST_MEMBER_PASSWORD: "Rotary-Staging-Test-2026!",
   };
@@ -56,16 +56,25 @@ describe("staging go-live input", () => {
     ]));
   });
 
+  it("rejects an uppercase or otherwise non-canonical expected SHA", () => {
+    const result = inspectStagingGoLiveInput({
+      ...validInput(),
+      STAGING_EXPECTED_SHA: sha.toUpperCase(),
+    });
+    expect(result.errors).toContain("STAGING_EXPECTED_SHA_INVALID");
+  });
+
   it("rejects non-public site and deployment hook targets", () => {
     for (const [name, value] of [
       ["STAGING_BASE_URL", "https://169.254.169.254"],
       ["STAGING_BASE_URL", "https://staging.example"],
-      ["STAGING_DEPLOY_HOOK_URL", "https://10.0.0.8/hooks/token"],
-      ["STAGING_DEPLOY_HOOK_URL", "http://deploy.rotary.org/hooks/token"],
+      ["STAGING_DEPLOY_HOOK", "https://10.0.0.8/hooks/token"],
+      ["STAGING_DEPLOY_HOOK", "http://deploy.rotary.org/hooks/token"],
     ]) {
       const result = inspectStagingGoLiveInput({ ...validInput(), [name]: value });
       expect(result.ok).toBe(false);
       expect(result.errors.some((error) => error.startsWith(name))).toBe(true);
+      if (name === "STAGING_DEPLOY_HOOK") expect(result.deploymentHookConfigured).toBe(false);
     }
   });
 
@@ -75,7 +84,7 @@ describe("staging go-live input", () => {
       ...validInput(),
       SUPABASE_ACCESS_TOKEN: "",
       SUPABASE_DB_PASSWORD: "short",
-      STAGING_DEPLOY_HOOK_URL: secret,
+      STAGING_DEPLOY_HOOK: secret,
       STAGING_TEST_MEMBER_PASSWORD: "short",
     });
     expect(result.ok).toBe(false);

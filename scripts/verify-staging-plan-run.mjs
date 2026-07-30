@@ -5,9 +5,9 @@ import { inspectStagingPlanRun } from "../src/lib/staging-plan-run.mjs";
 const repository = String(process.env.GITHUB_REPOSITORY ?? "").trim();
 const token = String(process.env.GITHUB_TOKEN ?? "");
 const runId = String(process.env.STAGING_PLAN_RUN_ID ?? "").trim();
-const expectedSha = String(process.env.STAGING_EXPECTED_SHA ?? "").trim().toLowerCase();
+const expectedSha = String(process.env.STAGING_EXPECTED_SHA ?? "").trim();
 
-if (!/^[^/\s]+\/[^/\s]+$/u.test(repository)) {
+if (!/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/iu.test(repository)) {
   console.error("ERROR GITHUB_REPOSITORY_INVALID");
   process.exit(1);
 }
@@ -40,9 +40,14 @@ async function githubJson(path) {
 }
 
 try {
-  const run = await githubJson(`/repos/${repository}/actions/runs/${runId}`);
-  const jobsResponse = await githubJson(`/repos/${repository}/actions/runs/${runId}/jobs?per_page=100`);
-  const result = inspectStagingPlanRun(run, jobsResponse.jobs, { expectedSha });
+  const [owner, repo] = repository.split("/").map(encodeURIComponent);
+  const run = await githubJson(`/repos/${owner}/${repo}/actions/runs/${runId}`);
+  const jobsResponse = await githubJson(`/repos/${owner}/${repo}/actions/runs/${runId}/jobs?per_page=100`);
+  const result = inspectStagingPlanRun(run, jobsResponse.jobs, {
+    expectedSha,
+    expectedRepository: repository,
+    expectedRunId: runId,
+  });
 
   console.log(`Referenced plan run: ${result.runId ?? "invalid"}`);
   console.log(`Referenced plan SHA: ${result.headSha ?? "invalid"}`);

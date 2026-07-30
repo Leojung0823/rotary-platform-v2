@@ -4,6 +4,7 @@ import { isPublicHostname } from "../src/lib/public-hostname.mjs";
 
 const rawBaseUrl = String(process.env.STAGING_BASE_URL ?? "").trim();
 const expectedEnvironment = String(process.env.STAGING_EXPECT_ENV ?? "staging").trim();
+const expectedSha = String(process.env.STAGING_EXPECTED_SHA ?? "").trim();
 
 function fail(message) {
   console.error(`SMOKE FAILED: ${message}`);
@@ -29,6 +30,9 @@ if (baseUrl.protocol !== "https:"
 }
 if (!isPublicHostname(baseUrl.hostname)) {
   fail("STAGING_BASE_URL must use a publicly routable hostname or IP address.");
+}
+if (expectedSha && !/^[a-f0-9]{40}$/u.test(expectedSha)) {
+  fail("STAGING_EXPECTED_SHA must be an exact 40-character commit SHA when configured.");
 }
 
 async function request(path, options = {}) {
@@ -66,7 +70,14 @@ try {
   if (expectedEnvironment && snapshot.environment !== expectedEnvironment) {
     fail(`Health environment is ${snapshot.environment}, expected ${expectedEnvironment}.`);
   }
-  if (snapshot.issues?.length) fail("Health snapshot contains public issues.");
+  if (expectedSha && snapshot.revision !== expectedSha.slice(0, 12)) {
+    fail("Health revision does not match the immutable staging commit.");
+  }
+  if (snapshot.checks?.configuration !== true) fail("Health configuration check did not pass.");
+  if (snapshot.checks?.database !== true) fail("Health database check did not pass.");
+  if (!Array.isArray(snapshot.issues) || snapshot.issues.length !== 0) {
+    fail("Health snapshot contains public issues or omits the issues list.");
+  }
   console.log("PASS health and database readiness");
 
   for (const path of ["/login", "/forgot-password", "/status", "/robots.txt"]) {

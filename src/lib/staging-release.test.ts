@@ -27,28 +27,9 @@ describe("staging release input", () => {
     });
   });
 
-  it("requires the exact confirmation and immutable commit SHA for apply", () => {
-    const missing = inspectStagingReleaseInput({ ...valid, STAGING_OPERATION: "apply" });
-    expect(missing.errors).toEqual(expect.arrayContaining([
-      "STAGING_CONFIRMATION_MISMATCH",
-      "STAGING_EXPECTED_SHA_INVALID",
-    ]));
-
-    const mismatch = inspectStagingReleaseInput({
-      ...valid,
-      STAGING_OPERATION: "apply",
-      STAGING_CONFIRMATION: "DEPLOY-STAGING",
-      STAGING_EXPECTED_SHA: "abcdef0123456789abcdef0123456789abcdef01",
-    });
-    expect(mismatch.errors).toContain("STAGING_EXPECTED_SHA_MISMATCH");
-
-    const accepted = inspectStagingReleaseInput({
-      ...valid,
-      STAGING_OPERATION: "apply",
-      STAGING_CONFIRMATION: "DEPLOY-STAGING",
-      STAGING_EXPECTED_SHA: commitSha.toUpperCase(),
-    });
-    expect(accepted.ok).toBe(true);
+  it("rejects apply because mutation is restricted to Staging Go-Live", () => {
+    const apply = inspectStagingReleaseInput({ ...valid, STAGING_OPERATION: "apply" });
+    expect(apply.errors).toContain("STAGING_OPERATION_INVALID");
   });
 
   it("rejects non-manual triggers, non-main refs and malformed staging origins", () => {

@@ -1,4 +1,10 @@
 import { isIP } from "node:net";
+import { lookup as dnsLookup } from "node:dns/promises";
+
+/** @typedef {{address: string, family: number}} ResolvedAddress */
+/** @typedef {(hostname: string, options: {all: true, verbatim: true}) => Promise<ResolvedAddress[]>} LookupAll */
+/** @type {LookupAll} */
+const resolveAllAddresses = (hostname, options) => dnsLookup(hostname, options);
 
 const LOCAL_HOSTS = new Set(["localhost", "localhost.localdomain"]);
 const NON_PUBLIC_SUFFIXES = [
@@ -145,4 +151,24 @@ export function isPublicHostname(hostname) {
 
 export function isNonPublicHostname(hostname) {
   return !isPublicHostname(hostname);
+}
+
+/**
+ * @param {string} hostname
+ * @param {LookupAll} lookupImpl
+ */
+export async function hostnameResolvesPublicly(hostname, lookupImpl = resolveAllAddresses) {
+  const normalized = normalizeHostname(hostname);
+  if (!isPublicHostname(normalized)) return false;
+  if (isIP(normalized)) return true;
+
+  let addresses;
+  try {
+    addresses = await lookupImpl(normalized, { all: true, verbatim: true });
+  } catch {
+    return false;
+  }
+  return Array.isArray(addresses)
+    && addresses.length > 0
+    && addresses.every((entry) => isPublicHostname(entry?.address));
 }

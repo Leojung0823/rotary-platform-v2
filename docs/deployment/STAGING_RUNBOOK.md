@@ -8,6 +8,7 @@
 - 使用獨立的 HTTPS staging 網址。
 - `APP_ENV=staging`。
 - `TRUSTED_ADMIN_ENVIRONMENT=staging`。
+- Runtime `APP_REVISION` 必須是部署中的完整 40 字元 Git SHA。
 - staging 與 production 不得共用 Supabase project、service role key、LINE Login channel secret、資料庫密碼或 Email provider credentials。
 - staging 只建立測試扶輪社與測試社員。
 - GitHub release workflow 不會建立 Supabase project、部署網站、設定 DNS 或建立 LINE channel；這些資源必須先由管理者建立。
@@ -52,11 +53,15 @@ Environment variables：
 
 - `SUPABASE_PROJECT_REF`：Hosted Supabase staging project reference。
 - `STAGING_BASE_URL`：不含路徑的 HTTPS staging origin，例如 `https://staging.example.com`。
+- `STAGING_EXPECTED_CLUB_NAME`：Hosted acceptance 測試社員可查看的測試扶輪社名稱。
 
 Environment secrets：
 
 - `SUPABASE_ACCESS_TOKEN`：只供 Supabase CLI 使用的管理 token。
 - `SUPABASE_DB_PASSWORD`：staging project 的資料庫密碼。
+- `STAGING_DEPLOY_HOOK`：只觸發 staging service 的 HTTPS POST deployment hook。
+- `STAGING_TEST_MEMBER_EMAIL`：staging 專用測試社員帳號。
+- `STAGING_TEST_MEMBER_PASSWORD`：staging 專用測試社員密碼。
 
 不要把上述 secret 改成 repository variable，也不要放入 `.env.example`。
 
@@ -72,11 +77,13 @@ npm run build
 
 `verify:deployment` 只輸出變數名稱與一般化錯誤，不輸出 credential values。
 
+此 repository 沒有既有 hosting provider 設定。Container host 的 build、start、health、revision 與環境變數 contract 見 [Container staging deployment](./CONTAINER_STAGING.md)。不得為此流程建立或修改 production service。
+
 ## 5. GitHub Actions migration release
 
 Workflow：`Staging Release`
 
-此 workflow 只能手動執行，而且每次只能選擇 `plan` 或 `apply` 其中一種操作。所有 job 都引用 GitHub `staging` environment；保護規則通過前，job 不得取得 environment secrets。
+此 workflow 只能手動從 `main` 執行，而且只允許 `plan`。所有 job 都引用 GitHub `staging` environment；保護規則通過前，job 不得取得 environment secrets。Migration apply 已移至 `Staging Go-Live`，不能由 plan workflow 繞過 backup、revision、deployment 與 acceptance gates。
 
 ### 5.1 先執行 plan
 
@@ -85,9 +92,8 @@ Workflow：`Staging Release`
 3. 進入 Actions → Staging Release → Run workflow。
 4. Branch 選擇 `main`。
 5. `operation` 選擇 `plan`。
-6. `expected_sha` 與 `confirmation` 留空。
-7. 通過 `staging` environment 核准後執行。
-8. 檢查 workflow summary 中的完整 commit SHA、project suffix 與 migration dry-run 結果。
+6. 通過 `staging` environment 核准後執行。
+7. 檢查 workflow summary 中的完整 commit SHA、project suffix 與 migration dry-run 結果，並記錄 workflow run id。
 
 Plan 只執行：
 
@@ -97,20 +103,19 @@ supabase db push --linked --dry-run
 
 Plan 不會套用 migration、不會 reset remote database，也不會載入 seed。
 
-### 5.2 再執行 apply
+### 5.2 確認備份並執行 Staging Go-Live
 
-只有 plan 結果正確時才能執行：
+只有 plan 結果正確、staging backup/rollback point 已由操作者確認，而且 deployment hook 明確只指向 staging service 時才能執行：
 
-1. 再次進入 Actions → Staging Release → Run workflow。
-2. Branch 必須仍為 `main`。
-3. `operation` 選擇 `apply`。
-4. `expected_sha` 貼上 plan 顯示的完整 40 字元 commit SHA。
-5. `confirmation` 輸入 `DEPLOY-STAGING`。
-6. 核對等待核准的 environment、commit 與操作者。
-7. 核准後，workflow 會重新 dry-run；只有 dry-run 成功才會執行 `supabase db push --linked`。
-8. Migration 完成後，自動重試 HTTPS staging smoke test，最長約三分鐘。
+1. 進入 Actions → Staging Go-Live → Run workflow；Branch 必須是 `main`。
+2. `expected_sha` 輸入 plan 的完整 40 字元 commit SHA。
+3. `plan_run_id` 輸入剛完成的 Staging Release plan run id。
+4. `confirmation` 輸入 `LAUNCH-STAGING`。
+5. `backup_confirmation` 只有在可用 staging 備份或 rollback point 已確認後才能輸入 `BACKUP-READY`。
+6. 核對等待核准的是 GitHub `staging` environment、Hosted Supabase staging project 與 staging deployment service。
+7. 核准後，workflow 先驗證 plan API metadata 與 repository checks，再依序 link、dry-run、單次 apply、POST deployment hook、等待 exact revision、smoke、Hosted browser acceptance。
 
-只要 `main` 在 plan 後出現新 commit，`expected_sha` 就會不一致，apply 會被阻擋，必須重新執行 plan。
+Plan run 必須來自本 repository 的 `Staging Release` workflow、`operation=plan`、`main`、相同 SHA、結論 success，且建立時間在最近 24 小時內。Fork、PR branch、其他 workflow/repository/SHA 或 apply job 都會被拒絕。只要 `main` 在 plan 後出現新 commit，就必須重新執行 plan。
 
 ### 5.3 發布 workflow 的禁止事項
 
@@ -118,10 +123,12 @@ Workflow 的 CI regression guard 會阻擋下列變更：
 
 - remote `db reset`
 - `--include-seed`
-- 未先 dry-run 就 apply
+- Staging Release plan workflow 直接 apply
+- Go-Live 未先 dry-run 就 apply
 - 取消 staging environment
-- 移除 exact SHA confirmation
-- 移除 apply 後的 HTTPS smoke test
+- 移除 exact SHA、plan run、launch 或 backup confirmation
+- 把 deployment hook 放進 variable、跟隨 redirect，或把 hook acceptance 當成 deployment success
+- 移除 exact revision wait、HTTPS smoke 或 Hosted acceptance
 
 Apply 失敗時不要直接重跑。先確認 Supabase migration history、失敗的 migration 是否已部分執行、staging 備份及 rollback 方式。
 
@@ -154,15 +161,17 @@ npm run bootstrap:superadmin
 
 ## 7. 自動 smoke test
 
-Release workflow 的 apply 成功後會自動執行 smoke test。也可以在可信任的管理環境單獨執行：
+Go-Live 等待 exact revision 成功後會自動執行 smoke test。也可以在可信任的管理環境單獨執行：
 
 ```bash
-STAGING_BASE_URL=https://<staging-domain> npm run smoke:staging
+STAGING_BASE_URL=https://<staging-domain> \
+STAGING_EXPECTED_SHA=<full-40-character-sha> \
+npm run smoke:staging
 ```
 
 檢查項目：
 
-- `/api/health` 回傳 200、環境為 staging、資料庫正常。
+- `/api/health` 回傳 200、環境為 staging、revision 相同、configuration/database 為 true 且 `issues=[]`。
 - `/login`、`/forgot-password`、`/status`、`/robots.txt` 可讀取。
 - HTTPS security headers 存在。
 - staging 有 `noindex` 防護。

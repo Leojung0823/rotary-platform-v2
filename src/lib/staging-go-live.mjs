@@ -10,6 +10,7 @@ function text(value) {
 }
 
 function validatePublicHttpsUrl(errors, name, rawValue, { originOnly = false } = {}) {
+  const initialErrorCount = errors.length;
   if (!rawValue) {
     errors.push(`${name}_REQUIRED`);
     return null;
@@ -32,7 +33,7 @@ function validatePublicHttpsUrl(errors, name, rawValue, { originOnly = false } =
   if (!isPublicHostname(parsed.hostname)) {
     errors.push(`${name}_PUBLIC_HOST_REQUIRED`);
   }
-  return parsed;
+  return errors.length === initialErrorCount ? parsed : null;
 }
 
 function configuredSecret(errors, input, name, predicate = (value) => Boolean(value)) {
@@ -49,8 +50,8 @@ export function inspectStagingGoLiveInput(input = process.env) {
   const errors = [];
   const eventName = text(input.GITHUB_EVENT_NAME);
   const refName = text(input.GITHUB_REF_NAME);
-  const githubSha = text(input.GITHUB_SHA).toLowerCase();
-  const expectedSha = text(input.STAGING_EXPECTED_SHA).toLowerCase();
+  const githubSha = text(input.GITHUB_SHA);
+  const expectedSha = text(input.STAGING_EXPECTED_SHA);
   const planRunId = text(input.STAGING_PLAN_RUN_ID);
   const confirmation = text(input.STAGING_LAUNCH_CONFIRMATION);
   const backupConfirmation = text(input.STAGING_BACKUP_CONFIRMATION);
@@ -58,7 +59,7 @@ export function inspectStagingGoLiveInput(input = process.env) {
   const siteUrl = validatePublicHttpsUrl(errors, "STAGING_BASE_URL", text(input.STAGING_BASE_URL), {
     originOnly: true,
   });
-  const deployHook = validatePublicHttpsUrl(errors, "STAGING_DEPLOY_HOOK_URL", text(input.STAGING_DEPLOY_HOOK_URL));
+  const deployHook = validatePublicHttpsUrl(errors, "STAGING_DEPLOY_HOOK", text(input.STAGING_DEPLOY_HOOK));
 
   if (eventName !== "workflow_dispatch") errors.push("STAGING_GO_LIVE_MANUAL_ONLY");
   if (refName !== "main") errors.push("STAGING_GO_LIVE_MAIN_ONLY");
