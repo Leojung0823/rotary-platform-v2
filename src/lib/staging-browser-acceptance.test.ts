@@ -49,9 +49,18 @@ describe("staging browser acceptance input", () => {
       "https://localhost",
       "https://user:pass@staging.example.com",
       "https://staging.example.com/app",
+      "https://127.1.2.3",
+      "https://10.0.0.8",
+      "https://169.254.1.2",
+      "https://172.20.0.5",
+      "https://192.168.1.5",
+      "https://[::1]",
+      "https://[fd00::1]",
+      "https://printer.local",
     ]) {
       const result = inspectStagingBrowserAcceptanceInput({ ...validInput(), STAGING_BASE_URL });
       expect(result.ok).toBe(false);
+      expect(result.errors).toContain("STAGING_BASE_URL_PUBLIC_HOST_REQUIRED");
     }
   });
 
