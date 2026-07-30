@@ -1,0 +1,131 @@
+name: Staging Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Choose plan first; apply only after reviewing the dry-run"
+        required: true
+        type: choice
+        default: plan
+        options:
+          - plan
+          - apply
+      expected_sha:
+        description: "For apply, enter the exact 40-character main commit SHA shown by the plan"
+        required: false
+        type: string
+      confirmation:
+        description: "For apply, enter DEPLOY-STAGING"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Staging migration ${{ inputs.operation }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+    env:
+      STAGING_OPERATION: ${{ inputs.operation }}
+      STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      STAGING_CONFIRMATION: ${{ inputs.confirmation }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      STAGING_EXPECT_ENV: staging
+
+    steps:
+      - name: Check out the immutable release revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.84.2
+          github-token: ${{ github.token }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate release inputs and immutable revision
+        run: node scripts/verify-staging-release-inputs.mjs
+
+      - name: Verify repository release invariants
+        run: |
+          npm run check:migrations
+          npm run check:db-verifications
+
+      - name: Verify protected staging credentials are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${SUPABASE_ACCESS_TOKEN:-}" ]] || { echo "SUPABASE_ACCESS_TOKEN is not configured in the staging environment."; exit 1; }
+          [[ -n "${SUPABASE_DB_PASSWORD:-}" ]] || { echo "SUPABASE_DB_PASSWORD is not configured in the staging environment."; exit 1; }
+          echo "Protected staging credentials are available. Values were not printed."
+
+      - name: Link the exact staging Supabase project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Preview remote migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db push --linked --dry-run
+          {
+            echo "### Staging migration plan"
+            echo "- Operation: \`$STAGING_OPERATION\`"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Project suffix: \`${SUPABASE_PROJECT_REF: -4}\`"
+            echo "- Remote migration dry-run completed successfully."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply remote migrations
+        if: inputs.operation == 'apply'
+        run: supabase db push --linked
+
+      - name: Wait for HTTPS staging and run smoke tests
+        if: inputs.operation == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            echo "Staging smoke attempt $attempt of 12"
+            if npm run smoke:staging; then
+              echo "Staging smoke test passed."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Staging smoke test did not pass after 12 attempts."
+          exit 1
+
+      - name: Record successful apply
+        if: inputs.operation == 'apply' && success()
+        shell: bash
+        run: |
+          {
+            echo "### Staging migration applied"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- HTTPS health and public-route smoke tests passed."
+            echo "- No seed data was applied."
+          } >> "$GITHUB_STEP_SUMMARY"
