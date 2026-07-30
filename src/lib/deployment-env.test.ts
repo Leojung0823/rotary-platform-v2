@@ -16,13 +16,13 @@ const localEnvironment = {
 const stagingEnvironment = {
   ...localEnvironment,
   APP_ENV: "staging",
-  NEXT_PUBLIC_SITE_URL: "https://staging.rotary.example",
+  NEXT_PUBLIC_SITE_URL: "https://staging.rotary.example.com",
   NEXT_PUBLIC_SUPABASE_URL: "https://staging-project.supabase.co",
   TRUSTED_ADMIN_ENVIRONMENT: "staging",
   LINE_LOGIN_MODE: "line",
   LINE_LOGIN_CHANNEL_ID: "1234567890",
   LINE_LOGIN_CHANNEL_SECRET: "staging-channel-secret",
-  LINE_LOGIN_CALLBACK_URL: "https://staging.rotary.example/api/auth/line/callback",
+  LINE_LOGIN_CALLBACK_URL: "https://staging.rotary.example.com/api/auth/line/callback",
 };
 
 describe("deployment environment validation", () => {
@@ -42,12 +42,35 @@ describe("deployment environment validation", () => {
   it("rejects public staging over HTTP or with a local Supabase URL", () => {
     const report = inspectDeploymentEnvironment({
       ...stagingEnvironment,
-      NEXT_PUBLIC_SITE_URL: "http://staging.rotary.example",
+      NEXT_PUBLIC_SITE_URL: "http://staging.rotary.example.com",
       NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
     });
     expect(report.errors).toContain("NEXT_PUBLIC_SITE_URL_HTTPS_REQUIRED");
     expect(report.errors).toContain("NEXT_PUBLIC_SUPABASE_URL_HTTPS_REQUIRED");
     expect(report.errors).toContain("NEXT_PUBLIC_SUPABASE_URL_PUBLIC_HOST_REQUIRED");
+  });
+
+  it("rejects private, reserved and single-label hosted origins", () => {
+    for (const NEXT_PUBLIC_SITE_URL of [
+      "https://staging",
+      "https://printer.local",
+      "https://10.0.0.8",
+      "https://192.0.2.5",
+      "https://[fd00::1]",
+    ]) {
+      const report = inspectDeploymentEnvironment({ ...stagingEnvironment, NEXT_PUBLIC_SITE_URL });
+      expect(report.errors, NEXT_PUBLIC_SITE_URL).toContain("NEXT_PUBLIC_SITE_URL_PUBLIC_HOST_REQUIRED");
+    }
+
+    const report = inspectDeploymentEnvironment({
+      ...stagingEnvironment,
+      NEXT_PUBLIC_SUPABASE_URL: "https://192.168.1.5",
+      LINE_LOGIN_CALLBACK_URL: "https://[::1]/api/auth/line/callback",
+    });
+    expect(report.errors).toEqual(expect.arrayContaining([
+      "NEXT_PUBLIC_SUPABASE_URL_PUBLIC_HOST_REQUIRED",
+      "LINE_LOGIN_CALLBACK_URL_PUBLIC_HOST_REQUIRED",
+    ]));
   });
 
   it("rejects a mismatched trusted admin boundary", () => {
@@ -69,7 +92,7 @@ describe("deployment environment validation", () => {
   it("requires the LINE callback to match the exact application callback", () => {
     const report = inspectDeploymentEnvironment({
       ...stagingEnvironment,
-      LINE_LOGIN_CALLBACK_URL: "https://staging.rotary.example/wrong-callback",
+      LINE_LOGIN_CALLBACK_URL: "https://staging.rotary.example.com/wrong-callback",
     });
     expect(report.errors).toContain("LINE_LOGIN_CALLBACK_URL_MISMATCH");
   });
