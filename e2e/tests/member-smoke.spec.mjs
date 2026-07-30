@@ -76,8 +76,9 @@ test.describe("社員平台登入後核心導覽", () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test("桌面與手機都有可操作的登出入口", async ({ page, isMobile }) => {
-    if (isMobile) {
+  test("桌面與手機都有可操作的登出入口", async ({ page }, testInfo) => {
+    const mobile = testInfo.project.name === "android-chromium";
+    if (mobile) {
       await expect(page.getByRole("navigation", { name: "行動版導覽" }).getByRole("button", { name: "登出" })).toBeVisible();
     } else {
       await expect(page.locator("aside").getByRole("button", { name: "登出" })).toBeVisible();
