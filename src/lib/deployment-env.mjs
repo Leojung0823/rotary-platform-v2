@@ -21,7 +21,7 @@ function parseUrl(errors, name, rawValue, options = {}) {
     return null;
   }
 
-  if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
+  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) {
     errors.push(`${name}_INVALID`);
     return null;
   }
@@ -35,6 +35,16 @@ function parseUrl(errors, name, rawValue, options = {}) {
     errors.push(`${name}_PUBLIC_HOST_REQUIRED`);
   }
   return parsed;
+}
+
+function validateCredential(errors, environment, name, minimumLength = 20) {
+  const credential = value(environment, name);
+  if (!credential) {
+    errors.push(`${name}_REQUIRED`);
+  } else if (credential.length < minimumLength || /\s/u.test(credential)) {
+    errors.push(`${name}_INVALID`);
+  }
+  return credential;
 }
 
 /**
@@ -63,10 +73,8 @@ export function inspectDeploymentEnvironment(environment = process.env) {
     publicHostRequired: isHosted,
   });
 
-  const publishableKey = value(environment, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
-  const serviceRoleKey = value(environment, "SUPABASE_SERVICE_ROLE_KEY");
-  if (!publishableKey) errors.push("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY_REQUIRED");
-  if (!serviceRoleKey) errors.push("SUPABASE_SERVICE_ROLE_KEY_REQUIRED");
+  const publishableKey = validateCredential(errors, environment, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+  const serviceRoleKey = validateCredential(errors, environment, "SUPABASE_SERVICE_ROLE_KEY");
   if (publishableKey && serviceRoleKey && publishableKey === serviceRoleKey) {
     errors.push("SUPABASE_KEYS_MUST_DIFFER");
   }
@@ -82,14 +90,12 @@ export function inspectDeploymentEnvironment(environment = process.env) {
   if (isHosted && lineLoginMode !== "line") errors.push("HOSTED_LINE_LOGIN_MUST_USE_LINE");
 
   if (lineLoginMode === "mock") {
-    if (value(environment, "LINE_MOCK_SIGNING_SECRET").length < 32) {
-      errors.push("LINE_MOCK_SIGNING_SECRET_TOO_SHORT");
-    }
+    validateCredential(errors, environment, "LINE_MOCK_SIGNING_SECRET", 32);
   }
 
   if (lineLoginMode === "line") {
-    if (!value(environment, "LINE_LOGIN_CHANNEL_ID")) errors.push("LINE_LOGIN_CHANNEL_ID_REQUIRED");
-    if (!value(environment, "LINE_LOGIN_CHANNEL_SECRET")) errors.push("LINE_LOGIN_CHANNEL_SECRET_REQUIRED");
+    validateCredential(errors, environment, "LINE_LOGIN_CHANNEL_ID", 6);
+    validateCredential(errors, environment, "LINE_LOGIN_CHANNEL_SECRET", 20);
     const callbackUrl = parseUrl(errors, "LINE_LOGIN_CALLBACK_URL", value(environment, "LINE_LOGIN_CALLBACK_URL"), {
       httpsRequired: isHosted,
       publicHostRequired: isHosted,
@@ -104,6 +110,13 @@ export function inspectDeploymentEnvironment(environment = process.env) {
   if (!LINE_OA_MODES.has(lineOaMode)) errors.push("LINE_OA_MODE_INVALID");
   if (isStaging && lineOaMode === "mock") warnings.push("STAGING_LINE_OA_IS_MOCK");
   if (isProduction && lineOaMode !== "line") errors.push("PRODUCTION_LINE_OA_MUST_USE_LINE");
+
+  if (isHosted && value(environment, "BOOTSTRAP_SUPERADMIN_PASSWORD")) {
+    warnings.push("HOSTED_BOOTSTRAP_PASSWORD_REMOVE_AFTER_USE");
+  }
+  if (isHosted && value(environment, "VERIFY_OPERATOR_PASSWORD")) {
+    warnings.push("HOSTED_VERIFY_OPERATOR_PASSWORD_LOCAL_ONLY");
+  }
 
   return {
     ok: errors.length === 0,
