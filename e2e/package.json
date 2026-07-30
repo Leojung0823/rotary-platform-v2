@@ -1,0 +1,16 @@
+{
+  "name": "rotary-platform-v2-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "playwright test --config=playwright.config.mjs",
+    "install:chromium": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1"
+  }
+}
