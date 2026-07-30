@@ -17,6 +17,7 @@
     "verify:db": "bash scripts/verify-local-database.sh",
     "verify:auth": "node scripts/verify-local-auth-flow.mjs",
     "verify:deployment": "node scripts/verify-deployment-env.mjs",
+    "verify:staging-release": "node scripts/verify-staging-release-inputs.mjs",
     "smoke:staging": "node scripts/smoke-staging.mjs",
     "check:migrations": "bash scripts/check-migration-history.sh",
     "check:db-verifications": "node scripts/check-database-verification-manifest.mjs"
