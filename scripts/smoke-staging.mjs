@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { isPublicHostname } from "../src/lib/public-hostname.mjs";
+
 const rawBaseUrl = String(process.env.STAGING_BASE_URL ?? "").trim();
 const expectedEnvironment = String(process.env.STAGING_EXPECT_ENV ?? "staging").trim();
 
@@ -24,6 +26,9 @@ if (baseUrl.protocol !== "https:"
   || baseUrl.search
   || baseUrl.hash) {
   fail("STAGING_BASE_URL must be a credential-free HTTPS origin.");
+}
+if (!isPublicHostname(baseUrl.hostname)) {
+  fail("STAGING_BASE_URL must use a publicly routable hostname or IP address.");
 }
 
 async function request(path, options = {}) {

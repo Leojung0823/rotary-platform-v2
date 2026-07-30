@@ -10,7 +10,7 @@ const valid = {
   STAGING_CONFIRMATION: "",
   STAGING_EXPECTED_SHA: "",
   SUPABASE_PROJECT_REF: "abcdefghijklmnopqrst",
-  STAGING_BASE_URL: "https://staging.rotary.example",
+  STAGING_BASE_URL: "https://staging.rotary.example.com",
 };
 
 describe("staging release input", () => {
@@ -21,7 +21,7 @@ describe("staging release input", () => {
       eventName: "workflow_dispatch",
       refName: "main",
       commitSha,
-      siteOrigin: "https://staging.rotary.example",
+      siteOrigin: "https://staging.rotary.example.com",
       projectRefSuffix: "qrst",
       errors: [],
     });
@@ -51,7 +51,7 @@ describe("staging release input", () => {
     expect(accepted.ok).toBe(true);
   });
 
-  it("rejects non-manual triggers, non-main refs and unsafe staging origins", () => {
+  it("rejects non-manual triggers, non-main refs and malformed staging origins", () => {
     const result = inspectStagingReleaseInput({
       ...valid,
       GITHUB_EVENT_NAME: "push",
@@ -64,6 +64,23 @@ describe("staging release input", () => {
       "STAGING_BASE_URL_HTTPS_ORIGIN_REQUIRED",
       "STAGING_BASE_URL_PUBLIC_HOST_REQUIRED",
     ]));
+  });
+
+  it("rejects local, private, reserved and single-label staging hosts", () => {
+    for (const STAGING_BASE_URL of [
+      "https://staging",
+      "https://printer.local",
+      "https://10.0.0.8",
+      "https://100.64.0.1",
+      "https://192.0.2.1",
+      "https://198.51.100.1",
+      "https://[::1]",
+      "https://[fd00::1]",
+      "https://[::ffff:7f00:1]",
+    ]) {
+      const result = inspectStagingReleaseInput({ ...valid, STAGING_BASE_URL });
+      expect(result.errors, STAGING_BASE_URL).toContain("STAGING_BASE_URL_PUBLIC_HOST_REQUIRED");
+    }
   });
 
   it("rejects malformed revisions, project references and operations", () => {
