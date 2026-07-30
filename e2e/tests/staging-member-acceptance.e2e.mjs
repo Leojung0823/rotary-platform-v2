@@ -39,6 +39,8 @@ async function login(page) {
 }
 
 test.describe("受保護的 Hosted staging 社員驗收", () => {
+  test.skip(process.env.E2E_REMOTE !== "1", "Hosted staging acceptance only runs in protected remote mode.");
+
   test.beforeAll(() => {
     requireStagingConfiguration();
   });
