@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const createClient = vi.fn(() => ({ configured: true }));
-vi.mock("@supabase/supabase-js", () => ({ createClient }));
+const mocks = vi.hoisted(() => ({
+  createClient: vi.fn(() => ({ configured: true })),
+}));
+vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.createClient }));
 
 import { createLocalAdminClient, createTrustedAdminClient } from "./admin";
 
@@ -11,7 +13,7 @@ function configure(values: Record<string, string>) {
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  createClient.mockClear();
+  mocks.createClient.mockClear();
 });
 
 describe("Supabase admin boundaries", () => {
