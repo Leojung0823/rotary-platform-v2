@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "playwright test --config=playwright.config.mjs",
+    "test:staging": "playwright test tests/staging-member-acceptance.e2e.mjs --config=playwright.config.mjs --project=desktop-chromium",
     "install:chromium": "playwright install --with-deps chromium"
   },
   "devDependencies": {
