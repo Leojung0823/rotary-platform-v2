@@ -66,7 +66,7 @@ test.describe("社員平台登入後核心導覽", () => {
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/me");
-    await expect(page.getByText("會員中心", { exact: true }).first()).toBeVisible();
+    await expect(page.locator("main").getByText("會員中心", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "基本資料" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
