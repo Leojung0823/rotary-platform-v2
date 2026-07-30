@@ -4,6 +4,11 @@ import { getHealthSnapshot } from "@/lib/health";
 
 export const dynamic = "force-dynamic";
 
+const issueLabels: Record<string, string> = {
+  CONFIGURATION_INVALID: "部署設定尚未通過安全預檢",
+  DATABASE_UNAVAILABLE: "資料庫目前無法完成健康檢查",
+};
+
 export default async function StatusPage() {
   const health = await getHealthSnapshot();
   const healthy = health.status === "ok";
@@ -34,10 +39,10 @@ export default async function StatusPage() {
     </div>
 
     {health.issues.length > 0 && <section className="notice notice-error">
-      <strong>部署設定尚未完成：</strong> {health.issues.join("、")}
+      <strong>系統尚未就緒：</strong> {health.issues.map((issue) => issueLabels[issue] ?? "健康檢查未通過").join("、")}
     </section>}
     {health.warnings.length > 0 && <section className="notice notice-info">
-      <strong>提醒：</strong> {health.warnings.join("、")}
+      <strong>提醒：</strong> 測試環境仍有非阻擋式部署提醒，請由管理員執行部署前檢查指令確認。
     </section>}
 
     <Card>
