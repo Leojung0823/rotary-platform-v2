@@ -9,6 +9,7 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(self), geolocation=(), microphone=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
 ];
 
 if (hosted) {
@@ -16,9 +17,6 @@ if (hosted) {
     key: "Strict-Transport-Security",
     value: "max-age=31536000; includeSubDomains",
   });
-}
-if (applicationEnvironment !== "production") {
-  securityHeaders.push({ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" });
 }
 
 const nextConfig: NextConfig = {
