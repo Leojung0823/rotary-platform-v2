@@ -43,10 +43,13 @@ describe("staging browser acceptance workflow safety", () => {
     expect(workflow).not.toContain("upload-artifact");
     expect(playwrightConfig).toContain('const remoteRun = process.env.E2E_REMOTE === "1";');
     expect(playwrightConfig).toContain('const sensitiveRun = process.env.E2E_SENSITIVE === "1";');
+    expect(playwrightConfig).toContain("retries: sensitiveRun ? 0");
+    expect(playwrightConfig).toContain('reporter: sensitiveRun\n    ? [["line"]]');
     expect(playwrightConfig).toContain('trace: sensitiveRun ? "off"');
     expect(playwrightConfig).toContain('screenshot: sensitiveRun ? "off"');
     expect(playwrightConfig).toContain('video: sensitiveRun ? "off"');
     expect(playwrightConfig).toContain("webServer: remoteRun");
     expect(stagingTest).toContain('test.skip(process.env.E2E_REMOTE !== "1"');
+    expect(stagingTest).toContain("expect(health.issues).toEqual([])");
   });
 });

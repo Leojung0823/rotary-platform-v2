@@ -63,6 +63,7 @@ test.describe("受保護的 Hosted staging 社員驗收", () => {
     expect(health.revision).toBe(expectedSha.slice(0, 12));
     expect(health.checks?.configuration).toBe(true);
     expect(health.checks?.database).toBe(true);
+    expect(health.issues).toEqual([]);
 
     await login(page);
     await expectNoHorizontalOverflow(page);

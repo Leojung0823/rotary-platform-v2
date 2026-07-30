@@ -12,12 +12,11 @@ describe("staging release workflow safety", () => {
     expect(workflow).toContain("url: ${{ vars.STAGING_BASE_URL }}");
   });
 
-  it("checks out and confirms the immutable main revision", () => {
+  it("checks out the immutable main revision and is plan-only", () => {
     expect(workflow).toContain("ref: ${{ github.sha }}");
-    expect(workflow).toContain("STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}");
-    expect(workflow).toContain("STAGING_CONFIRMATION: ${{ inputs.confirmation }}");
+    expect(workflow).toContain("if: github.ref == 'refs/heads/main' && inputs.operation == 'plan'");
     expect(workflow).toContain("node scripts/verify-staging-release-inputs.mjs");
-    expect(workflow).toContain("DEPLOY-STAGING");
+    expect(workflow).not.toContain("DEPLOY-STAGING");
   });
 
   it("uses environment-scoped Supabase credentials without printing them", () => {
@@ -26,21 +25,23 @@ describe("staging release workflow safety", () => {
     expect(workflow).toContain("SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}");
     expect(workflow).not.toContain("echo \"$SUPABASE_ACCESS_TOKEN\"");
     expect(workflow).not.toContain("echo \"$SUPABASE_DB_PASSWORD\"");
+    const jobEnvironment = workflow.slice(
+      workflow.indexOf("    env:"),
+      workflow.indexOf("    steps:"),
+    );
+    expect(jobEnvironment).not.toContain("secrets.");
   });
 
-  it("always performs a dry-run before an apply and never resets or seeds remote data", () => {
-    const dryRunIndex = workflow.indexOf("supabase db push --linked --dry-run");
-    const applyIndex = workflow.indexOf("supabase db push --linked\n");
-    expect(dryRunIndex).toBeGreaterThan(-1);
-    expect(applyIndex).toBeGreaterThan(dryRunIndex);
-    expect(workflow).toContain("if: inputs.operation == 'apply'");
+  it("performs a dry-run and never applies, resets or seeds remote data", () => {
+    expect(workflow).toContain("supabase db push --linked --dry-run");
+    expect(workflow).not.toContain("supabase db push --linked\n");
     expect(workflow).not.toContain("db reset");
     expect(workflow).not.toContain("--include-seed");
   });
 
-  it("requires HTTPS smoke verification after applying migrations", () => {
-    expect(workflow).toContain("npm run smoke:staging");
+  it("keeps staging identity explicit without performing deployment acceptance", () => {
     expect(workflow).toContain("STAGING_EXPECT_ENV: staging");
-    expect(workflow).toContain("Staging smoke test did not pass after 12 attempts");
+    expect(workflow).not.toContain("npm run smoke:staging");
+    expect(workflow).not.toContain("STAGING_DEPLOY_HOOK");
   });
 });

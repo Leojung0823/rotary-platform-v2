@@ -42,8 +42,6 @@ export function inspectStagingReleaseInput(input = process.env) {
   const eventName = text(input.GITHUB_EVENT_NAME);
   const refName = text(input.GITHUB_REF_NAME);
   const githubSha = text(input.GITHUB_SHA).toLowerCase();
-  const expectedSha = text(input.STAGING_EXPECTED_SHA).toLowerCase();
-  const confirmation = text(input.STAGING_CONFIRMATION);
   const operation = text(input.STAGING_OPERATION || "plan");
   const projectRef = text(input.SUPABASE_PROJECT_REF);
   const siteUrl = validateHttpsOrigin(errors, text(input.STAGING_BASE_URL));
@@ -51,14 +49,8 @@ export function inspectStagingReleaseInput(input = process.env) {
   if (eventName !== "workflow_dispatch") errors.push("STAGING_RELEASE_MANUAL_ONLY");
   if (refName !== "main") errors.push("STAGING_RELEASE_MAIN_ONLY");
   if (!COMMIT_SHA_PATTERN.test(githubSha)) errors.push("GITHUB_SHA_INVALID");
-  if (!new Set(["plan", "apply"]).has(operation)) errors.push("STAGING_OPERATION_INVALID");
+  if (operation !== "plan") errors.push("STAGING_OPERATION_INVALID");
   if (!PROJECT_REF_PATTERN.test(projectRef)) errors.push("SUPABASE_PROJECT_REF_INVALID");
-
-  if (operation === "apply") {
-    if (confirmation !== "DEPLOY-STAGING") errors.push("STAGING_CONFIRMATION_MISMATCH");
-    if (!COMMIT_SHA_PATTERN.test(expectedSha)) errors.push("STAGING_EXPECTED_SHA_INVALID");
-    else if (expectedSha !== githubSha) errors.push("STAGING_EXPECTED_SHA_MISMATCH");
-  }
 
   return {
     ok: errors.length === 0,
