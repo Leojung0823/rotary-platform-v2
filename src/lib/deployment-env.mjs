@@ -1,7 +1,8 @@
+import { isPublicHostname } from "./public-hostname.mjs";
+
 const APP_ENVIRONMENTS = new Set(["local", "staging", "production"]);
 const LINE_LOGIN_MODES = new Set(["mock", "line"]);
 const LINE_OA_MODES = new Set(["mock", "line"]);
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 function value(environment, name) {
   return String(environment[name] ?? "").trim();
@@ -21,7 +22,7 @@ function parseUrl(errors, name, rawValue, options = {}) {
     return null;
   }
 
-  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) {
+  if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
     errors.push(`${name}_INVALID`);
     return null;
   }
@@ -31,7 +32,7 @@ function parseUrl(errors, name, rawValue, options = {}) {
   if (options.httpsRequired && parsed.protocol !== "https:") {
     errors.push(`${name}_HTTPS_REQUIRED`);
   }
-  if (options.publicHostRequired && LOCAL_HOSTS.has(parsed.hostname)) {
+  if (options.publicHostRequired && !isPublicHostname(parsed.hostname)) {
     errors.push(`${name}_PUBLIC_HOST_REQUIRED`);
   }
   return parsed;
@@ -140,5 +141,5 @@ export function assertDeploymentEnvironment(environment = process.env) {
 }
 
 export function isLocalHostname(hostname) {
-  return LOCAL_HOSTS.has(hostname);
+  return !isPublicHostname(hostname);
 }
