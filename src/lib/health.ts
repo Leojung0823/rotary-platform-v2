@@ -37,6 +37,11 @@ export async function getHealthSnapshot(): Promise<HealthSnapshot> {
     }
   }
 
+  const issues: string[] = [];
+  if (!deployment.ok) issues.push("CONFIGURATION_INVALID");
+  if (deployment.ok && !database) issues.push("DATABASE_UNAVAILABLE");
+
+  const warnings = deployment.warnings.length > 0 ? ["DEPLOYMENT_WARNING"] : [];
   const healthy = deployment.ok && database;
   return {
     status: healthy ? "ok" : "degraded",
@@ -48,7 +53,7 @@ export async function getHealthSnapshot(): Promise<HealthSnapshot> {
       configuration: deployment.ok,
       database,
     },
-    issues: deployment.errors,
-    warnings: deployment.warnings,
+    issues,
+    warnings,
   };
 }
