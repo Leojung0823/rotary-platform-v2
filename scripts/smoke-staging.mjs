@@ -42,8 +42,14 @@ function requireSecurityHeaders(response, label) {
   if (response.headers.get("x-frame-options") !== "DENY") {
     fail(`${label} is missing X-Frame-Options.`);
   }
-  if (response.headers.get("referrer-policy") !== "no-referrer") {
-    fail(`${label} is missing Referrer-Policy.`);
+  if (response.headers.get("referrer-policy") !== "strict-origin-when-cross-origin") {
+    fail(`${label} has an unexpected Referrer-Policy.`);
+  }
+  if (!String(response.headers.get("strict-transport-security") ?? "").includes("max-age=")) {
+    fail(`${label} is missing Strict-Transport-Security.`);
+  }
+  if (!String(response.headers.get("x-robots-tag") ?? "").includes("noindex")) {
+    fail(`${label} is missing staging noindex protection.`);
   }
 }
 
@@ -55,14 +61,12 @@ try {
   if (expectedEnvironment && snapshot.environment !== expectedEnvironment) {
     fail(`Health environment is ${snapshot.environment}, expected ${expectedEnvironment}.`);
   }
+  if (snapshot.issues?.length) fail("Health snapshot contains public issues.");
   console.log("PASS health and database readiness");
 
-  for (const path of ["/login", "/forgot-password"]) {
+  for (const path of ["/login", "/forgot-password", "/status", "/robots.txt"]) {
     const page = await request(path);
     if (page.status !== 200) fail(`${path} returned ${page.status}.`);
-    if (!String(page.headers.get("content-type") ?? "").includes("text/html")) {
-      fail(`${path} did not return HTML.`);
-    }
     requireSecurityHeaders(page, path);
     console.log(`PASS public page ${path}`);
   }
