@@ -52,9 +52,9 @@ test("管理員建立扶輪社後，受邀執行秘書可從 Email 設定密碼�
   await expect(page.getByRole("heading", { level: 1, name: "建立扶輪社" })).toBeVisible();
   await page.getByLabel("扶輪社代碼").fill(clubCode);
   await page.getByLabel("扶輪社名稱").fill(clubName);
-  await page.getByLabel("首位執行秘書姓名").fill(operatorName);
-  await page.getByLabel("首位執行秘書 Email").fill(operatorEmail);
-  await page.getByRole("button", { name: "建立扶輪社並寄出邀請" }).click();
+  await page.getByLabel("姓名").fill(operatorName);
+  await page.getByLabel("電子郵件").fill(operatorEmail);
+  await page.getByRole("button", { name: "建立並寄出邀請" }).click();
   await expect(page).toHaveURL(/\/platform\/clubs\/[0-9a-f-]+\?success=club_created$/u);
   await expect(page.getByRole("heading", { level: 1, name: clubName })).toBeVisible();
 
@@ -63,6 +63,7 @@ test("管理員建立扶輪社後，受邀執行秘書可從 Email 設定密碼�
     inviteHref = await findInvitationLink(operatorEmail);
     return Boolean(inviteHref);
   }, { timeout: 20_000, intervals: [250, 500, 1_000] }).toBe(true);
+  if (!inviteHref) throw new Error("Mailpit invitation link was not found.");
 
   const invitationUrl = new URL(inviteHref);
   expect(invitationUrl.pathname).toBe("/auth/confirm");
