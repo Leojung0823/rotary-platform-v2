@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { isPublicHostname } from "../../src/lib/public-hostname.mjs";
 
 const memberEmail = process.env.STAGING_TEST_MEMBER_EMAIL;
 const memberPassword = process.env.STAGING_TEST_MEMBER_PASSWORD;
@@ -12,8 +13,14 @@ function requireStagingConfiguration() {
   }
 
   const parsed = new URL(baseURL);
-  if (parsed.protocol !== "https:" || ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname)) {
-    throw new Error("Staging acceptance requires a public HTTPS origin.");
+  if (parsed.protocol !== "https:"
+    || parsed.username
+    || parsed.password
+    || parsed.pathname !== "/"
+    || parsed.search
+    || parsed.hash
+    || !isPublicHostname(parsed.hostname)) {
+    throw new Error("Staging acceptance requires a public, credential-free HTTPS origin.");
   }
   if (!/^[a-f0-9]{40}$/u.test(expectedSha)) {
     throw new Error("E2E_EXPECTED_SHA must be an exact 40-character commit SHA.");
