@@ -43,12 +43,21 @@ describe("staging browser acceptance input", () => {
     ]));
   });
 
-  it("requires a public HTTPS origin without path or credentials", () => {
+  it("requires an HTTPS origin without path or credentials", () => {
     for (const STAGING_BASE_URL of [
       "http://staging.example.com",
-      "https://localhost",
       "https://user:pass@staging.example.com",
       "https://staging.example.com/app",
+    ]) {
+      const result = inspectStagingBrowserAcceptanceInput({ ...validInput(), STAGING_BASE_URL });
+      expect(result.ok).toBe(false);
+      expect(result.errors).toContain("STAGING_BASE_URL_HTTPS_ORIGIN_REQUIRED");
+    }
+  });
+
+  it("rejects local, private and link-local staging hosts", () => {
+    for (const STAGING_BASE_URL of [
+      "https://localhost",
       "https://127.1.2.3",
       "https://10.0.0.8",
       "https://169.254.1.2",
