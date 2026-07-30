@@ -1,0 +1,95 @@
+import { describe, expect, it } from "vitest";
+import { inspectStagingReleaseInput } from "./staging-release.mjs";
+
+const commitSha = "0123456789abcdef0123456789abcdef01234567";
+const valid = {
+  GITHUB_EVENT_NAME: "workflow_dispatch",
+  GITHUB_REF_NAME: "main",
+  GITHUB_SHA: commitSha,
+  STAGING_OPERATION: "plan",
+  STAGING_CONFIRMATION: "",
+  STAGING_EXPECTED_SHA: "",
+  SUPABASE_PROJECT_REF: "abcdefghijklmnopqrst",
+  STAGING_BASE_URL: "https://staging.rotary.example",
+};
+
+describe("staging release input", () => {
+  it("accepts a manually dispatched main-branch migration plan", () => {
+    expect(inspectStagingReleaseInput(valid)).toMatchObject({
+      ok: true,
+      operation: "plan",
+      eventName: "workflow_dispatch",
+      refName: "main",
+      commitSha,
+      siteOrigin: "https://staging.rotary.example",
+      projectRefSuffix: "qrst",
+      errors: [],
+    });
+  });
+
+  it("requires the exact confirmation and immutable commit SHA for apply", () => {
+    const missing = inspectStagingReleaseInput({ ...valid, STAGING_OPERATION: "apply" });
+    expect(missing.errors).toEqual(expect.arrayContaining([
+      "STAGING_CONFIRMATION_MISMATCH",
+      "STAGING_EXPECTED_SHA_INVALID",
+    ]));
+
+    const mismatch = inspectStagingReleaseInput({
+      ...valid,
+      STAGING_OPERATION: "apply",
+      STAGING_CONFIRMATION: "DEPLOY-STAGING",
+      STAGING_EXPECTED_SHA: "abcdef0123456789abcdef0123456789abcdef01",
+    });
+    expect(mismatch.errors).toContain("STAGING_EXPECTED_SHA_MISMATCH");
+
+    const accepted = inspectStagingReleaseInput({
+      ...valid,
+      STAGING_OPERATION: "apply",
+      STAGING_CONFIRMATION: "DEPLOY-STAGING",
+      STAGING_EXPECTED_SHA: commitSha.toUpperCase(),
+    });
+    expect(accepted.ok).toBe(true);
+  });
+
+  it("rejects non-manual triggers, non-main refs and unsafe staging origins", () => {
+    const result = inspectStagingReleaseInput({
+      ...valid,
+      GITHUB_EVENT_NAME: "push",
+      GITHUB_REF_NAME: "feature/test",
+      STAGING_BASE_URL: "http://localhost:3000/path",
+    });
+    expect(result.errors).toEqual(expect.arrayContaining([
+      "STAGING_RELEASE_MANUAL_ONLY",
+      "STAGING_RELEASE_MAIN_ONLY",
+      "STAGING_BASE_URL_HTTPS_ORIGIN_REQUIRED",
+      "STAGING_BASE_URL_PUBLIC_HOST_REQUIRED",
+    ]));
+  });
+
+  it("rejects malformed revisions, project references and operations", () => {
+    const result = inspectStagingReleaseInput({
+      ...valid,
+      GITHUB_SHA: "not-a-commit",
+      STAGING_OPERATION: "production",
+      SUPABASE_PROJECT_REF: "wrong ref",
+    });
+    expect(result.errors).toEqual(expect.arrayContaining([
+      "GITHUB_SHA_INVALID",
+      "STAGING_OPERATION_INVALID",
+      "SUPABASE_PROJECT_REF_INVALID",
+    ]));
+  });
+
+  it("never includes access tokens or database passwords in its report", () => {
+    const accessToken = "never-print-access-token";
+    const databasePassword = "never-print-db-password";
+    const result = inspectStagingReleaseInput({
+      ...valid,
+      SUPABASE_ACCESS_TOKEN: accessToken,
+      SUPABASE_DB_PASSWORD: databasePassword,
+    });
+    const serialized = JSON.stringify(result);
+    expect(serialized).not.toContain(accessToken);
+    expect(serialized).not.toContain(databasePassword);
+  });
+});
