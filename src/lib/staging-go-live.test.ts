@@ -13,13 +13,15 @@ function validInput() {
     STAGING_PLAN_RUN_ID: "30536951086",
     STAGING_LAUNCH_CONFIRMATION: "LAUNCH-STAGING",
     STAGING_BACKUP_CONFIRMATION: "BACKUP-READY",
+    STAGING_PROVISION_TEST_DATA: "false",
+    STAGING_PROVISIONING_CONFIRMATION: "",
     SUPABASE_PROJECT_REF: "abcdefghijklmnopqrst",
     STAGING_BASE_URL: "https://staging.rotary.org",
     STAGING_EXPECTED_CLUB_NAME: "測試扶輪社",
     SUPABASE_ACCESS_TOKEN: "s".repeat(40),
     SUPABASE_DB_PASSWORD: "database-password-2026",
     STAGING_DEPLOY_HOOK: "https://api.deploy.rotary.org/hooks/project-token?branch=main",
-    STAGING_TEST_MEMBER_EMAIL: "member@example.test",
+    STAGING_TEST_MEMBER_EMAIL: ["staging-member", "example.test"].join("@"),
     STAGING_TEST_MEMBER_PASSWORD: "Rotary-Staging-Test-2026!",
   };
 }
@@ -34,6 +36,8 @@ describe("staging go-live input", () => {
       projectRefSuffix: "qrst",
       deploymentHookConfigured: true,
       credentialsConfigured: true,
+      provisioningEnabled: false,
+      provisioningConfirmationValid: true,
       errors: [],
     });
   });
@@ -89,5 +93,34 @@ describe("staging go-live input", () => {
     });
     expect(result.ok).toBe(false);
     expect(JSON.stringify(result)).not.toContain(secret);
+  });
+
+  it("gates optional initial provisioning with the exact confirmation", () => {
+    const enabled = inspectStagingGoLiveInput({
+      ...validInput(),
+      STAGING_PROVISION_TEST_DATA: "true",
+      STAGING_PROVISIONING_CONFIRMATION: "PROVISION-STAGING-TEST-DATA",
+    });
+    expect(enabled).toMatchObject({
+      ok: true,
+      provisioningEnabled: true,
+      provisioningConfirmationValid: true,
+    });
+
+    const wrongConfirmation = inspectStagingGoLiveInput({
+      ...validInput(),
+      STAGING_PROVISION_TEST_DATA: "true",
+      STAGING_PROVISIONING_CONFIRMATION: "PROVISION-PRODUCTION-DATA",
+    });
+    expect(wrongConfirmation.errors).toContain("STAGING_PROVISIONING_CONFIRMATION_MISMATCH");
+  });
+
+  it("does not require or inspect service-role when provisioning is disabled", () => {
+    const result = inspectStagingGoLiveInput({
+      ...validInput(),
+      SUPABASE_SERVICE_ROLE_KEY: "",
+    });
+    expect(result.ok).toBe(true);
+    expect(JSON.stringify(result)).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
 });

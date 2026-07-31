@@ -14,8 +14,15 @@ describe("staging go-live workflow safety", () => {
     expect(workflow).toContain("node scripts/verify-staging-go-live-inputs.mjs");
   });
 
-  it("requires all four protected inputs and the exact checked-out SHA", () => {
-    for (const input of ["expected_sha", "plan_run_id", "confirmation", "backup_confirmation"]) {
+  it("requires the protected launch inputs and the exact checked-out SHA", () => {
+    for (const input of [
+      "expected_sha",
+      "plan_run_id",
+      "confirmation",
+      "backup_confirmation",
+      "provision_test_data",
+      "provisioning_confirmation",
+    ]) {
       expect(workflow).toContain(`      ${input}:`);
     }
     expect(workflow).toContain("ref: ${{ github.sha }}");
@@ -23,6 +30,7 @@ describe("staging go-live workflow safety", () => {
     expect(workflow).toContain("E2E_EXPECTED_SHA: ${{ inputs.expected_sha }}");
     expect(workflow).toContain("LAUNCH-STAGING");
     expect(workflow).toContain("BACKUP-READY");
+    expect(workflow).toContain("PROVISION-STAGING-TEST-DATA");
   });
 
   it("uses only the permissions needed to read code and plan-run metadata", () => {
@@ -34,11 +42,13 @@ describe("staging go-live workflow safety", () => {
     const inputGate = workflow.indexOf("node scripts/verify-staging-go-live-inputs.mjs");
     const planGate = workflow.indexOf("node scripts/verify-staging-plan-run.mjs");
     const migrationChecks = workflow.indexOf("npm run check:migrations");
+    const projectIdentity = workflow.indexOf("node scripts/verify-staging-project-identity.mjs");
     const link = workflow.indexOf('supabase link --project-ref "$SUPABASE_PROJECT_REF"');
     expect(inputGate).toBeGreaterThan(-1);
     expect(planGate).toBeGreaterThan(inputGate);
     expect(migrationChecks).toBeGreaterThan(planGate);
-    expect(link).toBeGreaterThan(migrationChecks);
+    expect(projectIdentity).toBeGreaterThan(migrationChecks);
+    expect(link).toBeGreaterThan(projectIdentity);
   });
 
   it("performs one dry-run before one apply and never resets or loads a seed", () => {
@@ -65,6 +75,18 @@ describe("staging go-live workflow safety", () => {
     expect(acceptance).toBeGreaterThan(smoke);
   });
 
+  it("orders apply, optional provisioning, deploy, smoke and acceptance", () => {
+    const apply = workflow.indexOf("supabase db push --linked\n");
+    const provision = workflow.indexOf("node scripts/provision-staging-test-data.mjs\n");
+    const deploy = workflow.indexOf("node scripts/trigger-staging-deploy.mjs");
+    const smoke = workflow.indexOf("npm run smoke:staging");
+    const acceptance = workflow.indexOf("npm --prefix e2e run test:staging");
+    expect(provision).toBeGreaterThan(apply);
+    expect(deploy).toBeGreaterThan(provision);
+    expect(smoke).toBeGreaterThan(deploy);
+    expect(acceptance).toBeGreaterThan(smoke);
+  });
+
   it("does not upload protected browser artifacts or print credential variables", () => {
     expect(workflow).not.toContain("actions/upload-artifact");
     expect(workflow).not.toMatch(/echo.*(?:PASSWORD|TOKEN|DEPLOY_HOOK|PROJECT_REF)/u);
@@ -81,5 +103,33 @@ describe("staging go-live workflow safety", () => {
     expect(workflow).toContain("SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}");
     expect(workflow).toContain("STAGING_DEPLOY_HOOK: ${{ secrets.STAGING_DEPLOY_HOOK }}");
     expect(workflow).toContain("STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}");
+    expect(jobEnvironment).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+  });
+
+  it("limits service-role to skipped-by-default provisioning steps", () => {
+    expect(workflow.match(/SUPABASE_SERVICE_ROLE_KEY: \$\{\{ secrets\.SUPABASE_SERVICE_ROLE_KEY \}\}/gu)).toHaveLength(2);
+    const preflight = workflow.slice(
+      workflow.indexOf("- name: Validate optional initial provisioning credentials"),
+      workflow.indexOf("- name: Link the exact staging Supabase project"),
+    );
+    const provision = workflow.slice(
+      workflow.indexOf("- name: Provision or confirm initial staging test data"),
+      workflow.indexOf("- name: Trigger the protected staging deployment hook"),
+    );
+    for (const step of [preflight, provision]) {
+      expect(step).toContain("if: inputs.provision_test_data == true");
+      expect(step).toContain("SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}");
+    }
+  });
+
+  it("does not weaken migration, reset, seed, revision, smoke or acceptance gates", () => {
+    expect(workflow).not.toContain("db reset");
+    expect(workflow).not.toContain("--include-seed");
+    expect(workflow.match(/supabase db push --linked\n/gu)).toHaveLength(1);
+    expect(workflow).toContain("node scripts/verify-staging-plan-run.mjs");
+    expect(workflow).toContain("BACKUP-READY");
+    expect(workflow).toContain("node scripts/wait-for-staging-revision.mjs");
+    expect(workflow).toContain("npm run smoke:staging");
+    expect(workflow).toContain("npm --prefix e2e run test:staging");
   });
 });

@@ -19,6 +19,16 @@ on:
         description: "Confirm a usable staging backup/rollback point by entering BACKUP-READY"
         required: true
         type: string
+      provision_test_data:
+        description: "Create or confirm the pure-test club and member for a brand-new staging project"
+        required: true
+        type: boolean
+        default: false
+      provisioning_confirmation:
+        description: "When provisioning is enabled, enter PROVISION-STAGING-TEST-DATA"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -42,7 +52,10 @@ jobs:
       STAGING_PLAN_RUN_ID: ${{ inputs.plan_run_id }}
       STAGING_LAUNCH_CONFIRMATION: ${{ inputs.confirmation }}
       STAGING_BACKUP_CONFIRMATION: ${{ inputs.backup_confirmation }}
+      STAGING_PROVISION_TEST_DATA: ${{ inputs.provision_test_data }}
+      STAGING_PROVISIONING_CONFIRMATION: ${{ inputs.provisioning_confirmation }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
       STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
       E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
@@ -50,6 +63,8 @@ jobs:
       E2E_REMOTE: "1"
       E2E_SENSITIVE: "1"
       STAGING_EXPECT_ENV: staging
+      APP_ENV: staging
+      TRUSTED_ADMIN_ENVIRONMENT: staging
 
     steps:
       - name: Check out the immutable launch revision
@@ -80,6 +95,7 @@ jobs:
         run: npm --prefix e2e run install:chromium
 
       - name: Validate protected go-live inputs and credentials
+        id: go_live_inputs
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -90,6 +106,7 @@ jobs:
         run: node scripts/verify-staging-go-live-inputs.mjs
 
       - name: Verify the approved staging migration plan
+        id: migration_plan
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/verify-staging-plan-run.mjs
@@ -98,6 +115,27 @@ jobs:
         run: |
           npm run check:migrations
           npm run check:db-verifications
+
+      - name: Verify the Hosted Supabase staging project identity
+        id: staging_project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REFS: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REFS }}
+          PRODUCTION_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+          PRODUCTION_SUPABASE_URLS: ${{ vars.PRODUCTION_SUPABASE_URLS }}
+        run: node scripts/verify-staging-project-identity.mjs
+
+      - name: Validate optional initial provisioning credentials
+        if: inputs.provision_test_data == true
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+          STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+          STAGING_SHA_VERIFIED: ${{ steps.go_live_inputs.outputs.sha_verified }}
+          STAGING_PLAN_VERIFIED: ${{ steps.migration_plan.outputs.verified }}
+          STAGING_PROJECT_IDENTITY_VERIFIED: ${{ steps.staging_project.outputs.verified }}
+        run: node scripts/provision-staging-test-data.mjs --preflight
 
       - name: Link the exact staging Supabase project
         env:
@@ -116,6 +154,17 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: supabase db push --linked
+
+      - name: Provision or confirm initial staging test data
+        if: inputs.provision_test_data == true
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+          STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+          STAGING_SHA_VERIFIED: ${{ steps.go_live_inputs.outputs.sha_verified }}
+          STAGING_PLAN_VERIFIED: ${{ steps.migration_plan.outputs.verified }}
+          STAGING_PROJECT_IDENTITY_VERIFIED: ${{ steps.staging_project.outputs.verified }}
+        run: node scripts/provision-staging-test-data.mjs
 
       - name: Trigger the protected staging deployment hook
         env:
@@ -143,6 +192,7 @@ jobs:
             echo "- Commit: \`$GITHUB_SHA\`"
             echo "- Approved plan run: \`${STAGING_PLAN_RUN_ID}\`"
             echo "- Migration dry-run and apply completed."
+            echo "- Optional initial staging test-data provisioning respected its explicit gate."
             echo "- Exact deployment revision became healthy."
             echo "- HTTPS smoke and hosted member browser acceptance passed."
             echo "- No browser screenshots, video, trace or HTML report were retained."

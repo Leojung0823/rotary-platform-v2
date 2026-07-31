@@ -42,4 +42,15 @@ Container host 必須把 staging-only runtime variables 與 secrets 注入執行
 
 GitHub `staging` environment 的 `STAGING_DEPLOY_HOOK` secret 以 POST 觸發部署。Hook 接受請求只代表排程成功；workflow 仍會等待 `/api/health` 回報相同 SHA、`environment=staging`、configuration/database checks 均通過且 `issues=[]`，之後才執行 smoke 與 Hosted browser acceptance。
 
+全新 staging 第一次 Go-Live 可明確設定 `provision_test_data=true` 與
+`provisioning_confirmation=PROVISION-STAGING-TEST-DATA`。此模式先以 Supabase Management API
+驗證 active project 的 ref、名稱、database hostname 與非 production identity，再在 migration apply
+後、deployment 前建立或確認 acceptance 所需的純測試 club／account／membership。
+
+GitHub environment 的 `SUPABASE_SERVICE_ROLE_KEY` 只注入兩個由
+`inputs.provision_test_data == true` 保護的 steps：credential preflight 與 provisioning execution。
+它不屬於 job-level env，也不會提供給 project/plan validation、Supabase link、migration dry-run/apply、
+deployment hook、revision wait、smoke、Playwright 或 summary。後續一般部署保持
+`provision_test_data=false`，兩個 steps 皆 skip。
+
 若平台不能把 immutable SHA 放入 `APP_REVISION`、不能提供公開 HTTPS health endpoint，或 hook 可能觸發 production，該平台設定不得用於 Go-Live。

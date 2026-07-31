@@ -62,8 +62,13 @@ Environment secrets：
 - `STAGING_DEPLOY_HOOK`：只觸發 staging service 的 HTTPS POST deployment hook。
 - `STAGING_TEST_MEMBER_EMAIL`：staging 專用測試社員帳號。
 - `STAGING_TEST_MEMBER_PASSWORD`：staging 專用測試社員密碼。
+- `SUPABASE_SERVICE_ROLE_KEY`：只供明確啟用的第一次 staging test-data provisioning steps 使用；後續一般 Go-Live 不會取得此 secret。
 
-不要把上述 secret 改成 repository variable，也不要放入 `.env.example`。
+可選的 defense-in-depth variables：若已有 production inventory，可設定
+`PRODUCTION_SUPABASE_PROJECT_REF(S)` 或 `PRODUCTION_SUPABASE_URL(S)`。Go-Live project identity
+驗證會拒絕任何相符的 project；值可用逗號或空白分隔。
+
+不要把上述 secret 改成 repository variable，也不要把任何 secret 值放入 `.env.example`。
 
 ## 4. 部署平台啟動前檢查
 
@@ -113,7 +118,40 @@ Plan 不會套用 migration、不會 reset remote database，也不會載入 see
 4. `confirmation` 輸入 `LAUNCH-STAGING`。
 5. `backup_confirmation` 只有在可用 staging 備份或 rollback point 已確認後才能輸入 `BACKUP-READY`。
 6. 核對等待核准的是 GitHub `staging` environment、Hosted Supabase staging project 與 staging deployment service。
-7. 核准後，workflow 先驗證 plan API metadata 與 repository checks，再依序 link、dry-run、單次 apply、POST deployment hook、等待 exact revision、smoke、Hosted browser acceptance。
+7. 核准後，workflow 先驗證 plan API metadata、repository checks 與 Supabase Management API project identity，再依序 link、dry-run、單次 apply、可選的第一次純測試資料 provisioning、POST deployment hook、等待 exact revision、smoke、Hosted browser acceptance。
+
+Management API 回傳的 project ref 與 database hostname 必須符合 `SUPABASE_PROJECT_REF`，project name
+必須含 `staging`（不分大小寫），且狀態必須允許連線。API network、401、403、404、格式錯誤、
+production identifier 命中或不健康狀態一律 fail closed，response 與 token 不會輸出。
+
+#### 第一次全新 staging
+
+全新 project 尚無 schema，因此測試社團與社員只能在 migration apply 後建立。完成下列順序：
+
+1. 建立名稱含 `staging`、與 production 完全分離的 Hosted Supabase project。
+2. 建立並私密保存可用的 backup／logical dump；沒有可用 rollback point 不得繼續。
+3. 設定 GitHub `staging` environment variables 與 secrets，包括 `SUPABASE_SERVICE_ROLE_KEY`。
+4. 對合併後的 exact `main` SHA 執行成功的 `Staging Release` plan。
+5. 執行 `Staging Go-Live`，除了既有四個 inputs 外設定：
+   - `provision_test_data=true`
+   - `provisioning_confirmation=PROVISION-STAGING-TEST-DATA`
+6. Migration apply。
+7. 建立或確認純測試社團與測試社員。
+8. 觸發 staging deployment 並等待 exact revision。
+9. HTTPS smoke。
+10. Hosted member acceptance。
+
+Provisioning 只建立固定名稱 `Staging Test Member` 的純測試身份、active club、active account 與
+active membership；不建立 superadmin、operator 或管理角色。Email 必須明確使用 reserved test domain，
+不得使用真實姓名、手機或生日。重複執行只確認既有正確資料；identity、tenant、membership 或權限
+衝突不會被覆寫或刪除。
+
+#### 後續一般部署
+
+- `provision_test_data=false`
+- `provisioning_confirmation` 留空。
+- 不建立或修改測試資料。
+- Provisioning credential preflight 與 execution steps 都會 skip，`SUPABASE_SERVICE_ROLE_KEY` 不會提供給任何 workflow step。
 
 Plan run 必須來自本 repository 的 `Staging Release` workflow、`operation=plan`、`main`、相同 SHA、結論 success，且建立時間在最近 24 小時內。Fork、PR branch、其他 workflow/repository/SHA 或 apply job 都會被拒絕。只要 `main` 在 plan 後出現新 commit，就必須重新執行 plan。
 
@@ -127,6 +165,9 @@ Workflow 的 CI regression guard 會阻擋下列變更：
 - Go-Live 未先 dry-run 就 apply
 - 取消 staging environment
 - 移除 exact SHA、plan run、launch 或 backup confirmation
+- 移除 staging Management API project identity verification
+- 在未提供 `PROVISION-STAGING-TEST-DATA` 時執行 initial provisioning
+- 把 service-role key 放到 job-level env，或提供給 migration、deployment、smoke、Playwright／summary steps
 - 把 deployment hook 放進 variable、跟隨 redirect，或把 hook acceptance 當成 deployment success
 - 移除 exact revision wait、HTTPS smoke 或 Hosted acceptance
 
