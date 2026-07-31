@@ -57,6 +57,7 @@ p { color: var(--muted); line-height: 1.75; }
 .back-link { display: inline-block; margin-bottom: 28px; color: var(--blue); font-weight: 700; font-size: 14px; }
 .card { padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
 .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.attendance-metrics { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .metric-label { display: block; color: var(--muted); font-size: 13px; font-weight: 700; }
 .metric-value { display: block; margin-top: 8px; font-size: 38px; }
 .metric-text { font-size: 24px; }
@@ -128,6 +129,17 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 .activity-list li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .activity-list li:last-child { border-bottom: 0; }
 .activity-list small { color: var(--muted); }
+.attendance-roster { display: grid; gap: 16px; }
+.attendance-member { overflow: hidden; }
+.record-panel { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
+.record-panel p { margin: 8px 0 0; }
+.trend-list { display: grid; gap: 12px; }
+.trend-row { display: grid; grid-template-columns: 80px minmax(120px, 1fr) 64px; align-items: center; gap: 12px; font-size: 13px; }
+.trend-row strong { text-align: right; }
+.trend-track { height: 10px; overflow: hidden; border-radius: 999px; background: #e8edf1; }
+.trend-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--gold)); }
+.dashboard-attendance { gap: 16px; }
+.dashboard-attendance .section-heading form { display: flex; gap: 8px; }
 
 .auth-page { min-height: 100vh; display: grid; grid-template-columns: minmax(420px, 560px) 1fr; background: white; }
 .auth-panel { padding: clamp(28px, 6vw, 76px); display: flex; flex-direction: column; justify-content: center; }
@@ -163,6 +175,7 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   .auth-panel { min-height: 100vh; }
   .auth-art { display: none; }
   .two-column, .token-panel { grid-template-columns: 1fr; }
+  .trend-row { grid-template-columns: 70px minmax(80px, 1fr) 56px; }
 }
 
 @media (max-width: 540px) {

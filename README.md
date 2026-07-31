@@ -1,6 +1,6 @@
 # Rotary Platform V2
 
-扶輪社多租戶管理平台的本機開發版本。身份核心採 invitation-first：LINE Login、社員確認加入、資料驅動 RBAC、秘書後台、每社獨立 LINE OA 管理、裝置與登入紀錄、RLS、audit log 及版本化 API。社員功能目前包含社內留言板、活動建立與報名，以及 V0.5 短效 token 簽到 MVP。
+扶輪社多租戶管理平台的本機開發版本。身份核心採 invitation-first：LINE Login、社員確認加入、資料驅動 RBAC、秘書後台、每社獨立 LINE OA 管理、裝置與登入紀錄、RLS、audit log 及版本化 API。社員功能目前包含社內留言板、活動建立與報名、短效 token 簽到，以及 V0.8 出席管理與統計。
 
 目前驗證邊界是 Supabase local stack；不包含 staging、Lovable 正式環境、正式 LINE Console 或正式資料。
 
@@ -98,6 +98,18 @@ Bootstrap 預設只接受 `localhost`、`127.0.0.1` 或 `::1` 的 Supabase URL�
 
 詳細範圍見 [活動簽到 MVP 範圍](docs/mvp/EVENT_CHECKIN_MVP_SCOPE.md)。
 
+## V0.8 出席管理與統計
+
+1. 社員由 `/attendance` 選擇社別與最長 366 天日期範圍，查看本人最終狀態、出席率與趨勢。
+2. 具 `attendance.manage` 的社長、秘書、執行秘書或平台管理員由 `/attendance/manage` 查看活動名冊。
+3. 請假、公假、補出席及免計寫入獨立 `attendance_adjustments`；不修改 `event_attendances` 原始簽到。
+4. 所有調整與撤銷都要求原因、保留歷史並寫入 audit log；同活動同社員同時只能有一筆有效調整。
+5. `present` 與 `makeup` 計出席；V0.8 明確規定 `official_leave` 與 `exempt` 不計分母，`leave` 與 `absent` 計分母。
+6. 執行秘書等非社員 operator 不進入分母；多社真人按各社 membership 分開計算。
+7. 出席 CSV 只允許管理者匯出核准欄位，並中和 spreadsheet formula injection。
+
+完整規則請見 [V0.8 出席管理範圍](docs/mvp/ATTENDANCE_MANAGEMENT_V08_SCOPE.md)。Issue #25 真實 staging 驗收完成前，不得合併 V0.8 到 `main`。
+
 ## 每社 LINE OA 憑證
 
 真實 OA 模式不得共用一組全平台 token。每個社依社代碼設定獨立環境變數；符號會轉成底線，例如 `TAIPEI-NORTH`：
@@ -137,6 +149,7 @@ npm run verify:auth
 - `event_registration_tenant_integrity.sql`
 - `event_registration_lifecycle_hardening.sql`
 - `event_checkin_security.sql`
+- `attendance_management_security.sql`
 
 所有 SQL fixture 都包在 transaction 中並於結尾 rollback。驗證範圍包含：
 
@@ -156,6 +169,7 @@ npm run verify:auth
 - 簽到 token hash、短效時間窗、旋轉失效與單一 active session
 - 本人簽到、跨社／停權拒絕、重複掃描冪等
 - 人工補登、撤銷歷史、活動終止自動關閉 token 與 direct table denial
+- 出席 adjustment tenant isolation、原始簽到優先、狀態／分母政策、audit、歷史保留與 CSV 隱私投影
 
 `npm run verify:auth` 只使用 local Mailpit 與 local Supabase，驗證密碼登入、邀請接受、冪等與 tenant visibility。
 
