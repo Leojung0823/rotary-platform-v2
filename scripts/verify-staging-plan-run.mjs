@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { appendFile } from "node:fs/promises";
 import { inspectStagingPlanRun } from "../src/lib/staging-plan-run.mjs";
 
 const repository = String(process.env.GITHUB_REPOSITORY ?? "").trim();
@@ -59,6 +60,9 @@ try {
   }
 
   console.log("Referenced staging migration plan is successful, recent, and matches the exact main commit.");
+  if (process.env.GITHUB_OUTPUT) {
+    await appendFile(process.env.GITHUB_OUTPUT, "verified=true\n", { encoding: "utf8" });
+  }
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Unable to verify staging plan run.");
   process.exit(1);

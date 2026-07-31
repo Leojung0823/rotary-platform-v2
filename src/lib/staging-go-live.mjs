@@ -55,6 +55,9 @@ export function inspectStagingGoLiveInput(input = process.env) {
   const planRunId = text(input.STAGING_PLAN_RUN_ID);
   const confirmation = text(input.STAGING_LAUNCH_CONFIRMATION);
   const backupConfirmation = text(input.STAGING_BACKUP_CONFIRMATION);
+  const rawProvisionTestData = text(input.STAGING_PROVISION_TEST_DATA).toLowerCase();
+  const provisionTestData = rawProvisionTestData === "true";
+  const provisioningConfirmation = text(input.STAGING_PROVISIONING_CONFIRMATION);
   const projectRef = text(input.SUPABASE_PROJECT_REF);
   const siteUrl = validatePublicHttpsUrl(errors, "STAGING_BASE_URL", text(input.STAGING_BASE_URL), {
     originOnly: true,
@@ -69,6 +72,12 @@ export function inspectStagingGoLiveInput(input = process.env) {
   if (!RUN_ID_PATTERN.test(planRunId)) errors.push("STAGING_PLAN_RUN_ID_INVALID");
   if (confirmation !== "LAUNCH-STAGING") errors.push("STAGING_LAUNCH_CONFIRMATION_MISMATCH");
   if (backupConfirmation !== "BACKUP-READY") errors.push("STAGING_BACKUP_CONFIRMATION_MISMATCH");
+  if (!new Set(["true", "false"]).has(rawProvisionTestData)) {
+    errors.push("STAGING_PROVISION_TEST_DATA_INVALID");
+  }
+  if (provisionTestData && provisioningConfirmation !== "PROVISION-STAGING-TEST-DATA") {
+    errors.push("STAGING_PROVISIONING_CONFIRMATION_MISMATCH");
+  }
   if (!PROJECT_REF_PATTERN.test(projectRef)) errors.push("SUPABASE_PROJECT_REF_INVALID");
 
   const credentialsConfigured = [
@@ -95,6 +104,9 @@ export function inspectStagingGoLiveInput(input = process.env) {
     deploymentHookConfigured: Boolean(deployHook),
     credentialsConfigured,
     expectedClubConfigured: Boolean(expectedClubName),
+    provisioningEnabled: provisionTestData,
+    provisioningConfirmationValid: !provisionTestData
+      || provisioningConfirmation === "PROVISION-STAGING-TEST-DATA",
     errors,
   };
 }
