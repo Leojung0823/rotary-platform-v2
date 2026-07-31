@@ -13,6 +13,7 @@ function validInput() {
     SUPABASE_PROJECT_REF: projectRef,
     NEXT_PUBLIC_SUPABASE_URL: `https://${projectRef}.supabase.co`,
     SUPABASE_ACCESS_TOKEN: "management-token-".padEnd(40, "x"),
+    PRODUCTION_SUPABASE_PROJECT_REF: "bbbbbbbbbbbbbbbbbbbb",
   };
 }
 
@@ -33,8 +34,6 @@ describe("staging Supabase project identity", () => {
     const result = await verifyStagingProjectIdentity(validInput(), { fetchImpl });
     expect(result).toMatchObject({
       ok: true,
-      projectRefSuffix: "qrst",
-      supabaseOrigin: `https://${projectRef}.supabase.co`,
       projectConnectable: true,
       errors: [],
     });
@@ -77,6 +76,20 @@ describe("staging Supabase project identity", () => {
     ]));
   });
 
+  it("requires explicit, valid production inventory before claiming separation", () => {
+    const missingInventory = inspectStagingProjectIdentityInput({
+      ...validInput(),
+      PRODUCTION_SUPABASE_PROJECT_REF: "",
+    });
+    expect(missingInventory.errors).toContain("PRODUCTION_PROJECT_INVENTORY_REQUIRED");
+
+    const invalidInventory = inspectStagingProjectIdentityInput({
+      ...validInput(),
+      PRODUCTION_SUPABASE_PROJECT_REF: "not-a-project-ref",
+    });
+    expect(invalidInventory.errors).toContain("PRODUCTION_PROJECT_IDENTIFIER_INVALID");
+  });
+
   it("rejects hostname mismatch and non-connectable metadata", async () => {
     const local = inspectStagingProjectIdentityInput({
       ...validInput(),
@@ -96,6 +109,8 @@ describe("staging Supabase project identity", () => {
       async () => new Response("unauthorized", { status: 401 }),
       async () => new Response("forbidden", { status: 403 }),
       async () => new Response("missing", { status: 404 }),
+      async () => new Response("rate limited", { status: 429 }),
+      async () => new Response("upstream failure", { status: 500 }),
     ]) {
       const result = await verifyStagingProjectIdentity(validInput(), { fetchImpl });
       expect(result.errors).toEqual(["PROJECT_METADATA_REQUEST_FAILED"]);
@@ -106,12 +121,15 @@ describe("staging Supabase project identity", () => {
     expect(malformed.errors).toEqual(["PROJECT_METADATA_INVALID"]);
   });
 
-  it("never returns the access token or API response", async () => {
+  it("never returns the access token, project identifier, origin or API response", async () => {
     const secret = "management-token-do-not-serialize";
     const result = await verifyStagingProjectIdentity({
       ...validInput(),
       SUPABASE_ACCESS_TOKEN: secret,
     }, { fetchImpl: async () => response({ hidden: secret }) });
-    expect(JSON.stringify(result)).not.toContain(secret);
+    const serialized = JSON.stringify(result);
+    for (const sensitive of [secret, projectRef, `${projectRef}.supabase.co`]) {
+      expect(serialized).not.toContain(sensitive);
+    }
   });
 });

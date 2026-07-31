@@ -135,8 +135,8 @@ function fakeAdapter() {
     async listActivePlatformRoles(target: string) { return state.platformRoles.filter((row) => row.app_account_id === target); },
     async listActiveOperatorPermissions(target: string) { return state.operatorPermissions.filter((row) => row.app_account_id === target); },
     async listActiveClubRoles(target: string) { return state.clubRoles.filter((row) => row.app_account_id === target); },
-    async ensureAuditEvent(input: { clubId: string; actionKey: string; subjectType: string; subjectId: string }) {
-      state.audits.add(`${input.actionKey}:${input.subjectId}`);
+    async ensureAuditEvent(input: { actionKey: string; subjectType: string }) {
+      state.audits.add(`${input.actionKey}:${input.subjectType}`);
     },
     async verifyMemberAccess(input: { email: string; password: string; clubName: string }) {
       const auth = state.authUsers.find((row) => row.email === input.email && row.password === input.password);
@@ -257,6 +257,16 @@ describe("initial staging provisioning", () => {
     expect(adapter.state.people).toHaveLength(0);
   });
 
+  it("rejects an Auth user missing the explicit staging-test marker", async () => {
+    const adapter = fakeAdapter();
+    adapter.state.authUsers.push({
+      id: "auth-existing", email, password, email_confirmed_at: "2026-07-31T00:00:00Z",
+      user_metadata: { display_name: STAGING_TEST_MEMBER_DISPLAY_NAME },
+    });
+    await expect(provisionStagingTestData(validInput(), adapter)).rejects.toThrow("AUTH_USER_CONFLICT");
+    expect(adapter.state.people).toHaveLength(0);
+  });
+
   it("rejects person and account identity conflicts", async () => {
     const personConflict = fakeAdapter();
     personConflict.state.people.push({
@@ -309,5 +319,10 @@ describe("initial staging provisioning", () => {
     ]) {
       expect(serialized).not.toContain(sensitive);
     }
+    expect(JSON.stringify([...adapter.state.audits])).not.toContain(adapter.state.authUsers[0].id);
+    expect(JSON.stringify([...adapter.state.audits])).not.toContain(adapter.state.people[0].id);
+    expect(JSON.stringify([...adapter.state.audits])).not.toContain(adapter.state.accounts[0].id);
+    expect(JSON.stringify([...adapter.state.audits])).not.toContain(adapter.state.clubs[0].id);
+    expect(JSON.stringify([...adapter.state.audits])).not.toContain(adapter.state.memberships[0].id);
   });
 });

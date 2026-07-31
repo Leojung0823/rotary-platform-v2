@@ -5,8 +5,6 @@ import { verifyStagingProjectIdentity } from "../src/lib/staging-project-identit
 
 const result = await verifyStagingProjectIdentity(process.env);
 
-console.log(`Project suffix: ${result.projectRefSuffix ?? "invalid"}`);
-console.log(`Supabase origin configured: ${result.supabaseOrigin ? "yes" : "no"}`);
 console.log(`Project connectable: ${result.projectConnectable ? "yes" : "no"}`);
 
 if (!result.ok) {

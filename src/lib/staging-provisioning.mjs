@@ -33,7 +33,7 @@ const RESERVED_TEST_DOMAIN_PATTERN = /(?:^|\.)(?:example\.(?:com|net|org)|test|i
  * @property {(accountId: string) => Promise<ProvisionedRole[]>} listActivePlatformRoles
  * @property {(accountId: string) => Promise<ProvisionedRole[]>} listActiveOperatorPermissions
  * @property {(accountId: string) => Promise<ProvisionedRole[]>} listActiveClubRoles
- * @property {(input: {clubId: string, actionKey: string, subjectType: string, subjectId: string}) => Promise<void>} ensureAuditEvent
+ * @property {(input: {actionKey: string, subjectType: string}) => Promise<void>} ensureAuditEvent
  * @property {(input: {email: string, password: string, clubName: string}) => Promise<boolean>} verifyMemberAccess
  */
 
@@ -181,7 +181,7 @@ function validateAuthUser(user, email) {
   if (!user) return;
   const metadataName = text(user.user_metadata?.display_name);
   if (normalizedEmail(user.email) !== email || !user.email_confirmed_at
-    || (metadataName && metadataName !== DISPLAY_NAME)) {
+    || metadataName !== DISPLAY_NAME || user.user_metadata?.staging_test_identity !== true) {
     fail("AUTH_USER_CONFLICT");
   }
 }
@@ -312,11 +312,11 @@ export async function provisionStagingTestData(input, adapter) {
     fail("TEST_ACCOUNT_PRIVILEGE_CONFLICT");
   }
 
-  await adapter.ensureAuditEvent({ clubId: club.id, actionKey: "staging.test_club.provisioned", subjectType: "club", subjectId: club.id });
-  await adapter.ensureAuditEvent({ clubId: club.id, actionKey: "staging.test_auth_user.provisioned", subjectType: "auth_user", subjectId: finalAuthUser.id });
-  await adapter.ensureAuditEvent({ clubId: club.id, actionKey: "staging.test_person.provisioned", subjectType: "person", subjectId: finalPerson.id });
-  await adapter.ensureAuditEvent({ clubId: club.id, actionKey: "staging.test_account.provisioned", subjectType: "app_account", subjectId: account.id });
-  await adapter.ensureAuditEvent({ clubId: club.id, actionKey: "staging.test_membership.provisioned", subjectType: "club_membership", subjectId: membership.id });
+  await adapter.ensureAuditEvent({ actionKey: "staging.test_club.provisioned", subjectType: "staging_test_data" });
+  await adapter.ensureAuditEvent({ actionKey: "staging.test_auth_user.provisioned", subjectType: "staging_test_data" });
+  await adapter.ensureAuditEvent({ actionKey: "staging.test_person.provisioned", subjectType: "staging_test_data" });
+  await adapter.ensureAuditEvent({ actionKey: "staging.test_account.provisioned", subjectType: "staging_test_data" });
+  await adapter.ensureAuditEvent({ actionKey: "staging.test_membership.provisioned", subjectType: "staging_test_data" });
 
   if (!(await adapter.verifyMemberAccess({ email, password, clubName }))) {
     fail("STAGING_MEMBER_ACCESS_VERIFICATION_FAILED");
@@ -471,17 +471,17 @@ export function createSupabaseStagingProvisioningAdapter(config) {
       return rows(await admin.from("club_role_assignments").select("id, club_id, role_key")
         .eq("app_account_id", accountId).eq("assignment_status", "active"));
     },
-    async ensureAuditEvent({ clubId, actionKey, subjectType, subjectId }) {
+    async ensureAuditEvent({ actionKey, subjectType }) {
       const existing = rows(await admin.from("audit_logs").select("id")
-        .eq("club_id", clubId).eq("action_key", actionKey)
-        .eq("subject_type", subjectType).eq("subject_id", subjectId).limit(1));
+        .is("club_id", null).eq("action_key", actionKey)
+        .eq("subject_type", subjectType).is("subject_id", null).limit(1));
       if (existing.length > 0) return;
       const result = await admin.from("audit_logs").insert({
-        club_id: clubId,
+        club_id: null,
         actor_app_account_id: null,
         action_key: actionKey,
         subject_type: subjectType,
-        subject_id: subjectId,
+        subject_id: null,
         metadata: { source: "staging_initial_provisioning" },
       });
       if (result.error) databaseFailure();

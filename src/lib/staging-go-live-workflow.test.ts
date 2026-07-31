@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const workflow = readFileSync(".github/workflows/staging-go-live.yml", "utf8");
+const projectIdentityScript = readFileSync("scripts/verify-staging-project-identity.mjs", "utf8");
 
 describe("staging go-live workflow safety", () => {
   it("is manual-only, serialized, main-gated and protected by the staging environment", () => {
@@ -120,6 +121,15 @@ describe("staging go-live workflow safety", () => {
       expect(step).toContain("if: inputs.provision_test_data == true");
       expect(step).toContain("SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}");
     }
+  });
+
+  it("requires production inventory without logging staging project identifiers", () => {
+    expect(workflow).toContain("PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}");
+    expect(workflow).toContain("PRODUCTION_SUPABASE_PROJECT_REFS: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REFS }}");
+    expect(workflow).toContain("PRODUCTION_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}");
+    expect(workflow).toContain("PRODUCTION_SUPABASE_URLS: ${{ vars.PRODUCTION_SUPABASE_URLS }}");
+    expect(projectIdentityScript).not.toContain("projectRefSuffix");
+    expect(projectIdentityScript).not.toContain("supabaseOrigin");
   });
 
   it("does not weaken migration, reset, seed, revision, smoke or acceptance gates", () => {

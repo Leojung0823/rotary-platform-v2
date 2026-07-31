@@ -64,9 +64,9 @@ Environment secrets：
 - `STAGING_TEST_MEMBER_PASSWORD`：staging 專用測試社員密碼。
 - `SUPABASE_SERVICE_ROLE_KEY`：只供明確啟用的第一次 staging test-data provisioning steps 使用；後續一般 Go-Live 不會取得此 secret。
 
-可選的 defense-in-depth variables：若已有 production inventory，可設定
-`PRODUCTION_SUPABASE_PROJECT_REF(S)` 或 `PRODUCTION_SUPABASE_URL(S)`。Go-Live project identity
-驗證會拒絕任何相符的 project；值可用逗號或空白分隔。
+必須設定 production inventory：
+`PRODUCTION_SUPABASE_PROJECT_REF(S)` 或 `PRODUCTION_SUPABASE_URL(S)` 至少一種。
+Go-Live project identity 驗證會拒絕缺少 inventory、格式錯誤或任何相符的 project；值可用逗號或空白分隔。
 
 不要把上述 secret 改成 repository variable，也不要把任何 secret 值放入 `.env.example`。
 
@@ -130,7 +130,7 @@ production identifier 命中或不健康狀態一律 fail closed，response 與 
 
 1. 建立名稱含 `staging`、與 production 完全分離的 Hosted Supabase project。
 2. 建立並私密保存可用的 backup／logical dump；沒有可用 rollback point 不得繼續。
-3. 設定 GitHub `staging` environment variables 與 secrets，包括 `SUPABASE_SERVICE_ROLE_KEY`。
+3. 設定 GitHub `staging` environment variables 與 secrets，包括 `SUPABASE_SERVICE_ROLE_KEY` 與必填的 production inventory。
 4. 對合併後的 exact `main` SHA 執行成功的 `Staging Release` plan。
 5. 執行 `Staging Go-Live`，除了既有四個 inputs 外設定：
    - `provision_test_data=true`

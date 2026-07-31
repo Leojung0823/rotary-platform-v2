@@ -9,8 +9,8 @@ function text(value) {
 
 function configuredProductionRefs(input) {
   return [
-    text(input.PRODUCTION_SUPABASE_PROJECT_REF),
-    ...text(input.PRODUCTION_SUPABASE_PROJECT_REFS).split(/[\s,]+/u),
+    text(input.PRODUCTION_SUPABASE_PROJECT_REF).toLowerCase(),
+    ...text(input.PRODUCTION_SUPABASE_PROJECT_REFS).toLowerCase().split(/[\s,]+/u),
   ].filter(Boolean);
 }
 
@@ -71,6 +71,12 @@ export function inspectStagingProjectIdentityInput(input = process.env) {
 
   const productionRefs = configuredProductionRefs(input);
   const productionHosts = configuredProductionHosts(input);
+  if (productionRefs.length === 0 && productionHosts.length === 0) {
+    errors.push("PRODUCTION_PROJECT_INVENTORY_REQUIRED");
+  }
+  if (productionRefs.some((ref) => !PROJECT_REF_PATTERN.test(ref))) {
+    errors.push("PRODUCTION_PROJECT_IDENTIFIER_INVALID");
+  }
   if (productionRefs.includes(projectRef)
     || (parsed && productionHosts.includes(parsed.hostname.toLowerCase()))) {
     errors.push("PRODUCTION_PROJECT_IDENTIFIER_MATCH");
@@ -81,10 +87,6 @@ export function inspectStagingProjectIdentityInput(input = process.env) {
 
   return {
     ok: errors.length === 0,
-    projectRefSuffix: PROJECT_REF_PATTERN.test(projectRef) ? projectRef.slice(-4) : null,
-    supabaseOrigin: parsed && errors.every((error) => !error.startsWith("STAGING_SUPABASE"))
-      ? parsed.origin
-      : null,
     errors,
   };
 }
@@ -141,8 +143,6 @@ export async function verifyStagingProjectIdentity(input = process.env, options 
 
   return {
     ok: errors.length === 0,
-    projectRefSuffix: local.projectRefSuffix,
-    supabaseOrigin: local.supabaseOrigin,
     projectConnectable: errors.length === 0,
     errors,
   };
