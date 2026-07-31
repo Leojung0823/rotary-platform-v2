@@ -135,6 +135,11 @@ begin
   history := public.list_my_attendance_history('57000000-0000-4000-8000-000000000001', current_date - 30, current_date);
   summary := public.get_my_attendance_summary('57000000-0000-4000-8000-000000000001', current_date - 30, current_date);
   if jsonb_array_length(history->'records') <> 7 then raise exception 'member history did not apply event eligibility rules'; end if;
+  if exists (
+    select 1 from jsonb_array_elements(history->'records') as record
+    where jsonb_typeof(record->'attendance_credit') <> 'boolean'
+       or jsonb_typeof(record->'in_denominator') <> 'boolean'
+  ) then raise exception 'attendance history returned a nullable boolean projection'; end if;
   if history::text like '%取消例會%' then raise exception 'cancelled event entered attendance statistics'; end if;
   if history::text like '%不計出席活動%' then raise exception 'counts_for_attendance false event entered denominator'; end if;
   if (summary->>'denominator')::integer <> 5

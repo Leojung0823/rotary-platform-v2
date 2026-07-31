@@ -199,7 +199,7 @@ as $$
         or coalesce(adjustment.effective_status, '') <> 'official_leave'
         or public.attendance_official_leave_counts_in_denominator()
       ) as in_denominator,
-    raw.id is not null or adjustment.effective_status = 'makeup' as attendance_credit,
+    coalesce(raw.id is not null or adjustment.effective_status = 'makeup', false) as attendance_credit,
     raw.id,
     raw.checkin_method,
     raw.checked_in_at,
