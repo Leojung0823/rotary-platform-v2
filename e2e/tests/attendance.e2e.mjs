@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+
+try {
+  process.loadEnvFile(fileURLToPath(new URL("../../.env.local", import.meta.url)));
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
