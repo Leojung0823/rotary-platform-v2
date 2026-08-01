@@ -20,7 +20,10 @@
     "verify:staging-release": "node scripts/verify-staging-release-inputs.mjs",
     "smoke:staging": "node scripts/smoke-staging.mjs",
     "check:migrations": "bash scripts/check-migration-history.sh",
-    "check:db-verifications": "node scripts/check-database-verification-manifest.mjs"
+    "check:db-verifications": "node scripts/check-database-verification-manifest.mjs",
+    "jobs:announcements": "node scripts/run-notification-jobs.mts announcements",
+    "jobs:notifications": "node scripts/run-notification-jobs.mts notifications",
+    "jobs:run-once": "node scripts/run-notification-jobs.mts all"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.3",

@@ -47,4 +47,3 @@ describe("announcement input and lifecycle", () => {
     expect(isSafeAnnouncementActionPath("/announcements/a b")).toBe(false);
   });
 });
-
