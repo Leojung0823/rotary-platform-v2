@@ -6,8 +6,11 @@ export type MockProviderBehavior = "success" | "temporary_failure" | "permanent_
 
 export class MockNotificationProvider implements NotificationProvider {
   readonly mode = "mock" as const;
+  private readonly behavior: MockProviderBehavior;
 
-  constructor(private readonly behavior: MockProviderBehavior = "success") {}
+  constructor(behavior: MockProviderBehavior = "success") {
+    this.behavior = behavior;
+  }
 
   async deliver(request: ProviderDeliveryRequest): Promise<ProviderDeliveryResult> {
     if (this.behavior === "temporary_failure") {

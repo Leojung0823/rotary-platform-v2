@@ -1,6 +1,6 @@
-import type { NotificationProvider } from "./provider";
-import { generalizedDeliveryError } from "./redaction";
-import type { DeliveryClaim, ScheduledAnnouncementClaim, WorkerCounts } from "./types";
+import type { NotificationProvider } from "./provider.ts";
+import { generalizedDeliveryError } from "./redaction.ts";
+import type { DeliveryClaim, ScheduledAnnouncementClaim, WorkerCounts } from "./types.ts";
 
 const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
 export const MAX_ANNOUNCEMENT_BATCH = 50;
