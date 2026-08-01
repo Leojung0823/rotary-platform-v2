@@ -112,6 +112,16 @@ describe("mutation request boundary", () => {
     })).toBe(true);
   });
 
+  it("keeps a remotely reachable local misconfiguration HTTPS-only", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(isSameOriginMutation({
+      requestOrigin: "http://remote.example",
+      configuredSiteUrl: "http://remote.example",
+      origin: "http://remote.example",
+      fetchSite: "same-origin",
+    })).toBe(false);
+  });
+
   it("requires the configured HTTPS origin in production instead of trusting request Host", () => {
     vi.stubEnv("APP_ENV", "production");
 

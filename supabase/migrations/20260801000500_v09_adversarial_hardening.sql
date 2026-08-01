@@ -25,6 +25,12 @@ begin
     raise exception using errcode = '23514', message = 'announcement_transition_immutable';
   end if;
 
+  if new.status = 'published'
+    and old.status is distinct from new.status
+    and current_setting('v09.publish_transition', true) <> 'authorized' then
+    raise exception using errcode = '23514', message = 'announcement_publish_transition_denied';
+  end if;
+
   if old.published_by_account_id is distinct from new.published_by_account_id
     or old.published_at is distinct from new.published_at then
     if old.published_by_account_id is not null

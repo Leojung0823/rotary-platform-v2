@@ -432,6 +432,11 @@ begin
     raise exception 'direct update initialized publication metadata';
   exception when check_violation then null; end;
   begin
+    update public.club_announcements set status = 'published'
+    where id = draft_id;
+    raise exception 'direct update published without metadata';
+  exception when check_violation then null; end;
+  begin
     insert into public.club_announcements as announcement (
       id, club_id, title, body, status, created_by_account_id
     ) values (

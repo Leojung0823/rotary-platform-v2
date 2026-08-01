@@ -125,17 +125,28 @@ function trustedOrigin(value: string, production: boolean) {
   }
 }
 
+function isLoopbackRequestOrigin(value: string) {
+  try {
+    const url = new URL(value);
+    return ["localhost", "127.0.0.1", "::1"].includes(url.hostname.replace(/^\[|\]$/gu, ""));
+  } catch {
+    return false;
+  }
+}
+
 export function isSameOriginMutation(input: {
   requestOrigin: string;
   origin: string | null;
   fetchSite: string | null;
   configuredSiteUrl?: string;
 }) {
-  // `next start` always sets NODE_ENV=production, including an explicitly
-  // configured local environment. Prefer the declared app environment and
-  // only fall back to NODE_ENV for deployments that do not declare one.
+  // `next start` uses NODE_ENV=production locally. The HTTP exception is
+  // intentionally narrow: an APP_ENV=local process must also receive a
+  // loopback request origin. A remotely reachable process remains HTTPS-only.
   const appEnvironment = process.env.APP_ENV?.trim().toLowerCase();
-  const production = appEnvironment ? appEnvironment === "production" : process.env.NODE_ENV === "production";
+  const production = appEnvironment === "production"
+    || (process.env.NODE_ENV === "production"
+      && !(appEnvironment === "local" && isLoopbackRequestOrigin(input.requestOrigin)));
   const configured = input.configuredSiteUrl?.trim();
   const expectedOrigin = configured
     ? trustedOrigin(configured, production)
