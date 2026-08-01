@@ -89,7 +89,7 @@ test.describe("受保護的 Hosted staging 社員驗收", () => {
     expect(contactLength).toBeGreaterThan(0);
     await expectNoHorizontalOverflow(page);
 
-    await page.getByRole("button", { name: "登出" }).click();
+    await page.getByRole("complementary").getByRole("button", { name: "登出" }).click();
     await expect(page).toHaveURL(/\/login(?:\?.*)?$/u);
     await expect(page.getByRole("heading", { level: 1, name: "歡迎回來" })).toBeVisible();
   });

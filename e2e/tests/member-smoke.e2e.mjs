@@ -78,13 +78,11 @@ test.describe("社員平台登入後核心導覽", () => {
 
   test("桌面與手機都有可操作的登出入口", async ({ page }, testInfo) => {
     const mobile = testInfo.project.name === "android-chromium";
-    if (mobile) {
-      await expect(page.getByRole("navigation", { name: "行動版導覽" }).getByRole("button", { name: "登出" })).toBeVisible();
-    } else {
-      await expect(page.locator("aside").getByRole("button", { name: "登出" })).toBeVisible();
-    }
-
-    await page.getByRole("button", { name: "登出" }).click();
+    const logoutButton = mobile
+      ? page.getByRole("navigation", { name: "行動版導覽" }).getByRole("button", { name: "登出" })
+      : page.getByRole("complementary").getByRole("button", { name: "登出" });
+    await expect(logoutButton).toBeVisible();
+    await logoutButton.click();
     await expect(page).toHaveURL(/\/login$/u);
     await expect(page.getByRole("heading", { level: 1, name: "歡迎回來" })).toBeVisible();
   });

@@ -22,13 +22,18 @@ async function login(page, email, password) {
 }
 
 async function readLocalSupabaseAdmin() {
-  const contents = await readFile(localEnvPath, "utf8");
-  const values = new Map();
-  for (const line of contents.split(/\r?\n/u)) {
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator < 1) continue;
-    values.set(line.slice(0, separator), line.slice(separator + 1));
+  const values = new Map(Object.entries({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  }).filter(([, value]) => Boolean(value)));
+  if (values.size === 0) {
+    const contents = await readFile(localEnvPath, "utf8");
+    for (const line of contents.split(/\r?\n/u)) {
+      if (!line || line.startsWith("#")) continue;
+      const separator = line.indexOf("=");
+      if (separator < 1) continue;
+      values.set(line.slice(0, separator), line.slice(separator + 1));
+    }
   }
 
   const url = values.get("NEXT_PUBLIC_SUPABASE_URL");
@@ -125,7 +130,7 @@ test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入
     await expect(page).toHaveURL(/\/login\?success=password_updated$/u);
     await expect(page.getByText("密碼已更新，請使用新密碼登入。", { exact: true })).toBeVisible();
     await login(page, adminEmail, newPassword);
-    await page.getByRole("button", { name: "登出" }).click();
+    await page.getByRole("complementary").getByRole("button", { name: "登出" }).click();
     await expect(page).toHaveURL(/\/login$/u);
   } finally {
     await restorePassword(adminEmail, adminPassword);
@@ -133,6 +138,6 @@ test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入
 
   expect(passwordChanged).toBe(true);
   await login(page, adminEmail, adminPassword);
-  await page.getByRole("button", { name: "登出" }).click();
+  await page.getByRole("complementary").getByRole("button", { name: "登出" }).click();
   await expect(page).toHaveURL(/\/login$/u);
 });
