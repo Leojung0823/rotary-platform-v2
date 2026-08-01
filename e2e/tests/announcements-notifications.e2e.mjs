@@ -53,12 +53,14 @@ async function setupFixtures() {
   fixture.managerEmail = `announcement-manager-${suffix}@example.test`;
   fixture.memberEmail = `announcement-member-${suffix}@example.test`;
   fixture.clubId = randomUUID();
+  fixture.otherClubId = randomUUID();
   fixture.managerPersonId = randomUUID();
   fixture.memberPersonId = randomUUID();
   fixture.managerAccountId = randomUUID();
   fixture.memberAccountId = randomUUID();
   fixture.managerMembershipId = randomUUID();
   fixture.memberMembershipId = randomUUID();
+  fixture.otherMembershipId = randomUUID();
   fixture.title = `本機公告 ${suffix.slice(0, 8)}`;
   const [managerUser, memberUser] = await Promise.all([
     createAuthUser(fixture.managerEmail, fixture.password, "公告測試秘書"),
@@ -80,14 +82,41 @@ async function setupFixtures() {
     activated_at: new Date().toISOString(),
     created_by_app_account_id: fixture.managerAccountId,
   });
+  await insert("clubs", {
+    id: fixture.otherClubId,
+    club_code: `V09-OTHER-${suffix.slice(0, 6)}`,
+    club_name: `公告隔離測試社 ${suffix.slice(0, 6)}`,
+    club_status: "active",
+    activated_at: new Date().toISOString(),
+    created_by_app_account_id: fixture.managerAccountId,
+  });
   await insert("club_memberships", [
     { id: fixture.managerMembershipId, club_id: fixture.clubId, person_id: fixture.managerPersonId, membership_status: "active", joined_on: "2020-01-01", created_by_app_account_id: fixture.managerAccountId },
     { id: fixture.memberMembershipId, club_id: fixture.clubId, person_id: fixture.memberPersonId, membership_status: "active", joined_on: "2020-01-01", created_by_app_account_id: fixture.managerAccountId },
+    { id: fixture.otherMembershipId, club_id: fixture.otherClubId, person_id: fixture.memberPersonId, membership_status: "active", joined_on: "2020-01-01", created_by_app_account_id: fixture.managerAccountId },
   ]);
   await insert("club_role_assignments", {
     id: randomUUID(), club_id: fixture.clubId, app_account_id: fixture.managerAccountId,
     role_key: "secretary", assignment_status: "active", granted_by_app_account_id: fixture.managerAccountId,
   });
+}
+
+async function activateSummary(page, summary, testInfo) {
+  await summary.scrollIntoViewIfNeeded();
+  if (testInfo.project.name === "android-chromium") {
+    const box = await summary.boundingBox();
+    expect(box).not.toBeNull();
+    await page.touchscreen.tap(box.x + (box.width / 2), box.y + (box.height / 2));
+  } else {
+    await summary.click();
+  }
+  await expect(summary.locator("..")).toHaveAttribute("open", "");
+}
+
+function futureLocalDateTime() {
+  const date = new Date(Date.now() + 120_000);
+  date.setMilliseconds(0);
+  return new Date(date.getTime() - (date.getTimezoneOffset() * 60_000)).toISOString().slice(0, 19);
 }
 
 async function login(page, email) {
@@ -118,16 +147,13 @@ test.describe("V0.9 公告與通知本機瀏覽器流程", () => {
     await page.getByRole("button", { name: "儲存草稿" }).click();
     await expect(page).toHaveURL(new RegExp(`/announcements/manage/[^?]+\\?clubId=${fixture.clubId}&success=created$`, "u"));
     await expect(page.getByText("草稿已建立。")).toBeVisible();
+    await page.getByLabel("標題").fill(`${fixture.title} 已更新`);
+    await page.getByRole("radio", { name: "指定職務" }).check();
+    await page.getByRole("radio", { name: "全體有效社員" }).check();
+    await page.getByRole("button", { name: "儲存新版本" }).click();
+    await expect(page.getByText("公告已更新並保留版本。")).toBeVisible();
     const publishSummary = page.getByText("繼續發布", { exact: true });
-    await publishSummary.scrollIntoViewIfNeeded();
-    if (testInfo.project.name === "android-chromium") {
-      const box = await publishSummary.boundingBox();
-      expect(box).not.toBeNull();
-      await page.touchscreen.tap(box.x + (box.width / 2), box.y + (box.height / 2));
-    } else {
-      await publishSummary.click();
-    }
-    await expect(publishSummary.locator("..")).toHaveAttribute("open", "");
+    await activateSummary(page, publishSummary, testInfo);
     await page.getByRole("button", { name: "確認立即發布" }).click();
     await expect(page.getByText("公告已發布並解析受眾。")).toBeVisible();
     await expect(page.getByText("受眾通知")).toBeVisible();
@@ -137,19 +163,41 @@ test.describe("V0.9 公告與通知本機瀏覽器流程", () => {
     const memberPage = await memberContext.newPage();
     await login(memberPage, fixture.memberEmail);
     await memberPage.goto(`/announcements?clubId=${fixture.clubId}`);
-    await expect(memberPage.getByText(fixture.title, { exact: true })).toBeVisible();
+    await expect(memberPage.getByText(`${fixture.title} 已更新`, { exact: true })).toBeVisible();
     await memberPage.getByRole("link", { name: "查看公告 →" }).click();
-    await expect(memberPage.getByRole("heading", { level: 1, name: fixture.title })).toBeVisible();
+    await expect(memberPage.getByRole("heading", { level: 1, name: `${fixture.title} 已更新` })).toBeVisible();
     await memberPage.getByRole("button", { name: "標記已讀" }).click();
     await expect(memberPage.getByText("已標記為已讀。")).toBeVisible();
     await memberPage.goto("/notifications");
-    await expect(memberPage.getByText(fixture.title, { exact: true })).toBeVisible();
+    await expect(memberPage.getByText(`${fixture.title} 已更新`, { exact: true })).toBeVisible();
+    await expect(memberPage.getByRole("link", { name: /通知 1/u })).toBeVisible();
     await memberPage.getByText("全部標記為已讀", { exact: true }).click();
     await memberPage.getByRole("button", { name: "確認全部已讀" }).click();
     await expect(memberPage.getByText("已更新已讀狀態。")).toBeVisible();
     await memberPage.goto("/announcements/manage");
     await expect(memberPage).toHaveURL(/\/access-denied\?reason=announcement_manage_required$/u);
+    await memberPage.goto(`/announcements?clubId=${fixture.otherClubId}`);
+    await expect(memberPage.getByText(`${fixture.title} 已更新`, { exact: true })).toHaveCount(0);
     await expectNoHorizontalOverflow(memberPage);
     await memberContext.close();
+
+    await page.goto(`/announcements/manage/new?clubId=${fixture.clubId}`);
+    await page.getByLabel("標題").fill(`排程 ${fixture.title}`);
+    await page.getByLabel("內容").fill("這是本機排程與取消 smoke。 ");
+    await page.getByRole("button", { name: "儲存草稿" }).click();
+    const scheduleSummary = page.getByText("繼續排程", { exact: true });
+    await activateSummary(page, scheduleSummary, testInfo);
+    await page.getByLabel("發布時間").fill(futureLocalDateTime());
+    await page.getByRole("button", { name: "確認排程" }).click();
+    await expect(page.getByText("公告已排程。")).toBeVisible();
+    await expect(page.getByText("已排程", { exact: true })).toBeVisible();
+    const cancelSummary = page.getByText("繼續取消", { exact: true });
+    await activateSummary(page, cancelSummary, testInfo);
+    await page.getByPlaceholder("取消原因").fill("本機 smoke 取消");
+    await page.getByRole("button", { name: "確認取消" }).click();
+    await expect(page.getByText("公告已取消。")).toBeVisible();
+    await page.goto("/dashboard");
+    await expect(page.getByRole("link", { name: /通知 /u })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
   });
 });
