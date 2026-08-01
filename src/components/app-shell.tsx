@@ -8,7 +8,7 @@ function environmentLabel() {
   return "LOCAL";
 }
 
-export function AppShell({ identity, children }: { identity: Identity; children: React.ReactNode }) {
+export function AppShell({ identity, unreadCount, children }: { identity: Identity; unreadCount: number; children: React.ReactNode }) {
   const isPlatform = identity.platform_roles.includes("superadmin") || identity.platform_roles.includes("platform_admin");
   return <div className="shell">
     <aside className="sidebar">
@@ -19,6 +19,8 @@ export function AppShell({ identity, children }: { identity: Identity; children:
         <Link href="/directory">社員名冊</Link>
         <Link href="/events">活動</Link>
         <Link href="/attendance">出席</Link>
+        <Link href="/announcements">公告</Link>
+        <Link href="/notifications">通知{unreadCount > 0 && <span className="nav-count" aria-label={`${unreadCount} 則未讀通知`}>{Math.min(unreadCount, 99)}</span>}</Link>
         <Link href="/board">留言板</Link>
         <Link href="/me">會員中心</Link>
         {isPlatform && <Link href="/platform/clubs">平台管理</Link>}
@@ -35,6 +37,8 @@ export function AppShell({ identity, children }: { identity: Identity; children:
       <Link href="/directory">名冊</Link>
       <Link href="/events">活動</Link>
       <Link href="/attendance">出席</Link>
+      <Link href="/announcements">公告</Link>
+      <Link href="/notifications">通知{unreadCount > 0 && <span className="nav-count">{Math.min(unreadCount, 99)}</span>}</Link>
       <Link href="/board">留言板</Link>
       <Link href="/me">我的</Link>
       {isPlatform && <Link href="/platform/clubs">平台</Link>}

@@ -34,6 +34,7 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .sidebar nav { display: grid; gap: 6px; }
 .sidebar nav a { padding: 12px 14px; border-radius: 10px; color: #bfd3df; font-weight: 650; }
 .sidebar nav a:hover { background: rgba(255,255,255,.08); color: white; }
+.nav-count { display: inline-grid; min-width: 20px; height: 20px; place-items: center; margin-left: 7px; padding: 0 5px; border-radius: 999px; color: #102a41; background: var(--gold); font-size: 11px; font-weight: 900; }
 .account { display: flex; gap: 10px; align-items: center; margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); min-width: 0; }
 .account div:last-child { min-width: 0; }
 .account strong, .account small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -140,6 +141,11 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 .trend-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--gold)); }
 .dashboard-attendance { gap: 16px; }
 .dashboard-attendance .section-heading form { display: flex; gap: 8px; }
+.announcement-body { overflow-wrap: anywhere; margin: 24px 0; }
+.notification-list { gap: 14px; }
+fieldset.card { min-width: 0; display: grid; gap: 12px; }
+details.card summary, details summary { cursor: pointer; color: var(--blue); font-weight: 800; }
+textarea.input { resize: vertical; }
 
 .auth-page { min-height: 100vh; display: grid; grid-template-columns: minmax(420px, 560px) 1fr; background: white; }
 .auth-panel { padding: clamp(28px, 6vw, 76px); display: flex; flex-direction: column; justify-content: center; }

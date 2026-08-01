@@ -112,8 +112,9 @@ export const productFeatures: ProductFeature[] = [
     title: "公告與排程通知",
     summary: "公告草稿、發布、LINE／Email 通知、排程與送達紀錄。",
     category: "溝通與內容",
-    status: "developing",
-    phase: "V0.9",
+    status: "available",
+    phase: "目前可測試",
+    href: "/announcements",
   },
   {
     slug: "documents",

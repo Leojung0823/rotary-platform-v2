@@ -2,6 +2,13 @@ import Link from "next/link";
 import { Badge, Card, EmptyState, Notice } from "@/components/ui";
 import { hasPlatformAccess, requireIdentity } from "@/lib/auth";
 import { parseAttendanceClubs, parseAttendanceSummary } from "@/lib/attendance/projections";
+import {
+  formatAnnouncementTime,
+  parseAnnouncementList,
+  parseManageableAnnouncements,
+  parseNotificationList,
+  type AnnouncementClub,
+} from "@/lib/announcements/projections";
 import { createClient } from "@/lib/supabase/server";
 
  type Club = {
@@ -19,19 +26,25 @@ function isoDate(date: Date) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ attendanceClubId?: string }>;
+  searchParams: Promise<{ attendanceClubId?: string; announcementClubId?: string }>;
 }) {
   const identity = await requireIdentity();
   const query = await searchParams;
   const supabase = await createClient();
-  const [{ data, error }, attendanceClubsResult] = await Promise.all([
+  const [{ data, error }, attendanceClubsResult, announcementClubsResult, unreadResult] = await Promise.all([
     supabase.rpc("list_manageable_clubs"),
     supabase.rpc("list_my_attendance_clubs"),
+    supabase.rpc("list_my_announcement_clubs"),
+    supabase.rpc("get_my_unread_notification_count"),
   ]);
   const clubs = (data ?? []) as Club[];
   const attendanceClubs = attendanceClubsResult.error ? null : parseAttendanceClubs(attendanceClubsResult.data);
   const selectedAttendanceClub = attendanceClubs?.find((club) => club.club_id === query.attendanceClubId)
     ?? attendanceClubs?.[0]
+    ?? null;
+  const announcementClubs = announcementClubsResult.error ? null : (announcementClubsResult.data ?? []) as AnnouncementClub[];
+  const selectedAnnouncementClub = announcementClubs?.find((club) => club.club_id === query.announcementClubId)
+    ?? announcementClubs?.[0]
     ?? null;
   const dateTo = new Date();
   const dateFrom = new Date(dateTo);
@@ -51,6 +64,27 @@ export default async function DashboardPage({
       });
     attendanceSummary = summaryResult.error ? null : parseAttendanceSummary(summaryResult.data);
   }
+  const [announcementListResult, notificationListResult, manageableResult] = await Promise.all([
+    selectedAnnouncementClub ? supabase.rpc("list_my_announcements", {
+      p_club_id: selectedAnnouncementClub.club_id, p_cursor: null, p_limit: 5,
+    }) : Promise.resolve({ data: { items: [] }, error: null }),
+    supabase.rpc("list_my_notifications", { p_cursor: null, p_limit: 5 }),
+    selectedAnnouncementClub?.can_manage ? supabase.rpc("list_manageable_announcements", {
+      p_club_id: selectedAnnouncementClub.club_id, p_status: null, p_cursor: null, p_limit: 100,
+    }) : Promise.resolve({ data: { items: [] }, error: null }),
+  ]);
+  const latestAnnouncements = announcementListResult.error ? null : parseAnnouncementList(announcementListResult.data);
+  const recentNotifications = notificationListResult.error ? null : parseNotificationList(notificationListResult.data);
+  const manageableAnnouncements = manageableResult.error ? null : parseManageableAnnouncements(manageableResult.data);
+  const deliverySummaries = selectedAnnouncementClub?.can_manage && manageableAnnouncements
+    ? await Promise.all(manageableAnnouncements.map((announcement) => supabase.rpc("get_announcement_delivery_summary", {
+      p_club_id: selectedAnnouncementClub.club_id, p_announcement_id: announcement.id,
+    })))
+    : [];
+  const failedDeliveryCount = deliverySummaries.reduce((sum, result) => {
+    const value = result.error || !result.data || typeof result.data !== "object" ? 0 : Number((result.data as { failed_count?: number }).failed_count ?? 0);
+    return sum + value;
+  }, 0);
 
   return (
     <div className="page-stack">
@@ -100,6 +134,13 @@ export default async function DashboardPage({
             </div>)}
           </div>}
         </Card>
+      </section>}
+
+      {selectedAnnouncementClub && <section className="page-stack dashboard-attendance">
+        <div className="section-heading"><div><p className="eyebrow">V0.9 公告與通知</p><h2>{selectedAnnouncementClub.club_name}</h2></div><div className="form-actions">{announcementClubs && announcementClubs.length > 1 && <form method="get"><label className="sr-only" htmlFor="announcementClubId">切換公告社別</label><select className="input" id="announcementClubId" name="announcementClubId" defaultValue={selectedAnnouncementClub.club_id}>{announcementClubs.map((club) => <option key={club.club_id} value={club.club_id}>{club.club_name}</option>)}</select><button className="button button-secondary" type="submit">切換</button></form>}<Link className="button" href={`/announcements?clubId=${selectedAnnouncementClub.club_id}`}>查看公告</Link></div></div>
+        <div className="metric-grid attendance-metrics"><Card><span className="metric-label">未讀通知</span><strong className="metric-value">{unreadResult.error ? "—" : Number(unreadResult.data ?? 0)}</strong></Card>{selectedAnnouncementClub.can_manage && <><Card><span className="metric-label">草稿</span><strong className="metric-value">{manageableAnnouncements?.filter((item) => item.status === "draft").length ?? "—"}</strong></Card><Card><span className="metric-label">已排程</span><strong className="metric-value">{manageableAnnouncements?.filter((item) => item.status === "scheduled").length ?? "—"}</strong></Card><Card><span className="metric-label">失敗送達</span><strong className="metric-value">{failedDeliveryCount}</strong></Card></>}</div>
+        <div className="two-column"><Card><div className="section-heading"><h2>最新公告</h2><span>{latestAnnouncements?.length ?? 0} 筆</span></div>{latestAnnouncements?.length ? <ul className="activity-list">{latestAnnouncements.map((item) => <li key={item.id}><Link href={`/announcements/${item.id}?clubId=${item.club_id}`}>{item.title}</Link><small>{formatAnnouncementTime(item.published_at)}</small></li>)}</ul> : <p>目前沒有可讀公告。</p>}</Card><Card><div className="section-heading"><h2>最近通知</h2><Link href="/notifications">全部</Link></div>{recentNotifications?.length ? <ul className="activity-list">{recentNotifications.map((item) => <li key={item.id}><Link href={item.action_path}>{item.title}</Link><small>{item.read_at ? "已讀" : "未讀"}</small></li>)}</ul> : <p>目前沒有通知。</p>}</Card></div>
+        {selectedAnnouncementClub.can_manage && <Card><div className="section-heading"><h2>即將發布</h2><Link href={`/announcements/manage?clubId=${selectedAnnouncementClub.club_id}&status=scheduled`}>管理</Link></div>{manageableAnnouncements?.filter((item) => item.status === "scheduled").slice(0, 5).map((item) => <p key={item.id}><Link href={`/announcements/manage/${item.id}?clubId=${selectedAnnouncementClub.club_id}`}>{item.title}</Link> · {formatAnnouncementTime(item.publish_at)}</p>) || <p>目前沒有排程公告。</p>}</Card>}
       </section>}
 
       <Card>
