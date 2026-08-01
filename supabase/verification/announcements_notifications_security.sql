@@ -268,7 +268,12 @@ do $$ declare claimed integer; second_count integer; result jsonb; begin
   if claimed <> 1 then raise exception 'due scheduled announcement was not claimed'; end if;
   select count(*) into second_count from public.claim_due_scheduled_announcements(10, 'worker-schedule-2') where announcement_id = current_setting('v09.scheduled_id')::uuid;
   if second_count <> 0 then raise exception 'valid schedule lease was reclaimed'; end if;
-  select public.complete_scheduled_announcement_claim(announcement_id, claim_token) into result
+  begin
+    perform public.complete_scheduled_announcement_claim(announcement_id, claim_token, 'worker-schedule-2')
+    from v09_schedule_claims where announcement_id = current_setting('v09.scheduled_id')::uuid;
+    raise exception 'foreign worker completed scheduled claim';
+  exception when no_data_found then null; end;
+  select public.complete_scheduled_announcement_claim(announcement_id, claim_token, 'worker-schedule-1') into result
   from v09_schedule_claims where announcement_id = current_setting('v09.scheduled_id')::uuid;
   if (select status from public.club_announcements where id = current_setting('v09.scheduled_id')::uuid) <> 'published' then raise exception 'scheduled claim was not published'; end if;
 end $$;
@@ -283,7 +288,11 @@ do $$ declare claim_count integer; second_count integer; first_claim record; sec
   if second_count <> 0 then raise exception 'active delivery leases were reclaimed'; end if;
 
   select * into first_claim from v09_delivery_claims order by delivery_id limit 1;
-  status_value := public.fail_notification_delivery(first_claim.delivery_id, first_claim.claim_token, 'provider_temporary');
+  begin
+    perform public.complete_notification_delivery(first_claim.delivery_id, first_claim.claim_token, 'worker-delivery-2', 'foreign-worker');
+    raise exception 'foreign worker completed delivery claim';
+  exception when no_data_found then null; end;
+  status_value := public.fail_notification_delivery(first_claim.delivery_id, first_claim.claim_token, 'worker-delivery-1', 'provider_temporary');
   if status_value <> 'retry_wait'
      or (select generalized_error_code from public.notification_deliveries where id = first_claim.delivery_id) <> 'provider_temporary'
      or (select next_attempt_at <= now() from public.notification_deliveries where id = first_claim.delivery_id) then
@@ -291,7 +300,7 @@ do $$ declare claim_count integer; second_count integer; first_claim record; sec
   end if;
   update public.notification_deliveries set next_attempt_at = now() - interval '1 second' where id = first_claim.delivery_id;
   select * into second_claim from public.claim_notification_deliveries(1, 'worker-delivery-retry') where delivery_id = first_claim.delivery_id;
-  perform public.complete_notification_delivery(second_claim.delivery_id, second_claim.claim_token, 'mock-generalized-reference');
+  perform public.complete_notification_delivery(second_claim.delivery_id, second_claim.claim_token, 'worker-delivery-retry', 'mock-generalized-reference');
   if (select status from public.notification_deliveries where id = first_claim.delivery_id) <> 'sent' then raise exception 'retry did not complete delivery'; end if;
   if exists (select 1 from public.claim_notification_deliveries(100, 'worker-delivery-after-sent') where delivery_id = first_claim.delivery_id) then raise exception 'sent delivery was reclaimed'; end if;
 
@@ -307,7 +316,7 @@ do $$ declare claim_count integer; second_count integer; first_claim record; sec
   if retry_claim.delivery_id is null then
     raise exception 'fixture did not create a second delivery for retry';
   end if;
-  status_value := public.fail_notification_delivery(retry_claim.delivery_id, retry_claim.claim_token, 'provider_permanent');
+  status_value := public.fail_notification_delivery(retry_claim.delivery_id, retry_claim.claim_token, 'worker-delivery-1', 'provider_permanent');
   if status_value <> 'failed' then raise exception 'permanent failure was retried'; end if;
   if exists (select 1 from public.notification_deliveries where provider_message_id_hash like '%mock-generalized-reference%') then raise exception 'provider reference body was stored'; end if;
 end $$;
@@ -404,6 +413,35 @@ do $$ begin
   exception when insufficient_privilege then null; end;
   begin delete from public.notification_deliveries where notification_id in (select id from public.account_notifications where source_id = current_setting('v09.all_id')::uuid); raise exception 'delivery hard deleted';
   exception when insufficient_privilege then null; end;
+end $$;
+
+-- Repair trigger permits publication metadata only through trusted RPC paths.
+do $$
+declare draft_id uuid := current_setting('v09.draft_id')::uuid;
+begin
+  begin
+    update public.club_announcements set status = 'draft'
+    where id = current_setting('v09.all_id')::uuid;
+    raise exception 'published announcement reverted to draft';
+  exception when check_violation then null; end;
+  begin
+    update public.club_announcements
+    set status = 'published', publish_at = now(), published_at = now(),
+        published_by_account_id = '39000000-0000-4000-8000-000000000001'
+    where id = draft_id;
+    raise exception 'direct update initialized publication metadata';
+  exception when check_violation then null; end;
+  begin
+    insert into public.club_announcements as announcement (
+      id, club_id, title, body, status, created_by_account_id
+    ) values (
+      draft_id, '59000000-0000-4000-8000-000000000001', '覆寫', '覆寫', 'draft',
+      '39000000-0000-4000-8000-000000000001'
+    ) on conflict (id) do update
+    set status = 'published', publish_at = now(), published_at = now(),
+        published_by_account_id = '39000000-0000-4000-8000-000000000001';
+    raise exception 'upsert initialized publication metadata';
+  exception when check_violation then null; end;
 end $$;
 
 -- Every management mutation is audited with generalized metadata only.

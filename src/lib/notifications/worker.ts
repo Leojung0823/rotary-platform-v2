@@ -13,7 +13,12 @@ export function assertLocalWorkerEnvironment(urlValue: string | undefined, appEn
   if (!urlValue) throw new Error("local_worker_configuration_missing");
   let url: URL;
   try { url = new URL(urlValue); } catch { throw new Error("local_worker_url_invalid"); }
-  if (appEnvironment === "production" || !localHosts.has(url.hostname)) {
+  const hostname = url.hostname.replace(/^\[|\]$/gu, "");
+  if (appEnvironment === "production"
+    || !["http:", "https:"].includes(url.protocol)
+    || url.username
+    || url.password
+    || !localHosts.has(hostname)) {
     throw new Error("local_worker_remote_refused");
   }
   return url.toString();
@@ -52,11 +57,13 @@ export async function runAnnouncementBatch(
     const completed = await client.rpc("complete_scheduled_announcement_claim", {
       p_announcement_id: claim.announcement_id,
       p_claim_token: claim.claim_token,
+      p_worker_id: workerId,
     });
     if (completed.error) {
       const failed = await client.rpc("fail_scheduled_announcement_claim", {
         p_announcement_id: claim.announcement_id,
         p_claim_token: claim.claim_token,
+        p_worker_id: workerId,
         p_error_code: "worker_temporary",
       });
       const status = rpcError(failed, "fail_announcement_claim");
@@ -89,6 +96,7 @@ export async function runNotificationBatch(
       const completed = await client.rpc("complete_notification_delivery", {
         p_delivery_id: claim.delivery_id,
         p_claim_token: claim.claim_token,
+        p_worker_id: workerId,
         p_provider_message_reference: outcome.messageReference,
       });
       rpcError(completed, "complete_delivery");
@@ -98,6 +106,7 @@ export async function runNotificationBatch(
     const failed = await client.rpc("fail_notification_delivery", {
       p_delivery_id: claim.delivery_id,
       p_claim_token: claim.claim_token,
+      p_worker_id: workerId,
       p_error_code: generalizedDeliveryError(outcome.errorCode),
     });
     const status = rpcError(failed, "fail_delivery");

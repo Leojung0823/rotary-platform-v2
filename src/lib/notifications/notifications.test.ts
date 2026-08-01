@@ -62,10 +62,16 @@ describe("notification providers and policy", () => {
 });
 
 describe("bounded local worker", () => {
-  it("accepts local URLs and permanently refuses production or remote URLs", () => {
+  it("accepts only HTTP(S) loopback URLs without embedded credentials", () => {
     expect(assertLocalWorkerEnvironment("http://127.0.0.1:54321", "local")).toContain("127.0.0.1");
+    expect(assertLocalWorkerEnvironment("http://localhost:54321", "local")).toContain("localhost");
+    expect(assertLocalWorkerEnvironment("http://[::1]:54321", "local")).toContain("[::1]");
     expect(() => assertLocalWorkerEnvironment("https://example.supabase.co", "local")).toThrow("remote_refused");
     expect(() => assertLocalWorkerEnvironment("http://localhost:54321", "production")).toThrow("remote_refused");
+    expect(() => assertLocalWorkerEnvironment("http://user:password@localhost:54321", "local")).toThrow("remote_refused");
+    expect(() => assertLocalWorkerEnvironment("ftp://localhost:54321", "local")).toThrow("remote_refused");
+    expect(() => assertLocalWorkerEnvironment("//localhost:54321", "local")).toThrow("url_invalid");
+    expect(() => assertLocalWorkerEnvironment("http://localhost.evil.example:54321", "local")).toThrow("remote_refused");
   });
 
   it("rejects unbounded batch sizes", () => {
@@ -81,5 +87,8 @@ describe("bounded local worker", () => {
     const result = await runNotificationBatch({ rpc }, new MockNotificationProvider(), "worker-1", 1);
     expect(result).toMatchObject({ claimed: 1, completed: 1, failed: 0 });
     expect(rpc).toHaveBeenCalledTimes(2);
+    expect(rpc).toHaveBeenLastCalledWith("complete_notification_delivery", expect.objectContaining({
+      p_worker_id: "worker-1",
+    }));
   });
 });
