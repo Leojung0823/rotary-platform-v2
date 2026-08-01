@@ -46,6 +46,7 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .mobile-nav { display: none; }
 
 .page-stack { display: grid; gap: 30px; max-width: 1180px; margin: 0 auto; }
+.page-stack > * { min-width: 0; }
 .narrow { max-width: 850px; }
 .page-header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 h1, h2, h3, p { margin-top: 0; }

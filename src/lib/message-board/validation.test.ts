@@ -102,6 +102,16 @@ describe("mutation request boundary", () => {
     expect(isSameOriginMutation({ requestOrigin: "http://localhost:3000", origin: "http://localhost:3000", fetchSite: "none" })).toBe(false);
   });
 
+  it("honors an explicit local app environment when next start sets NODE_ENV=production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(isSameOriginMutation({
+      requestOrigin: "http://localhost:3000",
+      configuredSiteUrl: "http://localhost:3000",
+      origin: "http://localhost:3000",
+      fetchSite: "same-origin",
+    })).toBe(true);
+  });
+
   it("requires the configured HTTPS origin in production instead of trusting request Host", () => {
     vi.stubEnv("APP_ENV", "production");
 

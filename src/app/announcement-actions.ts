@@ -85,7 +85,7 @@ export async function updateAnnouncementAction(formData: FormData) {
     p_club_id: clubId!, p_announcement_id: announcementId!, p_title: title!, p_body: body!,
     p_audiences: audiences!, p_publish_at: publishAt!, p_expire_at: expireAt!, p_pinned_until: pinnedUntil!,
   });
-  const path = `/announcements/manage/${announcementId!}`;
+  const path = `/announcements/manage/${announcementId!}?clubId=${clubId!}`;
   if (error) redirect(resultPath(path, "error", genericError(error.message)));
   revalidatePath(path); revalidatePath("/announcements/manage");
   redirect(resultPath(path, "success", "updated"));
@@ -112,7 +112,7 @@ export async function scheduleAnnouncementAction(formData: FormData) {
   const { error } = await supabase.rpc("schedule_club_announcement", {
     p_club_id: ids!.clubId, p_announcement_id: ids!.announcementId, p_publish_at: publishAt!,
   });
-  const path = `/announcements/manage/${ids!.announcementId}`;
+  const path = `/announcements/manage/${ids!.announcementId}?clubId=${ids!.clubId}`;
   if (error) redirect(resultPath(path, "error", genericError(error.message)));
   revalidatePath(path); revalidatePath("/announcements/manage");
   redirect(resultPath(path, "success", "scheduled"));
@@ -126,7 +126,7 @@ export async function publishAnnouncementAction(formData: FormData) {
   const { error } = await supabase.rpc("publish_club_announcement", {
     p_club_id: ids!.clubId, p_announcement_id: ids!.announcementId,
   });
-  const path = `/announcements/manage/${ids!.announcementId}`;
+  const path = `/announcements/manage/${ids!.announcementId}?clubId=${ids!.clubId}`;
   if (error) redirect(resultPath(path, "error", genericError(error.message)));
   revalidatePath("/announcements"); revalidatePath("/notifications"); revalidatePath("/dashboard");
   redirect(resultPath(path, "success", "published"));
@@ -144,7 +144,7 @@ export async function cancelAnnouncementAction(formData: FormData) {
   const { error } = await supabase.rpc("cancel_club_announcement", {
     p_club_id: ids!.clubId, p_announcement_id: ids!.announcementId, p_reason: reason!,
   });
-  const path = `/announcements/manage/${ids!.announcementId}`;
+  const path = `/announcements/manage/${ids!.announcementId}?clubId=${ids!.clubId}`;
   if (error) redirect(resultPath(path, "error", genericError(error.message)));
   revalidatePath("/announcements"); revalidatePath("/notifications");
   redirect(resultPath(path, "success", "cancelled"));
@@ -158,7 +158,7 @@ export async function archiveAnnouncementAction(formData: FormData) {
   const { error } = await supabase.rpc("archive_club_announcement", {
     p_club_id: ids!.clubId, p_announcement_id: ids!.announcementId,
   });
-  const path = `/announcements/manage/${ids!.announcementId}`;
+  const path = `/announcements/manage/${ids!.announcementId}?clubId=${ids!.clubId}`;
   if (error) redirect(resultPath(path, "error", genericError(error.message)));
   revalidatePath("/announcements/manage");
   redirect(resultPath(path, "success", "archived"));
@@ -172,7 +172,7 @@ export async function retryAnnouncementDeliveriesAction(formData: FormData) {
   const { error } = await supabase.rpc("retry_failed_announcement_deliveries", {
     p_club_id: ids!.clubId, p_announcement_id: ids!.announcementId,
   });
-  const path = `/announcements/manage/${ids!.announcementId}`;
+  const path = `/announcements/manage/${ids!.announcementId}?clubId=${ids!.clubId}`;
   if (error) redirect(resultPath(path, "error", genericError(error.message)));
   revalidatePath(path);
   redirect(resultPath(path, "success", "retry_queued"));

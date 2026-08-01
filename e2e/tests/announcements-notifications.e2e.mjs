@@ -109,15 +109,25 @@ async function expectNoHorizontalOverflow(page) {
 test.describe("V0.9 公告與通知本機瀏覽器流程", () => {
   test.beforeAll(setupFixtures);
 
-  test("管理員發布公告；社員可讀取、標記已讀且無法進入管理頁", async ({ page, browser }) => {
+  test("管理員發布公告；社員可讀取、標記已讀且無法進入管理頁", async ({ page, browser }, testInfo) => {
     await login(page, fixture.managerEmail);
     await page.goto(`/announcements/manage/new?clubId=${fixture.clubId}`);
     await expect(page.getByRole("heading", { level: 1, name: "新增公告" })).toBeVisible();
     await page.getByLabel("標題").fill(fixture.title);
     await page.getByLabel("內容").fill("這是本機瀏覽器 smoke 的公告內容。");
     await page.getByRole("button", { name: "儲存草稿" }).click();
+    await expect(page).toHaveURL(new RegExp(`/announcements/manage/[^?]+\\?clubId=${fixture.clubId}&success=created$`, "u"));
     await expect(page.getByText("草稿已建立。")).toBeVisible();
-    await page.getByText("繼續發布", { exact: true }).click();
+    const publishSummary = page.getByText("繼續發布", { exact: true });
+    await publishSummary.scrollIntoViewIfNeeded();
+    if (testInfo.project.name === "android-chromium") {
+      const box = await publishSummary.boundingBox();
+      expect(box).not.toBeNull();
+      await page.touchscreen.tap(box.x + (box.width / 2), box.y + (box.height / 2));
+    } else {
+      await publishSummary.click();
+    }
+    await expect(publishSummary.locator("..")).toHaveAttribute("open", "");
     await page.getByRole("button", { name: "確認立即發布" }).click();
     await expect(page.getByText("公告已發布並解析受眾。")).toBeVisible();
     await expect(page.getByText("受眾通知")).toBeVisible();

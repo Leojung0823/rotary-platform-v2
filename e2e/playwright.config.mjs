@@ -12,7 +12,9 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: sensitiveRun ? 0 : process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Several legacy browser flows intentionally rotate the one local synthetic
+  // administrator password. Keep the suite deterministic in every mode.
+  workers: 1,
   timeout: 30_000,
   expect: { timeout: 10_000 },
   reporter: sensitiveRun

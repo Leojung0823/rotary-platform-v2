@@ -131,7 +131,11 @@ export function isSameOriginMutation(input: {
   fetchSite: string | null;
   configuredSiteUrl?: string;
 }) {
-  const production = process.env.APP_ENV === "production" || process.env.NODE_ENV === "production";
+  // `next start` always sets NODE_ENV=production, including an explicitly
+  // configured local environment. Prefer the declared app environment and
+  // only fall back to NODE_ENV for deployments that do not declare one.
+  const appEnvironment = process.env.APP_ENV?.trim().toLowerCase();
+  const production = appEnvironment ? appEnvironment === "production" : process.env.NODE_ENV === "production";
   const configured = input.configuredSiteUrl?.trim();
   const expectedOrigin = configured
     ? trustedOrigin(configured, production)
