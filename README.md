@@ -1,6 +1,6 @@
 # Rotary Platform V2
 
-扶輪社多租戶管理平台的本機開發版本。身份核心採 invitation-first：LINE Login、社員確認加入、資料驅動 RBAC、秘書後台、每社獨立 LINE OA 管理、裝置與登入紀錄、RLS、audit log 及版本化 API。社員功能目前包含社內留言板、活動建立與報名、短效 token 簽到，以及 V0.8 出席管理與統計。
+扶輪社多租戶管理平台的本機開發版本。身份核心採 invitation-first：LINE Login、社員確認加入、資料驅動 RBAC、秘書後台、每社獨立 LINE OA 管理、裝置與登入紀錄、RLS、audit log 及版本化 API。社員功能目前包含社內留言板、活動建立與報名、短效 token 簽到、V0.8 出席管理與統計，以及 V0.9 公告與站內通知。
 
 目前驗證邊界是 Supabase local stack；不包含 staging、Lovable 正式環境、正式 LINE Console 或正式資料。
 
@@ -36,6 +36,9 @@ APP_ENV=local
 LINE_LOGIN_MODE=mock
 LINE_MOCK_SIGNING_SECRET=<至少 32 字元的本機隨機值>
 LINE_OA_MODE=mock
+NOTIFICATION_PROVIDER_MODE=mock
+NOTIFICATION_MOCK_BEHAVIOR=success
+NOTIFICATION_WORKER_BATCH_SIZE=20
 ```
 
 `.env.local` 已被 Git 忽略。不要提交任何實際 key、密碼或 token。
@@ -110,6 +113,16 @@ Bootstrap 預設只接受 `localhost`、`127.0.0.1` 或 `::1` 的 Supabase URL�
 
 完整規則請見 [V0.8 出席管理範圍](docs/mvp/ATTENDANCE_MANAGEMENT_V08_SCOPE.md)。Issue #25 真實 staging 驗收完成前，不得合併 V0.8 到 `main`。
 
+## V0.9 公告與通知
+
+1. 社員由 `/announcements` 查看同社、符合 audience、已發布且未到期的公告；`/notifications` 僅顯示本人的站內通知。
+2. 具 `announcement.manage` 權限的管理者可以建立草稿、排程、發布、取消、封存與檢視一般化送達統計；所有敏感操作都需要二次確認。
+3. 發布 transaction 解析當下 active membership，支援全體有效社員、職務與指定社籍三種 audience，並以 account／channel 去重。
+4. External delivery 僅有 local `mock` 或 `disabled` provider；不會傳送真實 Email 或 LINE 訊息。
+5. `npm run jobs:announcements` 與 `npm run jobs:notifications` 都是一次性的 local bounded batch，拒絕 remote URL 與 production。
+
+完整範圍與安全邊界請見 [V0.9 公告與通知範圍](docs/mvp/ANNOUNCEMENTS_NOTIFICATIONS_V09_SCOPE.md)、[通知送達架構](docs/architecture/notification-delivery.md) 與 [本機通知 worker](docs/development/local-notification-worker.md)。V0.9 是 stacked 在 PR #37 上的 Draft work；Issue #25 真實 staging 驗收完成前不得合併。
+
 ## 每社 LINE OA 憑證
 
 真實 OA 模式不得共用一組全平台 token。每個社依社代碼設定獨立環境變數；符號會轉成底線，例如 `TAIPEI-NORTH`：
@@ -150,6 +163,7 @@ npm run verify:auth
 - `event_registration_lifecycle_hardening.sql`
 - `event_checkin_security.sql`
 - `attendance_management_security.sql`
+- `announcements_notifications_security.sql`
 
 所有 SQL fixture 都包在 transaction 中並於結尾 rollback。驗證範圍包含：
 
@@ -170,6 +184,7 @@ npm run verify:auth
 - 本人簽到、跨社／停權拒絕、重複掃描冪等
 - 人工補登、撤銷歷史、活動終止自動關閉 token 與 direct table denial
 - 出席 adjustment tenant isolation、原始簽到優先、狀態／分母政策、audit、歷史保留與 CSV 隱私投影
+- 公告 audience、receipt、通知 queue、delivery lease／retry、worker grants、provider redaction 與 audit metadata
 
 `npm run verify:auth` 只使用 local Mailpit 與 local Supabase，驗證密碼登入、邀請接受、冪等與 tenant visibility。
 
