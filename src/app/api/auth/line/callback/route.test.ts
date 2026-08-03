@@ -208,10 +208,10 @@ describe("GET /api/auth/line/callback", () => {
     expect(mocks.verifyOtp).toHaveBeenCalled();
   });
 
-  it("rejects an existing LINE identity after all active access is removed", async () => {
+  it("explains that an existing LINE identity still needs active platform access", async () => {
     accountHasAccess = false;
     const response = await GET(callback("state=expected-state&code=signed-code"));
-    expect(response.headers.get("location")).toContain("line_login_failed");
+    expect(response.headers.get("location")).toContain("line_login_no_active_access");
     expect(mocks.verifyOtp).not.toHaveBeenCalled();
   });
 
