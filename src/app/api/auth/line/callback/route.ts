@@ -278,7 +278,22 @@ export async function GET(request: NextRequest) {
         ? `/join?token=${encodeURIComponent(invitationToken)}`
         : returnTo;
     return NextResponse.redirect(trustedLineRedirectUrl(destination));
-  } catch {
+  } catch (error) {
+    const flowCookie = store.get("line_flow")?.value ?? "unknown";
+    console.error("[LINE_CALLBACK_FAILED]", {
+      message: error instanceof Error ? error.message : "unknown_error",
+      flow: flowCookie,
+      providerReturnedError: request.nextUrl.searchParams.has("error"),
+      hasState: Boolean(request.nextUrl.searchParams.get("state")),
+      hasCode: Boolean(request.nextUrl.searchParams.get("code")),
+      hasStateCookie: Boolean(store.get("line_oauth_state")?.value),
+      hasNonceCookie: Boolean(store.get("line_oauth_nonce")?.value),
+      hasInvitationCookie: Boolean(store.get("line_invitation")?.value),
+      sessionCreated,
+      createdAuthUser: Boolean(createdAuthUserId),
+      trustedBindingCompleted,
+    });
+
     if (sessionCreated && sessionClient) {
       try {
         await sessionClient.auth.signOut({ scope: "local" });
