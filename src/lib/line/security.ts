@@ -27,9 +27,13 @@ export function isProductionRuntime() {
   return process.env.APP_ENV === "production";
 }
 
+export function isHostedRuntime() {
+  return process.env.APP_ENV === "staging" || isProductionRuntime();
+}
+
 export function lineSiteUrl() {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!configured && isProductionRuntime()) {
+  if (!configured && isHostedRuntime()) {
     throw new Error("LINE Login site URL is not configured.");
   }
 
@@ -38,8 +42,8 @@ export function lineSiteUrl() {
     || url.pathname !== "/" || url.search || url.hash) {
     throw new Error("LINE Login site URL is invalid.");
   }
-  if (isProductionRuntime() && url.protocol !== "https:") {
-    throw new Error("LINE Login production site URL must use HTTPS.");
+  if (isHostedRuntime() && url.protocol !== "https:") {
+    throw new Error("LINE Login hosted site URL must use HTTPS.");
   }
   return url;
 }
@@ -47,7 +51,7 @@ export function lineSiteUrl() {
 export function lineOAuthCookieOptions(maxAge = LINE_OAUTH_TTL_SECONDS): CookieOptions {
   return {
     httpOnly: true,
-    secure: isProductionRuntime(),
+    secure: isHostedRuntime(),
     sameSite: "lax",
     path: "/",
     maxAge,
