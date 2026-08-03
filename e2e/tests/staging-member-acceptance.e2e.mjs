@@ -81,9 +81,19 @@ test.describe("受保護的 Hosted staging 社員驗收", () => {
     await expect(page.getByRole("heading", { level: 2, name: "基本資料" })).toBeVisible();
     await expect(page.getByRole("button", { name: "儲存基本資料" })).toBeVisible();
     const displayNameLength = (await page.getByLabel("姓名").inputValue()).trim().length;
+    const phoneInput = page.getByRole("textbox", {
+      name: "手機",
+      exact: true,
+    });
+    const emailInput = page.getByRole("textbox", {
+      name: "Email",
+      exact: true,
+    });
+    await expect(phoneInput).toHaveCount(1);
+    await expect(emailInput).toHaveCount(1);
     const contactLength = Math.max(
-      (await page.getByLabel("手機").inputValue()).trim().length,
-      (await page.getByLabel("Email").inputValue()).trim().length,
+      (await phoneInput.inputValue()).trim().length,
+      (await emailInput.inputValue()).trim().length,
     );
     expect(displayNameLength).toBeGreaterThan(0);
     expect(contactLength).toBeGreaterThan(0);
