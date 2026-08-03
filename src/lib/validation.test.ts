@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapDatabaseError, parseClubInput, parseMemberInput, parseNewPassword, parseOperatorInput, safeRedirectPath } from "./validation";
+import { mapDatabaseError, parseClubInput, parseMemberInput, parseNewPassword, parseOperatorInput, safeMessage, safeRedirectPath } from "./validation";
 
 function form(values: Record<string, string>) { const data = new FormData(); Object.entries(values).forEach(([key, value]) => data.set(key, value)); return data; }
 
@@ -25,6 +25,9 @@ describe("safe error and redirect handling", () => {
   it("maps database details to stable UI codes", () => {
     expect(mapDatabaseError("active_member_cannot_be_operator")).toBe("member_conflict");
     expect(mapDatabaseError("cannot_revoke_last_active_operator")).toBe("last_operator");
+  });
+  it("explains how to finish an already-bound LINE invitation", () => {
+    expect(safeMessage("line_login_no_active_access")).toContain("最新重發的邀請連結");
   });
   it("blocks external and protocol-relative redirects", () => {
     expect(safeRedirectPath("/invite/accept")).toBe("/invite/accept");
