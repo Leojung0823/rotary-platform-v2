@@ -14,6 +14,9 @@ import {
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+const GENERIC_LINE_FAILURE = "line_login_failed";
+const NO_ACTIVE_ACCESS_FAILURE = "line_login_no_active_access";
+
 function digest(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -31,11 +34,13 @@ type InvitationBinding = {
   invitation_completed?: boolean;
 };
 
-function loginFailure() {
+function loginFailure(errorCode = GENERIC_LINE_FAILURE) {
   try {
-    return NextResponse.redirect(lineLoginFailureUrl());
+    const url = lineLoginFailureUrl();
+    url.searchParams.set("error", errorCode);
+    return NextResponse.redirect(url);
   } catch {
-    return NextResponse.json({ error: "line_login_failed" }, {
+    return NextResponse.json({ error: errorCode }, {
       status: 500,
       headers: { "cache-control": "no-store" },
     });
@@ -54,9 +59,9 @@ export async function GET(request: NextRequest) {
   let createdAuthUserId: string | null = null;
   let trustedBindingCompleted = false;
 
-  const fail = () => {
+  const fail = (errorCode = GENERIC_LINE_FAILURE) => {
     clearLineOAuthCookies(store);
-    return loginFailure();
+    return loginFailure(errorCode);
   };
 
   try {
@@ -280,8 +285,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(trustedLineRedirectUrl(destination));
   } catch (error) {
     const flowCookie = store.get("line_flow")?.value ?? "unknown";
+    const message = error instanceof Error ? error.message : "unknown_error";
+    const failureCode = message === "LINE Login account has no active access."
+      ? NO_ACTIVE_ACCESS_FAILURE
+      : GENERIC_LINE_FAILURE;
     console.error("[LINE_CALLBACK_FAILED]", {
-      message: error instanceof Error ? error.message : "unknown_error",
+      message,
+      failureCode,
       flow: flowCookie,
       providerReturnedError: request.nextUrl.searchParams.has("error"),
       hasState: Boolean(request.nextUrl.searchParams.get("state")),
@@ -308,6 +318,6 @@ export async function GET(request: NextRequest) {
         // Best-effort cleanup. The callback still fails closed.
       }
     }
-    return fail();
+    return fail(failureCode);
   }
 }
