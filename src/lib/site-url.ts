@@ -27,7 +27,6 @@ function isPublicHttpsOrigin(url: URL | null) {
 function isHostedRuntime(environment: SiteEnvironment) {
   return environment.APP_ENV === "staging"
     || environment.APP_ENV === "production"
-    || environment.NODE_ENV === "production"
     || environment.RENDER === "true"
     || environment.RENDER_SERVICE_TYPE === "web"
     || Boolean(environment.RENDER_EXTERNAL_URL);

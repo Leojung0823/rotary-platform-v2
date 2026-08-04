@@ -91,7 +91,7 @@ describe("trustedSiteUrl", () => {
   });
 
   it("keeps the local development fallback", () => {
-    expect(trustedSiteUrl({ APP_ENV: "local" }).href)
+    expect(trustedSiteUrl({ APP_ENV: "local", NODE_ENV: "production" }).href)
       .toBe("http://localhost:3000/");
   });
 });

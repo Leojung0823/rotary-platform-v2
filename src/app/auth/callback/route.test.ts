@@ -119,7 +119,7 @@ describe("GET /auth/callback", () => {
 
   it("keeps local development redirects on localhost", async () => {
     vi.stubEnv("APP_ENV", "local");
-    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("RENDER", "");
     vi.stubEnv("RENDER_SERVICE_TYPE", "");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
