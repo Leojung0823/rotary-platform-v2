@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   orchestrate:
-    name: Verify backup and launch protected staging rollout
+    name: Snapshot rollback and launch protected staging rollout
     runs-on: ubuntu-latest
     timeout-minutes: 75
     environment:
@@ -27,7 +27,7 @@ jobs:
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
 
     steps:
-      - name: Verify backup, run migration plan, and launch Go-Live
+      - name: Verify staging identity and create scoped rollback SQL
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -35,6 +35,8 @@ jobs:
         run: |
           set -euo pipefail
           node --input-type=module <<'NODE'
+          import { mkdirSync, writeFileSync } from "node:fs";
+
           const repository = process.env.GITHUB_REPOSITORY;
           const targetSha = process.env.GITHUB_SHA;
           const githubToken = process.env.GITHUB_TOKEN;
@@ -48,7 +50,7 @@ jobs:
             const response = await fetch(url, {
               ...options,
               headers: {
-                accept: "application/vnd.github+json",
+                accept: "application/json",
                 authorization: `Bearer ${token}`,
                 "content-type": "application/json",
                 "x-github-api-version": "2022-11-28",
@@ -68,38 +70,92 @@ jobs:
             throw new Error("Supabase project identity is not an approved staging project.");
           }
 
-          const backupState = await request(
-            `https://api.supabase.com/v1/projects/${encodeURIComponent(projectRef)}/database/backups`,
+          const queryResult = await request(
+            `https://api.supabase.com/v1/projects/${encodeURIComponent(projectRef)}/database/query`,
             supabaseToken,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                query: "select pg_get_functiondef('public.unbind_line_identity(uuid,uuid,text,boolean)'::regprocedure) as function_def",
+                read_only: true,
+              }),
+            },
           );
-          const now = Date.now();
-          const maxAgeMs = 36 * 60 * 60 * 1000;
-          const completed = Array.isArray(backupState?.backups)
-            ? backupState.backups.filter((backup) => String(backup?.status ?? "").toUpperCase() === "COMPLETED")
-            : [];
-          const latestLogicalMs = completed
-            .map((backup) => Date.parse(String(backup?.inserted_at ?? "")))
-            .filter(Number.isFinite)
-            .sort((a, b) => b - a)[0] ?? 0;
-          const latestPhysicalSeconds = Number(backupState?.physical_backup_data?.latest_physical_backup_date_unix ?? 0);
-          const latestPhysicalMs = Number.isFinite(latestPhysicalSeconds) ? latestPhysicalSeconds * 1000 : 0;
-          const latestBackupMs = Math.max(latestLogicalMs, latestPhysicalMs);
-          if (!latestBackupMs || now - latestBackupMs > maxAgeMs || latestBackupMs > now + 5 * 60 * 1000) {
-            throw new Error("No recent completed staging backup or PITR restore point was verified.");
+          const rows = Array.isArray(queryResult)
+            ? queryResult
+            : Array.isArray(queryResult?.result)
+              ? queryResult.result
+              : Array.isArray(queryResult?.data)
+                ? queryResult.data
+                : [];
+          const functionDef = rows[0]?.function_def;
+          if (typeof functionDef !== "string" || !functionDef.includes("unbind_line_identity")) {
+            throw new Error("The existing LINE unbind function could not be captured for rollback.");
           }
-          console.log("Staging project identity and a recent backup were verified.");
+
+          mkdirSync("staging-rollback", { recursive: true });
+          writeFileSync(
+            "staging-rollback/unbind_line_identity.sql",
+            [
+              "-- Scoped staging rollback generated before PR #46 migration apply.",
+              `-- Source revision: ${targetSha}`,
+              "begin;",
+              functionDef.trim(),
+              "revoke all on function public.unbind_line_identity(uuid, uuid, text, boolean) from public, anon;",
+              "grant execute on function public.unbind_line_identity(uuid, uuid, text, boolean) to authenticated;",
+              "commit;",
+              "",
+            ].join("\n"),
+            { mode: 0o600 },
+          );
+          console.log("Staging project identity was verified and a scoped function rollback was created.");
+          NODE
+
+      - name: Retain scoped rollback for one day
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-pr46-function-rollback-${{ github.sha }}
+          path: staging-rollback/unbind_line_identity.sql
+          retention-days: 1
+          if-no-files-found: error
+          compression-level: 9
+
+      - name: Dispatch migration plan and protected Go-Live
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          const repository = process.env.GITHUB_REPOSITORY;
+          const targetSha = process.env.GITHUB_SHA;
+          const githubToken = process.env.GITHUB_TOKEN;
+
+          async function request(url, options = {}) {
+            const response = await fetch(url, {
+              ...options,
+              headers: {
+                accept: "application/vnd.github+json",
+                authorization: `Bearer ${githubToken}`,
+                "content-type": "application/json",
+                "x-github-api-version": "2022-11-28",
+                ...(options.headers ?? {}),
+              },
+            });
+            const text = await response.text();
+            if (!response.ok) throw new Error(`GitHub Actions request failed with status ${response.status}.`);
+            return text ? JSON.parse(text) : null;
+          }
 
           async function dispatchAndFind(workflow, inputs) {
             const startedAt = new Date(Date.now() - 5000).toISOString();
             await request(
               `https://api.github.com/repos/${repository}/actions/workflows/${workflow}/dispatches`,
-              githubToken,
               { method: "POST", body: JSON.stringify({ ref: "main", inputs }) },
             );
             for (let attempt = 0; attempt < 60; attempt += 1) {
               const result = await request(
                 `https://api.github.com/repos/${repository}/actions/workflows/${workflow}/runs?event=workflow_dispatch&branch=main&per_page=20`,
-                githubToken,
               );
               const run = result?.workflow_runs?.find((candidate) =>
                 candidate.head_sha === targetSha
@@ -115,17 +171,13 @@ jobs:
           async function waitForSuccess(run, attempts) {
             let current = run;
             for (let attempt = 0; attempt < attempts; attempt += 1) {
-              current = await request(
-                `https://api.github.com/repos/${repository}/actions/runs/${run.id}`,
-                githubToken,
-              );
+              current = await request(`https://api.github.com/repos/${repository}/actions/runs/${run.id}`);
               if (current.status === "completed") break;
               await new Promise((resolve) => setTimeout(resolve, 10000));
             }
             if (current?.status !== "completed" || current?.conclusion !== "success") {
               throw new Error(`Workflow run ${run.id} did not complete successfully.`);
             }
-            return current;
           }
 
           const plan = await dispatchAndFind("staging-release.yml", { operation: "plan" });
