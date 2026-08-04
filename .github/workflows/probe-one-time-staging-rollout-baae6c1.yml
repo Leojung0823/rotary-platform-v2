@@ -1,4 +1,4 @@
-name: Probe Main Staging Rollout PR48
+name: Probe Main Staging Rollout PR49
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ jobs:
       - name: Report rollout runs and live health
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          MAIN_ROLLOUT_SHA: 34e4ef88fe13906fe0e0eb77d03f278e9666a13c
+          MAIN_ROLLOUT_SHA: 117f5f8d8361ec7e31841f980c5c0b5436367fd5
           STAGING_BASE_URL: https://rotary-platform-v2.onrender.com
         shell: bash
         run: |
