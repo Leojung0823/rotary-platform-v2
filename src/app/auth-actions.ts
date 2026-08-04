@@ -9,9 +9,31 @@ import { parseNewPassword, safeRedirectPath } from "@/lib/validation";
 const invitationTokenPattern = /^[0-9a-f]{64}$/i;
 const recoveryMarkerPattern = /^[0-9a-f]{48}$/i;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function parseSiteOrigin(value: string | undefined) {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) return null;
+    return new URL(parsed.origin);
+  } catch {
+    return null;
+  }
+}
 
 function siteUrl() {
-  return new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
+  const hosted = process.env.APP_ENV === "staging" || process.env.APP_ENV === "production";
+  const configured = parseSiteOrigin(process.env.NEXT_PUBLIC_SITE_URL);
+  const render = parseSiteOrigin(process.env.RENDER_EXTERNAL_URL);
+
+  if (hosted) {
+    if (configured?.protocol === "https:" && !localHosts.has(configured.hostname)) return configured;
+    if (render?.protocol === "https:" && !localHosts.has(render.hostname)) return render;
+    throw new Error("Hosted password recovery URL is not configured.");
+  }
+
+  return configured ?? render ?? new URL("http://localhost:3000");
 }
 
 function joinErrorPath(token: string, code: string) {
