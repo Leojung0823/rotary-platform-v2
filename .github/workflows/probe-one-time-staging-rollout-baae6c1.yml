@@ -19,7 +19,7 @@ jobs:
       - name: Report current rollout runs
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          MAIN_ROLLOUT_SHA: 0393599d56c2348faa0888d58dd48baf405e673c
+          MAIN_ROLLOUT_SHA: 748dcfd1f028f59996eef3d880ab5b7d0b2238ee
         shell: bash
         run: |
           set -euo pipefail
