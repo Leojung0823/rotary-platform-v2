@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveDeploymentRevision } from "./health";
+import { resolveDeploymentRevision } from "./health-revision";
 
 describe("deployment health revision", () => {
   it("prefers the live Render commit over a stale configured revision", () => {
