@@ -1,4 +1,4 @@
-name: Probe Main Staging Rollout PR46
+name: Probe Main Staging Rollout PR48
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ jobs:
       - name: Report rollout runs and live health
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          MAIN_ROLLOUT_SHA: 033969245a6998ba688b70c80501de8b65f1f081
+          MAIN_ROLLOUT_SHA: 34e4ef88fe13906fe0e0eb77d03f278e9666a13c
           STAGING_BASE_URL: https://rotary-platform-v2.onrender.com
         shell: bash
         run: |
@@ -43,7 +43,7 @@ jobs:
           const relevant = runs
             .filter((run) => run.head_sha === rolloutSha || ["Staging Release", "Staging Go-Live"].includes(run.name))
             .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
-            .slice(0, 12);
+            .slice(0, 15);
 
           console.log(`Main rollout revision: ${rolloutSha}`);
           if (!relevant.length) console.log("No matching workflow run was found.");
