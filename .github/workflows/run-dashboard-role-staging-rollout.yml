@@ -1,0 +1,140 @@
+name: Run Dashboard Role Staging Rollout
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/run-dashboard-role-staging-rollout.yml
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: dashboard-role-staging-rollout-815bb15
+  cancel-in-progress: false
+
+jobs:
+  rollout:
+    name: Release merged dashboard role fix to staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      TARGET_SHA: 815bb154cab0cbb38891018e5e1f58dd64d9a9e6
+      STAGING_BASE_URL: https://rotary-platform-v2.onrender.com
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Dispatch protected release plan and go-live
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          const repository = process.env.GITHUB_REPOSITORY;
+          const token = process.env.GITHUB_TOKEN;
+          const targetSha = process.env.TARGET_SHA;
+          const stagingBaseUrl = process.env.STAGING_BASE_URL;
+          const headers = {
+            accept: "application/vnd.github+json",
+            authorization: `Bearer ${token}`,
+            "x-github-api-version": "2022-11-28",
+            "content-type": "application/json",
+          };
+
+          async function api(path, options = {}) {
+            const response = await fetch(`https://api.github.com/repos/${repository}${path}`, {
+              ...options,
+              headers: { ...headers, ...(options.headers ?? {}) },
+            });
+            if (!response.ok) {
+              const body = await response.text();
+              throw new Error(`${options.method ?? "GET"} ${path} failed with ${response.status}: ${body.slice(0, 500)}`);
+            }
+            if (response.status === 204) return null;
+            return response.json();
+          }
+
+          const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+          async function listRuns(workflowFile) {
+            const result = await api(`/actions/workflows/${workflowFile}/runs?event=workflow_dispatch&branch=main&per_page=30`);
+            return (result.workflow_runs ?? [])
+              .filter((run) => run.head_sha === targetSha)
+              .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at));
+          }
+
+          async function waitForRun(workflowFile, runId, timeoutMinutes) {
+            const deadline = Date.now() + timeoutMinutes * 60_000;
+            while (Date.now() < deadline) {
+              const run = await api(`/actions/runs/${runId}`);
+              console.log(`${workflowFile} run ${run.id}: ${run.status}${run.conclusion ? ` (${run.conclusion})` : ""}`);
+              if (run.status === "completed") {
+                if (run.conclusion !== "success") {
+                  throw new Error(`${workflowFile} run ${run.id} completed with ${run.conclusion}.`);
+                }
+                return run;
+              }
+              await sleep(15_000);
+            }
+            throw new Error(`${workflowFile} run ${runId} timed out.`);
+          }
+
+          async function ensureWorkflowRun(workflowFile, inputs, timeoutMinutes) {
+            let runs = await listRuns(workflowFile);
+            const reusable = runs.find((run) => run.status !== "completed" || run.conclusion === "success");
+            if (reusable) {
+              console.log(`Reusing ${workflowFile} run ${reusable.id}.`);
+              return waitForRun(workflowFile, reusable.id, timeoutMinutes);
+            }
+
+            const dispatchedAt = Date.now();
+            await api(`/actions/workflows/${workflowFile}/dispatches`, {
+              method: "POST",
+              body: JSON.stringify({ ref: "main", inputs }),
+            });
+            console.log(`Dispatched ${workflowFile} for ${targetSha}.`);
+
+            const deadline = Date.now() + 3 * 60_000;
+            while (Date.now() < deadline) {
+              runs = await listRuns(workflowFile);
+              const created = runs.find((run) => Date.parse(run.created_at) >= dispatchedAt - 10_000);
+              if (created) return waitForRun(workflowFile, created.id, timeoutMinutes);
+              await sleep(5_000);
+            }
+            throw new Error(`Could not locate dispatched ${workflowFile} run.`);
+          }
+
+          const plan = await ensureWorkflowRun(
+            "staging-release.yml",
+            { operation: "plan" },
+            30,
+          );
+
+          const goLive = await ensureWorkflowRun(
+            "staging-go-live.yml",
+            {
+              expected_sha: targetSha,
+              plan_run_id: String(plan.id),
+              confirmation: "LAUNCH-STAGING",
+              backup_confirmation: "BACKUP-READY",
+              provision_test_data: "false",
+              provisioning_confirmation: "",
+            },
+            50,
+          );
+
+          const healthResponse = await fetch(`${stagingBaseUrl}/api/health`, {
+            headers: { accept: "application/json", "user-agent": "dashboard-role-staging-rollout" },
+            signal: AbortSignal.timeout(20_000),
+          });
+          if (!healthResponse.ok) throw new Error(`Staging health returned HTTP ${healthResponse.status}.`);
+          const health = await healthResponse.json();
+          const liveRevision = String(health.revision ?? "");
+          if (health.status !== "ok" || !liveRevision.startsWith(targetSha.slice(0, 12))) {
+            throw new Error(`Unexpected staging health: ${JSON.stringify(health)}`);
+          }
+
+          console.log(`Staging Release run: ${plan.id}`);
+          console.log(`Staging Go-Live run: ${goLive.id}`);
+          console.log(`Live revision: ${liveRevision}`);
+          NODE
