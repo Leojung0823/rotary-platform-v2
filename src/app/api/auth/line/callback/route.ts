@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { exchangeLineCode, lineMode } from "@/lib/line/provider";
-import { lineIdentityLoginEmail } from "@/lib/line/identity-login-email";
+import { lineIdentityLoginEmail } from "../../../../../lib/line/identity-login-email";
 import {
   clearLineOAuthCookies,
   constantTimeEqual,
