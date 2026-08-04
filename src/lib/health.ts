@@ -15,13 +15,22 @@ export type HealthSnapshot = {
   warnings: string[];
 };
 
-function revision() {
-  const value = process.env.APP_REVISION
-    ?? process.env.VERCEL_GIT_COMMIT_SHA
-    ?? process.env.GITHUB_SHA
-    ?? process.env.RENDER_GIT_COMMIT
+type RevisionEnvironment = Partial<Record<
+  "RENDER_GIT_COMMIT" | "VERCEL_GIT_COMMIT_SHA" | "GITHUB_SHA" | "APP_REVISION",
+  string | undefined
+>>;
+
+export function resolveDeploymentRevision(env: RevisionEnvironment) {
+  // Hosting-provider commit metadata describes the code that is actually
+  // running. APP_REVISION is an operator-supplied fallback and can become
+  // stale across deploys, so it must never mask Render or Vercel metadata.
+  const value = env.RENDER_GIT_COMMIT
+    ?? env.VERCEL_GIT_COMMIT_SHA
+    ?? env.GITHUB_SHA
+    ?? env.APP_REVISION
     ?? "";
-  return value ? value.slice(0, 12) : null;
+  const normalized = value.trim();
+  return normalized ? normalized.slice(0, 12) : null;
 }
 
 export async function getHealthSnapshot(): Promise<HealthSnapshot> {
@@ -48,7 +57,7 @@ export async function getHealthSnapshot(): Promise<HealthSnapshot> {
     status: healthy ? "ok" : "degraded",
     service: "rotary-platform-v2",
     environment: deployment.environment,
-    revision: revision(),
+    revision: resolveDeploymentRevision(process.env),
     timestamp: new Date().toISOString(),
     checks: {
       configuration: deployment.ok,
