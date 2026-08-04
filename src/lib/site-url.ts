@@ -11,14 +11,21 @@ function parseSiteOrigin(value: string | undefined) {
   }
 }
 
+function isPublicHttpsOrigin(url: URL | null) {
+  return Boolean(url && url.protocol === "https:" && !localHosts.has(url.hostname));
+}
+
 export function trustedSiteUrl(environment: NodeJS.ProcessEnv = process.env) {
   const hosted = environment.APP_ENV === "staging" || environment.APP_ENV === "production";
   const configured = parseSiteOrigin(environment.NEXT_PUBLIC_SITE_URL);
   const render = parseSiteOrigin(environment.RENDER_EXTERNAL_URL);
 
+  // Prefer a public HTTPS origin whenever one is available, even if APP_ENV was
+  // accidentally omitted or set to local on a hosted Render service.
+  if (isPublicHttpsOrigin(configured)) return configured!;
+  if (isPublicHttpsOrigin(render)) return render!;
+
   if (hosted) {
-    if (configured?.protocol === "https:" && !localHosts.has(configured.hostname)) return configured;
-    if (render?.protocol === "https:" && !localHosts.has(render.hostname)) return render;
     throw new Error("Hosted site URL is not configured.");
   }
 
