@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { trustedSiteRedirect } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 import { safeRedirectPath } from "@/lib/validation";
 
@@ -13,8 +14,8 @@ const allowedOtpTypes = new Set<EmailOtpType>([
   "magiclink",
 ]);
 
-function failure(request: NextRequest) {
-  const target = new URL("/login", request.url);
+function failure() {
+  const target = trustedSiteRedirect("/login");
   target.searchParams.set("error", "recovery_invalid");
   return NextResponse.redirect(target);
 }
@@ -32,20 +33,21 @@ export async function GET(request: NextRequest) {
   } else if (tokenHash && type && allowedOtpTypes.has(type)) {
     ({ error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash }));
   } else {
-    return failure(request);
+    return failure();
   }
 
-  if (error) return failure(request);
+  if (error) return failure();
 
   const { data } = await supabase.auth.getUser();
-  if (!data.user) return failure(request);
+  if (!data.user) return failure();
 
-  const response = NextResponse.redirect(new URL(next, request.url));
+  const destination = trustedSiteRedirect(next);
+  const response = NextResponse.redirect(destination);
   if (next === "/reset-password") {
     response.cookies.set("rotary_recovery", randomBytes(24).toString("hex"), {
       httpOnly: true,
       sameSite: "lax",
-      secure: request.nextUrl.protocol === "https:",
+      secure: destination.protocol === "https:",
       path: "/",
       maxAge: 15 * 60,
     });
