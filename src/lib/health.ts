@@ -1,5 +1,6 @@
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
 import { inspectDeploymentEnvironment } from "@/lib/deployment-env.mjs";
+import { resolveDeploymentRevision } from "./health-revision";
 
 export type HealthSnapshot = {
   status: "ok" | "degraded";
@@ -14,15 +15,6 @@ export type HealthSnapshot = {
   issues: string[];
   warnings: string[];
 };
-
-function revision() {
-  const value = process.env.APP_REVISION
-    ?? process.env.VERCEL_GIT_COMMIT_SHA
-    ?? process.env.GITHUB_SHA
-    ?? process.env.RENDER_GIT_COMMIT
-    ?? "";
-  return value ? value.slice(0, 12) : null;
-}
 
 export async function getHealthSnapshot(): Promise<HealthSnapshot> {
   const deployment = inspectDeploymentEnvironment(process.env);
@@ -48,7 +40,7 @@ export async function getHealthSnapshot(): Promise<HealthSnapshot> {
     status: healthy ? "ok" : "degraded",
     service: "rotary-platform-v2",
     environment: deployment.environment,
-    revision: revision(),
+    revision: resolveDeploymentRevision(process.env),
     timestamp: new Date().toISOString(),
     checks: {
       configuration: deployment.ok,
