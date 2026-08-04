@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const GENERIC_LINE_FAILURE = "line_login_failed";
 const NO_ACTIVE_ACCESS_FAILURE = "line_login_no_active_access";
+const INVITATION_IDENTITY_CONFLICT_FAILURE = "line_invitation_identity_conflict";
 
 function digest(value: string) {
   return createHash("sha256").update(value).digest("hex");
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
   let createdAuthUserId: string | null = null;
   let trustedBindingCompleted = false;
   let authUserCreationError: AuthUserCreationError | null = null;
+  let authUserRecovered = false;
 
   const fail = (errorCode = GENERIC_LINE_FAILURE) => {
     clearLineOAuthCookies(store);
@@ -152,6 +154,7 @@ export async function GET(request: NextRequest) {
 
     let account: Account | null = null;
     let invitationKind: string | null = null;
+    let invitationPersonId: string | null = null;
 
     if (flow === "invitation") {
       const invitation = await admin
@@ -165,14 +168,42 @@ export async function GET(request: NextRequest) {
         throw new Error("LINE Login invitation is invalid or expired.");
       }
       invitationKind = invitation.data.invitation_kind;
+      invitationPersonId = invitation.data.person_id;
 
       const accountResult = await admin
         .from("app_accounts")
         .select("id, person_id, auth_user_id, login_email, account_status")
-        .eq("person_id", invitation.data.person_id)
+        .eq("person_id", invitationPersonId)
         .maybeSingle();
       if (accountResult.error) throw new Error("LINE Login account lookup failed.");
       account = accountResult.data;
+
+      if (!account) {
+        const existingIdentity = await admin
+          .from("line_identities")
+          .select("app_account_id")
+          .eq("provider_subject", profile.subject)
+          .eq("identity_status", "active")
+          .maybeSingle();
+        if (existingIdentity.error) {
+          throw new Error("LINE Login existing identity lookup failed.");
+        }
+        if (existingIdentity.data) {
+          const existingAccount = await admin
+            .from("app_accounts")
+            .select("id, person_id, auth_user_id, login_email, account_status")
+            .eq("id", existingIdentity.data.app_account_id)
+            .single();
+          if (existingAccount.error || !existingAccount.data) {
+            throw new Error("LINE Login existing identity account lookup failed.");
+          }
+          if (existingAccount.data.person_id !== invitationPersonId) {
+            throw new Error("LINE Login invitation conflicts with an existing member account.");
+          }
+          account = existingAccount.data;
+        }
+      }
+
       if (account && account.account_status !== "active") {
         throw new Error("LINE Login account is not active.");
       }
@@ -211,8 +242,9 @@ export async function GET(request: NextRequest) {
 
     let authUserId = account?.auth_user_id ?? null;
     let loginEmail = account?.login_email ?? null;
+    let sessionTokenHash: string | null = null;
     if (!authUserId) {
-      if (flow !== "invitation" || invitationKind !== "member_join") {
+      if (flow !== "invitation" || invitationKind !== "member_join" || !invitationPersonId) {
         throw new Error("Valid member invitation is required to create an Auth user.");
       }
       loginEmail = `line-${digest(profile.subject).slice(0, 24)}@identity.local`;
@@ -227,10 +259,44 @@ export async function GET(request: NextRequest) {
           status: created.error?.status ?? null,
           name: created.error?.name ?? null,
         };
-        throw new Error("LINE Login Auth user creation failed.");
+        if (created.error?.code !== "email_exists") {
+          throw new Error("LINE Login Auth user creation failed.");
+        }
+
+        const recoveredLink = await admin.auth.admin.generateLink({
+          type: "magiclink",
+          email: loginEmail,
+        });
+        const recoveredUserId = (recoveredLink.data as { user?: { id?: string } } | null)?.user?.id ?? null;
+        const recoveredTokenHash = recoveredLink.data?.properties.hashed_token ?? null;
+        if (recoveredLink.error || !recoveredUserId || !recoveredTokenHash) {
+          throw new Error("LINE Login existing Auth user recovery failed.");
+        }
+
+        const recoveredAccountResult = await admin
+          .from("app_accounts")
+          .select("id, person_id, auth_user_id, login_email, account_status")
+          .eq("auth_user_id", recoveredUserId)
+          .maybeSingle();
+        if (recoveredAccountResult.error) {
+          throw new Error("LINE Login recovered account lookup failed.");
+        }
+        if (recoveredAccountResult.data?.person_id !== undefined
+          && recoveredAccountResult.data.person_id !== invitationPersonId) {
+          throw new Error("LINE Login invitation conflicts with an existing member account.");
+        }
+        if (recoveredAccountResult.data && recoveredAccountResult.data.account_status !== "active") {
+          throw new Error("LINE Login account is not active.");
+        }
+
+        account = recoveredAccountResult.data;
+        authUserId = recoveredUserId;
+        sessionTokenHash = recoveredTokenHash;
+        authUserRecovered = true;
+      } else {
+        authUserId = created.data.user.id;
+        createdAuthUserId = authUserId;
       }
-      authUserId = created.data.user.id;
-      createdAuthUserId = authUserId;
     }
     if (!loginEmail) throw new Error("LINE Login account email is unavailable.");
 
@@ -261,14 +327,17 @@ export async function GET(request: NextRequest) {
       if (refreshed.error) throw new Error("LINE Login identity refresh failed.");
     }
 
-    const link = await admin.auth.admin.generateLink({ type: "magiclink", email: loginEmail });
-    if (link.error || !link.data.properties.hashed_token) {
-      throw new Error("LINE Login session link creation failed.");
+    if (!sessionTokenHash) {
+      const link = await admin.auth.admin.generateLink({ type: "magiclink", email: loginEmail });
+      if (link.error || !link.data.properties.hashed_token) {
+        throw new Error("LINE Login session link creation failed.");
+      }
+      sessionTokenHash = link.data.properties.hashed_token;
     }
 
     const verified = await sessionClient.auth.verifyOtp({
       type: "magiclink",
-      token_hash: link.data.properties.hashed_token,
+      token_hash: sessionTokenHash,
     });
     if (verified.error) throw new Error("LINE Login session creation failed.");
     sessionCreated = true;
@@ -300,7 +369,9 @@ export async function GET(request: NextRequest) {
     const message = error instanceof Error ? error.message : "unknown_error";
     const failureCode = message === "LINE Login account has no active access."
       ? NO_ACTIVE_ACCESS_FAILURE
-      : GENERIC_LINE_FAILURE;
+      : message === "LINE Login invitation conflicts with an existing member account."
+        ? INVITATION_IDENTITY_CONFLICT_FAILURE
+        : GENERIC_LINE_FAILURE;
     console.error("[LINE_CALLBACK_FAILED]", {
       message,
       failureCode,
@@ -312,6 +383,7 @@ export async function GET(request: NextRequest) {
       hasNonceCookie: Boolean(store.get("line_oauth_nonce")?.value),
       hasInvitationCookie: Boolean(store.get("line_invitation")?.value),
       authUserCreationError,
+      authUserRecovered,
       sessionCreated,
       createdAuthUser: Boolean(createdAuthUserId),
       trustedBindingCompleted,
