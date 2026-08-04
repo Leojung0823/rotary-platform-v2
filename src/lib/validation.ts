@@ -72,6 +72,7 @@ export function safeMessage(code?: string): string | null {
     recovery_invalid: "密碼重設連結無效、已過期或已使用，請重新申請。",
     line_login_failed: "LINE Login 未完成，請重新開啟邀請後再試一次。",
     line_login_no_active_access: "此 LINE 身份已綁定平台帳號，但尚未完成啟用中的社籍或平台權限。請使用社務管理員最新重發的邀請連結完成加入，不要直接從登入頁重新登入。",
+    line_invitation_identity_conflict: "此 LINE 身份已屬於另一筆社員資料。請社務管理員不要重複新增社員，改從原社員紀錄重送邀請，或先合併重複資料。",
     missing_contact: "手機與電子郵件至少需要填寫一項。",
     invalid_birth_date: "生日格式不正確。",
     invitation_invalid: "邀請不存在、已取消、已接受或已過期。",
