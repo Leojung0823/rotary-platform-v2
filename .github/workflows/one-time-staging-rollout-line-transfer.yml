@@ -1,0 +1,142 @@
+name: One-time Staging Rollout LINE Transfer
+
+on:
+  push:
+    branches:
+      - ops/staging-rollout-line-transfer-956fb21
+    paths:
+      - .github/workflows/one-time-staging-rollout-line-transfer.yml
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  rollout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TARGET_SHA: 956fb219ef731bec91512b5417747fb4ed4333aa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ops/staging-rollout-line-transfer-956fb21
+          fetch-depth: 0
+
+      - name: Dispatch protected staging plan and go-live
+        id: rollout
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set +e
+          node --input-type=module <<'NODE'
+          import { writeFile } from "node:fs/promises";
+
+          const repository = process.env.GITHUB_REPOSITORY;
+          const token = process.env.GITHUB_TOKEN;
+          const targetSha = process.env.TARGET_SHA;
+          const startedAt = new Date(Date.now() - 10_000);
+          const resultPath = ".ops/staging-rollout-line-transfer-result.json";
+          const headers = {
+            accept: "application/vnd.github+json",
+            authorization: `Bearer ${token}`,
+            "content-type": "application/json",
+            "x-github-api-version": "2022-11-28",
+          };
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          async function github(path, init = {}) {
+            const response = await fetch(`https://api.github.com/repos/${repository}${path}`, {
+              ...init,
+              headers: { ...headers, ...(init.headers ?? {}) },
+            });
+            if (!response.ok) {
+              const text = await response.text();
+              throw new Error(`${init.method ?? "GET"} ${path} failed with ${response.status}: ${text.slice(0, 500)}`);
+            }
+            if (response.status === 204) return null;
+            return response.json();
+          }
+
+          async function dispatch(workflow, inputs) {
+            await github(`/actions/workflows/${workflow}/dispatches`, {
+              method: "POST",
+              body: JSON.stringify({ ref: "main", inputs }),
+            });
+          }
+
+          async function waitForRun(workflow, expectedName, timeoutMs) {
+            const deadline = Date.now() + timeoutMs;
+            let run = null;
+            while (Date.now() < deadline) {
+              const response = await github(`/actions/workflows/${workflow}/runs?branch=main&event=workflow_dispatch&per_page=20`);
+              const candidates = (response.workflow_runs ?? [])
+                .filter((item) => item.name === expectedName
+                  && item.head_sha === targetSha
+                  && new Date(item.created_at) >= startedAt)
+                .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+              run = candidates[0] ?? null;
+              if (run?.status === "completed") return run;
+              await sleep(10_000);
+            }
+            throw new Error(`${expectedName} did not complete before timeout${run ? `; last status ${run.status}` : "; run not found"}.`);
+          }
+
+          const output = {
+            target_sha: targetSha,
+            started_at: new Date().toISOString(),
+            plan_run_id: null,
+            plan_conclusion: null,
+            go_live_run_id: null,
+            go_live_conclusion: null,
+            completed_at: null,
+            error: null,
+          };
+          let exitCode = 0;
+
+          try {
+            const main = await github(`/commits/main`);
+            if (main.sha !== targetSha) {
+              throw new Error(`main moved: expected ${targetSha}, found ${main.sha}`);
+            }
+
+            await dispatch("staging-release.yml", { operation: "plan" });
+            const plan = await waitForRun("staging-release.yml", "Staging Release", 20 * 60_000);
+            output.plan_run_id = plan.id;
+            output.plan_conclusion = plan.conclusion;
+            if (plan.conclusion !== "success") {
+              throw new Error(`Staging Release plan ${plan.id} concluded ${plan.conclusion}.`);
+            }
+
+            await dispatch("staging-go-live.yml", {
+              expected_sha: targetSha,
+              plan_run_id: String(plan.id),
+              confirmation: "LAUNCH-STAGING",
+              backup_confirmation: "BACKUP-READY",
+              provision_test_data: "false",
+              provisioning_confirmation: "",
+            });
+            const goLive = await waitForRun("staging-go-live.yml", "Staging Go-Live", 45 * 60_000);
+            output.go_live_run_id = goLive.id;
+            output.go_live_conclusion = goLive.conclusion;
+            if (goLive.conclusion !== "success") {
+              throw new Error(`Staging Go-Live ${goLive.id} concluded ${goLive.conclusion}.`);
+            }
+          } catch (error) {
+            output.error = error instanceof Error ? error.message : String(error);
+            exitCode = 1;
+          }
+
+          output.completed_at = new Date().toISOString();
+          await writeFile(resultPath, `${JSON.stringify(output, null, 2)}\n`);
+          process.exitCode = exitCode;
+          NODE
+          rollout_status=$?
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .ops/staging-rollout-line-transfer-result.json
+          git commit -m "ops: record LINE transfer staging rollout"
+          git push origin HEAD:ops/staging-rollout-line-transfer-956fb21
+          exit "$rollout_status"
