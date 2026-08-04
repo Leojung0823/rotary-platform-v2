@@ -268,7 +268,7 @@ export async function GET(request: NextRequest) {
           email: loginEmail,
         });
         const recoveredUserId = (recoveredLink.data as { user?: { id?: string } } | null)?.user?.id ?? null;
-        const recoveredTokenHash = recoveredLink.data?.properties.hashed_token ?? null;
+        const recoveredTokenHash = recoveredLink.data?.properties?.hashed_token ?? null;
         if (recoveredLink.error || !recoveredUserId || !recoveredTokenHash) {
           throw new Error("LINE Login existing Auth user recovery failed.");
         }

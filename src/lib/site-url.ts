@@ -1,10 +1,19 @@
-const localHosts = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+import { isPublicHostname } from "./public-hostname.mjs";
+
+type SiteEnvironment = Readonly<Record<string, string | undefined>>;
 
 function parseSiteOrigin(value: string | undefined) {
   if (!value) return null;
   try {
     const parsed = new URL(value);
-    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) return null;
+    if (
+      !["http:", "https:"].includes(parsed.protocol)
+      || parsed.username
+      || parsed.password
+      || parsed.pathname !== "/"
+      || parsed.search
+      || parsed.hash
+    ) return null;
     return new URL(parsed.origin);
   } catch {
     return null;
@@ -12,11 +21,19 @@ function parseSiteOrigin(value: string | undefined) {
 }
 
 function isPublicHttpsOrigin(url: URL | null) {
-  return Boolean(url && url.protocol === "https:" && !localHosts.has(url.hostname));
+  return Boolean(url && url.protocol === "https:" && isPublicHostname(url.hostname));
 }
 
-export function trustedSiteUrl(environment: NodeJS.ProcessEnv = process.env) {
-  const hosted = environment.APP_ENV === "staging" || environment.APP_ENV === "production";
+function isHostedRuntime(environment: SiteEnvironment) {
+  return environment.APP_ENV === "staging"
+    || environment.APP_ENV === "production"
+    || environment.RENDER === "true"
+    || environment.RENDER_SERVICE_TYPE === "web"
+    || Boolean(environment.RENDER_EXTERNAL_URL);
+}
+
+export function trustedSiteUrl(environment: SiteEnvironment = process.env) {
+  const hosted = isHostedRuntime(environment);
   const configured = parseSiteOrigin(environment.NEXT_PUBLIC_SITE_URL);
   const render = parseSiteOrigin(environment.RENDER_EXTERNAL_URL);
 
@@ -32,6 +49,6 @@ export function trustedSiteUrl(environment: NodeJS.ProcessEnv = process.env) {
   return configured ?? render ?? new URL("http://localhost:3000");
 }
 
-export function trustedSiteRedirect(path: string, environment: NodeJS.ProcessEnv = process.env) {
+export function trustedSiteRedirect(path: string, environment: SiteEnvironment = process.env) {
   return new URL(path, trustedSiteUrl(environment));
 }
