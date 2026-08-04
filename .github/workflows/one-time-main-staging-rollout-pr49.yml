@@ -1,0 +1,107 @@
+name: One-time Main Staging Rollout PR49
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/one-time-main-staging-rollout-pr49.yml
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: one-time-main-staging-rollout-pr49
+  cancel-in-progress: false
+
+jobs:
+  orchestrate:
+    name: Launch exact-revision staging rollout
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+
+    steps:
+      - name: Dispatch migration plan and protected Go-Live
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          const repository = process.env.GITHUB_REPOSITORY;
+          const targetSha = process.env.GITHUB_SHA;
+          const token = process.env.GITHUB_TOKEN;
+
+          if (!repository || !token || !/^[0-9a-f]{40}$/.test(targetSha ?? "")) {
+            throw new Error("Invalid protected rollout context.");
+          }
+
+          async function api(path, options = {}) {
+            const response = await fetch(`https://api.github.com/repos/${repository}${path}`, {
+              ...options,
+              headers: {
+                accept: "application/vnd.github+json",
+                authorization: `Bearer ${token}`,
+                "content-type": "application/json",
+                "x-github-api-version": "2022-11-28",
+                ...(options.headers ?? {}),
+              },
+            });
+            const text = await response.text();
+            if (!response.ok) throw new Error(`GitHub Actions request failed with status ${response.status}.`);
+            return text ? JSON.parse(text) : null;
+          }
+
+          const main = await api("/commits/main");
+          if (main?.sha !== targetSha) throw new Error("Main moved after rollout started.");
+
+          async function dispatchAndFind(workflow, inputs) {
+            const startedAt = new Date(Date.now() - 5000).toISOString();
+            await api(`/actions/workflows/${workflow}/dispatches`, {
+              method: "POST",
+              body: JSON.stringify({ ref: "main", inputs }),
+            });
+            for (let attempt = 0; attempt < 60; attempt += 1) {
+              const result = await api(`/actions/workflows/${workflow}/runs?event=workflow_dispatch&branch=main&per_page=20`);
+              const run = result?.workflow_runs?.find((candidate) =>
+                candidate.head_sha === targetSha
+                && candidate.event === "workflow_dispatch"
+                && candidate.created_at >= startedAt
+              );
+              if (run) return run;
+              await new Promise((resolve) => setTimeout(resolve, 5000));
+            }
+            throw new Error(`The ${workflow} run could not be located.`);
+          }
+
+          async function waitForSuccess(run, attempts) {
+            let current = run;
+            for (let attempt = 0; attempt < attempts; attempt += 1) {
+              current = await api(`/actions/runs/${run.id}`);
+              if (current.status === "completed") break;
+              await new Promise((resolve) => setTimeout(resolve, 10000));
+            }
+            if (current?.status !== "completed" || current?.conclusion !== "success") {
+              throw new Error(`Workflow run ${run.id} did not complete successfully.`);
+            }
+          }
+
+          const plan = await dispatchAndFind("staging-release.yml", { operation: "plan" });
+          await waitForSuccess(plan, 180);
+          console.log(`Staging migration plan passed (run ${plan.id}).`);
+
+          const goLive = await dispatchAndFind("staging-go-live.yml", {
+            expected_sha: targetSha,
+            plan_run_id: String(plan.id),
+            confirmation: "LAUNCH-STAGING",
+            backup_confirmation: "BACKUP-READY",
+            provision_test_data: "false",
+            provisioning_confirmation: "",
+          });
+          await waitForSuccess(goLive, 360);
+          console.log(`Staging Go-Live passed (run ${goLive.id}).`);
+          NODE
