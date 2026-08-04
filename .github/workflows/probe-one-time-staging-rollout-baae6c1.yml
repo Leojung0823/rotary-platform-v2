@@ -1,0 +1,88 @@
+name: Probe One-time Staging Rollout baae6c1
+
+on:
+  push:
+    branches:
+      - ops/staging-rollout-baae6c1
+
+permissions:
+  actions: read
+  issues: write
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Wait for rollout and report status
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_SHA: baae6c1749e5a4b8713ef9e8afe2be696db16a98
+          ORCHESTRATOR_SHA: 3cb44fc50320699c73c6df53f31d81dac1e0ddaf
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          const repository = process.env.GITHUB_REPOSITORY;
+          const token = process.env.GITHUB_TOKEN;
+          const targetSha = process.env.TARGET_SHA;
+          const orchestratorSha = process.env.ORCHESTRATOR_SHA;
+
+          async function api(path, options = {}) {
+            const response = await fetch(`https://api.github.com/repos/${repository}${path}`, {
+              ...options,
+              headers: {
+                accept: "application/vnd.github+json",
+                authorization: `Bearer ${token}`,
+                "content-type": "application/json",
+                "x-github-api-version": "2022-11-28",
+                ...(options.headers ?? {}),
+              },
+            });
+            const text = await response.text();
+            if (!response.ok) throw new Error(`GitHub status request failed with status ${response.status}.`);
+            return text ? JSON.parse(text) : null;
+          }
+
+          function latest(runs, predicate) {
+            return runs.filter(predicate).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0] ?? null;
+          }
+
+          let snapshot = null;
+          for (let attempt = 0; attempt < 420; attempt += 1) {
+            const result = await api("/actions/runs?per_page=100");
+            const runs = result?.workflow_runs ?? [];
+            const orchestrator = latest(runs, (run) => run.head_sha === orchestratorSha && run.name === "One-time Staging Rollout baae6c1");
+            const plan = latest(runs, (run) => run.head_sha === targetSha && run.name === "Staging Release");
+            const goLive = latest(runs, (run) => run.head_sha === targetSha && run.name === "Staging Go-Live");
+            snapshot = { orchestrator, plan, goLive };
+
+            const terminalFailure = [orchestrator, plan, goLive].some((run) => run?.status === "completed" && run?.conclusion !== "success");
+            const success = goLive?.status === "completed" && goLive?.conclusion === "success";
+            if (terminalFailure || success) break;
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+          }
+
+          const format = (run) => run
+            ? `#${run.run_number} / ${run.id}: ${run.status}${run.conclusion ? ` (${run.conclusion})` : ""}`
+            : "not found";
+          const completed = snapshot?.goLive?.status === "completed" && snapshot?.goLive?.conclusion === "success";
+          const body = [
+            "### Protected staging rollout status",
+            `- Target main SHA: \`${targetSha}\``,
+            `- One-time orchestrator: ${format(snapshot?.orchestrator)}`,
+            `- Staging migration plan: ${format(snapshot?.plan)}`,
+            `- Staging Go-Live: ${format(snapshot?.goLive)}`,
+            completed
+              ? "- Result: migration, deployment, HTTPS smoke, and hosted acceptance passed."
+              : "- Result: rollout did not reach a successful hosted acceptance; inspect the failed or waiting workflow before retrying.",
+          ].join("\n");
+
+          await api("/issues/46/comments", {
+            method: "POST",
+            body: JSON.stringify({ body }),
+          });
+
+          if (!completed) process.exitCode = 1;
+          NODE
