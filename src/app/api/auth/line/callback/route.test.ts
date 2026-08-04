@@ -18,8 +18,10 @@ const mocks = vi.hoisted(() => ({
 
 let cookieValues: Record<string, string>;
 let stateCalls: number;
+let accountCalls: number;
 let identityResult: { data: Record<string, unknown> | null; error: unknown };
 let accountResult: { data: Record<string, unknown> | null; error: unknown };
+let secondaryAccountResult: { data: Record<string, unknown> | null; error: unknown };
 let invitationKind: "member_join" | "line_rebind";
 let accountHasAccess: boolean;
 
@@ -117,6 +119,7 @@ describe("GET /api/auth/line/callback", () => {
       line_flow: "login",
     };
     stateCalls = 0;
+    accountCalls = 0;
     invitationKind = "member_join";
     accountHasAccess = true;
     identityResult = { data: { app_account_id: "account-id" }, error: null };
@@ -130,6 +133,7 @@ describe("GET /api/auth/line/callback", () => {
       },
       error: null,
     };
+    secondaryAccountResult = accountResult;
 
     for (const mock of Object.values(mocks)) mock.mockReset();
     mocks.exchangeLineCode.mockResolvedValue({
@@ -140,7 +144,10 @@ describe("GET /api/auth/line/callback", () => {
     mocks.createUser.mockResolvedValue({ data: { user: { id: "new-auth-user-id" } }, error: null });
     mocks.deleteUser.mockResolvedValue({ data: {}, error: null });
     mocks.generateLink.mockResolvedValue({
-      data: { properties: { hashed_token: "hashed-magic-link-token" } },
+      data: {
+        user: { id: "auth-user-id" },
+        properties: { hashed_token: "hashed-magic-link-token" },
+      },
       error: null,
     });
     mocks.getUser.mockResolvedValue({ data: { user: { id: "auth-user-id" } } });
@@ -179,7 +186,10 @@ describe("GET /api/auth/line/callback", () => {
         return query({ data: { id: "oauth-state-id" }, error: null });
       }
       if (table === "line_identities") return query(identityResult);
-      if (table === "app_accounts") return query(accountResult);
+      if (table === "app_accounts") {
+        accountCalls += 1;
+        return query(accountCalls === 1 ? accountResult : secondaryAccountResult);
+      }
       if (table === "member_invitations") {
         return query({
           data: {
@@ -228,6 +238,8 @@ describe("GET /api/auth/line/callback", () => {
     cookieValues.line_return_to = "/join";
     cookieValues.line_flow = "invitation";
     accountResult = { data: null, error: null };
+    secondaryAccountResult = { data: null, error: null };
+    identityResult = { data: null, error: null };
     const response = await GET(callback("state=expected-state&code=signed-code"));
 
     expect(mocks.adminRpc).toHaveBeenCalledWith("bind_line_identity_from_invitation_trusted", expect.objectContaining({
@@ -237,6 +249,62 @@ describe("GET /api/auth/line/callback", () => {
     }));
     expect(mocks.adminRpc.mock.invocationCallOrder[0]).toBeLessThan(mocks.verifyOtp.mock.invocationCallOrder[0]);
     expect(response.headers.get("location")).toContain("/join?token=");
+  });
+
+  it("recovers an orphaned deterministic Auth user after email_exists", async () => {
+    cookieValues.line_invitation = "d".repeat(64);
+    cookieValues.line_return_to = "/join";
+    cookieValues.line_flow = "invitation";
+    accountResult = { data: null, error: null };
+    secondaryAccountResult = { data: null, error: null };
+    identityResult = { data: null, error: null };
+    mocks.createUser.mockResolvedValue({
+      data: { user: null },
+      error: { code: "email_exists", status: 422, name: "AuthApiError" },
+    });
+    mocks.generateLink.mockResolvedValue({
+      data: {
+        user: { id: "recovered-auth-user-id" },
+        properties: { hashed_token: "recovered-magic-link-token" },
+      },
+      error: null,
+    });
+
+    const response = await GET(callback("state=expected-state&code=signed-code"));
+
+    expect(mocks.adminRpc).toHaveBeenCalledWith("bind_line_identity_from_invitation_trusted", expect.objectContaining({
+      p_auth_user_id: "recovered-auth-user-id",
+    }));
+    expect(mocks.verifyOtp).toHaveBeenCalledWith({
+      type: "magiclink",
+      token_hash: "recovered-magic-link-token",
+    });
+    expect(mocks.generateLink).toHaveBeenCalledTimes(1);
+    expect(response.headers.get("location")).toContain("/join?token=");
+  });
+
+  it("rejects an invitation that duplicates a different LINE member record", async () => {
+    cookieValues.line_invitation = "e".repeat(64);
+    cookieValues.line_return_to = "/join";
+    cookieValues.line_flow = "invitation";
+    accountResult = { data: null, error: null };
+    identityResult = { data: { app_account_id: "other-account-id" }, error: null };
+    secondaryAccountResult = {
+      data: {
+        id: "other-account-id",
+        person_id: "other-person-id",
+        auth_user_id: "other-auth-user-id",
+        login_email: "line-existing@identity.local",
+        account_status: "active",
+      },
+      error: null,
+    };
+
+    const response = await GET(callback("state=expected-state&code=signed-code"));
+
+    expect(response.headers.get("location")).toContain("line_invitation_identity_conflict");
+    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
   });
 
   it("completes a rebind invitation without returning to the member join form", async () => {
@@ -276,6 +344,8 @@ describe("GET /api/auth/line/callback", () => {
     cookieValues.line_return_to = "/join";
     cookieValues.line_flow = "invitation";
     accountResult = { data: null, error: null };
+    secondaryAccountResult = { data: null, error: null };
+    identityResult = { data: null, error: null };
     mocks.adminRpc.mockImplementation(async (name: string) => {
       if (name === "bind_line_identity_from_invitation_trusted") return { data: null, error: { message: "binding-failed" } };
       return { data: true, error: null };
