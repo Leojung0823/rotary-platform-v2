@@ -15,10 +15,7 @@ export type HealthSnapshot = {
   warnings: string[];
 };
 
-type RevisionEnvironment = Partial<Record<
-  "RENDER_GIT_COMMIT" | "VERCEL_GIT_COMMIT_SHA" | "GITHUB_SHA" | "APP_REVISION",
-  string | undefined
->>;
+type RevisionEnvironment = Record<string, string | undefined>;
 
 export function resolveDeploymentRevision(env: RevisionEnvironment) {
   // Hosting-provider commit metadata describes the code that is actually
