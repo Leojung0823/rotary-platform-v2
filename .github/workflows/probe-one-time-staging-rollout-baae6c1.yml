@@ -9,7 +9,6 @@ on:
 
 permissions:
   actions: read
-  issues: write
   contents: read
 
 jobs:
@@ -29,38 +28,24 @@ jobs:
           const token = process.env.GITHUB_TOKEN;
           const rolloutSha = process.env.MAIN_ROLLOUT_SHA;
 
-          async function api(path, options = {}) {
-            const response = await fetch(`https://api.github.com/repos/${repository}${path}`, {
-              ...options,
-              headers: {
-                accept: "application/vnd.github+json",
-                authorization: `Bearer ${token}`,
-                "content-type": "application/json",
-                "x-github-api-version": "2022-11-28",
-              },
-            });
-            const text = await response.text();
-            if (!response.ok) throw new Error(`GitHub status request failed with status ${response.status}.`);
-            return text ? JSON.parse(text) : null;
-          }
-
-          const result = await api("/actions/runs?per_page=100");
+          const response = await fetch(`https://api.github.com/repos/${repository}/actions/runs?per_page=100`, {
+            headers: {
+              accept: "application/vnd.github+json",
+              authorization: `Bearer ${token}`,
+              "x-github-api-version": "2022-11-28",
+            },
+          });
+          if (!response.ok) throw new Error(`GitHub status request failed with status ${response.status}.`);
+          const result = await response.json();
           const runs = result?.workflow_runs ?? [];
           const relevant = runs
             .filter((run) => run.head_sha === rolloutSha || ["Staging Release", "Staging Go-Live"].includes(run.name))
             .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
-            .slice(0, 10);
-          const lines = relevant.map((run) =>
-            `- ${run.name} #${run.run_number} / ${run.id}: ${run.status}${run.conclusion ? ` (${run.conclusion})` : ""}; head \`${run.head_sha}\`; event ${run.event}`
-          );
-          const body = [
-            "### Current staging rollout runs",
-            `- Main rollout revision: \`${rolloutSha}\``,
-            ...(lines.length ? lines : ["- No matching workflow run was found."]),
-          ].join("\n");
+            .slice(0, 12);
 
-          await api("/issues/46/comments", {
-            method: "POST",
-            body: JSON.stringify({ body }),
-          });
+          console.log(`Main rollout revision: ${rolloutSha}`);
+          if (!relevant.length) console.log("No matching workflow run was found.");
+          for (const run of relevant) {
+            console.log(`${run.name} #${run.run_number} / ${run.id}: ${run.status}${run.conclusion ? ` (${run.conclusion})` : ""}; head ${run.head_sha}; event ${run.event}`);
+          }
           NODE
