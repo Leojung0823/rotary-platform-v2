@@ -34,6 +34,12 @@ type InvitationBinding = {
   invitation_completed?: boolean;
 };
 
+type AuthUserCreationError = {
+  code: string | null;
+  status: number | null;
+  name: string | null;
+};
+
 function loginFailure(errorCode = GENERIC_LINE_FAILURE) {
   try {
     const url = lineLoginFailureUrl();
@@ -58,6 +64,7 @@ export async function GET(request: NextRequest) {
   let sessionCreated = false;
   let createdAuthUserId: string | null = null;
   let trustedBindingCompleted = false;
+  let authUserCreationError: AuthUserCreationError | null = null;
 
   const fail = (errorCode = GENERIC_LINE_FAILURE) => {
     clearLineOAuthCookies(store);
@@ -215,6 +222,11 @@ export async function GET(request: NextRequest) {
         user_metadata: { line_display_name: profile.displayName },
       });
       if (created.error || !created.data.user) {
+        authUserCreationError = {
+          code: created.error?.code ?? null,
+          status: created.error?.status ?? null,
+          name: created.error?.name ?? null,
+        };
         throw new Error("LINE Login Auth user creation failed.");
       }
       authUserId = created.data.user.id;
@@ -299,6 +311,7 @@ export async function GET(request: NextRequest) {
       hasStateCookie: Boolean(store.get("line_oauth_state")?.value),
       hasNonceCookie: Boolean(store.get("line_oauth_nonce")?.value),
       hasInvitationCookie: Boolean(store.get("line_invitation")?.value),
+      authUserCreationError,
       sessionCreated,
       createdAuthUser: Boolean(createdAuthUserId),
       trustedBindingCompleted,
