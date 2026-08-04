@@ -66,6 +66,7 @@ export function safeMessage(code?: string): string | null {
     self_status_change: "不能在目前登入工作階段停用自己的平台帳號。",
     password_login_required: "解除 LINE Login 前必須先具備可用的平台密碼登入方式。",
     line_identity_conflict: "此 LINE 身份已綁定其他帳號，或此帳號已綁定另一個 LINE 身份。",
+    line_unbind_membership_mismatch: "找不到此帳號在目前扶輪社的社籍資料，無法解除 LINE Login。",
     invite_not_found: "找不到符合目前登入信箱的有效邀請。",
     invite_failed: "邀請已建立，但郵件暫時無法寄出；請稍後重試。",
     invalid_password: "密碼至少需要 12 個字元，且兩次輸入必須相同。",
@@ -99,6 +100,7 @@ export function mapDatabaseError(message: string): string {
   if (message.includes("self_account_status") || message.includes("self_membership_suspend")) return "self_status_change";
   if (message.includes("password_login_required")) return "password_login_required";
   if (message.includes("line_identity_already_bound") || message.includes("account_already_has_another_line_identity")) return "line_identity_conflict";
+  if (message.includes("account_not_in_club")) return "line_unbind_membership_mismatch";
   if (message.includes("required") || message.includes("42501")) return "forbidden";
   if (message.includes("already_exists") || message.includes("23505")) return "duplicate";
   if (message.includes("active_member")) return "member_conflict";
