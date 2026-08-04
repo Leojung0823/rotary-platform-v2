@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Badge, Card, EmptyState, Notice } from "@/components/ui";
 import { hasPlatformAccess, requireIdentity } from "@/lib/auth";
+import { dashboardAccessPresentation } from "@/lib/dashboard-access";
 import { createClient } from "@/lib/supabase/server";
 
- type Club = {
+type Club = {
   club_id: string;
   club_code: string;
   club_name: string;
@@ -16,6 +17,9 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("list_manageable_clubs");
   const clubs = (data ?? []) as Club[];
+  const platformAccess = hasPlatformAccess(identity);
+  const accessPresentation = dashboardAccessPresentation(platformAccess, clubs);
+  const clubCount = error ? "—" : clubs.length;
 
   return (
     <div className="page-stack">
@@ -23,13 +27,17 @@ export default async function DashboardPage() {
         <div>
           <p className="eyebrow">工作台</p>
           <h1>{identity.display_name}，您好</h1>
-          <p>您目前可管理 {error ? "—" : clubs.length} 個扶輪社。</p>
+          <p>
+            {accessPresentation.canManageClubs
+              ? `您目前可管理 ${clubCount} 個扶輪社。`
+              : `您目前加入 ${clubCount} 個扶輪社。`}
+          </p>
         </div>
         <div className="form-actions">
           <Link className="button button-secondary" href="/features">
             功能總覽
           </Link>
-          {hasPlatformAccess(identity) && (
+          {platformAccess && (
             <Link className="button" href="/platform/clubs/new">
               建立扶輪社
             </Link>
@@ -50,19 +58,17 @@ export default async function DashboardPage() {
       </Card>
 
       {error ? (
-        <Notice tone="error">目前無法讀取可管理的扶輪社，請稍後重新整理。</Notice>
+        <Notice tone="error">目前無法讀取扶輪社資料，請稍後重新整理。</Notice>
       ) : (
         <>
           <div className="metric-grid">
             <Card>
-              <span className="metric-label">可管理扶輪社</span>
+              <span className="metric-label">{accessPresentation.clubCountLabel}</span>
               <strong className="metric-value">{clubs.length}</strong>
             </Card>
             <Card>
-              <span className="metric-label">平台角色</span>
-              <strong className="metric-value metric-text">
-                {hasPlatformAccess(identity) ? "平台管理員" : "執行秘書"}
-              </strong>
+              <span className="metric-label">帳號角色</span>
+              <strong className="metric-value metric-text">{accessPresentation.roleLabel}</strong>
             </Card>
           </div>
 
@@ -71,7 +77,7 @@ export default async function DashboardPage() {
               <h2>我的扶輪社</h2>
             </div>
             {clubs.length === 0 ? (
-              <EmptyState title="尚無可管理的扶輪社" body="接受扶輪社邀請後，扶輪社會出現在這裡。" />
+              <EmptyState title="尚未加入扶輪社" body="接受扶輪社邀請後，扶輪社會出現在這裡。" />
             ) : (
               <div className="club-grid">
                 {clubs.map((club) => {
