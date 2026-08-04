@@ -4,37 +4,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { trustedSiteUrl } from "@/lib/site-url";
 import { parseNewPassword, safeRedirectPath } from "@/lib/validation";
 
 const invitationTokenPattern = /^[0-9a-f]{64}$/i;
 const recoveryMarkerPattern = /^[0-9a-f]{48}$/i;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
-
-function parseSiteOrigin(value: string | undefined) {
-  if (!value) return null;
-  try {
-    const parsed = new URL(value);
-    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) return null;
-    return new URL(parsed.origin);
-  } catch {
-    return null;
-  }
-}
-
-function siteUrl() {
-  const hosted = process.env.APP_ENV === "staging" || process.env.APP_ENV === "production";
-  const configured = parseSiteOrigin(process.env.NEXT_PUBLIC_SITE_URL);
-  const render = parseSiteOrigin(process.env.RENDER_EXTERNAL_URL);
-
-  if (hosted) {
-    if (configured?.protocol === "https:" && !localHosts.has(configured.hostname)) return configured;
-    if (render?.protocol === "https:" && !localHosts.has(render.hostname)) return render;
-    throw new Error("Hosted password recovery URL is not configured.");
-  }
-
-  return configured ?? render ?? new URL("http://localhost:3000");
-}
 
 function joinErrorPath(token: string, code: string) {
   return `/join?token=${encodeURIComponent(token)}&error=${encodeURIComponent(code)}`;
@@ -65,7 +40,7 @@ export async function requestPasswordResetAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
   if (emailPattern.test(email)) {
-    const callbackUrl = new URL("/auth/callback", siteUrl());
+    const callbackUrl = new URL("/auth/callback", trustedSiteUrl());
     callbackUrl.searchParams.set("next", "/reset-password");
 
     const supabase = await createClient();
