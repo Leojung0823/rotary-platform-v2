@@ -16,10 +16,11 @@ jobs:
     if: github.head_ref == 'ops/staging-rollout-baae6c1'
     runs-on: ubuntu-latest
     steps:
-      - name: Report current rollout runs
+      - name: Report rollout runs and live health
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MAIN_ROLLOUT_SHA: 033969245a6998ba688b70c80501de8b65f1f081
+          STAGING_BASE_URL: https://rotary-platform-v2.onrender.com
         shell: bash
         run: |
           set -euo pipefail
@@ -27,6 +28,7 @@ jobs:
           const repository = process.env.GITHUB_REPOSITORY;
           const token = process.env.GITHUB_TOKEN;
           const rolloutSha = process.env.MAIN_ROLLOUT_SHA;
+          const baseUrl = process.env.STAGING_BASE_URL;
 
           const response = await fetch(`https://api.github.com/repos/${repository}/actions/runs?per_page=100`, {
             headers: {
@@ -47,5 +49,25 @@ jobs:
           if (!relevant.length) console.log("No matching workflow run was found.");
           for (const run of relevant) {
             console.log(`${run.name} #${run.run_number} / ${run.id}: ${run.status}${run.conclusion ? ` (${run.conclusion})` : ""}; head ${run.head_sha}; event ${run.event}`);
+          }
+
+          try {
+            const health = await fetch(`${baseUrl}/api/health`, {
+              redirect: "manual",
+              headers: { accept: "application/json", "user-agent": "rotary-staging-probe" },
+              signal: AbortSignal.timeout(20000),
+            });
+            const text = await health.text();
+            console.log(`Live health HTTP ${health.status}.`);
+            try {
+              const body = JSON.parse(text);
+              console.log(`Live health status: ${String(body.status ?? "unknown")}`);
+              console.log(`Live environment: ${String(body.environment ?? "unknown")}`);
+              console.log(`Live revision: ${String(body.revision ?? "unknown")}`);
+            } catch {
+              console.log(`Live health body was not JSON; length ${text.length}.`);
+            }
+          } catch (error) {
+            console.log(`Live health request failed: ${error instanceof Error ? error.message : "unknown error"}`);
           }
           NODE
