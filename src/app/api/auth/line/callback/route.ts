@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { exchangeLineCode, lineMode } from "@/lib/line/provider";
+import { lineIdentityLoginEmail } from "../../../../../lib/line/identity-login-email";
 import {
   clearLineOAuthCookies,
   constantTimeEqual,
@@ -247,7 +248,7 @@ export async function GET(request: NextRequest) {
       if (flow !== "invitation" || invitationKind !== "member_join" || !invitationPersonId) {
         throw new Error("Valid member invitation is required to create an Auth user.");
       }
-      loginEmail = `line-${digest(profile.subject).slice(0, 24)}@identity.local`;
+      loginEmail = lineIdentityLoginEmail(profile.subject, invitationPersonId);
       const created = await admin.auth.admin.createUser({
         email: loginEmail,
         email_confirm: true,
