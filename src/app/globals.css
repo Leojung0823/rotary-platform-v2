@@ -44,6 +44,35 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .content { min-width: 0; padding: 48px clamp(24px, 5vw, 72px) 80px; }
 .mobile-nav { display: none; }
 
+.loading-shell { background: var(--canvas); }
+.loading-nav-item { padding: 12px 14px; border-radius: 10px; color: #9fb9c8; font-weight: 650; }
+.loading-account { width: 100%; }
+.loading-account-copy { display: grid; flex: 1; gap: 7px; }
+.loading-page { width: 100%; }
+.loading-heading { display: grid; width: min(620px, 72vw); gap: 12px; }
+.skeleton { display: block; overflow: hidden; border-radius: 999px; background: #dfe6ec; animation: skeleton-pulse 1.35s ease-in-out infinite; }
+.sidebar .skeleton { background: rgba(255,255,255,.16); }
+.skeleton-eyebrow { width: 88px; height: 12px; }
+.skeleton-title { width: min(430px, 68vw); height: 44px; border-radius: 12px; }
+.skeleton-copy { width: min(360px, 64vw); height: 14px; }
+.skeleton-copy-wide { width: min(720px, 70vw); }
+.skeleton-action { width: 112px; height: 44px; border-radius: 10px; }
+.skeleton-card { display: grid; min-height: 160px; align-content: center; gap: 14px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
+.skeleton-card-title { width: min(280px, 52vw); height: 24px; border-radius: 8px; }
+.skeleton-metric { min-height: 130px; }
+.skeleton-avatar { width: 36px; height: 36px; flex: 0 0 auto; border-radius: 10px; }
+.skeleton-account-name { width: 92px; height: 13px; }
+.skeleton-account-email { width: 132px; height: 10px; }
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: .58; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}
+
 .page-stack { display: grid; gap: 30px; max-width: 1180px; margin: 0 auto; }
 .narrow { max-width: 850px; }
 .page-header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
@@ -157,6 +186,7 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   .mobile-nav { position: fixed; z-index: 20; bottom: 0; left: 0; right: 0; display: flex; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 10px max(12px, env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: rgba(255,255,255,.95); backdrop-filter: blur(12px); }
   .mobile-nav::-webkit-scrollbar { display: none; }
   .mobile-nav a { flex: 0 0 auto; min-width: 64px; padding: 8px 12px; color: var(--navy); text-align: center; white-space: nowrap; font-weight: 800; }
+  .mobile-nav .loading-nav-item { flex: 0 0 auto; min-width: 64px; padding: 8px 12px; color: var(--muted); text-align: center; white-space: nowrap; font-weight: 800; }
   .page-header { flex-direction: column; }
   .form-grid, .inline-form { grid-template-columns: 1fr; }
   .auth-page { grid-template-columns: 1fr; }

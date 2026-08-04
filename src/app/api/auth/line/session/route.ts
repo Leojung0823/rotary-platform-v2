@@ -10,8 +10,8 @@ function sessionResponse(authenticated: boolean) {
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.auth.getUser();
-    return sessionResponse(!error && Boolean(data.user));
+    const { data, error } = await supabase.auth.getClaims();
+    return sessionResponse(!error && Boolean(data?.claims?.sub));
   } catch {
     return sessionResponse(false);
   }

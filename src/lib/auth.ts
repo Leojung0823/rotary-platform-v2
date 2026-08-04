@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,10 +17,10 @@ export async function getAuthenticatedUser() {
   return data.user;
 }
 
-export async function requireIdentity(): Promise<Identity> {
+export async function resolveIdentity(): Promise<Identity> {
   const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/login");
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  if (claimsError || !claimsData?.claims?.sub) redirect("/login");
 
   const [{ data, error }, access] = await Promise.all([
     supabase.rpc("resolve_current_app_account"),
@@ -32,6 +33,10 @@ export async function requireIdentity(): Promise<Identity> {
   if (access.error || access.data !== true) redirect("/access-denied?reason=no_active_access");
   return identity;
 }
+
+// Authenticated layouts and their pages often request the same identity. React's
+// request cache keeps that work to one claims check and one pair of account RPCs.
+export const requireIdentity = cache(resolveIdentity);
 
 export function hasPlatformAccess(identity: Identity) {
   return identity.status === "active"

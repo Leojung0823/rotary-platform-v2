@@ -13,9 +13,10 @@ type Club = {
 };
 
 export default async function DashboardPage() {
-  const identity = await requireIdentity();
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("list_manageable_clubs");
+  const [identity, { data, error }] = await Promise.all([
+    requireIdentity(),
+    createClient().then((supabase) => supabase.rpc("list_manageable_clubs")),
+  ]);
   const clubs = (data ?? []) as Club[];
   const platformAccess = hasPlatformAccess(identity);
   const accessPresentation = dashboardAccessPresentation(platformAccess, clubs);
