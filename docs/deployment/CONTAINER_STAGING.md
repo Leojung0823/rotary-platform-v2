@@ -32,7 +32,7 @@ docker build -t rotary-platform-v2:staging .
 
 Container host 必須把 staging-only runtime variables 與 secrets 注入執行環境，不得寫入 image、Git 或 deployment hook：
 
-- Variables：`APP_ENV=staging`、`TRUSTED_ADMIN_ENVIRONMENT=staging`、`NEXT_PUBLIC_SITE_URL`、`NEXT_PUBLIC_SUPABASE_URL`、`LINE_LOGIN_MODE=line`、`LINE_OA_MODE`、`APP_REVISION`、`PORT`。
+- Variables：`APP_ENV=staging`、`TRUSTED_ADMIN_ENVIRONMENT=staging`、`NEXT_PUBLIC_SITE_URL`、`NEXT_PUBLIC_SUPABASE_URL`、`LINE_LOGIN_MODE=line`、`LINE_OA_MODE`、`APP_REVISION`、`PORT`。Render web service 另會自動在 build 與 runtime 提供 `RENDER_EXTERNAL_URL`，server-side redirect 只在它是 public HTTPS origin 時當作 fallback。
 - Public configuration：`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、`LINE_LOGIN_CHANNEL_ID`、`LINE_LOGIN_CALLBACK_URL`。
 - Secrets：`SUPABASE_SERVICE_ROLE_KEY`、`LINE_LOGIN_CHANNEL_SECRET`；若啟用 LINE OA，另需各測試社專用的 OA secret/token。
 
