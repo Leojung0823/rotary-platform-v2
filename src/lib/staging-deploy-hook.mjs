@@ -26,8 +26,19 @@ export function parseStagingDeployHook(rawValue) {
   return hook;
 }
 
+export function parseStagingDeployCommit(rawValue) {
+  const commitSha = String(rawValue ?? "").trim().toLowerCase();
+  if (!/^[0-9a-f]{40}$/u.test(commitSha)) {
+    throw new StagingDeployHookError("STAGING_DEPLOY_COMMIT_INVALID");
+  }
+  return commitSha;
+}
+
 export async function triggerStagingDeployment(rawValue, options = {}) {
   const hook = parseStagingDeployHook(rawValue);
+  const commitSha = options.commitSha == null
+    ? null
+    : parseStagingDeployCommit(options.commitSha);
   const timeoutMs = Number(options.timeoutMs ?? 15_000);
   const fetchImpl = options.fetchImpl ?? fetch;
   const lookupImpl = options.lookupImpl;
@@ -38,6 +49,11 @@ export async function triggerStagingDeployment(rawValue, options = {}) {
   if (!await hostnameResolvesPublicly(hook.hostname, lookupImpl)) {
     throw new StagingDeployHookError("STAGING_DEPLOY_HOOK_DNS_UNSAFE");
   }
+
+  // Render deploy hooks otherwise deploy the service's configured branch, which
+  // can remain pinned to an old revision. An explicit ref makes the deployment
+  // match the immutable SHA that the protected Go-Live workflow validates.
+  if (commitSha) hook.searchParams.set("ref", commitSha);
 
   let response;
   try {
