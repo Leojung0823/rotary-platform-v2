@@ -23,6 +23,27 @@ describe("trustedSiteUrl", () => {
       .toBe("https://rotary-platform-v2.onrender.com/reset-password");
   });
 
+  it("uses the public Render origin even when APP_ENV is missing", () => {
+    const environment = {
+      NEXT_PUBLIC_SITE_URL: "http://0.0.0.0:10000",
+      RENDER_EXTERNAL_URL: "https://rotary-platform-v2.onrender.com",
+    } as NodeJS.ProcessEnv;
+
+    expect(trustedSiteRedirect("/reset-password", environment).href)
+      .toBe("https://rotary-platform-v2.onrender.com/reset-password");
+  });
+
+  it("uses the public Render origin even when APP_ENV is incorrectly local", () => {
+    const environment = {
+      APP_ENV: "local",
+      NEXT_PUBLIC_SITE_URL: "http://0.0.0.0:10000",
+      RENDER_EXTERNAL_URL: "https://rotary-platform-v2.onrender.com",
+    } as NodeJS.ProcessEnv;
+
+    expect(trustedSiteRedirect("/reset-password", environment).href)
+      .toBe("https://rotary-platform-v2.onrender.com/reset-password");
+  });
+
   it("rejects hosted environments without a public HTTPS origin", () => {
     const environment = {
       APP_ENV: "production",
