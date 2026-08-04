@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { loginWithPasswordAction } from "@/app/auth-actions";
+import { LoginSessionRedirect } from "@/components/login-session-redirect";
 import { Button, Field, Input, Notice } from "@/components/ui";
-import { getAuthenticatedUser } from "@/lib/auth";
 import { safeMessage, safeRedirectPath } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +13,12 @@ export default async function LoginPage({
 }) {
   const query = await searchParams;
   const returnTo = safeRedirectPath(query.returnTo, "/dashboard");
-  if (await getAuthenticatedUser()) redirect(returnTo);
 
   const message = safeMessage(query.error);
   const local = process.env.APP_ENV !== "staging" && process.env.APP_ENV !== "production";
 
-  return <main className="auth-page">
+  return <main id="main" className="auth-page">
+    <LoginSessionRedirect returnTo={returnTo} />
     <section className="auth-panel">
       <div className="brand"><span className="brand-mark">R</span><span>扶輪管理平台<small>ROTARY PLATFORM V2</small></span></div>
       <div className="auth-copy"><p className="eyebrow">安全的多社管理</p><h1>歡迎回來</h1><p>請使用您的個人帳號登入。每一項平台與社務操作都會留下可稽核紀錄。</p></div>
