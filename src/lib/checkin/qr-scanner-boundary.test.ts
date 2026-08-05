@@ -1,27 +1,28 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-function source(path: string) {
-  return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
-}
+function source(path: string) { return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"); }
 
-describe("check-in QR presentation boundary", () => {
+describe("dynamic check-in QR presentation boundary", () => {
   const qr = source("components/events/checkin-qr-code.tsx");
-  const controls = source("components/events/checkin-token-controls.tsx");
+  const dynamic = source("components/events/dynamic-checkin-qr.tsx");
+  const capture = source("components/events/checkin-link-capture.tsx");
 
-  it("generates a local data URL from the one-time action-state token", () => {
-    expect(qr).toContain("QRCode.toDataURL(token");
-    expect(qr).toContain('type: "image/png"');
-    expect(controls).toContain("<CheckinQrCode token={state.token} />");
-    expect(controls).toContain('rotateState.status !== "success"');
+  it("renders only a dynamic QR image and rotates it from controlled server actions", () => {
+    expect(qr).toContain("QRCode.toDataURL(value");
+    expect(dynamic).toContain("issueDynamicQrAction(clubId, eventId)");
+    expect(dynamic).toContain("window.setTimeout(refresh, delay)");
+    expect(dynamic).toContain("/checkin#");
+    expect(dynamic).not.toContain("textarea");
+    expect(dynamic).not.toContain("一次性 token");
   });
 
-  it("does not send or persist the raw token while rendering the QR", () => {
-    for (const forbidden of ["fetch(", "localStorage", "sessionStorage", "console.", "URLSearchParams"]) {
-      expect(qr).not.toContain(forbidden);
-    }
-    expect(qr).not.toContain("download=");
-    expect(controls).not.toContain('params.set("token"');
+  it("keeps credentials out of query strings and clears the fragment immediately", () => {
+    expect(capture).toContain('window.history.replaceState(null, "", "/checkin")');
+    expect(capture).toContain('sessionStorage.setItem("rotary_checkin_credential"');
+    expect(dynamic).not.toContain('?token=');
+    expect(qr).not.toContain("fetch(");
+    expect(qr).not.toContain("localStorage");
   });
 });
 
@@ -37,28 +38,18 @@ describe("check-in camera boundary", () => {
     expect(scanner).toContain("onClick={() => void startCamera()}");
   });
 
-  it("stops media tracks on exit paths and when the page becomes hidden", () => {
+  it("stops media tracks on cleanup and backgrounding", () => {
     expect(scanner).toContain("getTracks().forEach((track) => track.stop())");
     expect(scanner).toContain('document.addEventListener("visibilitychange"');
-    expect(scanner).toContain("stopCamera();\n    setStatus(\"submitting\")");
-    expect(scanner).toContain("cameraRequestRef.current += 1");
-    expect(scanner).toContain("return () => {");
+    expect(scanner).toContain('document.removeEventListener("visibilitychange"');
   });
 
-  it("ignores camera or detector results that resolve after the user stopped", () => {
-    expect(scanner).toContain("const requestId = cameraRequestRef.current");
-    expect(scanner).toContain("requestId !== cameraRequestRef.current || document.visibilityState !== \"visible\"");
-    expect(scanner).toContain("if (!activeRef.current || requestId !== cameraRequestRef.current) return;");
-    expect(scanner).toContain("activeRef.current && requestId === cameraRequestRef.current");
-  });
-
-  it("submits through the existing server action without token URLs or browser persistence", () => {
-    expect(scanner).toContain('formData.set("token", token)');
-    expect(scanner).toContain("selfCheckinAction(formData)");
-    for (const forbidden of ["fetch(", "localStorage", "sessionStorage", "console.", 'params.set("token"', "location.href"]) {
-      expect(scanner).not.toContain(forbidden);
-    }
-    expect(page).toContain("<CheckinCameraScanner />");
-    expect(page).toContain('name="token"');
+  it("previews event details before confirmation and has no manual credential input", () => {
+    expect(scanner).toContain("previewQrCheckinAction(token)");
+    expect(scanner).toContain("confirmQrCheckinAction(credential)");
+    expect(scanner).toContain("請確認活動");
+    expect(page).toContain("<CheckinCameraScanner");
+    expect(page).not.toContain('name="token"');
+    expect(page).toContain("平台不會要求您手動輸入長字串");
   });
 });

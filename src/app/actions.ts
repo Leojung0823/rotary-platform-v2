@@ -270,6 +270,7 @@ export async function unbindLineIdentityAction(formData: FormData) {
 }
 
 export async function updateIdentitySettingsAction(formData: FormData) {
+  const section = formData.get("returnSection") === "notifications" ? "notifications" : "privacy";
   const supabase = await createClient();
   const bool = (name: string) => formData.get(name) === "on";
   const { error } = await supabase.rpc("update_my_settings", {
@@ -286,8 +287,8 @@ export async function updateIdentitySettingsAction(formData: FormData) {
       analytics_consent: bool("analyticsConsent"),
     },
   });
-  if (error) redirect("/me?error=unexpected");
-  redirect("/me?success=settings_saved");
+  if (error) redirect(`/me/${section}?error=unexpected`);
+  redirect(`/me/${section}?success=settings_saved`);
 }
 
 export async function revokeDeviceAction(formData: FormData) {
@@ -295,8 +296,8 @@ export async function revokeDeviceAction(formData: FormData) {
   const { error } = await supabase.rpc("revoke_my_device", {
     p_device_id: String(formData.get("deviceId") ?? ""),
   });
-  if (error) redirect("/me?error=unexpected");
-  redirect("/me?success=device_revoked");
+  if (error) redirect("/me/security?error=unexpected");
+  redirect("/me/security?success=device_revoked");
 }
 
 export async function configureLineOaAction(formData: FormData) {

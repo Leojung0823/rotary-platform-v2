@@ -1,95 +1,29 @@
 import Link from "next/link";
+import { AvatarPhoto } from "@/components/avatar-photo";
+import { ClubSwitcher } from "@/components/club-switcher";
 import { EmptyState, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
-import {
-  directoryRoleLabel,
-  parseDirectoryClubs,
-  parseDirectoryMembers,
-} from "@/lib/members/directory";
+import { avatarPublicUrl } from "@/lib/avatar";
+import { parseMemberClubs } from "@/lib/member-experience";
+import { directoryRoleLabel, parseDirectoryMembers } from "@/lib/members/directory";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function MemberDirectoryPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ clubId?: string; q?: string }>;
-}) {
-  await requireIdentity();
-  const query = await searchParams;
-  const supabase = await createClient();
-  const clubsResult = await supabase.rpc("list_my_directory_clubs");
-
-  if (clubsResult.error) {
-    return <Notice tone="error">目前無法載入您可查看的社員名冊。</Notice>;
-  }
-
-  const clubs = parseDirectoryClubs(clubsResult.data);
-  if (clubs.length === 0) {
-    return <div className="page-stack">
-      <header className="page-header"><div><p className="eyebrow">社員與身份</p><h1>社員名冊</h1></div></header>
-      <EmptyState title="目前沒有可查看的名冊" body="只有有效社籍的社員能查看同社的有效社員名冊。" />
-    </div>;
-  }
-
+export default async function MemberDirectoryPage({ searchParams }: { searchParams: Promise<{ clubId?: string; q?: string }> }) {
+  await requireIdentity(); const query = await searchParams; const supabase = await createClient();
+  const clubsResult = await supabase.rpc("list_my_member_clubs");
+  const clubs = clubsResult.error ? null : parseMemberClubs(clubsResult.data);
+  if (!clubs) return <div className="page-stack"><h1>社員</h1><Notice tone="error">社員名冊暫時無法載入，請重新整理。</Notice></div>;
+  if (clubs.length === 0) return <div className="page-stack"><h1>社員</h1><EmptyState title="目前沒有可查看的名冊" body="加入扶輪社後，即可查找同社社員。" /></div>;
   const selectedClub = clubs.find((club) => club.club_id === query.clubId) ?? clubs[0];
   const search = query.q?.trim().slice(0, 80) || null;
-  const membersResult = await supabase.rpc("list_club_member_directory", {
-    p_club_id: selectedClub.club_id,
-    p_query: search,
-  });
+  const result = await supabase.rpc("list_club_member_directory", { p_club_id: selectedClub.club_id, p_query: search });
+  const members = result.error ? null : parseDirectoryMembers(result.data);
 
-  if (membersResult.error) {
-    return <Notice tone="error">目前無法讀取這個扶輪社的社員名冊。</Notice>;
-  }
-
-  const members = parseDirectoryMembers(membersResult.data);
-
-  return <div className="page-stack">
-    <header className="page-header">
-      <div>
-        <p className="eyebrow">社員與身份</p>
-        <h1>社員名冊</h1>
-        <p>只顯示同社有效社員；Email、手機與出生年份依每位社員的隱私設定公開。</p>
-      </div>
-      <Link className="button button-secondary" href="/me">我的資料與隱私</Link>
-    </header>
-
-    <form className="inline-form" action="/directory">
-      <label className="field">
-        <span className="label">扶輪社</span>
-        <select className="input" name="clubId" defaultValue={selectedClub.club_id}>
-          {clubs.map((club) => <option key={club.club_id} value={club.club_id}>{club.club_name}</option>)}
-        </select>
-      </label>
-      <label className="field">
-        <span className="label">搜尋社員姓名</span>
-        <input className="input" name="q" defaultValue={query.q ?? ""} maxLength={80} placeholder="輸入姓名" />
-      </label>
-      <button className="button" type="submit">搜尋</button>
-    </form>
-
-    <section>
-      <div className="section-heading">
-        <div><p className="eyebrow">{selectedClub.club_code}</p><h2>{selectedClub.club_name}</h2></div>
-        <span>{members.length} 位社員</span>
-      </div>
-
-      {members.length === 0
-        ? <EmptyState title="找不到社員" body="請調整姓名搜尋條件。" />
-        : <div className="club-grid">
-          {members.map((member) => <Link
-            className="club-card"
-            key={member.membership_id}
-            href={`/directory/${member.membership_id}?clubId=${encodeURIComponent(selectedClub.club_id)}`}
-          >
-            <div className="avatar">{member.display_name.slice(0, 1)}</div>
-            <div>
-              <span className="club-code">{directoryRoleLabel(member.role_key)}{member.is_self ? " · 我" : ""}</span>
-              <h3>{member.display_name}</h3>
-            </div>
-            <p>{member.email ?? member.phone ?? "聯絡資料未公開"}</p>
-            <span className="card-link">查看社員資料 →</span>
-          </Link>)}
-        </div>}
-    </section>
+  return <div className="page-stack"><header className="page-header"><div><h1>社員</h1><p>搜尋同社社員，並依本人設定的公開範圍聯絡。</p></div></header>
+    <ClubSwitcher clubs={clubs} selectedClubId={selectedClub.club_id} />
+    <form className="directory-search" action="/directory"><input type="hidden" name="clubId" value={selectedClub.club_id} /><label className="field"><span className="label">搜尋社員姓名</span><input className="input directory-search-input" type="search" name="q" defaultValue={query.q ?? ""} maxLength={80} placeholder="輸入姓名" /></label><button className="button" type="submit">搜尋</button></form>
+    {!members && <Notice tone="error">社員名冊暫時無法載入，請重新整理；若問題持續，請聯絡扶輪社秘書。</Notice>}
+    {members?.length === 0 && <EmptyState title="找不到社員" body="請確認姓名，或清除搜尋條件後再試一次。" />}
+    <div className="directory-grid">{members?.map((member) => { const avatarUrl = avatarPublicUrl(member.avatar_url); return <article className="directory-card" key={member.membership_id}><div className="directory-person"><div className="avatar directory-avatar">{avatarUrl ? <AvatarPhoto src={avatarUrl} /> : member.display_name.slice(0, 1)}</div><div><span>{directoryRoleLabel(member.role_key)}{member.is_self ? "｜我" : ""}</span><h2>{member.display_name}</h2></div></div><div className="contact-actions">{member.phone && <a className="button" href={`tel:${member.phone}`}>撥打電話</a>}{member.email && <a className="button button-secondary" href={`mailto:${member.email}`}>寄送 Email</a>}{!member.phone && !member.email && <span className="subtle">聯絡資料未公開</span>}</div><Link className="text-action" href={`/directory/${member.membership_id}?clubId=${encodeURIComponent(selectedClub.club_id)}`}>查看社員資料</Link></article>; })}</div>
   </div>;
 }

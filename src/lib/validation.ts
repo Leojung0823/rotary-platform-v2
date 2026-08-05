@@ -76,6 +76,7 @@ export function safeMessage(code?: string): string | null {
     line_invitation_identity_conflict: "此 LINE 身份已屬於另一筆社員資料。請社務管理員不要重複新增社員，改從原社員紀錄重送邀請，或先合併重複資料。",
     missing_contact: "手機與電子郵件至少需要填寫一項。",
     invalid_birth_date: "生日格式不正確。",
+    invalid_avatar: "照片需為 JPG、PNG 或 WebP，且檔案不得超過 5 MB。",
     invitation_invalid: "邀請不存在、已取消、已接受或已過期。",
     invitation_email_mismatch: "輸入的 Email 與扶輪社預建的社員資料不一致，請聯絡秘書確認。",
     use_existing_account: "這個 Email 可能已有平台帳號，請先登入；忘記密碼可使用重設功能。",

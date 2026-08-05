@@ -8,7 +8,7 @@ const messages: Record<string, { title: string; body: string }> = {
   },
   no_active_access: {
     title: "目前沒有有效社籍",
-    body: "您的帳號仍存在，但目前沒有有效社籍、社級管理權限或平台權限，因此不能進入社員系統。",
+    body: "您的帳號目前沒有可使用的扶輪社社籍。請聯絡所屬扶輪社秘書協助確認。",
   },
 };
 
@@ -31,7 +31,7 @@ export default async function AccessDeniedPage({
       <div className="form-actions">
         <Link className="button button-secondary" href="/login">返回登入</Link>
         <form method="post" action="/api/auth/line/logout?redirect=1">
-          <button className="button" type="submit">清除登入狀態</button>
+          <button className="button" type="submit">重新登入</button>
         </form>
       </div>
     </Card>

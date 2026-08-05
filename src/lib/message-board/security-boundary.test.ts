@@ -8,6 +8,7 @@ function source(path: string) {
 describe("message board rendering boundary", () => {
   const component = source("components/message-board/message-board.tsx");
   const css = source("components/message-board/message-board.module.css");
+  const avatar = source("lib/avatar.ts");
 
   it("renders user content as escaped React text with safe line breaks", () => {
     expect(component).toContain("{post.content}");
@@ -17,7 +18,9 @@ describe("message board rendering boundary", () => {
   });
 
   it("restricts avatar sources to HTTP(S) and has a fallback", () => {
-    expect(component).toContain('url.protocol === "https:" || url.protocol === "http:"');
+    expect(component).toContain("avatarPublicUrl(post.author_avatar_url)");
+    expect(avatar).toContain('url.protocol === "https:" || url.protocol === "http:"');
+    expect(avatar).toContain("MEMBER_AVATAR_PREFIX");
     expect(component).toContain("onError={() => setFailed(true)}");
   });
 

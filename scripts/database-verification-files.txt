@@ -1,4 +1,5 @@
 supabase/verification/core_identity_baseline.sql
+supabase/verification/club_announcements_security.sql
 supabase/verification/provisioning_security.sql
 supabase/verification/operator_expiry_consistency.sql
 supabase/verification/invitation_selection.sql
@@ -11,6 +12,8 @@ supabase/verification/event_registration_security.sql
 supabase/verification/event_registration_tenant_integrity.sql
 supabase/verification/event_registration_lifecycle_hardening.sql
 supabase/verification/event_checkin_security.sql
+supabase/verification/member_experience_security.sql
+supabase/verification/member_avatar_security.sql
 supabase/verification/member_directory_self_profile_security.sql
 supabase/verification/member_profile_validation.sql
 supabase/verification/member_password_invitation_security.sql

@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const AUTH_SESSION_PATHS = [
+  "/announcements",
   "/board",
   "/club",
   "/clubs",
@@ -45,6 +46,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/announcements/:path*",
     "/board/:path*",
     "/club/:path*",
     "/clubs/:path*",

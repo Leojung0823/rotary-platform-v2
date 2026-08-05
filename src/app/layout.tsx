@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "扶輪管理平台 V2",
-  description: "扶輪社多社管理平台 V2",
+  title: "扶輪社員平台",
+  description: "扶輪社員活動、報名、簽到與社內聯絡平台",
 };
 
 export default function RootLayout({

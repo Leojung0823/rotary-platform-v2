@@ -7,7 +7,9 @@ describe("normalizeScannedCheckinToken", () => {
     expect(normalizeScannedCheckinToken(`  ${token}\n`)).toBe(token.toLowerCase());
   });
 
-  it("rejects URLs, arbitrary QR payloads, wrong lengths, and non-string values", () => {
+  it("accepts a fragment-only check-in URL and rejects query credentials or arbitrary payloads", () => {
+    const token = "a".repeat(64);
+    expect(normalizeScannedCheckinToken(`https://example.test/checkin#credential=${token}`)).toBe(token);
     expect(normalizeScannedCheckinToken("https://example.test/checkin?token=" + "a".repeat(64))).toBeNull();
     expect(normalizeScannedCheckinToken("社員簽到")).toBeNull();
     expect(normalizeScannedCheckinToken("a".repeat(63))).toBeNull();

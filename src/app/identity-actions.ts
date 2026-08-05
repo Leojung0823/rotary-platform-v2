@@ -41,7 +41,7 @@ export async function unbindMyLineIdentityAction(formData: FormData) {
   const reason = String(formData.get("reason") ?? "本人於會員中心解除 LINE Login").trim();
 
   if (!password || password.length > 1024 || reason.length < 2 || reason.length > 500) {
-    redirect("/me?error=invalid_credentials");
+    redirect("/me/security?error=invalid_credentials");
   }
 
   const supabase = await createClient();
@@ -53,14 +53,14 @@ export async function unbindMyLineIdentityAction(formData: FormData) {
     email: user.email,
     password,
   });
-  if (reauthenticated.error) redirect("/me?error=invalid_credentials");
+  if (reauthenticated.error) redirect("/me/security?error=invalid_credentials");
 
   const admin = createTrustedAdminClient();
   const { error } = await admin.rpc("unbind_my_line_identity_trusted", {
     p_auth_user_id: user.id,
     p_reason: reason,
   });
-  if (error) redirect(`/me?error=${encodeURIComponent(mapDatabaseError(error.message))}`);
+  if (error) redirect(`/me/security?error=${encodeURIComponent(mapDatabaseError(error.message))}`);
 
   await supabase.auth.signOut({ scope: "local" });
   redirect("/login?success=line_unbound");

@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element, react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { BoardPost } from "@/lib/message-board/contracts";
+import { avatarPublicUrl } from "@/lib/avatar";
 import styles from "./message-board.module.css";
 
 const BOARD_CONTENT_MAX_CODE_POINTS = 1000;
@@ -35,19 +36,9 @@ function formatTime(value: string) {
   }).format(date);
 }
 
-function safeAvatarUrl(value: string | null) {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
 function Avatar({ post }: { post: BoardPost }) {
   const [failed, setFailed] = useState(false);
-  const url = safeAvatarUrl(post.author_avatar_url);
+  const url = avatarPublicUrl(post.author_avatar_url);
   const initial = post.author_display_name.trim().slice(0, 1) || "？";
   return <span className={styles.avatar} aria-hidden="true">
     <span>{initial}</span>
@@ -92,7 +83,8 @@ export function MessageBoard({ clubId }: { clubId: string }) {
   }, []);
 
   const loadPosts = useCallback(async (nextCursor: string | null, append: boolean) => {
-    append ? setLoadingMore(true) : setLoading(true);
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     setStateMessage(null);
     try {
       const query = new URLSearchParams({ limit: "20" });
@@ -104,7 +96,8 @@ export function MessageBoard({ clubId }: { clubId: string }) {
     } catch (error) {
       handleError(error);
     } finally {
-      append ? setLoadingMore(false) : setLoading(false);
+      if (append) setLoadingMore(false);
+      else setLoading(false);
     }
   }, [clubId, handleError]);
 

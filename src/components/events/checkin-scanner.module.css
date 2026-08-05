@@ -9,7 +9,7 @@
   color: var(--muted);
   background: white;
   text-align: center;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .cameraFrame {
@@ -61,7 +61,7 @@
   border-radius: 999px;
   color: #102a41;
   background: rgba(255, 255, 255, .92);
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 900;
   letter-spacing: .12em;
 }
@@ -83,6 +83,8 @@
 
   .cameraActions {
     display: grid;
+    justify-content: stretch;
+    width: 100%;
   }
 
   .cameraActions button {

@@ -1,10 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { ClubAdminNav } from "@/components/club-admin-nav";
 import { Notice } from "@/components/ui";
+import { createClient } from "@/lib/supabase/server";
 
-type Audit = { id: number; action_key: string; actor_name: string | null; subject_type: string; metadata: Record<string, unknown>; created_at: string };
-export default async function AuditPage({ params }: { params: Promise<{ clubId: string }> }) {
-  const { clubId } = await params; const supabase = await createClient(); const { data, error } = await supabase.rpc("list_club_audit", { p_club_id: clubId, p_limit: 100 });
-  if (error) return <Notice tone="error">您沒有查看 Audit Log 的權限。</Notice>; const logs = (data ?? []) as Audit[];
-  return <div className="page-stack"><header><p className="eyebrow">不可變更的歷史</p><h1>Audit Log</h1><p>身份、邀請、權限、社籍、裝置與 LINE 操作均保留 actor、時間與安全摘要。</p></header><ClubAdminNav clubId={clubId}/><div className="table-wrap"><table><thead><tr><th>時間</th><th>操作</th><th>操作者</th><th>對象</th></tr></thead><tbody>{logs.map(log => <tr key={log.id}><td>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "medium" }).format(new Date(log.created_at))}</td><td><code>{log.action_key}</code></td><td>{log.actor_name ?? "系統"}</td><td>{log.subject_type}</td></tr>)}</tbody></table></div></div>;
-}
+type Audit = { id: number; action_key: string; actor_name: string | null; subject_type: string; created_at: string };
+const actions: Record<string, string> = { "attendance.session_opened": "開始現場簽到", "attendance.session_closed": "結束現場簽到", "attendance.checkin_closed": "結束簽到", "attendance.self_checked_in": "社員完成簽到", "attendance.manual_checked_in": "人工補登簽到", "attendance.revoked": "撤銷簽到", "announcement.created": "建立公告", "announcement.published": "發布公告", "announcement.archived": "封存公告", "event.created": "建立活動", "event.published": "發布活動", "event.cancelled": "取消活動" };
+export default async function AuditPage({ params }: { params: Promise<{ clubId: string }> }) { const { clubId } = await params; const supabase = await createClient(); const { data, error } = await supabase.rpc("list_club_audit", { p_club_id: clubId, p_limit: 100 }); if (error) return <Notice tone="error">您無法查看操作紀錄。</Notice>; const logs = (data ?? []) as Audit[]; return <div className="page-stack"><header><h1>操作紀錄</h1><p>查看社務管理的重要操作、時間與操作者。</p></header><div className="management-card-list">{logs.map((log) => <article className="card attendance-row" key={log.id}><div><h2>{actions[log.action_key] ?? "社務設定已更新"}</h2><p>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(log.created_at))}</p></div><strong>{log.actor_name ?? "系統"}</strong></article>)}</div></div>; }

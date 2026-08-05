@@ -19,6 +19,17 @@ function eventPath(clubId: string, key: "success" | "error", code: string) {
   return `/events?${params.toString()}`;
 }
 
+function eventDetailPath(eventId: string, key: "success" | "error", code: string) {
+  return `/events/${encodeURIComponent(eventId)}?${new URLSearchParams({ [key]: code }).toString()}`;
+}
+
+function actionResultPath(formData: FormData, clubId: string, key: "success" | "error", code: string) {
+  const returnPath = String(formData.get("returnPath") ?? "");
+  const managementPath = `/clubs/${clubId}/events`;
+  if (returnPath === managementPath) return `${managementPath}?${new URLSearchParams({ [key]: code }).toString()}`;
+  return eventPath(clubId, key, code);
+}
+
 function parseUuid(value: FormDataEntryValue | null) {
   const parsed = typeof value === "string" ? value.trim() : "";
   if (!uuidPattern.test(parsed)) throw new Error("invalid_uuid");
@@ -83,9 +94,10 @@ export async function createEventAction(formData: FormData) {
     p_capacity: input.capacity,
     p_counts_for_attendance: input.countsForAttendance,
   });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
+  if (error) redirect(actionResultPath(formData, clubId, "error", mapEventError(error.message)));
   revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "event_created"));
+  revalidatePath(`/clubs/${clubId}/events`);
+  redirect(actionResultPath(formData, clubId, "success", "event_created"));
 }
 
 export async function publishEventAction(formData: FormData) {
@@ -103,9 +115,10 @@ export async function publishEventAction(formData: FormData) {
     p_club_id: clubId,
     p_event_id: eventId,
   });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
+  if (error) redirect(actionResultPath(formData, clubId, "error", mapEventError(error.message)));
   revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "event_published"));
+  revalidatePath(`/clubs/${clubId}/events`);
+  redirect(actionResultPath(formData, clubId, "success", "event_published"));
 }
 
 export async function cancelEventAction(formData: FormData) {
@@ -126,9 +139,10 @@ export async function cancelEventAction(formData: FormData) {
     p_event_id: eventId,
     p_reason: reason,
   });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
+  if (error) redirect(actionResultPath(formData, clubId, "error", mapEventError(error.message)));
   revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "event_cancelled"));
+  revalidatePath(`/clubs/${clubId}/events`);
+  redirect(actionResultPath(formData, clubId, "success", "event_cancelled"));
 }
 
 export async function registerEventAction(formData: FormData) {
@@ -144,7 +158,8 @@ export async function registerEventAction(formData: FormData) {
     guestCount = parseGuestCount(formData.get("guestCount"), response);
     note = parseEventText(formData.get("note"), 500);
   } catch {
-    redirect("/events?error=invalid_input");
+    const rawEventId = typeof formData.get("eventId") === "string" ? String(formData.get("eventId")) : "";
+    redirect(uuidPattern.test(rawEventId) ? eventDetailPath(rawEventId, "error", "invalid_input") : "/events?error=invalid_input");
   }
 
   const supabase = await createClient();
@@ -155,7 +170,9 @@ export async function registerEventAction(formData: FormData) {
     p_guest_count: guestCount,
     p_note: note,
   });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
+  if (error) redirect(eventDetailPath(eventId, "error", mapEventError(error.message)));
   revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "registration_saved"));
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/dashboard");
+  redirect(eventDetailPath(eventId, "success", "registration_saved"));
 }

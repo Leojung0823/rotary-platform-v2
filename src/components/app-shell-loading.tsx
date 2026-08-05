@@ -1,5 +1,5 @@
-const primaryNavigation = ["總覽", "功能總覽", "社員名冊", "活動", "留言板", "會員中心"];
-const mobileNavigation = ["總覽", "功能", "名冊", "活動", "留言板", "我的"];
+const primaryNavigation = ["首頁", "活動", "社員", "我的"];
+const mobileNavigation = ["首頁", "活動", "社員", "我的"];
 
 function LoadingPageContent() {
   return (
@@ -37,11 +37,11 @@ export function PageLoading() {
 export function AppShellLoading() {
   return (
     <div className="shell loading-shell" aria-busy="true" aria-live="polite">
-      <span className="sr-only">正在確認登入狀態並載入工作台</span>
+      <span className="sr-only">正在確認登入狀態並載入首頁</span>
       <aside className="sidebar" aria-hidden="true">
         <div className="brand">
           <span className="brand-mark">R</span>
-          <span>扶輪管理平台<small>ROTARY V2</small></span>
+          <span>扶輪社員平台</span>
         </div>
         <nav>
           {primaryNavigation.map((label) => <span className="loading-nav-item" key={label}>{label}</span>)}

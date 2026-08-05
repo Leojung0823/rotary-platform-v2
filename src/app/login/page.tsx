@@ -13,37 +13,27 @@ export default async function LoginPage({
 }) {
   const query = await searchParams;
   const returnTo = safeRedirectPath(query.returnTo, "/dashboard");
-
   const message = safeMessage(query.error);
-  const local = process.env.APP_ENV !== "staging" && process.env.APP_ENV !== "production";
 
-  return <main id="main" className="auth-page">
+  return <main id="main" className="auth-page auth-page-simple">
     <LoginSessionRedirect returnTo={returnTo} />
-    <section className="auth-panel">
-      <div className="brand"><span className="brand-mark">R</span><span>扶輪管理平台<small>ROTARY PLATFORM V2</small></span></div>
-      <div className="auth-copy"><p className="eyebrow">安全的多社管理</p><h1>歡迎回來</h1><p>請使用您的個人帳號登入。每一項平台與社務操作都會留下可稽核紀錄。</p></div>
-
+    <section className="auth-panel auth-panel-simple">
+      <div className="brand auth-brand"><span className="brand-mark">R</span><span>扶輪社員平台</span></div>
+      <div className="auth-copy"><h1>歡迎回來</h1><p>登入後即可查看活動、完成報名與聯絡社友。</p></div>
       {message && <Notice tone="error">{message}</Notice>}
       {query.success === "password_updated" && <Notice tone="success">密碼已更新，請使用新密碼登入。</Notice>}
-
-      <a className="button line-button" href={`/api/auth/line/start?returnTo=${encodeURIComponent(returnTo)}`}>使用 LINE 登入</a>
-      <div className="divider"><span>或使用平台密碼</span></div>
-
-      <form action={loginWithPasswordAction} className="form-stack">
-        <input type="hidden" name="returnTo" value={returnTo} />
-        <Field label="電子郵件"><Input name="email" type="email" autoComplete="email" required placeholder="name@example.com" /></Field>
-        <Field label="密碼"><Input name="password" type="password" autoComplete="current-password" required minLength={12} /></Field>
-        <Button type="submit">登入平台</Button>
-      </form>
-
-      <div className="form-actions">
-        <Link className="back-link" href="/forgot-password">忘記密碼？</Link>
-        <Link className="back-link" href="/status">系統狀態</Link>
-      </div>
-      <p className="auth-footnote">
-        {local ? "本機邀請信與密碼重設信可在 Mailpit 檢視。" : "無法登入時，請聯絡所屬扶輪社的社務管理員。"}
-      </p>
+      {query.success === "line_unbound" && <Notice tone="success">LINE 登入已解除綁定，請使用電子郵件登入。</Notice>}
+      <a className="button line-button button-full auth-primary" href={`/api/auth/line/start?returnTo=${encodeURIComponent(returnTo)}`}>使用 LINE 登入</a>
+      <details className="email-login-details">
+        <summary>使用電子郵件登入</summary>
+        <form action={loginWithPasswordAction} className="form-stack">
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <Field label="電子郵件"><Input name="email" type="email" autoComplete="email" required /></Field>
+          <Field label="密碼"><Input name="password" type="password" autoComplete="current-password" required minLength={12} /></Field>
+          <Button className="button-full" type="submit">登入</Button>
+        </form>
+      </details>
+      <Link className="text-action auth-help" href="/login-help">登入遇到問題？</Link>
     </section>
-    <aside className="auth-art" aria-hidden="true"><div className="orb orb-one"/><div className="orb orb-two"/><blockquote>以清楚的身份、最小權限與跨社隔離，支援每一位獨立作業的執行秘書。</blockquote></aside>
   </main>;
 }

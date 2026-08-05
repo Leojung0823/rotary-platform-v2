@@ -1,71 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge, Card, Notice } from "@/components/ui";
-import {
-  directoryRoleLabel,
-  parseDirectoryMember,
-  parseDirectoryUuid,
-} from "@/lib/members/directory";
+import { AvatarPhoto } from "@/components/avatar-photo";
+import { Card, Notice } from "@/components/ui";
+import { avatarPublicUrl } from "@/lib/avatar";
+import { directoryRoleLabel, parseDirectoryMember, parseDirectoryUuid } from "@/lib/members/directory";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function DirectoryMemberPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ membershipId: string }>;
-  searchParams: Promise<{ clubId?: string }>;
-}) {
-  const route = await params;
-  const query = await searchParams;
-
-  let membershipId: string;
-  let clubId: string;
-  try {
-    membershipId = parseDirectoryUuid(route.membershipId);
-    clubId = parseDirectoryUuid(query.clubId);
-  } catch {
-    notFound();
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_club_member_directory_profile", {
-    p_club_id: clubId,
-    p_membership_id: membershipId,
-  });
-
-  if (error) {
-    return <Notice tone="error">目前無法查看這位社員，或您已不具備同社有效社籍。</Notice>;
-  }
-
-  const member = parseDirectoryMember(data);
-  if (!member) notFound();
-
-  return <div className="page-stack narrow">
-    <header className="page-header">
-      <div>
-        <Link className="back-link" href={`/directory?clubId=${encodeURIComponent(clubId)}`}>← 返回社員名冊</Link>
-        <p className="eyebrow">社員資料</p>
-        <h1>{member.display_name}</h1>
-        <div className="status-pair">
-          <Badge tone="neutral">{directoryRoleLabel(member.role_key)}</Badge>
-          {member.is_self && <Badge tone="success">這是我的資料</Badge>}
-        </div>
-      </div>
-      {member.is_self && <Link className="button" href="/me">編輯我的資料</Link>}
-    </header>
-
-    <Card>
-      <h2>同社可見資料</h2>
-      <p>聯絡資料與出生年份由社員本人在會員中心決定是否向同社社員公開。</p>
-      <ul className="activity-list">
-        <li><span>Email</span><strong>{member.email ?? "未公開"}</strong></li>
-        <li><span>手機</span><strong>{member.phone ?? "未公開"}</strong></li>
-        <li><span>出生年份</span><strong>{member.birth_year ?? "未公開"}</strong></li>
-      </ul>
-    </Card>
-
-    <Notice>
-      社員名冊不顯示 Auth ID、帳號 ID、LINE subject、登入紀錄、完整生日或其他管理欄位。
-    </Notice>
+export default async function DirectoryMemberPage({ params, searchParams }: { params: Promise<{ membershipId: string }>; searchParams: Promise<{ clubId?: string }> }) {
+  const [route, query, supabase] = await Promise.all([params, searchParams, createClient()]);
+  let membershipId: string; let clubId: string;
+  try { membershipId = parseDirectoryUuid(route.membershipId); clubId = parseDirectoryUuid(query.clubId); } catch { notFound(); }
+  const { data, error } = await supabase.rpc("get_club_member_directory_profile", { p_club_id: clubId, p_membership_id: membershipId });
+  if (error) return <div className="page-stack narrow"><Notice tone="error">目前無法查看這位社員，請返回名冊後重試。</Notice></div>;
+  const member = parseDirectoryMember(data); if (!member) notFound();
+  const avatarUrl = avatarPublicUrl(member.avatar_url);
+  return <div className="page-stack narrow"><Link className="back-link" href={`/directory?clubId=${encodeURIComponent(clubId)}`}>← 返回社員名冊</Link><header className="profile-heading"><div className="avatar profile-avatar">{avatarUrl ? <AvatarPhoto src={avatarUrl} /> : member.display_name.slice(0, 1)}</div><div><p className="selected-club-name">{directoryRoleLabel(member.role_key)}{member.is_self ? "｜我" : ""}</p><h1>{member.display_name}</h1></div></header>
+    <Card><h2>聯絡資料</h2><div className="profile-contact-list">{member.phone ? <div><span>手機</span><strong>{member.phone}</strong><a className="button" href={`tel:${member.phone}`}>撥打電話</a></div> : <div><span>手機</span><strong>未公開</strong></div>}{member.email ? <div><span>Email</span><strong>{member.email}</strong><a className="button button-secondary" href={`mailto:${member.email}`}>寄送 Email</a></div> : <div><span>Email</span><strong>未公開</strong></div>}<div><span>出生年份</span><strong>{member.birth_year ?? "未公開"}</strong></div></div></Card>
+    {member.is_self && <Link className="button" href="/me/profile">修改我的資料</Link>}
   </div>;
 }

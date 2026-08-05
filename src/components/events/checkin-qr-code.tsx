@@ -11,36 +11,36 @@ type QrResult = {
   failed: boolean;
 };
 
-export function CheckinQrCode({ token }: { token: string }) {
+export function CheckinQrCode({ value }: { value: string }) {
   const [result, setResult] = useState<QrResult | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    QRCode.toDataURL(token, {
+    QRCode.toDataURL(value, {
       errorCorrectionLevel: "M",
       margin: 2,
       width: 512,
       type: "image/png",
-    }).then((value) => {
-      if (active) setResult({ token, dataUrl: value, failed: false });
+    }).then((dataUrl) => {
+      if (active) setResult({ token: value, dataUrl, failed: false });
     }).catch(() => {
-      if (active) setResult({ token, dataUrl: null, failed: true });
+      if (active) setResult({ token: value, dataUrl: null, failed: true });
     });
 
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [value]);
 
-  const current = result?.token === token ? result : null;
+  const current = result?.token === value ? result : null;
   if (current?.failed) {
-    return <div className={styles.qrPlaceholder} role="alert">QR 圖片產生失敗，仍可使用右側一次性 token。</div>;
+    return <div className={styles.qrPlaceholder} role="alert">QR 圖片產生失敗，請重新產生或聯絡現場工作人員。</div>;
   }
 
   if (!current?.dataUrl) {
     return <div className={styles.qrPlaceholder} role="status">正在產生 QR…</div>;
   }
 
-  return <Image src={current.dataUrl} alt="活動簽到 QR code" width={512} height={512} unoptimized draggable={false} />;
+  return <Image src={current.dataUrl} alt="現場活動簽到 QR Code" width={512} height={512} unoptimized draggable={false} />;
 }
