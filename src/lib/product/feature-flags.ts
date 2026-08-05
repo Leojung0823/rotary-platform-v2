@@ -65,9 +65,10 @@ function isValidRecord(record: FeatureFlagRecord) {
   );
 }
 
-export function resolveAppEnvironment(value: string | undefined): AppEnvironment {
+export function resolveAppEnvironment(value: string | undefined): AppEnvironment | null {
+  if (value === undefined || value === "local") return "local";
   if (value === "staging" || value === "production") return value;
-  return "local";
+  return null;
 }
 
 export function evaluateFeatureFlag({
