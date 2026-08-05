@@ -99,10 +99,11 @@ describe("feature flag evaluation", () => {
 });
 
 describe("resolveAppEnvironment", () => {
-  it("keeps supported hosted values and defaults other values to local", () => {
+  it("keeps supported values, defaults an unset local environment, and rejects malformed values", () => {
+    expect(resolveAppEnvironment("local")).toBe("local");
     expect(resolveAppEnvironment("staging")).toBe("staging");
     expect(resolveAppEnvironment("production")).toBe("production");
     expect(resolveAppEnvironment(undefined)).toBe("local");
-    expect(resolveAppEnvironment("unexpected")).toBe("local");
+    expect(resolveAppEnvironment("unexpected")).toBeNull();
   });
 });
