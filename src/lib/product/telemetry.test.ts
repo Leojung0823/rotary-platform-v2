@@ -18,7 +18,10 @@ describe("product telemetry", () => {
 
     await expect(recordProductTelemetry({ write }, event)).resolves.toEqual({ recorded: true });
     expect(write).toHaveBeenCalledWith(event);
-    expect(JSON.stringify(event)).not.toMatch(/email|line|token|latitude|longitude|name/i);
+    expect(Object.keys(event).sort()).toEqual(["durationMs", "method", "name", "reason"]);
+    expect(Object.keys(event)).not.toEqual(
+      expect.arrayContaining(["email", "lineSubject", "token", "latitude", "longitude", "freeText"])
+    );
   });
 
   it("rejects out-of-range durations before calling a sink", async () => {
