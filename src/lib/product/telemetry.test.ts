@@ -24,6 +24,18 @@ describe("product telemetry", () => {
     );
   });
 
+  it("rejects extra fields even when the allowlisted fields are valid", () => {
+    expect(
+      isValidProductTelemetryEvent({
+        name: "checkin_failure",
+        method: "qr",
+        durationMs: 840,
+        reason: "expired",
+        email: "private@example.test",
+      })
+    ).toBe(false);
+  });
+
   it("rejects out-of-range durations before calling a sink", async () => {
     const write = vi.fn();
     const event = {
@@ -64,7 +76,7 @@ describe("product telemetry", () => {
         name: "checkin_failure",
         method: "gps",
         durationMs: 2_000,
-        reason: "raw database error" as never,
+        reason: "raw database error",
       })
     ).toBe(false);
   });
