@@ -1,110 +1,71 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   isValidProductTelemetryEvent,
+  productTelemetryRetentionClass,
   recordProductTelemetry,
+  telemetryDatabasePayload,
+  telemetryEventRequiresDailySubject,
   type ProductTelemetryEvent,
-  type ProductTelemetrySink,
 } from "./telemetry";
 
-describe("product telemetry", () => {
+describe("product telemetry closed schema", () => {
   it("records an allowlisted event without identifiers or arbitrary metadata", async () => {
     const write = vi.fn();
     const event: ProductTelemetryEvent = {
-      name: "checkin_failure",
-      method: "qr",
-      durationMs: 840,
-      reason: "expired",
+      name: "checkin_failure", method: "qr", durationMs: 840, reason: "expired",
     };
-
     await expect(recordProductTelemetry({ write }, event)).resolves.toEqual({ recorded: true });
     expect(write).toHaveBeenCalledWith(event);
     expect(Object.keys(event).sort()).toEqual(["durationMs", "method", "name", "reason"]);
-    expect(Object.keys(event)).not.toEqual(
-      expect.arrayContaining(["email", "lineSubject", "token", "latitude", "longitude", "freeText"])
-    );
   });
 
-  it("rejects extra fields even when the allowlisted fields are valid", () => {
-    expect(
-      isValidProductTelemetryEvent({
-        name: "checkin_failure",
-        method: "qr",
-        durationMs: 840,
-        reason: "expired",
-        email: "private@example.test",
-      })
-    ).toBe(false);
+  it("rejects unknown events, payload keys, values, free text, and arbitrary JSON", () => {
+    expect(isValidProductTelemetryEvent({ name: "unknown" })).toBe(false);
+    expect(isValidProductTelemetryEvent({
+      name: "checkin_failure", method: "qr", durationMs: 840, reason: "expired", email: "private@example.test",
+    })).toBe(false);
+    expect(isValidProductTelemetryEvent({
+      name: "checkin_failure", method: "gps", durationMs: 120_001, reason: "raw database error",
+    })).toBe(false);
+    expect(isValidProductTelemetryEvent({
+      name: "checkin_success", method: "qr", durationMs: 1, result: "created", metadata: {},
+    })).toBe(false);
   });
 
-  it("rejects out-of-range durations before calling a sink", async () => {
-    const write = vi.fn();
-    const event = {
-      name: "member_home_projection_duration",
-      durationMs: 120_001,
-      databaseRoundTrips: 2,
-    } as ProductTelemetryEvent;
-
-    await expect(recordProductTelemetry({ write }, event)).resolves.toEqual({
-      recorded: false,
-      reason: "invalid_event",
+  it("maps only bounded typed fields to the database payload", () => {
+    const payload = telemetryDatabasePayload({
+      name: "member_home_projection_duration", durationMs: 12, databaseRoundTrips: 2,
     });
-    expect(write).not.toHaveBeenCalled();
+    expect(payload).toEqual({ duration_ms: 12, database_round_trips: 2 });
+    expect(Object.values(payload).every((value) => typeof value !== "object")).toBe(true);
   });
 
-  it("rejects unbounded database round-trip counts", () => {
-    expect(
-      isValidProductTelemetryEvent({
-        name: "member_home_projection_duration",
-        durationMs: 200,
-        databaseRoundTrips: 11,
-      })
-    ).toBe(false);
+  it("assigns only the approved retention classes", () => {
+    expect(productTelemetryRetentionClass("checkin_success")).toBe("product_checkin_90d");
+    expect(productTelemetryRetentionClass("member_context_resolve_success")).toBe("product_performance_90d");
   });
 
-  it("accepts only the bounded check-in reason enum", () => {
-    expect(
-      isValidProductTelemetryEvent({
-        name: "checkin_failure",
-        method: "gps",
-        durationMs: 2_000,
-        reason: "gps_out_of_range",
-      })
-    ).toBe(true);
-
-    expect(
-      isValidProductTelemetryEvent({
-        name: "checkin_failure",
-        method: "gps",
-        durationMs: 2_000,
-        reason: "raw database error",
-      })
-    ).toBe(false);
+  it("uses a daily subject only for user-flow event families", () => {
+    expect(telemetryEventRequiresDailySubject({ name: "checkin_attempt", method: "qr" })).toBe(true);
+    expect(telemetryEventRequiresDailySubject({
+      name: "feature_flag_evaluation_failure", key: "role_context_v2", reason: "evaluation_error",
+    })).toBe(false);
   });
+});
 
-  it("contains no fields for raw coordinates, credentials or free text", () => {
+describe("product telemetry containment", () => {
+  it("contains sink failures, emits one bounded signal, and never recurses", async () => {
+    const report = vi.fn();
+    const sink = { write: vi.fn(() => { throw new Error("sensitive failure"); }) };
     const event: ProductTelemetryEvent = {
-      name: "checkin_success",
-      method: "gps",
-      durationMs: 1_200,
-      result: "created",
+      name: "feature_flag_evaluation_failure", key: "role_shells_v2", reason: "evaluation_error",
     };
 
-    expect(Object.keys(event).sort()).toEqual(["durationMs", "method", "name", "result"]);
-  });
-
-  it("contains sink failures and does not throw into product flows", async () => {
-    const sink: ProductTelemetrySink = {
-      write() {
-        throw new Error("provider secret or internal failure");
-      },
-    };
-
-    await expect(
-      recordProductTelemetry(sink, {
-        name: "feature_flag_evaluation_failure",
-        key: "role_shells_v2",
-        reason: "evaluation_error",
-      })
-    ).resolves.toEqual({ recorded: false, reason: "sink_failure" });
+    await expect(recordProductTelemetry(sink, event, { report })).resolves.toEqual({
+      recorded: false,
+      reason: "sink_failure",
+    });
+    expect(sink.write).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledTimes(1);
   });
 });

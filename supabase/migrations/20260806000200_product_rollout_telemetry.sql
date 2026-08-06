@@ -1,0 +1,235 @@
+begin;
+
+create or replace function public.jsonb_has_exact_keys(p_value jsonb, p_keys text[])
+returns boolean
+language sql
+immutable
+set search_path = pg_catalog, public
+as $$
+  select pg_catalog.jsonb_typeof(p_value) = 'object'
+    and not exists (
+      select 1
+      from pg_catalog.jsonb_object_keys(p_value) as actual(key)
+      where not (actual.key = any(p_keys))
+    )
+    and not exists (
+      select 1
+      from pg_catalog.unnest(p_keys) as expected(key)
+      where not (p_value ? expected.key)
+    )
+$$;
+
+create or replace function public.jsonb_bounded_integer(p_value jsonb, p_key text, p_maximum integer)
+returns boolean
+language sql
+immutable
+set search_path = pg_catalog, public
+as $$
+  select p_value ? p_key
+    and pg_catalog.jsonb_typeof(p_value -> p_key) = 'number'
+    and (p_value ->> p_key) ~ '^[0-9]+$'
+    and (p_value ->> p_key)::numeric between 0 and p_maximum
+$$;
+
+create or replace function public.platform_product_telemetry_payload_is_valid(
+  p_event_name text,
+  p_payload jsonb
+)
+returns boolean
+language plpgsql
+immutable
+set search_path = pg_catalog, public
+as $$
+begin
+  case p_event_name
+    when 'member_context_resolve_success' then
+      return public.jsonb_has_exact_keys(p_payload, array['duration_ms', 'club_count', 'mode_count'])
+        and public.jsonb_bounded_integer(p_payload, 'duration_ms', 120000)
+        and public.jsonb_bounded_integer(p_payload, 'club_count', 1000)
+        and public.jsonb_bounded_integer(p_payload, 'mode_count', 3);
+    when 'member_context_resolve_failure', 'member_home_projection_failure' then
+      return public.jsonb_has_exact_keys(p_payload, array['duration_ms', 'reason'])
+        and public.jsonb_bounded_integer(p_payload, 'duration_ms', 120000)
+        and coalesce(p_payload ->> 'reason', '') in (
+          'database_unavailable', 'invalid_projection', 'authorization_denied', 'invalid_configuration', 'unexpected'
+        );
+    when 'member_home_projection_duration' then
+      return public.jsonb_has_exact_keys(p_payload, array['duration_ms', 'database_round_trips'])
+        and public.jsonb_bounded_integer(p_payload, 'duration_ms', 120000)
+        and public.jsonb_bounded_integer(p_payload, 'database_round_trips', 10);
+    when 'checkin_attempt' then
+      return public.jsonb_has_exact_keys(p_payload, array['method'])
+        and coalesce(p_payload ->> 'method', '') in ('qr', 'gps', 'manual');
+    when 'checkin_success' then
+      return public.jsonb_has_exact_keys(p_payload, array['method', 'duration_ms', 'result'])
+        and coalesce(p_payload ->> 'method', '') in ('qr', 'gps', 'manual')
+        and public.jsonb_bounded_integer(p_payload, 'duration_ms', 120000)
+        and coalesce(p_payload ->> 'result', '') in ('created', 'duplicate', 'current_qr', 'grace_qr');
+    when 'checkin_failure' then
+      return public.jsonb_has_exact_keys(p_payload, array['method', 'duration_ms', 'reason'])
+        and coalesce(p_payload ->> 'method', '') in ('qr', 'gps', 'manual')
+        and public.jsonb_bounded_integer(p_payload, 'duration_ms', 120000)
+        and coalesce(p_payload ->> 'reason', '') in (
+          'expired', 'previous_code_grace_expired', 'session_closed', 'not_started', 'not_eligible', 'duplicate',
+          'network_timeout', 'gps_denied', 'gps_unavailable', 'gps_out_of_range', 'gps_low_quality', 'unexpected'
+        );
+    when 'checkin_pending_confirmation' then
+      return public.jsonb_has_exact_keys(p_payload, array['method', 'reason'])
+        and coalesce(p_payload ->> 'method', '') in ('qr', 'gps', 'manual')
+        and p_payload ->> 'reason' = 'network_timeout';
+    when 'feature_flag_evaluation_failure' then
+      return public.jsonb_has_exact_keys(p_payload, array['feature_key', 'reason'])
+        and coalesce(p_payload ->> 'feature_key', '') in (
+          'role_context_v2', 'role_shells_v2', 'member_home_v2', 'checkin_qr_v2', 'checkin_gps_v2',
+          'attendance_ui_v2', 'announcements_v09'
+        )
+        and coalesce(p_payload ->> 'reason', '') in (
+          'missing_configuration', 'invalid_configuration', 'evaluation_error'
+        );
+    else
+      return false;
+  end case;
+end;
+$$;
+
+create or replace function public.platform_product_telemetry_retention_class(p_event_name text)
+returns text
+language plpgsql
+immutable
+set search_path = pg_catalog, public
+as $$
+begin
+  if p_event_name in ('checkin_attempt', 'checkin_success', 'checkin_failure', 'checkin_pending_confirmation') then
+    return 'product_checkin_90d';
+  end if;
+  if p_event_name in (
+    'member_context_resolve_success', 'member_context_resolve_failure', 'member_home_projection_duration',
+    'member_home_projection_failure', 'feature_flag_evaluation_failure'
+  ) then
+    return 'product_performance_90d';
+  end if;
+  raise exception using errcode = '22023', message = 'invalid_product_telemetry_event';
+end;
+$$;
+
+create table public.platform_product_telemetry (
+  id bigint generated by default as identity primary key,
+  event_name text not null check (event_name in (
+    'member_context_resolve_success',
+    'member_context_resolve_failure',
+    'member_home_projection_duration',
+    'member_home_projection_failure',
+    'checkin_attempt',
+    'checkin_success',
+    'checkin_failure',
+    'checkin_pending_confirmation',
+    'feature_flag_evaluation_failure'
+  )),
+  payload jsonb not null check (public.platform_product_telemetry_payload_is_valid(event_name, payload)),
+  daily_subject text check (daily_subject is null or daily_subject ~ '^[0-9a-f]{64}$'),
+  retention_class text not null default 'product_performance_90d'
+    check (retention_class in ('product_checkin_90d', 'product_performance_90d')),
+  created_at timestamptz not null default now(),
+  check (
+    (event_name = 'feature_flag_evaluation_failure' and daily_subject is null)
+    or (event_name <> 'feature_flag_evaluation_failure' and daily_subject is not null)
+  )
+);
+
+comment on table public.platform_product_telemetry is
+  'Closed-schema product telemetry. It stores no PII, provider data, free text, club ID, or stable subject.';
+
+create index platform_product_telemetry_retention_created_at_idx
+  on public.platform_product_telemetry (retention_class, created_at, id);
+
+create table public.platform_product_telemetry_rate_limits (
+  daily_subject text not null check (daily_subject ~ '^[0-9a-f]{64}$'),
+  event_name text not null check (event_name in (
+    'member_context_resolve_success',
+    'member_context_resolve_failure',
+    'member_home_projection_duration',
+    'member_home_projection_failure',
+    'checkin_attempt',
+    'checkin_success',
+    'checkin_failure',
+    'checkin_pending_confirmation'
+  )),
+  window_started_at timestamptz not null,
+  retention_class text not null default 'operational_rate_limit_2d'
+    check (retention_class = 'operational_rate_limit_2d'),
+  event_count integer not null default 0 check (event_count between 0 and 100),
+  primary key (daily_subject, event_name, window_started_at)
+);
+
+comment on table public.platform_product_telemetry_rate_limits is
+  'Two-day operational abuse guard keyed only by a daily rotating HMAC pseudonym.';
+
+create index platform_product_telemetry_rate_limits_retention_window_idx
+  on public.platform_product_telemetry_rate_limits (retention_class, window_started_at);
+
+alter table public.platform_product_telemetry enable row level security;
+alter table public.platform_product_telemetry_rate_limits enable row level security;
+
+revoke all on table public.platform_product_telemetry from public, anon, authenticated;
+revoke all on table public.platform_product_telemetry_rate_limits from public, anon, authenticated, service_role;
+grant insert on table public.platform_product_telemetry to service_role;
+
+create or replace function public.set_platform_product_telemetry_retention_class()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public, auth
+as $$
+begin
+  new.retention_class := public.platform_product_telemetry_retention_class(new.event_name);
+  return new;
+end;
+$$;
+
+create trigger platform_product_telemetry_set_retention_class
+before insert or update of event_name on public.platform_product_telemetry
+for each row execute function public.set_platform_product_telemetry_retention_class();
+
+create or replace function public.enforce_platform_product_telemetry_rate_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public, auth
+as $$
+declare
+  updated_count integer;
+  utc_day timestamptz := pg_catalog.date_trunc('day', new.created_at at time zone 'UTC') at time zone 'UTC';
+begin
+  if new.daily_subject is null then
+    return new;
+  end if;
+
+  insert into public.platform_product_telemetry_rate_limits (
+    daily_subject, event_name, window_started_at, event_count
+  ) values (
+    new.daily_subject, new.event_name, utc_day, 1
+  )
+  on conflict (daily_subject, event_name, window_started_at) do update
+    set event_count = public.platform_product_telemetry_rate_limits.event_count + 1
+    where public.platform_product_telemetry_rate_limits.event_count < 100
+  returning event_count into updated_count;
+
+  if updated_count is null then
+    raise exception using errcode = '22023', message = 'product_telemetry_rate_limited';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger platform_product_telemetry_enforce_rate_limit
+before insert on public.platform_product_telemetry
+for each row execute function public.enforce_platform_product_telemetry_rate_limit();
+
+revoke all on function public.jsonb_has_exact_keys(jsonb, text[]) from public, anon, authenticated;
+revoke all on function public.jsonb_bounded_integer(jsonb, text, integer) from public, anon, authenticated;
+revoke all on function public.platform_product_telemetry_payload_is_valid(text, jsonb) from public, anon, authenticated;
+revoke all on function public.platform_product_telemetry_retention_class(text) from public, anon, authenticated;
+revoke all on function public.set_platform_product_telemetry_retention_class() from public, anon, authenticated;
+revoke all on function public.enforce_platform_product_telemetry_rate_limit() from public, anon, authenticated;
+
+commit;
