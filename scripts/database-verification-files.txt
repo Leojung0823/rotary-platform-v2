@@ -16,3 +16,4 @@ supabase/verification/member_profile_validation.sql
 supabase/verification/member_password_invitation_security.sql
 supabase/verification/member_line_account_lifecycle_security.sql
 supabase/verification/line_unbind_invited_membership_security.sql
+supabase/verification/product_rollout_controls_security.sql
