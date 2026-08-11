@@ -9,6 +9,6 @@ test("member_home_v2 disabled keeps the existing member landing", async ({ page 
   await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/dashboard$/u);
-  await expect(page.getByRole("heading", { name: "目前作用扶輪社" })).toBeVisible();
+  await expect(page.getByText("目前作用扶輪社", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "今天與我有關的事情" })).toHaveCount(0);
 });
