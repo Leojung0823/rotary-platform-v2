@@ -63,11 +63,20 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     await rolePage.getByLabel("切換作用扶輪社").focus();
     await rolePage.keyboard.press("Enter");
     await expect(rolePage.getByRole("region", { name: "我的扶輪社" })).toBeVisible();
-    await expect(rolePage.getByRole("region", { name: "其他可管理扶輪社" })).toBeVisible();
+    await expect(rolePage.getByRole("region", { name: "其他可管理扶輪社" })).toHaveCount(0);
 
     await rolePage.getByRole("navigation", { name: "切換工作模式" }).getByRole("link", { name: "社員模式" }).click();
     await expectShell(rolePage, "社員模式");
     await context.close();
+
+    const managementContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const managementPage = await managementContext.newPage();
+    await login(managementPage, accounts.management.email);
+    await managementPage.getByLabel("切換作用扶輪社").focus();
+    await managementPage.keyboard.press("Enter");
+    await expect(managementPage.getByRole("region", { name: "其他可管理扶輪社" })).toBeVisible();
+    await expect(managementPage.getByRole("region", { name: "我的扶輪社" })).toHaveCount(0);
+    await managementContext.close();
 
     const allModesContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const allModesPage = await allModesContext.newPage();

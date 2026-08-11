@@ -198,14 +198,12 @@ await addMembership({ clubId: memberClub.id, account: fixtures.multi, createdBy 
 await addMembership({ clubId: secondMemberClub.id, account: fixtures.multi, createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.memberManager, createdBy });
 await addClubManagementRole({ clubId: memberClub.id, account: fixtures.memberManager, createdBy });
-await addOperator({ clubId: managedClub.id, account: fixtures.memberManager, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.management, createdBy });
 await addPlatformRole({ account: fixtures.platform, createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.platformMember, createdBy });
 await addPlatformRole({ account: fixtures.platformMember, createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.allModes, createdBy });
 await addClubManagementRole({ clubId: memberClub.id, account: fixtures.allModes, createdBy });
-await addOperator({ clubId: managedClub.id, account: fixtures.allModes, createdBy });
 await addPlatformRole({ account: fixtures.allModes, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.revoked, status: "revoked", createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.suspended, status: "suspended", createdBy });
