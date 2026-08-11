@@ -5,6 +5,11 @@ const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const remoteRun = process.env.E2E_REMOTE === "1";
 const sensitiveRun = process.env.E2E_SENSITIVE === "1";
+const roleShellTestMatch = /role-shells.*\.e2e\.mjs/;
+const roleShellCoreTestMatch = /role-shells\.e2e\.mjs/;
+const roleShellDisabledTestMatch = /role-shells-off\.e2e\.mjs/;
+const roleShellForceTestMatch = /role-shells-force-legacy\.e2e\.mjs/;
+const rollbackScenario = process.env.E2E_ROLE_SHELL_ROLLBACK;
 
 export default defineConfig({
   testDir: "./tests",
@@ -31,6 +36,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       use: { viewport: { width: 1440, height: 900 } },
+      testIgnore: roleShellTestMatch,
     },
     {
       name: "android-chromium",
@@ -40,6 +46,49 @@ export default defineConfig({
         hasTouch: true,
         deviceScaleFactor: 2.625,
       },
+      testIgnore: roleShellTestMatch,
+    },
+    {
+      name: "role-shells-1440",
+      testMatch: roleShellCoreTestMatch,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "role-shells-1024",
+      testMatch: roleShellCoreTestMatch,
+      use: { viewport: { width: 1024, height: 900 } },
+    },
+    {
+      name: "role-shells-768",
+      testMatch: roleShellCoreTestMatch,
+      use: { viewport: { width: 768, height: 900 } },
+    },
+    {
+      name: "role-shells-412",
+      testMatch: roleShellCoreTestMatch,
+      use: { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2.625 },
+    },
+    {
+      name: "role-shells-375",
+      testMatch: roleShellCoreTestMatch,
+      use: { viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+    },
+    {
+      name: "role-shells-320",
+      testMatch: roleShellCoreTestMatch,
+      use: { viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+    },
+    {
+      name: "role-shells-disabled",
+      testMatch: roleShellDisabledTestMatch,
+      testIgnore: rollbackScenario === "disabled" ? undefined : /.*/,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "role-shells-force-legacy",
+      testMatch: roleShellForceTestMatch,
+      testIgnore: rollbackScenario === "force" ? undefined : /.*/,
+      use: { viewport: { width: 1440, height: 900 } },
     },
   ],
   webServer: remoteRun
@@ -52,5 +101,8 @@ export default defineConfig({
         timeout: 120_000,
         stdout: "pipe",
         stderr: "pipe",
+        env: process.env.E2E_FORCE_LEGACY_ROLE_SHELLS === "true"
+          ? { ...process.env, FORCE_LEGACY_ROLE_SHELLS: "true" }
+          : process.env,
       },
 });

@@ -15,6 +15,7 @@ jobs:
     env:
       E2E_ADMIN_EMAIL: admin@example.test
       E2E_ADMIN_PASSWORD: Rotary-CI-Admin-2026!
+      E2E_ROLE_PASSWORD: Rotary-CI-Role-2026!
       E2E_BASE_URL: http://localhost:3000
 
     steps:
@@ -99,11 +100,26 @@ jobs:
       - name: Bootstrap local superadmin
         run: node --env-file=.env.local scripts/bootstrap-superadmin.mjs
 
+      - name: Create local role-shell browser fixtures
+        run: node --env-file=.env.local scripts/bootstrap-role-shell-browser-fixtures.mjs
+
+      - name: Verify role-shell rollback with the database flag disabled
+        run: |
+          node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs disabled
+          npm run build
+          npm --prefix e2e run test:role-shells-off
+
+      - name: Enable role-shell browser fixture through the protected RPC
+        run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
+
       - name: Build the application
         run: npm run build
 
-      - name: Run desktop and Android browser smoke tests
+      - name: Run desktop, mobile, and role-shell browser smoke tests
         run: npm --prefix e2e test
+
+      - name: Verify role-shell rollback with the emergency kill switch
+        run: E2E_FORCE_LEGACY_ROLE_SHELLS=true npm --prefix e2e run test:role-shells-force
 
       - name: Upload browser smoke diagnostics
         if: failure()

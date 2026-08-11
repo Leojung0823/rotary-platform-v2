@@ -56,8 +56,7 @@ test.describe("社員平台登入後核心導覽", () => {
     await login(page);
   });
 
-  test("管理員可開啟功能總覽、會員中心與社員名冊", async ({ page }) => {
-    await expect(page.getByRole("link", { name: "功能總覽" }).first()).toBeVisible();
+  test("管理員可直接開啟功能總覽、會員中心與社員名冊", async ({ page }) => {
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/features");
@@ -76,14 +75,9 @@ test.describe("社員平台登入後核心導覽", () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test("桌面與手機都有可操作的登出入口", async ({ page }, testInfo) => {
-    const mobile = testInfo.project.name === "android-chromium";
-    if (mobile) {
-      await expect(page.getByRole("navigation", { name: "行動版導覽" }).getByRole("button", { name: "登出" })).toBeVisible();
-    } else {
-      await expect(page.locator("aside").getByRole("button", { name: "登出" })).toBeVisible();
-    }
-
+  test("桌面與手機都有可操作的帳號選單與登出入口", async ({ page }) => {
+    await page.getByLabel("帳號選單").click();
+    await expect(page.getByRole("button", { name: "登出" })).toBeVisible();
     await page.getByRole("button", { name: "登出" }).click();
     await expect(page).toHaveURL(/\/login$/u);
     await expect(page.getByRole("heading", { level: 1, name: "歡迎回來" })).toBeVisible();

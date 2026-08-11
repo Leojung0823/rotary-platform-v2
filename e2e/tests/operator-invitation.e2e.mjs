@@ -85,6 +85,7 @@ test("管理員建立扶輪社後，受邀執行秘書可從 Email 設定密碼�
   await expect(operatorPage.getByText("邀請已接受，扶輪社管理權限已啟用。", { exact: true })).toBeVisible();
   await expect(operatorPage.getByRole("cell", { name: operatorEmail, exact: true }).first()).toBeVisible();
 
+  await operatorPage.getByLabel("帳號選單").click();
   await operatorPage.getByRole("button", { name: "登出" }).click();
   await expect(operatorPage).toHaveURL(/\/login$/u);
   await login(operatorPage, operatorEmail, operatorPassword);
