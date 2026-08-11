@@ -5,10 +5,10 @@ const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const remoteRun = process.env.E2E_REMOTE === "1";
 const sensitiveRun = process.env.E2E_SENSITIVE === "1";
-const roleShellTestMatch = /role-shells.*\.e2e\.mjs/;
 const roleShellCoreTestMatch = /role-shells\.e2e\.mjs/;
 const roleShellDisabledTestMatch = /role-shells-off\.e2e\.mjs/;
 const roleShellForceTestMatch = /role-shells-force-legacy\.e2e\.mjs/;
+const eventCreateTestMatch = /event-create-form\.e2e\.mjs/;
 const rollbackScenario = process.env.E2E_ROLE_SHELL_ROLLBACK;
 
 export default defineConfig({
@@ -36,7 +36,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       use: { viewport: { width: 1440, height: 900 } },
-      testIgnore: roleShellTestMatch,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs/,
     },
     {
       name: "android-chromium",
@@ -46,7 +46,7 @@ export default defineConfig({
         hasTouch: true,
         deviceScaleFactor: 2.625,
       },
-      testIgnore: roleShellTestMatch,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs/,
     },
     {
       name: "role-shells-1440",
@@ -90,6 +90,13 @@ export default defineConfig({
       testIgnore: rollbackScenario === "force" ? undefined : /.*/,
       use: { viewport: { width: 1440, height: 900 } },
     },
+    ...[1440, 1024, 768, 412, 375, 320].map((width) => ({
+      name: `event-create-${width}`,
+      testMatch: eventCreateTestMatch,
+      use: width <= 412
+        ? { viewport: { width, height: width === 320 ? 700 : 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
+        : { viewport: { width, height: 900 } },
+    })),
   ],
   webServer: remoteRun
     ? undefined

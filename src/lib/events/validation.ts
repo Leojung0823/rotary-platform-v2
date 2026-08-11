@@ -10,6 +10,177 @@ export const EVENT_TYPES = [
 export type EventType = (typeof EVENT_TYPES)[number];
 export type EventResponse = "pending" | "attending" | "declined";
 
+export const EVENT_CREATE_FIELDS = [
+  "eventType",
+  "title",
+  "startsAt",
+  "endsAt",
+  "registrationDeadline",
+  "capacity",
+  "location",
+  "countsForAttendance",
+  "description",
+] as const;
+
+export type EventCreateField = (typeof EVENT_CREATE_FIELDS)[number];
+export type EventCreateFieldErrors = Partial<Record<EventCreateField, string>>;
+
+export type EventCreateFormValues = {
+  eventType: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  registrationDeadline: string;
+  capacity: string;
+  location: string;
+  countsForAttendance: boolean;
+  description: string;
+};
+
+export type EventCreateActionState = {
+  status: "idle" | "error";
+  revision: number;
+  values: EventCreateFormValues;
+  fieldErrors: EventCreateFieldErrors;
+  formError?: string;
+};
+
+type ValidEventCreateInput = {
+  eventType: EventType;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  registrationDeadline: string;
+  capacity: number | null;
+  location: string;
+  countsForAttendance: boolean;
+  description: string;
+};
+
+export type EventCreateValidation =
+  | { ok: true; input: ValidEventCreateInput }
+  | { ok: false; fieldErrors: EventCreateFieldErrors };
+
+export const initialEventCreateFormValues: EventCreateFormValues = {
+  eventType: "regular_meeting",
+  title: "",
+  startsAt: "",
+  endsAt: "",
+  registrationDeadline: "",
+  capacity: "",
+  location: "",
+  countsForAttendance: true,
+  description: "",
+};
+
+export const initialEventCreateActionState: EventCreateActionState = {
+  status: "idle",
+  revision: 0,
+  values: initialEventCreateFormValues,
+  fieldErrors: {},
+};
+
+function boundedFormString(value: FormDataEntryValue | null, maximum: number) {
+  return typeof value === "string" ? value.slice(0, maximum) : "";
+}
+
+export function readEventCreateFormValues(formData: FormData): EventCreateFormValues {
+  return {
+    eventType: boundedFormString(formData.get("eventType"), 64),
+    title: boundedFormString(formData.get("title"), 161),
+    startsAt: boundedFormString(formData.get("startsAt"), 32),
+    endsAt: boundedFormString(formData.get("endsAt"), 32),
+    registrationDeadline: boundedFormString(formData.get("registrationDeadline"), 32),
+    capacity: boundedFormString(formData.get("capacity"), 32),
+    location: boundedFormString(formData.get("location"), 301),
+    countsForAttendance: formData.get("countsForAttendance") === "on",
+    description: boundedFormString(formData.get("description"), 5001),
+  };
+}
+
+function hasErrors(fieldErrors: EventCreateFieldErrors) {
+  return Object.keys(fieldErrors).length > 0;
+}
+
+export function validateEventCreateForm(values: EventCreateFormValues): EventCreateValidation {
+  const fieldErrors: EventCreateFieldErrors = {};
+  let eventType: EventType | undefined;
+  let title: string | undefined;
+  let startsAt: string | undefined;
+  let endsAt: string | undefined;
+  let registrationDeadline: string | undefined;
+  let capacity: number | null | undefined;
+  let location: string | undefined;
+  let description: string | undefined;
+
+  try {
+    eventType = parseEventType(values.eventType);
+  } catch {
+    fieldErrors.eventType = "請選擇有效的活動類型。";
+  }
+  try {
+    title = parseEventText(values.title, 160, true);
+  } catch {
+    fieldErrors.title = values.title.trim()
+      ? "活動名稱不可超過 160 字。"
+      : "請輸入活動名稱。";
+  }
+  try {
+    startsAt = parseTaipeiDateTime(values.startsAt);
+  } catch {
+    fieldErrors.startsAt = "請輸入有效的開始日期與時間。";
+  }
+  try {
+    endsAt = parseTaipeiDateTime(values.endsAt);
+  } catch {
+    fieldErrors.endsAt = "請輸入有效的結束日期與時間。";
+  }
+  try {
+    registrationDeadline = parseTaipeiDateTime(values.registrationDeadline);
+  } catch {
+    fieldErrors.registrationDeadline = "請輸入有效的報名截止日期與時間。";
+  }
+  try {
+    capacity = parseOptionalCapacity(values.capacity);
+  } catch {
+    fieldErrors.capacity = "名額必須是 1 至 10000 的整數，或留空表示不限。";
+  }
+  try {
+    location = parseEventText(values.location, 300);
+  } catch {
+    fieldErrors.location = "地點不可超過 300 字。";
+  }
+  try {
+    description = parseEventText(values.description, 5000);
+  } catch {
+    fieldErrors.description = "活動說明不可超過 5000 字。";
+  }
+
+  if (startsAt && endsAt && endsAt <= startsAt) {
+    fieldErrors.endsAt = "結束時間必須晚於開始時間。";
+  }
+  if (startsAt && registrationDeadline && registrationDeadline > startsAt) {
+    fieldErrors.registrationDeadline = "報名截止時間不得晚於活動開始時間。";
+  }
+
+  if (hasErrors(fieldErrors)) return { ok: false, fieldErrors };
+
+  return {
+    ok: true,
+    input: {
+      eventType: eventType!,
+      title: title!,
+      startsAt: startsAt!,
+      endsAt: endsAt!,
+      registrationDeadline: registrationDeadline!,
+      capacity: capacity!,
+      location: location!,
+      countsForAttendance: values.countsForAttendance,
+      description: description!,
+    },
+  };
+}
+
 export function parseEventType(value: FormDataEntryValue | null): EventType {
   if (typeof value !== "string" || !EVENT_TYPES.includes(value as EventType)) {
     throw new Error("invalid_event_type");

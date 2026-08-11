@@ -3,12 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  type EventCreateActionState,
+  type EventCreateFormValues,
   parseEventResponse,
   parseEventText,
-  parseEventType,
   parseGuestCount,
-  parseOptionalCapacity,
-  parseTaipeiDateTime,
+  readEventCreateFormValues,
+  validateEventCreateForm,
 } from "@/lib/events/validation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,55 +36,64 @@ function mapEventError(message: string | undefined) {
   return "unexpected";
 }
 
-export async function createEventAction(formData: FormData) {
-  let clubId: string;
-  let input: {
-    eventType: ReturnType<typeof parseEventType>;
-    title: string;
-    description: string;
-    location: string;
-    startsAt: string;
-    endsAt: string;
-    registrationDeadline: string;
-    capacity: number | null;
-    countsForAttendance: boolean;
-  };
+function createEventFailure(
+  values: EventCreateFormValues,
+  revision: number,
+  formError: string,
+  fieldErrors: EventCreateActionState["fieldErrors"] = {},
+): EventCreateActionState {
+  return { status: "error", revision, values, fieldErrors, formError };
+}
 
+function createEventRpcFailure(values: EventCreateFormValues, revision: number, message: string | undefined) {
+  const code = mapEventError(message);
+  if (code === "forbidden") {
+    return createEventFailure(values, revision, "目前帳號沒有建立此扶輪社活動的權限。請確認社別與權限後再試。");
+  }
+  if (code === "invalid_input" || code === "cannot_publish") {
+    return createEventFailure(values, revision, "活動資料未通過系統規則，請確認內容後再試。");
+  }
+  return createEventFailure(values, revision, "目前無法建立活動草稿，請稍後再試。已輸入的內容仍保留，可直接重試。");
+}
+
+export async function createEventAction(
+  previousState: EventCreateActionState,
+  formData: FormData,
+): Promise<EventCreateActionState> {
+  const values = readEventCreateFormValues(formData);
+  const revision = previousState.revision + 1;
+  let clubId: string;
   try {
     clubId = parseUuid(formData.get("clubId"));
-    input = {
-      eventType: parseEventType(formData.get("eventType")),
-      title: parseEventText(formData.get("title"), 160, true),
-      description: parseEventText(formData.get("description"), 5000),
-      location: parseEventText(formData.get("location"), 300),
-      startsAt: parseTaipeiDateTime(formData.get("startsAt")),
-      endsAt: parseTaipeiDateTime(formData.get("endsAt")),
-      registrationDeadline: parseTaipeiDateTime(formData.get("registrationDeadline")),
-      capacity: parseOptionalCapacity(formData.get("capacity")),
-      countsForAttendance: formData.get("countsForAttendance") === "on",
-    };
-    if (input.endsAt <= input.startsAt || input.registrationDeadline > input.startsAt) {
-      throw new Error("invalid_event_time");
-    }
   } catch {
-    const rawClubId = typeof formData.get("clubId") === "string" ? String(formData.get("clubId")) : "";
-    redirect(eventPath(rawClubId, "error", "invalid_input"));
+    return createEventFailure(values, revision, "目前無法確認活動社別與權限，請重新整理後再試。");
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("create_club_event", {
-    p_club_id: clubId,
-    p_event_type: input.eventType,
-    p_title: input.title,
-    p_description: input.description,
-    p_location: input.location,
-    p_starts_at: input.startsAt,
-    p_ends_at: input.endsAt,
-    p_registration_deadline: input.registrationDeadline,
-    p_capacity: input.capacity,
-    p_counts_for_attendance: input.countsForAttendance,
-  });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
+  const validated = validateEventCreateForm(values);
+  if (!validated.ok) {
+    return createEventFailure(values, revision, "請修正下列欄位後再建立活動草稿。", validated.fieldErrors);
+  }
+
+  let rpcError: { message?: string } | null = null;
+  try {
+    const supabase = await createClient();
+    const result = await supabase.rpc("create_club_event", {
+      p_club_id: clubId,
+      p_event_type: validated.input.eventType,
+      p_title: validated.input.title,
+      p_description: validated.input.description,
+      p_location: validated.input.location,
+      p_starts_at: validated.input.startsAt,
+      p_ends_at: validated.input.endsAt,
+      p_registration_deadline: validated.input.registrationDeadline,
+      p_capacity: validated.input.capacity,
+      p_counts_for_attendance: validated.input.countsForAttendance,
+    });
+    rpcError = result.error;
+  } catch {
+    return createEventFailure(values, revision, "目前無法建立活動草稿，請稍後再試。已輸入的內容仍保留，可直接重試。");
+  }
+  if (rpcError) return createEventRpcFailure(values, revision, rpcError.message);
   revalidatePath("/events");
   redirect(eventPath(clubId, "success", "event_created"));
 }
