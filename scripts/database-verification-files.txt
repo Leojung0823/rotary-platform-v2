@@ -11,6 +11,7 @@ supabase/verification/event_registration_security.sql
 supabase/verification/event_registration_tenant_integrity.sql
 supabase/verification/event_registration_lifecycle_hardening.sql
 supabase/verification/event_checkin_security.sql
+supabase/verification/attendance_domain_core_security.sql
 supabase/verification/member_directory_self_profile_security.sql
 supabase/verification/member_profile_validation.sql
 supabase/verification/member_password_invitation_security.sql
