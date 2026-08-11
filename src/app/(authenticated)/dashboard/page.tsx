@@ -3,9 +3,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Badge, Card, EmptyState, Notice } from "@/components/ui";
 import { ExperienceContextResolver } from "@/components/experience-context-resolver";
+import { MemberHome } from "@/components/member-home";
 import { RoleAwareDashboardLanding } from "@/components/role-aware-dashboard";
 import { resolveDashboardRoleContext } from "@/lib/dashboard-role-context";
 import { hasPlatformAccess, requireIdentity, type Identity } from "@/lib/auth";
+import { activeClubForMode } from "@/lib/experience-context";
 import {
   activeClubCookieName,
   readActiveClubPreference,
@@ -42,6 +44,30 @@ async function recordRoleContextFlagFailure(evaluation: FeatureFlagEvaluation) {
     await recordAuthenticatedProductTelemetry({
       name: "feature_flag_evaluation_failure",
       key: "role_context_v2",
+      reason,
+    });
+  } catch {
+    // Observability cannot make an authenticated page unavailable.
+  }
+}
+
+async function recordMemberHomeFlagFailure(evaluation: FeatureFlagEvaluation) {
+  const reason = evaluation.reason === "missing_configuration"
+    ? "missing_configuration"
+    : evaluation.reason === "invalid_configuration"
+      || evaluation.reason === "invalid_environment"
+      || evaluation.reason === "environment_not_allowed"
+      || evaluation.reason === "rollout_subject_required"
+      ? "invalid_configuration"
+      : evaluation.reason === "database_read_error"
+        ? "evaluation_error"
+        : null;
+  if (!reason) return;
+
+  try {
+    await recordAuthenticatedProductTelemetry({
+      name: "feature_flag_evaluation_failure",
+      key: "member_home_v2",
       reason,
     });
   } catch {
@@ -188,6 +214,18 @@ export default async function DashboardPage({
   }
 
   if (roleShellsEvaluation.enabled) {
+    if (resolved.resolution.mode === "member") {
+      const memberHomeEvaluation = await evaluateCurrentFeatureFlag({
+        key: "member_home_v2",
+        subjectUuid: identity.id,
+      });
+      if (!memberHomeEvaluation.enabled) {
+        await recordMemberHomeFlagFailure(memberHomeEvaluation);
+      } else {
+        const activeClub = activeClubForMode(context.context, "member");
+        if (activeClub) return <MemberHome identity={identity} activeClubId={activeClub.clubId} />;
+      }
+    }
     return <RoleAwareDashboardLanding
       identity={identity}
       context={context.context}

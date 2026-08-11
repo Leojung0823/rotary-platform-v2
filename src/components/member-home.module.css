@@ -1,0 +1,17 @@
+.memberHome { max-width: 880px; }
+.todayHeading { margin: 0; color: var(--muted); font-size: 17px; font-weight: 700; }
+.primaryCard, .nextCard, .emptyCard { display: grid; gap: 18px; }
+.primaryCard { border-color: #9ec5b0; background: linear-gradient(145deg, #f8fffb 0%, #f2f8f4 100%); }
+.eventHeading { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+.eventHeading h2 { margin: 4px 0 0; overflow-wrap: anywhere; }
+.eventDetails { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; }
+.eventDetails div { min-width: 0; }
+.eventDetails dt { color: var(--muted); font-size: 13px; font-weight: 750; }
+.eventDetails dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+.primaryCard .button, .emptyCard .button { width: fit-content; min-height: 48px; }
+
+@media (max-width: 640px) {
+  .eventHeading { display: grid; gap: 10px; }
+  .eventDetails { grid-template-columns: 1fr; gap: 10px; }
+  .primaryCard .button, .emptyCard .button { width: 100%; }
+}
