@@ -21,7 +21,11 @@ export function shouldRefreshAuthSession(pathname: string) {
 }
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-rotary-pathname", request.nextUrl.pathname);
+  requestHeaders.set("x-rotary-requested-mode", request.nextUrl.searchParams.get("mode") ?? "");
+  const nextRequest = { headers: requestHeaders };
+  let response = NextResponse.next({ request: nextRequest });
   if (!shouldRefreshAuthSession(request.nextUrl.pathname)) return response;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,7 +36,7 @@ export async function proxy(request: NextRequest) {
       getAll: () => request.cookies.getAll(),
       setAll(cookies) {
         cookies.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
+        response = NextResponse.next({ request: nextRequest });
         cookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     },

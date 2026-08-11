@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Badge, Card, EmptyState, Notice } from "@/components/ui";
 import { ExperienceContextResolver } from "@/components/experience-context-resolver";
+import { RoleAwareDashboardLanding } from "@/components/role-aware-dashboard";
 import { resolveDashboardRoleContext } from "@/lib/dashboard-role-context";
 import { hasPlatformAccess, requireIdentity, type Identity } from "@/lib/auth";
 import {
@@ -160,10 +161,10 @@ export default async function DashboardPage({
   searchParams: Promise<{ mode?: string }>;
 }) {
   const identity = await requireIdentity();
-  const evaluation = await evaluateCurrentFeatureFlag({
-    key: "role_context_v2",
-    subjectUuid: identity.id,
-  });
+  const [evaluation, roleShellsEvaluation] = await Promise.all([
+    evaluateCurrentFeatureFlag({ key: "role_context_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
+  ]);
   if (!evaluation.enabled) {
     await recordRoleContextFlagFailure(evaluation);
     return <LegacyDashboard identity={identity} />;
@@ -184,6 +185,14 @@ export default async function DashboardPage({
   if (!context.ok) return <LegacyDashboard identity={identity} contextUnavailable />;
   if (resolved.resolution.kind === "access_denied") {
     return <ExperienceContextResolver context={context.context} requestedMode={null} />;
+  }
+
+  if (roleShellsEvaluation.enabled) {
+    return <RoleAwareDashboardLanding
+      identity={identity}
+      context={context.context}
+      mode={resolved.resolution.mode}
+    />;
   }
 
   return <ExperienceContextResolver context={context.context} requestedMode={resolved.resolution.mode} />;

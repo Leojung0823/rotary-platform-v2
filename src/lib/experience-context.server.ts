@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { recordAuthenticatedProductTelemetry } from "@/lib/product/telemetry.server";
 import type { ProductTelemetryEvent } from "@/lib/product/telemetry";
@@ -72,7 +73,7 @@ async function recordResolutionTelemetry({
   }
 }
 
-export async function resolveExperienceContext(
+export const resolveExperienceContext = cache(async function resolveExperienceContext(
   preferredClubId: unknown,
 ): Promise<ExperienceContextResolution> {
   const startedAt = performance.now();
@@ -90,4 +91,4 @@ export async function resolveExperienceContext(
 
   await recordResolutionTelemetry({ startedAt, resolution });
   return resolution;
-}
+});

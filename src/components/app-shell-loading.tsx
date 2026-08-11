@@ -1,5 +1,4 @@
-const primaryNavigation = ["總覽", "功能總覽", "社員名冊", "活動", "留言板", "會員中心"];
-const mobileNavigation = ["總覽", "功能", "名冊", "活動", "留言板", "我的"];
+const navigationSkeletons = ["one", "two", "three", "four", "five"];
 
 function LoadingPageContent() {
   return (
@@ -43,8 +42,8 @@ export function AppShellLoading() {
           <span className="brand-mark">R</span>
           <span>扶輪管理平台<small>ROTARY V2</small></span>
         </div>
-        <nav>
-          {primaryNavigation.map((label) => <span className="loading-nav-item" key={label}>{label}</span>)}
+        <nav aria-hidden="true">
+          {navigationSkeletons.map((key) => <span className="loading-nav-item" key={key}><span className="skeleton skeleton-loading-nav" /></span>)}
         </nav>
         <div className="account loading-account">
           <span className="skeleton skeleton-avatar" />
@@ -54,11 +53,11 @@ export function AppShellLoading() {
           </span>
         </div>
       </aside>
-      <main id="main" className="content">
+      <main id="main" tabIndex={-1} className="content">
         <LoadingPageContent />
       </main>
       <nav className="mobile-nav" aria-hidden="true">
-        {mobileNavigation.map((label) => <span className="loading-nav-item" key={label}>{label}</span>)}
+        {navigationSkeletons.map((key) => <span className="loading-nav-item" key={key}><span className="skeleton skeleton-loading-nav" /></span>)}
       </nav>
     </div>
   );

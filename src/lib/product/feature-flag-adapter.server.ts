@@ -64,14 +64,14 @@ export const readFeatureFlagRecords = cache(async (): Promise<FeatureFlagReadRes
   }
 });
 
-export async function evaluateCurrentFeatureFlag({
+async function evaluateCurrentFeatureFlagWithEnvironment({
   key,
   subjectUuid,
-  environment = process.env,
+  environment,
 }: {
   key: FeatureFlagKey;
   subjectUuid?: string;
-  environment?: Readonly<Record<string, string | undefined>>;
+  environment: Readonly<Record<string, string | undefined>>;
 }): Promise<FeatureFlagEvaluation> {
   const result = await readFeatureFlagRecords();
   return evaluateFeatureFlag({
@@ -83,4 +83,23 @@ export async function evaluateCurrentFeatureFlag({
     pepper: environment.FEATURE_FLAG_ROLLOUT_PEPPER,
     env: environment,
   });
+}
+
+const evaluateCurrentFeatureFlagForRequest = cache(async (
+  key: FeatureFlagKey,
+  subjectUuid?: string,
+) => evaluateCurrentFeatureFlagWithEnvironment({ key, subjectUuid, environment: process.env }));
+
+export async function evaluateCurrentFeatureFlag({
+  key,
+  subjectUuid,
+  environment,
+}: {
+  key: FeatureFlagKey;
+  subjectUuid?: string;
+  environment?: Readonly<Record<string, string | undefined>>;
+}): Promise<FeatureFlagEvaluation> {
+  return environment
+    ? evaluateCurrentFeatureFlagWithEnvironment({ key, subjectUuid, environment })
+    : evaluateCurrentFeatureFlagForRequest(key, subjectUuid);
 }

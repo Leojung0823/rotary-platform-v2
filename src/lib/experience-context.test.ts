@@ -4,6 +4,7 @@ import {
   applyActiveClubPreference,
   clubsForExperienceMode,
   parseExperienceContextProjection,
+  resolveActiveClubPreferenceChange,
   resolveExperienceMode,
 } from "./experience-context";
 
@@ -143,6 +144,27 @@ describe("active club preference safety", () => {
 
     const afterRevocation = context(projection({ memberClubs: [clubA] }), initial.activeClubId);
     expect(afterRevocation.activeClubId).toBe(clubA.club_id);
+  });
+
+  it("only saves a candidate that is legal for the server-resolved mode", () => {
+    const value = context(projection({
+      memberClubs: [{ ...clubA, can_manage: true }],
+      managedOnlyClubs: [managedClub],
+      hasPlatformAccess: true,
+    }), clubA.club_id);
+
+    expect(resolveActiveClubPreferenceChange(value, "member", managedClub.club_id)).toEqual({
+      mode: "member",
+      clubId: clubA.club_id,
+    });
+    expect(resolveActiveClubPreferenceChange(value, "management", managedClub.club_id)).toEqual({
+      mode: "management",
+      clubId: managedClub.club_id,
+    });
+    expect(resolveActiveClubPreferenceChange(value, "platform", clubA.club_id)).toEqual({
+      mode: "platform",
+      clubId: null,
+    });
   });
 
   it("rejects malformed, unbounded, and no-authority projections", () => {

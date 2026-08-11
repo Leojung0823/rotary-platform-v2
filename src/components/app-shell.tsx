@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Identity } from "@/lib/auth";
+import { Notice } from "@/components/ui";
 import styles from "./app-shell.module.css";
 
 function environmentLabel() {
@@ -8,7 +9,15 @@ function environmentLabel() {
   return "LOCAL";
 }
 
-export function AppShell({ identity, children }: { identity: Identity; children: React.ReactNode }) {
+export function LegacyAppShell({
+  identity,
+  children,
+  fallbackNotice,
+}: {
+  identity: Identity;
+  children: React.ReactNode;
+  fallbackNotice?: string;
+}) {
   const isPlatform = identity.platform_roles.includes("superadmin") || identity.platform_roles.includes("platform_admin");
   return <div className="shell">
     <aside className="sidebar">
@@ -27,7 +36,7 @@ export function AppShell({ identity, children }: { identity: Identity; children:
         <form action="/api/auth/line/logout?redirect=1" method="post"><button className="link-button">登出</button></form>
       </div>
     </aside>
-    <main id="main" className="content">{children}</main>
+    <main id="main" tabIndex={-1} className="content">{fallbackNotice && <Notice tone="error">{fallbackNotice}</Notice>}{children}</main>
     <nav className="mobile-nav" aria-label="行動版導覽">
       <Link href="/dashboard">總覽</Link>
       <Link href="/features">功能</Link>
@@ -42,3 +51,7 @@ export function AppShell({ identity, children }: { identity: Identity; children:
     </nav>
   </div>;
 }
+
+// Kept as an alias for existing consumers while role-aware shells remain fully
+// rollback-safe behind role_shells_v2.
+export const AppShell = LegacyAppShell;
