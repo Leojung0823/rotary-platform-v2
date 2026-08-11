@@ -36,6 +36,22 @@ async function expectNoHorizontalOverflow(page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
+async function expectBottomNavigationClearance(page) {
+  const layout = await page.evaluate(() => {
+    const main = document.querySelector("main");
+    const navigation = document.querySelector('nav[aria-label="主要導覽"]');
+    if (!main || !navigation) return null;
+    return {
+      navigationHeight: navigation.getBoundingClientRect().height,
+      navigationPosition: window.getComputedStyle(navigation).position,
+      mainPaddingBottom: Number.parseFloat(window.getComputedStyle(main).paddingBottom),
+    };
+  });
+  expect(layout).not.toBeNull();
+  expect(layout.navigationPosition).toBe("fixed");
+  expect(layout.mainPaddingBottom).toBeGreaterThanOrEqual(layout.navigationHeight);
+}
+
 async function expectShell(page, mode) {
   await expect(page.locator("aside > header > p").first()).toHaveText(mode);
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toBeVisible();
@@ -89,7 +105,7 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     return;
   }
 
-  await login(page, accounts.ordinary.email);
+  await login(page, testInfo.project.name === "role-shells-768" ? accounts.allModes.email : accounts.ordinary.email);
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(1);
   await expect(page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "首頁" })).toHaveAttribute("aria-current", "page");
@@ -104,7 +120,22 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
   if (testInfo.project.name === "role-shells-320") await expectNoHorizontalOverflow(page);
   if (testInfo.project.name === "role-shells-768") {
     await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
-    await expect(page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "我的" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await expect(page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "活動" })).toBeVisible();
+
+    const modeSwitcher = page.getByRole("navigation", { name: "切換工作模式" });
+    const managementMode = modeSwitcher.getByRole("link", { name: "社務管理模式" });
+    await expect(managementMode).toBeVisible();
+    await managementMode.click();
+    await expectShell(page, "社務管理模式");
+
+    await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+    await page.getByLabel("切換作用扶輪社").click();
+    await expect(page.getByRole("region", { name: "我的扶輪社" })).toBeVisible();
+    await page.getByLabel("帳號選單").click();
+    await expect(page.getByRole("link", { name: "我的帳號" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await expectBottomNavigationClearance(page);
   }
   if (["role-shells-412", "role-shells-375", "role-shells-320"].includes(testInfo.project.name)) {
     await expect(page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "簽到" })).toBeVisible();
