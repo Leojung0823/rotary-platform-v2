@@ -36,7 +36,9 @@ test("recoverable event-create failure retains the form and exposes an accessibl
   await page.getByLabel("名額（留空表示不限）").fill("80");
   await page.getByLabel("地點").fill("本機河濱公園");
   await page.getByLabel("活動說明").fill("請攜帶手套與飲水。");
-  await page.getByLabel("計入出席").uncheck();
+  const countsForAttendance = page.getByLabel("計入出席");
+  await countsForAttendance.focus();
+  await page.keyboard.press("Space");
 
   const submit = page.getByRole("button", { name: "建立草稿" });
   if (testInfo.project.name === "event-create-1440") {
