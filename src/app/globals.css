@@ -55,6 +55,7 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .skeleton-eyebrow { width: 88px; height: 12px; }
 .skeleton-title { width: min(430px, 68vw); height: 44px; border-radius: 12px; }
 .skeleton-copy { width: min(360px, 64vw); height: 14px; }
+.skeleton-loading-nav { width: 100%; height: 12px; }
 .skeleton-copy-wide { width: min(720px, 70vw); }
 .skeleton-action { width: 112px; height: 44px; border-radius: 10px; }
 .skeleton-card { display: grid; min-height: 160px; align-content: center; gap: 14px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }

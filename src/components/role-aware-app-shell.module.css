@@ -1,0 +1,110 @@
+.shell {
+  --shell-accent: #1677a8;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 288px minmax(0, 1fr);
+}
+
+.shellMember { --shell-accent: #1677a8; }
+.shellManagement { --shell-accent: #a86f16; }
+.shellPlatform { --shell-accent: #7b4ca3; }
+
+.rail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 22px 16px;
+  color: #eff7fb;
+  background: linear-gradient(165deg, #102a41 0%, #173d59 62%, #0d2539 100%);
+}
+
+.header { display: grid; gap: 14px; }
+
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; color: inherit; font-weight: 850; }
+.brandMark { display: grid; place-items: center; flex: 0 0 auto; width: 38px; height: 38px; color: #102a41; border-radius: 50%; background: var(--gold); font-family: Georgia, serif; font-size: 22px; box-shadow: inset 0 0 0 5px rgba(255,255,255,.28); }
+.brand small { display: block; margin-top: 2px; color: #9fb9c8; font-size: 9px; letter-spacing: .14em; }
+.modeName { margin: 0; color: #d7ebf5; font-size: 13px; font-weight: 850; }
+.mobileContext { display: none; }
+
+.controlLabel { display: block; color: #9fb9c8; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.modeSwitcher { display: grid; gap: 6px; }
+.modeOptions { display: flex; flex-wrap: wrap; gap: 5px; }
+.modeOption, .modeOptionCurrent { min-height: 32px; display: inline-flex; align-items: center; padding: 6px 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; color: #c8dce7; font-size: 12px; font-weight: 750; }
+.modeOption:hover { border-color: rgba(255,255,255,.48); color: white; }
+.modeOptionCurrent { border-color: var(--shell-accent); color: white; background: var(--shell-accent); }
+
+.clubSwitcher { position: relative; border: 1px solid rgba(255,255,255,.16); border-radius: 10px; }
+.clubSwitcher summary { display: grid; gap: 3px; padding: 9px 10px; cursor: pointer; list-style: none; }
+.clubSwitcher summary::-webkit-details-marker { display: none; }
+.clubSwitcher summary strong { overflow: hidden; color: white; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.clubPanel { position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; width: min(340px, calc(100vw - 32px)); max-height: min(420px, 70vh); overflow-y: auto; padding: 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: white; box-shadow: 0 18px 50px rgba(18,48,74,.26); }
+.clubGroup + .clubGroup { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.clubGroup h3 { margin: 0 0 6px; color: var(--muted); font-size: 12px; }
+.clubOption button { width: 100%; display: grid; gap: 2px; padding: 9px; border: 0; border-radius: 8px; color: var(--ink); background: transparent; cursor: pointer; text-align: left; }
+.clubOption button:hover, .clubOption button[aria-current="true"] { background: #edf4f7; }
+.clubOption span { font-size: 14px; font-weight: 800; }
+.clubOption small { color: var(--muted); font-size: 11px; }
+.scopeLabel { margin: 0; padding: 9px 10px; border: 1px solid rgba(255,255,255,.16); border-radius: 10px; color: #bdd4df; font-size: 12px; line-height: 1.5; }
+
+.navigation { margin-top: 2px; }
+.navigation ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.navigation a { min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: #c3d7e2; font-weight: 760; }
+.navigation a:hover { color: white; background: rgba(255,255,255,.08); }
+.navigation a[aria-current="page"] { color: white; background: var(--shell-accent); }
+.navigationIcon { width: 22px; display: inline-grid; place-items: center; font-size: 19px; font-weight: 900; }
+.mobileLabel { display: none; }
+
+.accountMenu { position: relative; margin-top: auto; border-top: 1px solid rgba(255,255,255,.16); padding-top: 14px; }
+.accountMenu summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; }
+.accountMenu summary::-webkit-details-marker { display: none; }
+.avatar { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; border-radius: 10px; color: #f2ce67; background: rgba(213,169,46,.18); font-weight: 850; }
+.accountSummary { min-width: 0; }
+.accountSummary strong, .accountSummary small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.accountSummary strong { font-size: 13px; }
+.accountSummary small { color: #9fb9c8; font-size: 11px; }
+.accountPanel { position: absolute; z-index: 30; bottom: calc(100% + 8px); left: 0; width: 250px; display: grid; gap: 8px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: white; box-shadow: 0 18px 50px rgba(18,48,74,.26); }
+.accountPanel p { overflow-wrap: anywhere; margin: 0; font-size: 12px; line-height: 1.45; }
+.accountPanel a, .accountPanel button { min-height: 38px; padding: 8px; border: 0; border-radius: 8px; color: var(--navy); background: #edf4f7; cursor: pointer; font-weight: 750; text-align: left; }
+.accountPanel button { width: 100%; color: var(--danger); }
+
+.content { min-width: 0; padding: 48px clamp(24px, 5vw, 72px) 80px; }
+
+@media (max-width: 840px) {
+  .shell { display: block; }
+  .rail { position: static; height: auto; min-height: 68px; display: block; padding: 13px 16px; }
+  .header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+  .brand { flex: 1; font-size: 14px; }
+  .brandMark { width: 34px; height: 34px; font-size: 20px; }
+  .modeName { display: none; }
+  .mobileContext { flex: 1 1 calc(100% - 50px); display: block; overflow: hidden; margin: 0; color: #bdd4df; font-size: 11px; font-weight: 750; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+  .modeSwitcher { flex: 1 0 100%; order: 3; }
+  .modeSwitcher .controlLabel { display: none; }
+  .modeOptions { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .modeOption, .modeOptionCurrent { flex: 0 0 auto; min-height: 30px; }
+  .clubSwitcher, .scopeLabel { flex: 1 0 100%; order: 4; }
+  .clubSwitcher { display: block; }
+  .clubPanel { position: fixed; z-index: 40; top: auto; right: 12px; bottom: calc(78px + env(safe-area-inset-bottom)); left: 12px; width: auto; max-height: min(420px, 62vh); }
+  .scopeLabel { display: block; }
+  .accountMenu { margin: 0; padding: 0; border: 0; }
+  .accountSummary { display: none; }
+  .accountPanel { position: fixed; z-index: 40; top: 66px; right: 12px; bottom: auto; left: auto; }
+  .navigation { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; margin: 0; padding: 8px max(8px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right)); border-top: 1px solid var(--line); background: rgba(255,255,255,.96); box-shadow: 0 -8px 24px rgba(18,48,74,.08); backdrop-filter: blur(12px); }
+  .navigation ul { grid-template-columns: repeat(var(--nav-count, 5), minmax(0, 1fr)); display: grid; gap: 2px; }
+  .navigation li { min-width: 0; }
+  .navigation a { min-height: 54px; flex-direction: column; justify-content: center; gap: 2px; padding: 5px 2px; color: var(--navy); font-size: 11px; text-align: center; }
+  .navigation a[aria-current="page"] { color: white; }
+  .navigationIcon { height: 20px; font-size: 18px; }
+  .desktopLabel { display: none; }
+  .mobileLabel { display: block; overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
+  .content { padding: 28px 18px calc(92px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 360px) {
+  .rail { padding-right: 12px; padding-left: 12px; }
+  .brand { font-size: 13px; }
+  .navigation { padding-right: 4px; padding-left: 4px; }
+  .navigation a { font-size: 10px; }
+}

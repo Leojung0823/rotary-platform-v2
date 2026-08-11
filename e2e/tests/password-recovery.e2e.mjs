@@ -125,6 +125,7 @@ test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入
     await expect(page).toHaveURL(/\/login\?success=password_updated$/u);
     await expect(page.getByText("密碼已更新，請使用新密碼登入。", { exact: true })).toBeVisible();
     await login(page, adminEmail, newPassword);
+    await page.getByLabel("帳號選單").click();
     await page.getByRole("button", { name: "登出" }).click();
     await expect(page).toHaveURL(/\/login$/u);
   } finally {
@@ -133,6 +134,7 @@ test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入
 
   expect(passwordChanged).toBe(true);
   await login(page, adminEmail, adminPassword);
+  await page.getByLabel("帳號選單").click();
   await page.getByRole("button", { name: "登出" }).click();
   await expect(page).toHaveURL(/\/login$/u);
 });

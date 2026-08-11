@@ -27,6 +27,26 @@ describe("feature flag evaluation truth table", () => {
     })).toMatchObject({ enabled: false, reason: "kill_switch" });
   });
 
+  it("keeps role shells on the legacy path when its server-only kill switch is enabled", () => {
+    expect(evaluateFeatureFlag({
+      key: "role_shells_v2",
+      record: enabledRecord,
+      environment: "local",
+      pepper,
+      env: { FORCE_LEGACY_ROLE_SHELLS: "true" },
+    })).toMatchObject({ enabled: false, reason: "kill_switch" });
+  });
+
+  it("fails closed to the legacy role shell when its feature read fails", () => {
+    expect(evaluateFeatureFlag({
+      key: "role_shells_v2",
+      record: enabledRecord,
+      environment: "local",
+      pepper,
+      databaseReadFailed: true,
+    })).toMatchObject({ enabled: false, reason: "database_read_error" });
+  });
+
   it("never lets a kill switch enable a database-disabled feature", () => {
     expect(evaluateFeatureFlag({
       key: "member_home_v2",

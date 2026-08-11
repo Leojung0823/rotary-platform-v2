@@ -20,8 +20,21 @@ export function shouldRefreshAuthSession(pathname: string) {
   return AUTH_SESSION_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+export function buildForwardedRequestHeaders(request: NextRequest) {
+  const headers = new Headers(request.headers);
+  // These are proxy-derived display inputs. Never preserve browser-supplied
+  // values, and never use them as authorization inputs.
+  headers.set("x-rotary-pathname", request.nextUrl.pathname);
+  headers.set("x-rotary-requested-mode", request.nextUrl.searchParams.get("mode") ?? "");
+  return headers;
+}
+
+function forwardedResponse(request: NextRequest) {
+  return NextResponse.next({ request: { headers: buildForwardedRequestHeaders(request) } });
+}
+
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  let response = forwardedResponse(request);
   if (!shouldRefreshAuthSession(request.nextUrl.pathname)) return response;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,7 +45,10 @@ export async function proxy(request: NextRequest) {
       getAll: () => request.cookies.getAll(),
       setAll(cookies) {
         cookies.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
+        // Rebuild from the mutated request. Reusing a pre-refresh Headers
+        // snapshot would drop the refreshed session from this request's
+        // downstream Server Component Cookie header.
+        response = forwardedResponse(request);
         cookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     },

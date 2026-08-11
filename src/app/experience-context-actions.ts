@@ -8,23 +8,29 @@ import {
   readActiveClubPreference,
 } from "@/lib/experience-context-cookie";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
-import { resolveExperienceMode } from "@/lib/experience-context";
+import { resolveActiveClubPreferenceChange } from "@/lib/experience-context";
 
 export async function setActiveClubPreferenceAction(formData: FormData) {
-  const resolution = await resolveExperienceContext(readActiveClubPreference(formData.get("clubId")));
+  const cookieStore = await cookies();
+  const resolution = await resolveExperienceContext(
+    readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value),
+  );
   if (!resolution.ok) redirect("/access-denied");
 
-  const cookieStore = await cookies();
-  if (resolution.context.activeClubId) {
+  const preference = resolveActiveClubPreferenceChange(
+    resolution.context,
+    formData.get("mode"),
+    readActiveClubPreference(formData.get("clubId")),
+  );
+  if (preference.clubId) {
     cookieStore.set(
       activeClubCookieName,
-      resolution.context.activeClubId,
+      preference.clubId,
       activeClubCookieOptions(),
     );
   } else {
     cookieStore.delete(activeClubCookieName);
   }
 
-  const mode = resolveExperienceMode(resolution.context, formData.get("mode"));
-  redirect(`/dashboard?mode=${encodeURIComponent(mode)}`);
+  redirect(`/dashboard?mode=${encodeURIComponent(preference.mode)}`);
 }

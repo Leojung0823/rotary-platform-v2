@@ -151,3 +151,15 @@ export function activeClubForMode(context: ExperienceContext, mode: ExperienceMo
   const clubs = clubsForExperienceMode(context, mode);
   return clubs.find((club) => club.clubId === context.activeClubId) ?? clubs[0] ?? null;
 }
+
+export function resolveActiveClubPreferenceChange(
+  context: ExperienceContext,
+  requestedMode: unknown,
+  requestedClubId: unknown,
+): Readonly<{ mode: ExperienceMode; clubId: string | null }> {
+  const mode = resolveExperienceMode(context, requestedMode);
+  const candidate = clubsForExperienceMode(context, mode)
+    .find((club) => club.clubId === requestedClubId)
+    ?? activeClubForMode(context, mode);
+  return { mode, clubId: candidate?.clubId ?? null };
+}
