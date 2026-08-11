@@ -30,7 +30,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     const memberPage = await memberContext.newPage();
     await login(memberPage, "e2e-shell-ordinary@example.test");
     await expect(memberPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
-    await expect(memberPage.getByRole("heading", { name: "進行中的首頁例會" })).toBeVisible();
+    await expect(memberPage.getByRole("heading", { name: "本機社員首頁例會" })).toBeVisible();
     await memberPage.getByRole("link", { name: "前往簽到" }).click();
     await expect(memberPage).toHaveURL(/\/events\/checkin/u);
     await memberContext.close();
@@ -67,7 +67,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
   if (testInfo.project.name === "member-home-320") await expectNoHorizontalOverflow(page);
   if (testInfo.project.name === "member-home-768") {
     await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
-    await expect(page.getByRole("link", { name: "查看活動" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "前往簽到" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   }
   if (["member-home-412", "member-home-375", "member-home-320"].includes(testInfo.project.name)) {
