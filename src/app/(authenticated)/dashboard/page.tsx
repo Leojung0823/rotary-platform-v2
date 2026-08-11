@@ -1,7 +1,19 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { Badge, Card, EmptyState, Notice } from "@/components/ui";
-import { hasPlatformAccess, requireIdentity } from "@/lib/auth";
+import { ExperienceContextResolver } from "@/components/experience-context-resolver";
+import { resolveDashboardRoleContext } from "@/lib/dashboard-role-context";
+import { hasPlatformAccess, requireIdentity, type Identity } from "@/lib/auth";
+import {
+  activeClubCookieName,
+  readActiveClubPreference,
+} from "@/lib/experience-context-cookie";
+import { resolveExperienceContext } from "@/lib/experience-context.server";
 import { dashboardAccessPresentation } from "@/lib/dashboard-access";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
+import type { FeatureFlagEvaluation } from "@/lib/product/feature-flags";
+import { recordAuthenticatedProductTelemetry } from "@/lib/product/telemetry.server";
 import { createClient } from "@/lib/supabase/server";
 
 type Club = {
@@ -12,11 +24,38 @@ type Club = {
   permission_level: string;
 };
 
-export default async function DashboardPage() {
-  const [identity, { data, error }] = await Promise.all([
-    requireIdentity(),
-    createClient().then((supabase) => supabase.rpc("list_manageable_clubs")),
-  ]);
+async function recordRoleContextFlagFailure(evaluation: FeatureFlagEvaluation) {
+  const reason = evaluation.reason === "missing_configuration"
+    ? "missing_configuration"
+    : evaluation.reason === "invalid_configuration"
+      || evaluation.reason === "invalid_environment"
+      || evaluation.reason === "environment_not_allowed"
+      || evaluation.reason === "rollout_subject_required"
+      ? "invalid_configuration"
+      : evaluation.reason === "database_read_error"
+        ? "evaluation_error"
+        : null;
+  if (!reason) return;
+
+  try {
+    await recordAuthenticatedProductTelemetry({
+      name: "feature_flag_evaluation_failure",
+      key: "role_context_v2",
+      reason,
+    });
+  } catch {
+    // Observability cannot make an authenticated page unavailable.
+  }
+}
+
+async function LegacyDashboard({
+  identity,
+  contextUnavailable = false,
+}: {
+  identity: Identity;
+  contextUnavailable?: boolean;
+}) {
+  const { data, error } = await createClient().then((supabase) => supabase.rpc("list_manageable_clubs"));
   const clubs = (data ?? []) as Club[];
   const platformAccess = hasPlatformAccess(identity);
   const accessPresentation = dashboardAccessPresentation(platformAccess, clubs);
@@ -24,6 +63,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="page-stack">
+      {contextUnavailable && <Notice tone="error">
+        目前無法解析新版角色脈絡，已安全保留原有工作台；請稍後重新整理。
+      </Notice>}
       <header className="page-header">
         <div>
           <p className="eyebrow">工作台</p>
@@ -110,4 +152,39 @@ export default async function DashboardPage() {
       )}
     </div>
   );
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
+  const identity = await requireIdentity();
+  const evaluation = await evaluateCurrentFeatureFlag({
+    key: "role_context_v2",
+    subjectUuid: identity.id,
+  });
+  if (!evaluation.enabled) {
+    await recordRoleContextFlagFailure(evaluation);
+    return <LegacyDashboard identity={identity} />;
+  }
+
+  const cookieStore = await cookies();
+  const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
+  const context = await resolveExperienceContext(preferredClubId);
+  if (!context.ok && context.reason === "authorization_denied") redirect("/access-denied");
+  const resolved = resolveDashboardRoleContext({
+    roleContextEnabled: true,
+    context: context.ok ? context.context : null,
+    requestedMode: (await searchParams).mode,
+  });
+  if (resolved.kind === "legacy") {
+    return <LegacyDashboard identity={identity} contextUnavailable={resolved.contextUnavailable} />;
+  }
+  if (!context.ok) return <LegacyDashboard identity={identity} contextUnavailable />;
+  if (resolved.resolution.kind === "access_denied") {
+    return <ExperienceContextResolver context={context.context} requestedMode={null} />;
+  }
+
+  return <ExperienceContextResolver context={context.context} requestedMode={resolved.resolution.mode} />;
 }
