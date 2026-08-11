@@ -70,14 +70,14 @@ function ModeSwitcher({ context, mode }: { context: ExperienceContext; mode: Exp
   return <nav className={styles.modeSwitcher} aria-label="切換工作模式">
     <span className={styles.controlLabel}>工作模式</span>
     <div className={styles.modeOptions}>
-      {context.availableModes.map((availableMode) => <Link
+      {context.availableModes.map((availableMode) => <a
         key={availableMode}
         href={modeHref(availableMode)}
         className={availableMode === mode ? styles.modeOptionCurrent : styles.modeOption}
         aria-current={availableMode === mode ? "page" : undefined}
       >
         {roleShellModeLabels[availableMode]}
-      </Link>)}
+      </a>)}
     </div>
   </nav>;
 }
