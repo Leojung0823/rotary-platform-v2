@@ -119,7 +119,15 @@ async function addOperator({ clubId, account, status = "active", createdBy }) {
   if (existing.error) fail("could not inspect local fixture operator");
   const values = status === "active"
     ? { assignment_status: "active", ends_at: null, revoked_at: null, revoked_by_app_account_id: null, revoke_reason: null }
-    : { assignment_status: "revoked", revoked_at: new Date().toISOString(), revoked_by_app_account_id: createdBy, revoke_reason: "local_browser_fixture" };
+    : {
+      assignment_status: "revoked",
+      // The database default for starts_at is evaluated at INSERT time. Make the
+      // historical fixture start first so its revoked_at invariant holds.
+      starts_at: new Date(Date.now() - 1_000).toISOString(),
+      revoked_at: new Date().toISOString(),
+      revoked_by_app_account_id: createdBy,
+      revoke_reason: "local_browser_fixture",
+    };
   if (existing.data) {
     const update = await admin.from("club_operator_permissions").update(values).eq("id", existing.data.id);
     if (update.error) fail("could not update local fixture operator");
