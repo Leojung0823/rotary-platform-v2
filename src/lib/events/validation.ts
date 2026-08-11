@@ -39,6 +39,7 @@ export type EventCreateFormValues = {
 
 export type EventCreateActionState = {
   status: "idle" | "error";
+  revision: number;
   values: EventCreateFormValues;
   fieldErrors: EventCreateFieldErrors;
   formError?: string;
@@ -74,6 +75,7 @@ export const initialEventCreateFormValues: EventCreateFormValues = {
 
 export const initialEventCreateActionState: EventCreateActionState = {
   status: "idle",
+  revision: 0,
   values: initialEventCreateFormValues,
   fieldErrors: {},
 };

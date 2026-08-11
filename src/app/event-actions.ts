@@ -38,38 +38,40 @@ function mapEventError(message: string | undefined) {
 
 function createEventFailure(
   values: EventCreateFormValues,
+  revision: number,
   formError: string,
   fieldErrors: EventCreateActionState["fieldErrors"] = {},
 ): EventCreateActionState {
-  return { status: "error", values, fieldErrors, formError };
+  return { status: "error", revision, values, fieldErrors, formError };
 }
 
-function createEventRpcFailure(values: EventCreateFormValues, message: string | undefined) {
+function createEventRpcFailure(values: EventCreateFormValues, revision: number, message: string | undefined) {
   const code = mapEventError(message);
   if (code === "forbidden") {
-    return createEventFailure(values, "目前帳號沒有建立此扶輪社活動的權限。請確認社別與權限後再試。");
+    return createEventFailure(values, revision, "目前帳號沒有建立此扶輪社活動的權限。請確認社別與權限後再試。");
   }
   if (code === "invalid_input" || code === "cannot_publish") {
-    return createEventFailure(values, "活動資料未通過系統規則，請確認內容後再試。");
+    return createEventFailure(values, revision, "活動資料未通過系統規則，請確認內容後再試。");
   }
-  return createEventFailure(values, "目前無法建立活動草稿，請稍後再試。已輸入的內容仍保留，可直接重試。");
+  return createEventFailure(values, revision, "目前無法建立活動草稿，請稍後再試。已輸入的內容仍保留，可直接重試。");
 }
 
 export async function createEventAction(
-  _previousState: EventCreateActionState,
+  previousState: EventCreateActionState,
   formData: FormData,
 ): Promise<EventCreateActionState> {
   const values = readEventCreateFormValues(formData);
+  const revision = previousState.revision + 1;
   let clubId: string;
   try {
     clubId = parseUuid(formData.get("clubId"));
   } catch {
-    return createEventFailure(values, "目前無法確認活動社別與權限，請重新整理後再試。");
+    return createEventFailure(values, revision, "目前無法確認活動社別與權限，請重新整理後再試。");
   }
 
   const validated = validateEventCreateForm(values);
   if (!validated.ok) {
-    return createEventFailure(values, "請修正下列欄位後再建立活動草稿。", validated.fieldErrors);
+    return createEventFailure(values, revision, "請修正下列欄位後再建立活動草稿。", validated.fieldErrors);
   }
 
   let rpcError: { message?: string } | null = null;
@@ -89,9 +91,9 @@ export async function createEventAction(
     });
     rpcError = result.error;
   } catch {
-    return createEventFailure(values, "目前無法建立活動草稿，請稍後再試。已輸入的內容仍保留，可直接重試。");
+    return createEventFailure(values, revision, "目前無法建立活動草稿，請稍後再試。已輸入的內容仍保留，可直接重試。");
   }
-  if (rpcError) return createEventRpcFailure(values, rpcError.message);
+  if (rpcError) return createEventRpcFailure(values, revision, rpcError.message);
   revalidatePath("/events");
   redirect(eventPath(clubId, "success", "event_created"));
 }
