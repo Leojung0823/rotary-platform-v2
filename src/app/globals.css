@@ -126,6 +126,10 @@ hr { width: 100%; border: 0; border-top: 1px solid var(--line); }
 .notice-info { color: #145c7e; background: #e6f4fa; }
 .notice-success { color: #176548; background: #e2f4eb; }
 .notice-error { color: #95213a; background: #fce8ec; }
+.form-error-summary:focus { outline: 3px solid rgba(180, 35, 60, .28); outline-offset: 3px; }
+.form-error-summary ul { display: grid; gap: 6px; margin: 10px 0 0; padding-left: 20px; }
+.form-error-summary a { text-decoration: underline; }
+.field-error { color: #95213a; font-size: 13px; font-weight: 700; line-height: 1.5; }
 .empty { padding: 56px 24px; border: 1px dashed #bdc9d2; border-radius: 18px; text-align: center; background: rgba(255,255,255,.55); }
 .empty-icon { display: grid; place-items: center; width: 50px; height: 50px; margin: 0 auto 14px; border-radius: 50%; color: var(--blue); background: #e4f2f8; font-family: Georgia, serif; font-size: 25px; font-weight: bold; }
 .empty p { margin-bottom: 0; }

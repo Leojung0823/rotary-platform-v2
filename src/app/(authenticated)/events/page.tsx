@@ -1,10 +1,10 @@
 import Link from "next/link";
 import {
   cancelEventAction,
-  createEventAction,
   publishEventAction,
   registerEventAction,
 } from "@/app/event-actions";
+import { EventCreateForm } from "@/components/events/event-create-form";
 import { requireIdentity } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -215,42 +215,7 @@ export default async function EventsPage({
         <div><p className="eyebrow">活動管理</p><h2>建立活動草稿</h2></div>
         <span>{selectedClub.club_name}</span>
       </div>
-      <form action={createEventAction} className="form-stack">
-        <input type="hidden" name="clubId" value={selectedClub.club_id} />
-        <div className="form-grid">
-          <label className="field"><span className="label">活動類型</span>
-            <select className="input" name="eventType" defaultValue="regular_meeting" required>
-              {Object.entries(eventTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
-          <label className="field"><span className="label">活動名稱</span>
-            <input className="input" name="title" maxLength={160} required />
-          </label>
-          <label className="field"><span className="label">開始時間（台北）</span>
-            <input className="input" type="datetime-local" name="startsAt" required />
-          </label>
-          <label className="field"><span className="label">結束時間（台北）</span>
-            <input className="input" type="datetime-local" name="endsAt" required />
-          </label>
-          <label className="field"><span className="label">報名截止（台北）</span>
-            <input className="input" type="datetime-local" name="registrationDeadline" required />
-          </label>
-          <label className="field"><span className="label">名額（留空表示不限）</span>
-            <input className="input" type="number" name="capacity" min={1} max={10000} inputMode="numeric" />
-          </label>
-          <label className="field"><span className="label">地點</span>
-            <input className="input" name="location" maxLength={300} />
-          </label>
-          <label className="checkbox-row">
-            <input type="checkbox" name="countsForAttendance" defaultChecked />
-            <span><strong>計入出席</strong><br /><span className="hint">已發布且計入出席的活動可在活動前後 24 小時內開啟短效簽到 token。</span></span>
-          </label>
-        </div>
-        <label className="field"><span className="label">活動說明</span>
-          <textarea className="input" name="description" maxLength={5000} rows={4} />
-        </label>
-        <div className="form-actions"><button className="button" type="submit">建立草稿</button></div>
-      </form>
+      <EventCreateForm clubId={selectedClub.club_id} eventTypeLabels={eventTypeLabels} />
     </section>}
 
     {selectedClub && <section>

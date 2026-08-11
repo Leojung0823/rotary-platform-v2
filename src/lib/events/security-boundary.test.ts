@@ -8,6 +8,7 @@ function source(path: string) {
 describe("event application boundary", () => {
   const page = source("app/(authenticated)/events/page.tsx");
   const actions = source("app/event-actions.ts");
+  const createForm = source("components/events/event-create-form.tsx");
   const shell = source("components/app-shell.tsx");
 
   it("exposes the events entrypoint on desktop and mobile navigation", () => {
@@ -22,6 +23,10 @@ describe("event application boundary", () => {
     expect(actions).toContain('return "unexpected"');
     expect(actions).not.toContain("redirect(error.message");
     expect(actions).not.toContain("code: error.message");
+    expect(actions).toContain("return createEventFailure");
+    expect(createForm).toContain("useActionState(createEventAction");
+    expect(createForm).toContain("aria-invalid");
+    expect(createForm).toContain("aria-describedby");
   });
 
   it("keeps event authorization self-contained and uses RPC-only mutations", () => {
