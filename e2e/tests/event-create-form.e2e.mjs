@@ -41,15 +41,12 @@ test("recoverable event-create failure retains the form and exposes an accessibl
   await page.keyboard.press("Space");
 
   const submit = page.getByRole("button", { name: "建立草稿" });
-  if (testInfo.project.name === "event-create-1440") {
-    await submit.focus();
-    await page.keyboard.press("Enter");
-  } else {
-    await submit.click();
-  }
+  await submit.focus();
+  await page.keyboard.press("Enter");
 
-  await expect(page.getByRole("alert")).toContainText("請修正下列欄位後再建立活動草稿。");
-  await expect(page.getByText("結束時間必須晚於開始時間。", { exact: true })).toBeVisible();
+  const errorSummary = page.getByRole("alert", { name: "建立活動錯誤" });
+  await expect(errorSummary).toContainText("請修正下列欄位後再建立活動草稿。");
+  await expect(page.locator("#event-create-endsAt-error")).toHaveText("結束時間必須晚於開始時間。");
   await expect(page.getByLabel("活動類型")).toHaveValue("service");
   await expect(page.getByLabel("活動名稱")).toHaveValue("本機表單保留服務活動");
   await expect(page.getByLabel("開始時間（台北）")).toHaveValue("2026-08-20T18:30");

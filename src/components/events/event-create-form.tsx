@@ -47,7 +47,7 @@ export function EventCreateForm({ clubId, eventTypeLabels }: EventCreateFormProp
 
   return <form action={formAction} className="form-stack" noValidate>
     <input type="hidden" name="clubId" value={clubId} />
-    {state.status === "error" && <div className="notice notice-error form-error-summary" role="alert" tabIndex={-1} ref={errorSummaryRef}>
+    {state.status === "error" && <div className="notice notice-error form-error-summary" role="alert" aria-label="建立活動錯誤" tabIndex={-1} ref={errorSummaryRef}>
       <strong>{state.formError}</strong>
       {Object.keys(state.fieldErrors).length > 0 && <ul>
         {EVENT_CREATE_FIELDS.map((field) => {
