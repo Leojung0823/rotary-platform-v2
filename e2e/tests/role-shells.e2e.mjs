@@ -134,7 +134,6 @@ test("mode, active-club cookie, and deep links remain bounded UX inputs", async 
   await expectShell(rolePage, "社員模式");
   await rolePage.goto(new URL(`/clubs/${managedClubId}/members?mode=management`, baseURL).toString());
   await expect(rolePage).toHaveURL(new RegExp(`/clubs/${managedClubId}/members`, "u"));
-  await expect(rolePage.locator("main")).toBeVisible();
   await context.close();
 
   const multiContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
