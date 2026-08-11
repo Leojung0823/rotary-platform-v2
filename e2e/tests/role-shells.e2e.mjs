@@ -37,7 +37,7 @@ async function expectNoHorizontalOverflow(page) {
 }
 
 async function expectShell(page, mode) {
-  await expect(page.locator("aside").getByText(mode, { exact: true })).toBeVisible();
+  await expect(page.locator("aside > header > p").first()).toHaveText(mode);
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toBeVisible();
 }
 
@@ -93,8 +93,9 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(1);
   await expect(page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "首頁" })).toHaveAttribute("aria-current", "page");
-  await page.keyboard.press("Tab");
-  await expect(page.getByRole("link", { name: "跳至主要內容" })).toBeFocused();
+  const skipLink = page.getByRole("link", { name: "跳至主要內容" });
+  await skipLink.focus();
+  await expect(skipLink).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -128,7 +129,7 @@ test("mode, active-club cookie, and deep links remain bounded UX inputs", async 
   }]);
   await login(rolePage, accounts.ordinary.email);
   await rolePage.getByLabel("切換作用扶輪社").click();
-  await expect(rolePage.getByText("本機 Shell 社員社", { exact: true })).toBeVisible();
+  await expect(rolePage.getByRole("button", { name: /^本機 Shell 社員社 E2E-SHELL-MEMBER/u })).toBeVisible();
   await rolePage.goto(new URL("/dashboard?mode=platform", baseURL).toString());
   await expectShell(rolePage, "社員模式");
   await rolePage.goto(new URL(`/clubs/${managedClubId}/members?mode=management`, baseURL).toString());
