@@ -1,8 +1,8 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-08-11
+更新日期：2026-08-12
 
-本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的「扶輪社基本資料編輯」缺口放在同一張地圖上。
+本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
 ## 目前基線
 
@@ -13,7 +13,7 @@
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
 
-目前主線已完成「權限與資料底座 → 角色脈絡 → Shell」階段，下一個真正面向社員的產品切片是 PR-02 Member Home V2。
+目前主線已完成「權限與資料底座 → 角色脈絡 → Shell」階段，下一個真正面向社員的產品切片是 PR-02 Member Home V2；但在進入 PR-02 前，先處理已確認的活動建立資料遺失 P1 UX Hotfix。
 
 ## 開發原則
 
@@ -25,6 +25,7 @@
 - 時間使用 `timestamptz` / UTC 儲存，介面依 club timezone 顯示；台灣預設 `Asia/Taipei`。
 - QR 不暴露長效秘密；GPS 不保存社員原始座標或精確距離。
 - 所有高頻 mobile flow 都必須考慮 320px、200% text zoom、keyboard、weak network 與 safe retry。
+- **Recoverable form error 不得造成使用者已輸入資料遺失；成功才清空。**
 
 ## 路線圖
 
@@ -36,6 +37,13 @@
 - [x] PR-01b — Role-aware Member / Management / Platform Shells（PR #62）
 
 ### Phase 2 — Member Experience：現在進行
+
+優先修復：
+
+- [ ] **P1 Hotfix — Event Create Form State Preservation / 活動建立失敗保留輸入內容**
+  - 建立活動失敗時不得清空表單。
+  - 提供可行動的欄位級 validation error，而不是只顯示 generic error。
+  - 建議先於 PR-02 完成，避免社員／社務使用者在活動流程持續遇到高挫折資料遺失。
 
 主線順序：
 
@@ -59,6 +67,107 @@
 5. **M1 — 五位目標使用者形成性測試**
 
 PR-37B 應使用 PR #61 的 canonical attendance RPC，並等 PR-03 / PR-04 的 check-in policy 穩定後再做最終出席 UI 整合，避免再建立第二套 attendance authority。
+
+---
+
+# P1 Hotfix — Event Create Form State Preservation
+
+## 問題
+
+目前建立活動流程在 server-side validation 或 RPC 建立失敗時會 redirect 回活動頁。重新 render 後，使用者剛輸入的活動資料不會被帶回，造成整張表單清空。
+
+這會讓使用者在建立活動失敗時失去：
+
+- 活動類型。
+- 活動名稱。
+- 開始時間。
+- 結束時間。
+- 報名截止時間。
+- 名額。
+- 地點。
+- 是否計入出席。
+- 活動說明。
+
+同時，現有多種不同 validation / business-rule error 可能被壓成 generic「輸入內容不完整或格式不正確」，使用者無法知道應修改哪一個欄位。
+
+## 產品原則
+
+**失敗保留，成功才清空。**
+
+任何可恢復的建立失敗都不得讓使用者重新輸入整張表單。
+
+## V1 目標
+
+- client / server validation 失敗時保留所有已輸入值。
+- RPC / business-rule error 時保留所有已輸入值。
+- 暫時性 server error 時保留所有已輸入值，並提供安全重試。
+- 顯示可行動的欄位級錯誤訊息；需要時另提供頁面級錯誤摘要。
+- 第一個錯誤欄位可被 focus，並提供 `aria-invalid` / 對應錯誤說明。
+- 只有成功建立活動後才清空表單，並允許既有 revalidate / redirect 成功流程繼續運作。
+
+## 建議架構
+
+優先採 structured Server Action state（例如 React / Next 的 `useActionState` 或等價模式）：
+
+1. Client submit 保留目前表單 DOM / controlled or uncontrolled values。
+2. Server Action 解析與驗證輸入。
+3. Recoverable error 回傳 bounded structured state，不 redirect。
+4. UI 依 state 顯示欄位級與頁面級錯誤，同時保留原值。
+5. RPC 成功後才 `revalidatePath` / redirect 到成功狀態。
+
+不得為了保存草稿把活動名稱、說明或其他表單內容塞進 URL query string。
+
+不應依賴一般 cookie 保存整份活動表單內容；如果未來要做真正跨頁草稿，應另行設計 draft domain，而不是把本 Hotfix 擴張成草稿系統。
+
+## Validation / Error UX
+
+至少應把下列可預期錯誤轉成可理解訊息：
+
+- 活動名稱必填或超長。
+- 日期／時間格式錯誤。
+- 結束時間必須晚於開始時間。
+- 報名截止時間不得晚於活動開始時間。
+- 名額不是合法範圍。
+- 權限不足。
+- RPC / database business-rule rejection。
+- 暫時性 server error。
+
+對非欄位型錯誤可顯示例如：「建立失敗，您填寫的內容已保留，請稍後再試。」
+
+## Security / Data Boundaries
+
+- server 仍需重新驗證所有欄位；保留表單內容不代表信任 client state。
+- `clubId`、角色、mode、active club 或 browser state 不得成為 authorization authority。
+- 不把敏感表單內容寫入 telemetry、URL 或不必要的持久化儲存。
+- 此 Hotfix 預期不需要 DB schema migration；若實作時發現需要 migration，必須先停下並重新審查 scope。
+
+## Acceptance
+
+至少驗證：
+
+- 故意輸入錯誤時間後提交，顯示明確錯誤且所有其他欄位值仍存在。
+- 活動名稱、日期、地點、名額、checkbox、說明在 validation failure 後全部保留。
+- RPC failure 後所有欄位值仍存在。
+- 暫時性 server error 後可安全重試，不需重新填表。
+- 權限錯誤不洩漏敏感資訊，也不誤導為成功。
+- 成功建立後才清空／離開建立表單。
+- 第一個錯誤欄位可 keyboard focus，錯誤訊息有可及性關聯。
+- 320px / 375px / 412px 無水平頁面 overflow。
+- 200% text zoom 下表單、錯誤訊息與 submit button 都可操作。
+- deterministic unit / integration regression 覆蓋 validation failure 與 RPC failure。
+- CI、Quality、Browser Smoke 維持全綠；若無 DB 變更，不新增 migration。
+
+## Non-goals
+
+此 Hotfix 不做：
+
+- 真正的跨裝置／跨登入活動草稿。
+- Auto-save 到 database。
+- Event schema redesign。
+- QR / GPS Check-in。
+- Attendance UI / statistics。
+- Member Home redesign。
+- Announcements / notifications 擴張。
 
 ---
 
@@ -200,12 +309,14 @@ PR-01c 不做：
 ## Dependency Map
 
 ```text
-PR #59 Rollout Controls ─┐
-PR #60 ExperienceContext ├─> PR #62 Role-aware Shells ─> PR-02 Member Home ─> PR-03 Dynamic QR ─> PR-04 GPS
-PR #61 Attendance Core ──┘                                   │                         │               │
-                                                            │                         └───────────────┤
-                                                            │                                         v
-                                                            └────────────────────────────────────> PR-37B Attendance UI
+P1 Event Form State Hotfix ────────────────────────────────> PR-02 Member Home
+                                                               │
+PR #59 Rollout Controls ─┐                                    │
+PR #60 ExperienceContext ├─> PR #62 Role-aware Shells ────────┘ ─> PR-03 Dynamic QR ─> PR-04 GPS
+PR #61 Attendance Core ──┘                                                               │               │
+                                                                                          └───────────────┤
+                                                                                                          v
+                                                                                                  PR-37B Attendance UI
 
 PR-01c Club Profile Editing ── parallel with PR-02, recommended before PR-03
 
@@ -214,10 +325,11 @@ PR-37B ─> PR #40 Announcements/Notifications update ─> PR-07a ─> PR-07b �
 
 ## Current Next Actions
 
-1. 建立 `feat/member-home-v2`，實作 PR-02。
-2. PR-01c 可用獨立 branch 平行開發；不要 stack 在 PR-02。
-3. PR-02 merge 後進 PR-03 Dynamic QR / Check-in Policy。
-4. PR-03 merge 後進 PR-04 GPS。
-5. PR-03 / PR-04 policy 穩定後，再開 clean PR-37B。
+1. 先完成 **P1 Event Create Form State Preservation Hotfix**；失敗保留輸入內容、成功才清空，並補 actionable validation errors。
+2. Hotfix merge 後建立／繼續 `feat/member-home-v2`，實作 PR-02。
+3. PR-01c 可用獨立 branch 平行開發；不要 stack 在 PR-02。
+4. PR-02 merge 後進 PR-03 Dynamic QR / Check-in Policy。
+5. PR-03 merge 後進 PR-04 GPS。
+6. PR-03 / PR-04 policy 穩定後，再開 clean PR-37B。
 
 任何一支 PR 都不得自行 auto merge、修改 staging / production、執行 Hosted Supabase migration 或使用真實社員資料驗證。
