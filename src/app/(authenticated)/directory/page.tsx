@@ -75,19 +75,21 @@ export default async function MemberDirectoryPage({
 
       {members.length === 0
         ? <EmptyState title="找不到社員" body="請調整姓名搜尋條件。" />
-        : <div className="club-grid">
+        : <div className="directory-grid">
           {members.map((member) => <Link
-            className="club-card"
+            className="directory-card"
             key={member.membership_id}
             href={`/directory/${member.membership_id}?clubId=${encodeURIComponent(selectedClub.club_id)}`}
           >
-            <div className="avatar">{member.display_name.slice(0, 1)}</div>
-            <div>
-              <span className="club-code">{directoryRoleLabel(member.role_key)}{member.is_self ? " · 我" : ""}</span>
-              <h3>{member.display_name}</h3>
+            <div className="directory-avatar" aria-hidden="true">{member.display_name.slice(0, 1)}</div>
+            <div className="directory-card-body">
+              <div className="directory-card-name">
+                <strong>{member.display_name}</strong>
+                <span className="directory-role-badge">{directoryRoleLabel(member.role_key)}{member.is_self ? " · 我" : ""}</span>
+              </div>
+              <div className="directory-card-meta">{member.email ?? member.phone ?? "聯絡資料未公開"}</div>
             </div>
-            <p>{member.email ?? member.phone ?? "聯絡資料未公開"}</p>
-            <span className="card-link">查看社員資料 →</span>
+            <span className="directory-chevron" aria-hidden="true">›</span>
           </Link>)}
         </div>}
     </section>
