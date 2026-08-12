@@ -33,13 +33,26 @@ function forwardedResponse(request: NextRequest) {
   return NextResponse.next({ request: { headers: buildForwardedRequestHeaders(request) } });
 }
 
+function loginRedirectResponse(request: NextRequest, refreshedResponse: NextResponse) {
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = "/login";
+  loginUrl.search = "";
+  loginUrl.hash = "";
+
+  const redirectResponse = NextResponse.redirect(loginUrl);
+  refreshedResponse.cookies.getAll().forEach(({ name, value, ...options }) => {
+    redirectResponse.cookies.set(name, value, options);
+  });
+  return redirectResponse;
+}
+
 export async function proxy(request: NextRequest) {
   let response = forwardedResponse(request);
   if (!shouldRefreshAuthSession(request.nextUrl.pathname)) return response;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return response;
+  if (!url || !key) return loginRedirectResponse(request, response);
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
@@ -54,7 +67,14 @@ export async function proxy(request: NextRequest) {
     },
   });
   const startedAt = performance.now();
-  await supabase.auth.getClaims();
+  let claimsResult;
+  try {
+    claimsResult = await supabase.auth.getClaims();
+  } catch {
+    return loginRedirectResponse(request, response);
+  }
+  const { data, error } = claimsResult;
+  if (error || !data?.claims?.sub) return loginRedirectResponse(request, response);
   response.headers.set("Server-Timing", `auth;dur=${(performance.now() - startedAt).toFixed(1)}`);
   return response;
 }

@@ -53,6 +53,65 @@ describe("auth session proxy", () => {
     expect(response.headers.get("server-timing")).toMatch(/^auth;dur=\d+\.\d$/);
   });
 
+  it("redirects an anonymous protected route before a streamed page can return 200", async () => {
+    mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: null });
+
+    const response = await proxy(new NextRequest("https://app.example.test/dashboard?mode=platform"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+    expect(response.headers.get("server-timing")).toBeNull();
+  });
+
+  it("fails closed to the same-origin login route when claims verification errors", async () => {
+    mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: { message: "test-only" } });
+
+    const response = await proxy(new NextRequest("https://app.example.test/events"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+  });
+
+  it("fails closed when claims verification throws", async () => {
+    mocks.getClaims.mockRejectedValue(new Error("test-only transport failure"));
+
+    const response = await proxy(new NextRequest("https://app.example.test/me"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+  });
+
+  it("preserves refreshed auth cookies on the anonymous login redirect", async () => {
+    mocks.createServerClient.mockImplementation((_url, _key, options) => ({
+      auth: {
+        getClaims: async () => {
+          options.cookies.setAll([{
+            name: "sb-example-auth-token",
+            value: "cleared-or-refreshed-session-cookie",
+            options: { httpOnly: true, path: "/", sameSite: "lax" },
+          }]);
+          return { data: { claims: null }, error: null };
+        },
+      },
+    }));
+
+    const response = await proxy(new NextRequest("https://app.example.test/dashboard"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+    expect(response.cookies.get("sb-example-auth-token")?.value).toBe("cleared-or-refreshed-session-cookie");
+  });
+
+  it("fails closed when protected-route auth configuration is missing", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+
+    const response = await proxy(new NextRequest("https://app.example.test/dashboard"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+    expect(mocks.createServerClient).not.toHaveBeenCalled();
+  });
+
   it("forwards refreshed session cookies to this request and overwrites browser-supplied rotary headers", async () => {
     mocks.createServerClient.mockImplementation((_url, _key, options) => ({
       auth: {
