@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const AUTH_SESSION_PATHS = [
+// Paths that require an authenticated session: anonymous visitors are
+// redirected to /login before the (authenticated) layout's Suspense
+// fallback can stream a 200.
+const PROTECTED_SESSION_PATHS = [
   "/board",
   "/club",
   "/clubs",
@@ -11,13 +14,23 @@ const AUTH_SESSION_PATHS = [
   "/features",
   "/me",
   "/platform",
-  "/invite/accept",
-  "/join",
-  "/reset-password",
 ] as const;
+
+// Anonymous-first pages, outside the (authenticated) layout entirely: they
+// exist specifically for visitors who have never had a session (accepting
+// an invite, resetting a password). They still benefit from an opportunistic
+// refresh for an already-logged-in visitor, but must never be redirected to
+// /login just for lacking one — that would make invitation links unusable.
+const SESSION_REFRESH_ONLY_PATHS = ["/invite/accept", "/join", "/reset-password"] as const;
+
+const AUTH_SESSION_PATHS = [...PROTECTED_SESSION_PATHS, ...SESSION_REFRESH_ONLY_PATHS] as const;
 
 export function shouldRefreshAuthSession(pathname: string) {
   return AUTH_SESSION_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function requiresSession(pathname: string) {
+  return PROTECTED_SESSION_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
 export function buildForwardedRequestHeaders(request: NextRequest) {
@@ -50,9 +63,12 @@ export async function proxy(request: NextRequest) {
   let response = forwardedResponse(request);
   if (!shouldRefreshAuthSession(request.nextUrl.pathname)) return response;
 
+  const mustHaveSession = requiresSession(request.nextUrl.pathname);
+  const failClosed = () => (mustHaveSession ? loginRedirectResponse(request, response) : response);
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return loginRedirectResponse(request, response);
+  if (!url || !key) return failClosed();
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
@@ -71,10 +87,10 @@ export async function proxy(request: NextRequest) {
   try {
     claimsResult = await supabase.auth.getClaims();
   } catch {
-    return loginRedirectResponse(request, response);
+    return failClosed();
   }
   const { data, error } = claimsResult;
-  if (error || !data?.claims?.sub) return loginRedirectResponse(request, response);
+  if (error || !data?.claims?.sub) return failClosed();
   response.headers.set("Server-Timing", `auth;dur=${(performance.now() - startedAt).toFixed(1)}`);
   return response;
 }

@@ -63,6 +63,23 @@ describe("auth session proxy", () => {
     expect(response.headers.get("server-timing")).toBeNull();
   });
 
+  it("does not redirect anonymous visitors on invitation and reset-password pages", async () => {
+    mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: null });
+
+    for (const path of ["/join", "/invite/accept", "/reset-password"]) {
+      const response = await proxy(new NextRequest(`https://app.example.test${path}?token=abc`));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBeNull();
+    }
+  });
+
+  it("still refreshes cookies for an already-authenticated visitor on the join page", async () => {
+    const response = await proxy(new NextRequest("https://app.example.test/join?token=abc"));
+
+    expect(mocks.getClaims).toHaveBeenCalledOnce();
+    expect(response.status).toBe(200);
+  });
+
   it("fails closed to the same-origin login route when claims verification errors", async () => {
     mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: { message: "test-only" } });
 
