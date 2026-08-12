@@ -5,7 +5,7 @@ function form(values: Record<string, string>) { const data = new FormData(); Obj
 
 describe("club input validation", () => {
   it("normalizes safe club and operator values", () => {
-    expect(parseClubInput(form({ clubCode: " taipei-north ", clubName: " 台北北區扶輪社 ", operatorEmail: " Admin@Example.COM ", operatorName: " 王秘書 " }))).toEqual({ clubCode: "TAIPEI-NORTH", clubName: "台北北區扶輪社", operatorEmail: "admin@example.com", operatorName: "王秘書" });
+    expect(parseClubInput(form({ clubCode: " taipei-north ", clubName: " 台北北區扶輪社 ", operatorEmail: " Admin@Example.COM ", operatorName: " 王秘書 ", operatorPassword: "a-secure-local-password", operatorPasswordConfirmation: "a-secure-local-password" }))).toEqual({ clubCode: "TAIPEI-NORTH", clubName: "台北北區扶輪社", operatorEmail: "admin@example.com", operatorName: "王秘書", operatorPassword: "a-secure-local-password" });
   });
   it("rejects malformed input", () => {
     expect(() => parseClubInput(form({ clubCode: "!", clubName: "A", operatorEmail: "bad", operatorName: "A" }))).toThrow("invalid_club_code");

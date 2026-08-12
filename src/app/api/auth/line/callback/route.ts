@@ -6,7 +6,6 @@ import { lineIdentityLoginEmail } from "../../../../../lib/line/identity-login-e
 import {
   clearLineOAuthCookies,
   constantTimeEqual,
-  lineLoginFailureUrl,
   lineOAuthCookieOptions,
   safeLineRedirectPath,
   trustedLineRedirectUrl,
@@ -42,9 +41,9 @@ type AuthUserCreationError = {
   name: string | null;
 };
 
-function loginFailure(errorCode = GENERIC_LINE_FAILURE) {
+function loginFailure(errorCode = GENERIC_LINE_FAILURE, redirectPath = "/login") {
   try {
-    const url = lineLoginFailureUrl();
+    const url = trustedLineRedirectUrl(redirectPath);
     url.searchParams.set("error", errorCode);
     return NextResponse.redirect(url);
   } catch {
@@ -70,8 +69,17 @@ export async function GET(request: NextRequest) {
   let authUserRecovered = false;
 
   const fail = (errorCode = GENERIC_LINE_FAILURE) => {
+    // Read before clearing: if the invitation cookie survived the round trip
+    // even though state/nonce did not, send the member back to /join with
+    // their token so the password fallback is one tap away instead of
+    // stranding them on the generic login page.
+    const invitationCookie = store.get("line_invitation")?.value;
+    const flowCookie = store.get("line_flow")?.value;
     clearLineOAuthCookies(store);
-    return loginFailure(errorCode);
+    const redirectPath = flowCookie === "invitation" && invitationCookie
+      ? `/join?token=${encodeURIComponent(invitationCookie)}`
+      : "/login";
+    return loginFailure(errorCode, redirectPath);
   };
 
   try {
