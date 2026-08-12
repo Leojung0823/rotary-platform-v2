@@ -12,6 +12,7 @@
     "test:role-shells-force": "E2E_ROLE_SHELL_ROLLBACK=force playwright test tests/role-shells-force-legacy.e2e.mjs --config=playwright.config.mjs",
     "test:member-home-off": "E2E_MEMBER_HOME_ROLLBACK=disabled playwright test tests/member-home-off.e2e.mjs --config=playwright.config.mjs",
     "test:member-home-force": "E2E_MEMBER_HOME_ROLLBACK=force playwright test tests/member-home-force-legacy.e2e.mjs --config=playwright.config.mjs",
+    "test:checkin-off": "E2E_CHECKIN_QR_ROLLBACK=disabled playwright test tests/dynamic-checkin-off.e2e.mjs --config=playwright.config.mjs",
     "test:staging": "playwright test tests/staging-member-acceptance.e2e.mjs --config=playwright.config.mjs --project=desktop-chromium",
     "install:chromium": "playwright install --with-deps chromium"
   },

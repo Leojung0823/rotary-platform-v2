@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { selfCheckinAction } from "@/app/checkin-actions";
 import { CheckinCameraScanner } from "@/components/events/checkin-camera-scanner";
+import { DynamicCheckinCameraScanner } from "@/components/events/dynamic-checkin-camera-scanner";
+import { requireIdentity } from "@/lib/auth";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 
 const successMessages: Record<string, string> = {
   checked_in: "簽到成功，系統已記錄您的社員社籍與簽到時間。",
@@ -20,12 +23,16 @@ export default async function EventCheckinPage({
   searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const params = await searchParams;
+  const identity = await requireIdentity();
+  const checkinV2 = await evaluateCurrentFeatureFlag({ key: "checkin_qr_v2", subjectUuid: identity.id });
   return <div className="page-stack narrow">
     <header className="page-header">
       <div>
         <p className="eyebrow">活動現場</p>
         <h1>社員簽到</h1>
-        <p>掃描現場 QR，或手動輸入 64 字元 token。系統只會為目前登入帳號所對應的同社有效社員社籍簽到。</p>
+        <p>{checkinV2.enabled
+          ? "掃描現場動態 QR。系統只會為目前登入帳號所對應的同社有效社員社籍簽到。"
+          : "掃描現場 QR，或手動輸入 64 字元 token。系統只會為目前登入帳號所對應的同社有效社員社籍簽到。"}</p>
       </div>
       <Link className="button button-secondary" href="/events">返回活動</Link>
     </header>
@@ -37,9 +44,9 @@ export default async function EventCheckinPage({
       {errorMessages[params.error] ?? errorMessages.unexpected}
     </div>}
 
-    <CheckinCameraScanner />
+    {checkinV2.enabled ? <DynamicCheckinCameraScanner /> : <CheckinCameraScanner />}
 
-    <section className="card">
+    {!checkinV2.enabled && <section className="card">
       <div className="section-heading">
         <div><p className="eyebrow">備用方式</p><h2>手動輸入簽到 token</h2></div>
       </div>
@@ -64,6 +71,6 @@ export default async function EventCheckinPage({
         </div>
         <div className="form-actions"><button className="button" type="submit">完成本人簽到</button></div>
       </form>
-    </section>
+    </section>}
   </div>;
 }

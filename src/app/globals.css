@@ -154,6 +154,10 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 .status-pair { display: flex; flex-wrap: wrap; gap: 7px; }
 .token-panel { display: grid; grid-template-columns: 160px 1fr; gap: 22px; align-items: center; }
 .token-panel img { width: 160px; height: 160px; border: 1px solid var(--line); border-radius: 12px; }
+.dynamic-qr-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 280px); gap: 24px; align-items: center; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: #f8fbfd; }
+.dynamic-qr-panel img { display: block; width: min(100%, 280px); height: auto; aspect-ratio: 1; margin-inline: auto; border: 1px solid var(--line); border-radius: 12px; background: white; }
+.dynamic-qr-panel .qrPlaceholder { width: min(100%, 280px); min-height: 180px; margin-inline: auto; }
+.dynamic-qr-expired { display: grid; place-items: center; min-height: 180px; color: var(--muted); border: 2px dashed #bfcad4; border-radius: 12px; background: white; font-weight: 800; }
 .token-value { overflow-wrap: anywhere; padding: 10px; border-radius: 8px; background: #eef3f6; font-family: ui-monospace, monospace; font-size: 11px; }
 .checkbox-row { display: flex; min-width: 0; gap: 10px; align-items: flex-start; color: var(--ink); }
 .checkbox-row input { width: 18px; height: 18px; margin-top: 2px; }
@@ -198,7 +202,7 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   .auth-page { grid-template-columns: 1fr; }
   .auth-panel { min-height: 100vh; }
   .auth-art { display: none; }
-  .two-column, .token-panel { grid-template-columns: 1fr; }
+  .two-column, .token-panel, .dynamic-qr-panel { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 540px) {

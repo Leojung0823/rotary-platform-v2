@@ -4,9 +4,16 @@ import {
   manualCheckinAction,
   revokeAttendanceAction,
 } from "@/app/checkin-actions";
+import { DynamicCheckinControls } from "@/components/events/dynamic-checkin-controls";
+import {
+  DynamicCloseCheckinForm,
+  DynamicManualCheckinForm,
+  DynamicRevokeAttendanceForm,
+} from "@/components/events/dynamic-checkin-management-forms";
 import { CheckinTokenControls } from "@/components/events/checkin-token-controls";
 import { requireIdentity } from "@/lib/auth";
 import { parseCheckinUuid } from "@/lib/checkin/validation";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 
 type CheckinEvent = {
@@ -153,7 +160,7 @@ export default async function EventCheckinManagementPage({
   params: Promise<{ eventId: string }>;
   searchParams: Promise<{ clubId?: string; success?: string; error?: string }>;
 }) {
-  await requireIdentity();
+  const identity = await requireIdentity();
   const route = await params;
   const query = await searchParams;
   let eventId: string;
@@ -169,6 +176,7 @@ export default async function EventCheckinManagementPage({
   }
 
   const supabase = await createClient();
+  const checkinV2 = await evaluateCurrentFeatureFlag({ key: "checkin_qr_v2", subjectUuid: identity.id });
   const { data, error } = await supabase.rpc("get_event_checkin_overview", {
     p_club_id: clubId,
     p_event_id: eventId,
@@ -212,20 +220,24 @@ export default async function EventCheckinManagementPage({
 
     <section className="card">
       <div className="section-heading">
-        <div><p className="eyebrow">短效 token</p><h2>簽到場次</h2></div>
+        <div><p className="eyebrow">{checkinV2.enabled ? "短效動態 QR" : "短效 token"}</p><h2>簽到場次</h2></div>
         {usableSession
           ? <span className="badge badge-success">有效至 {formatDateTime(usableSession.expires_at)}</span>
           : <span className="badge badge-neutral">目前未開啟</span>}
       </div>
       {overview.active_session?.expired && <div className="notice notice-info">前一個 token 已到期；重新開啟時資料庫會先關閉舊場次。</div>}
-      <CheckinTokenControls clubId={clubId} eventId={eventId} hasActiveSession={Boolean(usableSession)} />
-      {usableSession && <form action={closeCheckinAction} className="inline-form">
-        <input type="hidden" name="clubId" value={clubId} />
-        <input type="hidden" name="eventId" value={eventId} />
-        <label className="field"><span className="label">關閉原因</span><input className="input" name="reason" maxLength={500} required /></label>
-        <span className="hint">識別前綴：{usableSession.token_prefix}。關閉後 token 立即失效。</span>
-        <button className="button button-danger" type="submit">關閉簽到</button>
-      </form>}
+      {checkinV2.enabled
+        ? <DynamicCheckinControls clubId={clubId} eventId={eventId} hasActiveSession={Boolean(usableSession)} />
+        : <CheckinTokenControls clubId={clubId} eventId={eventId} hasActiveSession={Boolean(usableSession)} />}
+      {usableSession && (checkinV2.enabled
+        ? <DynamicCloseCheckinForm clubId={clubId} eventId={eventId} />
+        : <form action={closeCheckinAction} className="inline-form">
+          <input type="hidden" name="clubId" value={clubId} />
+          <input type="hidden" name="eventId" value={eventId} />
+          <label className="field"><span className="label">關閉原因</span><input className="input" name="reason" maxLength={500} required /></label>
+          <span className="hint">識別前綴：{usableSession.token_prefix}。關閉後 token 立即失效。</span>
+          <button className="button button-danger" type="submit">關閉簽到</button>
+        </form>)}
     </section>
 
     <section className="card">
@@ -235,7 +247,9 @@ export default async function EventCheckinManagementPage({
       </div>
       {availableMembers.length === 0
         ? <div className="notice notice-info">目前所有 active 社員都已有有效簽到。</div>
-        : <form action={manualCheckinAction} className="inline-form">
+        : checkinV2.enabled
+          ? <DynamicManualCheckinForm clubId={clubId} eventId={eventId} members={availableMembers.map((member) => ({ membershipId: member.membership_id, displayName: member.display_name }))} />
+          : <form action={manualCheckinAction} className="inline-form">
           <input type="hidden" name="clubId" value={clubId} />
           <input type="hidden" name="eventId" value={eventId} />
           <label className="field"><span className="label">社員</span>
@@ -246,7 +260,7 @@ export default async function EventCheckinManagementPage({
           </label>
           <label className="field"><span className="label">補登原因</span><input className="input" name="reason" maxLength={500} required /></label>
           <button className="button" type="submit">人工補登</button>
-        </form>}
+          </form>}
     </section>
 
     <section>
@@ -262,13 +276,15 @@ export default async function EventCheckinManagementPage({
             <td><strong>{attendance.display_name}</strong></td>
             <td>{attendance.checkin_method === "qr" ? "本人 token" : "人工補登"}</td>
             <td>{formatDateTime(attendance.checked_in_at)}</td>
-            <td><form action={revokeAttendanceAction} className="inline-form">
+            <td>{checkinV2.enabled
+              ? <DynamicRevokeAttendanceForm clubId={clubId} eventId={eventId} attendance={{ attendanceId: attendance.attendance_id, displayName: attendance.display_name }} />
+              : <form action={revokeAttendanceAction} className="inline-form">
               <input type="hidden" name="clubId" value={clubId} />
               <input type="hidden" name="eventId" value={eventId} />
               <input type="hidden" name="attendanceId" value={attendance.attendance_id} />
               <label className="field"><span className="sr-only">撤銷原因</span><input className="input" name="reason" placeholder="撤銷原因" maxLength={500} required /></label>
               <button className="button button-danger" type="submit">撤銷</button>
-            </form></td>
+              </form>}</td>
           </tr>)}</tbody>
         </table></div>}
     </section>
