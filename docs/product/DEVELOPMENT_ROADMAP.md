@@ -13,7 +13,7 @@
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
 
-目前主線已完成「權限與資料底座 → 角色脈絡 → Shell」階段，下一個真正面向社員的產品切片是 PR-02 Member Home V2；但在進入 PR-02 前，先處理已確認的活動建立資料遺失 P1 UX Hotfix。
+目前主線已完成「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到」階段。下一個產品切片是 PR-04 GPS Check-in；出席 UI 整合必須繼續使用 canonical Attendance RPC，不能另建 authority。
 
 ## 開發原則
 
@@ -36,20 +36,13 @@
 - [x] PR-01a / #57 — ExperienceContext / server routing（PR #60）
 - [x] PR-01b — Role-aware Member / Management / Platform Shells（PR #62）
 
-### Phase 2 — Member Experience：現在進行
+### Phase 2 — Member Experience：進行中
 
-優先修復：
-
-- [ ] **P1 Hotfix — Event Create Form State Preservation / 活動建立失敗保留輸入內容**
-  - 建立活動失敗時不得清空表單。
-  - 提供可行動的欄位級 validation error，而不是只顯示 generic error。
-  - 建議先於 PR-02 完成，避免社員／社務使用者在活動流程持續遇到高挫折資料遺失。
-
-主線順序：
-
-1. **PR-02 — Member Home V2 / 社員任務型首頁**
-2. **PR-03 — 完整簽到政策、Dynamic QR、Manual Check-in**
-3. **PR-04 — GPS Check-in**
+- [x] **P1 Hotfix — Event Create Form State Preservation / 活動建立失敗保留輸入內容**（PR #67）
+  - 建立活動失敗保留所有欄位，提供可行動的欄位級錯誤；成功才清空。
+- [x] **PR-02 — Member Home V2 / 社員任務型首頁**（PR #64）
+- [x] **PR-03 — 完整簽到政策、Dynamic QR、Manual Check-in**
+- [ ] **PR-04 — GPS Check-in**
 
 平行小切片：
 
@@ -72,7 +65,7 @@ PR-37B 應使用 PR #61 的 canonical attendance RPC，並等 PR-03 / PR-04 的 
 
 # P1 Hotfix — Event Create Form State Preservation
 
-## 問題
+## 原問題（已修正）
 
 目前建立活動流程在 server-side validation 或 RPC 建立失敗時會 redirect 回活動頁。重新 render 後，使用者剛輸入的活動資料不會被帶回，造成整張表單清空。
 
@@ -89,6 +82,10 @@ PR-37B 應使用 PR #61 的 canonical attendance RPC，並等 PR-03 / PR-04 的 
 - 活動說明。
 
 同時，現有多種不同 validation / business-rule error 可能被壓成 generic「輸入內容不完整或格式不正確」，使用者無法知道應修改哪一個欄位。
+
+## 完成記錄
+
+PR #67 已改為 structured Server Action state：可恢復的 validation、RPC/business-rule 與暫時性失敗都不 redirect，並保留全部 submitted values；成功建立活動才 revalidate / redirect。另已覆蓋欄位級錯誤、ARIA/focus、checkbox 與 empty capacity，以及真實瀏覽器的多欄位失敗保留情境。沒有 migration，也沒有 hosted database mutation。
 
 ## 產品原則
 
@@ -325,11 +322,9 @@ PR-37B ─> PR #40 Announcements/Notifications update ─> PR-07a ─> PR-07b �
 
 ## Current Next Actions
 
-1. 先完成 **P1 Event Create Form State Preservation Hotfix**；失敗保留輸入內容、成功才清空，並補 actionable validation errors。
-2. Hotfix merge 後建立／繼續 `feat/member-home-v2`，實作 PR-02。
-3. PR-01c 可用獨立 branch 平行開發；不要 stack 在 PR-02。
-4. PR-02 merge 後進 PR-03 Dynamic QR / Check-in Policy。
-5. PR-03 merge 後進 PR-04 GPS。
-6. PR-03 / PR-04 policy 穩定後，再開 clean PR-37B。
+1. 實作 **PR-04 GPS Check-in**，保持 QR credential 與 GPS privacy boundary 分離。
+2. PR-01c Club Profile Editing 可作為獨立、小範圍工作，不與 PR-04 混合。
+3. PR-03 / PR-04 policy 穩定後，再實作 PR-37B Attendance UI / Statistics Integration。
+4. 之後才處理 PR #40 Announcements / Notifications 更新與帳號安全、legacy cleanup。
 
-任何一支 PR 都不得自行 auto merge、修改 staging / production、執行 Hosted Supabase migration 或使用真實社員資料驗證。
+目前採本地開發、完整驗證、清楚 commit 後直接同步 `main` 的節奏；不得自行 auto merge、修改 staging / production、執行 Hosted Supabase migration 或使用真實社員資料驗證。

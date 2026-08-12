@@ -109,7 +109,11 @@ async function issueDynamicCredential({
 
   const credential = parseDynamicCredentialProjection(data);
   if (!credential) return { status: "error", revision: previousState.revision + 1, code: "temporary" };
-  revalidatePath(managementPath(clubId, eventId));
+  // The caller renders this credential entirely from action state. Revalidating
+  // the current route here can replace that client state with the page loading
+  // boundary before the new QR reaches the operator. The next navigation still
+  // reads the session from the server, and mutations that change server-rendered
+  // attendance data revalidate their routes separately.
   return { status: "success", revision: previousState.revision + 1, operation, ...credential };
 }
 
