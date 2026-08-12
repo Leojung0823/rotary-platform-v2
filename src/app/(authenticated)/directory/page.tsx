@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DirectoryAvatar } from "@/components/directory-avatar";
 import { EmptyState, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
 import {
@@ -81,7 +82,7 @@ export default async function MemberDirectoryPage({
             key={member.membership_id}
             href={`/directory/${member.membership_id}?clubId=${encodeURIComponent(selectedClub.club_id)}`}
           >
-            <div className="directory-avatar" aria-hidden="true">{member.display_name.slice(0, 1)}</div>
+            <DirectoryAvatar avatarUrl={member.avatar_url} displayName={member.display_name} />
             <div className="directory-card-body">
               <div className="directory-card-name">
                 <strong>{member.display_name}</strong>
