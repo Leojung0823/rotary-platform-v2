@@ -26,10 +26,18 @@ export type MemberHomeEvent = Readonly<{
   checkinState: MemberHomeCheckinState;
 }>;
 
+export type MemberHomeRecentEvent = Readonly<{
+  title: string;
+  location: string;
+  startsAt: string;
+  attended: boolean;
+}>;
+
 export type MemberHomeProjection = Readonly<{
   club: Readonly<{ clubCode: string; clubName: string }>;
   primaryEvent: MemberHomeEvent | null;
   nextEvent: MemberHomeEvent | null;
+  recentEvents: readonly MemberHomeRecentEvent[];
 }>;
 
 const maximumEventTextLength = 300;
@@ -81,8 +89,35 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
   };
 }
 
+function parseRecentEvent(value: unknown): MemberHomeRecentEvent | null {
+  if (!isRecord(value)
+    || !hasExactKeys(value, ["title", "location", "starts_at", "attended"])
+    || typeof value.title !== "string"
+    || typeof value.location !== "string"
+    || value.title.length === 0
+    || value.title.length > 160
+    || value.location.length > maximumEventTextLength
+    || !isIsoDateTime(value.starts_at)
+    || typeof value.attended !== "boolean") return null;
+
+  return {
+    title: value.title,
+    location: value.location,
+    startsAt: value.starts_at,
+    attended: value.attended,
+  };
+}
+
+const maximumRecentEvents = 3;
+
+function parseRecentEvents(value: unknown): readonly MemberHomeRecentEvent[] | null {
+  if (!Array.isArray(value) || value.length > maximumRecentEvents) return null;
+  const parsed = value.map(parseRecentEvent);
+  return parsed.some((event) => event === null) ? null : (parsed as MemberHomeRecentEvent[]);
+}
+
 export function parseMemberHomeProjection(value: unknown): MemberHomeProjection | null {
-  if (!isRecord(value) || !hasExactKeys(value, ["club", "primary_event", "next_event"])
+  if (!isRecord(value) || !hasExactKeys(value, ["club", "primary_event", "next_event", "recent_events"])
     || !isRecord(value.club)
     || !hasExactKeys(value.club, ["club_code", "club_name"])
     || typeof value.club.club_code !== "string"
@@ -97,10 +132,14 @@ export function parseMemberHomeProjection(value: unknown): MemberHomeProjection 
   if ((value.primary_event !== null && primaryEvent === null)
     || (value.next_event !== null && nextEvent === null)) return null;
 
+  const recentEvents = parseRecentEvents(value.recent_events);
+  if (recentEvents === null) return null;
+
   return {
     club: { clubCode: value.club.club_code, clubName: value.club.club_name },
     primaryEvent,
     nextEvent,
+    recentEvents,
   };
 }
 

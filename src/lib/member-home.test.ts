@@ -16,11 +16,19 @@ const event = {
   checkin_state: "not_open",
 };
 
+const recentEvent = {
+  title: "上週例會",
+  location: "扶輪社會館",
+  starts_at: "2026-08-05T10:00:00.000Z",
+  attended: true,
+};
+
 function projection(overrides: Record<string, unknown> = {}) {
   return {
     club: { club_code: "MEMBER", club_name: "社員測試社" },
     primary_event: event,
     next_event: null,
+    recent_events: [],
     ...overrides,
   };
 }
@@ -39,7 +47,24 @@ describe("member-home projection contract", () => {
         checkinState: "not_open",
       },
       nextEvent: null,
+      recentEvents: [],
     });
+  });
+
+  it("accepts bounded recent-events review entries", () => {
+    const parsed = parseMemberHomeProjection(projection({ recent_events: [recentEvent] }));
+    expect(parsed?.recentEvents).toEqual([
+      { title: "上週例會", location: "扶輪社會館", startsAt: "2026-08-05T10:00:00.000Z", attended: true },
+    ]);
+  });
+
+  it("rejects a recent event with an internal identifier", () => {
+    expect(parseMemberHomeProjection(projection({ recent_events: [{ ...recentEvent, id: "internal" }] }))).toBeNull();
+  });
+
+  it("rejects more recent events than the bounded maximum", () => {
+    const tooMany = [recentEvent, recentEvent, recentEvent, recentEvent];
+    expect(parseMemberHomeProjection(projection({ recent_events: tooMany }))).toBeNull();
   });
 
   it("rejects an internal identifier added to the top-level projection", () => {

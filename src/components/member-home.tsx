@@ -5,6 +5,7 @@ import {
   memberHomePrimaryAction,
   type MemberHomeCheckinState,
   type MemberHomeEvent,
+  type MemberHomeRecentEvent,
   type MemberHomeRegistrationState,
 } from "@/lib/member-home";
 import { resolveMemberHomeProjection } from "@/lib/member-home.server";
@@ -61,6 +62,16 @@ function EventSummary({ event, primary = false }: { event: MemberHomeEvent; prim
   </Card>;
 }
 
+function RecentEventRow({ event }: { event: MemberHomeRecentEvent }) {
+  return <div className={styles.recentItem}>
+    <div>
+      <strong>{event.title}</strong>
+      <small>{formatDateTime(event.startsAt)}{event.location ? ` · ${event.location}` : ""}</small>
+    </div>
+    <Badge tone={event.attended ? "success" : "neutral"}>{event.attended ? "已出席" : "未出席"}</Badge>
+  </div>;
+}
+
 export async function MemberHome({ identity, activeClubId }: { identity: Identity; activeClubId: string }) {
   const resolution = await resolveMemberHomeProjection(activeClubId);
   if (!resolution.ok) {
@@ -100,6 +111,16 @@ export async function MemberHome({ identity, activeClubId }: { identity: Identit
         <Link className="card-link" href="/events">查看全部活動 →</Link>
       </div>
       <EventSummary event={projection.nextEvent} />
+    </section>}
+
+    {projection.recentEvents.length > 0 && <section aria-labelledby="member-home-recent-events">
+      <div className="section-heading">
+        <div><p className="eyebrow">回顧</p><h2 id="member-home-recent-events">近期社團回顧</h2></div>
+        <Link className="card-link" href="/events">查看全部活動 →</Link>
+      </div>
+      <div className={styles.recentList}>
+        {projection.recentEvents.map((event, index) => <RecentEventRow key={`${event.title}-${index}`} event={event} />)}
+      </div>
     </section>}
   </div>;
 }
