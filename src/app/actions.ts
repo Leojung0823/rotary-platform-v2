@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { sendLineOaMessage } from "@/lib/line/messaging";
-import { createLocalAdminClient, createTrustedAdminClient } from "@/lib/supabase/admin";
+import { createTrustedAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   mapDatabaseError,
@@ -19,18 +19,20 @@ function errorPath(path: string, code: string) {
   return `${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(code)}`;
 }
 
-async function sendLocalInvite(email: string, inviteId: string) {
-  const admin = createLocalAdminClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const { error } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/invite/accept`,
+async function provisionOperatorAccount(email: string, password: string, inviteId: string) {
+  const admin = createTrustedAdminClient();
+  const { data, error } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
   });
-  if (error) throw error;
+  if (error || !data.user) throw error ?? new Error("operator_account_creation_failed");
   const supabase = await createClient();
-  const { error: markError } = await supabase.rpc("mark_operator_invitation_sent", {
+  const { error: provisionError } = await supabase.rpc("provision_operator_account", {
     p_invite_id: inviteId,
+    p_target_auth_user_id: data.user.id,
   });
-  if (markError) throw markError;
+  if (provisionError) throw provisionError;
 }
 
 export async function loginAction(formData: FormData) {
@@ -67,7 +69,7 @@ export async function createClubAction(formData: FormData) {
   if (error || !data) redirect(errorPath("/platform/clubs/new", mapDatabaseError(error?.message ?? "")));
   const result = data as { club_id: string; invite_id: string };
   try {
-    await sendLocalInvite(input.operatorEmail, result.invite_id);
+    await provisionOperatorAccount(input.operatorEmail, input.operatorPassword, result.invite_id);
   } catch {
     redirect(`/platform/clubs/${result.club_id}?error=invite_failed`);
   }
@@ -93,7 +95,7 @@ export async function inviteOperatorAction(formData: FormData) {
   if (error || !data) redirect(errorPath(returnPath, mapDatabaseError(error?.message ?? "")));
   const result = data as { invite_id: string };
   try {
-    await sendLocalInvite(input.email, result.invite_id);
+    await provisionOperatorAccount(input.email, input.password, result.invite_id);
   } catch {
     redirect(errorPath(returnPath, "invite_failed"));
   }

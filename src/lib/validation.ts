@@ -3,9 +3,10 @@ export type ClubInput = {
   clubName: string;
   operatorEmail: string;
   operatorName: string;
+  operatorPassword: string;
 };
 
-export type OperatorInput = { email: string; displayName: string };
+export type OperatorInput = { email: string; displayName: string; password: string };
 export type MemberInput = { name: string; phone: string; email: string; birthDate: string | null };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,11 +18,16 @@ export function parseClubInput(formData: FormData): ClubInput {
     clubName: String(formData.get("clubName") ?? "").trim(),
     operatorEmail: String(formData.get("operatorEmail") ?? "").trim().toLowerCase(),
     operatorName: String(formData.get("operatorName") ?? "").trim(),
+    operatorPassword: String(formData.get("operatorPassword") ?? ""),
   };
+  const operatorPasswordConfirmation = String(formData.get("operatorPasswordConfirmation") ?? "");
   if (!clubCodePattern.test(input.clubCode)) throw new Error("invalid_club_code");
   if (input.clubName.length < 2 || input.clubName.length > 100) throw new Error("invalid_club_name");
   if (!emailPattern.test(input.operatorEmail)) throw new Error("invalid_email");
   if (input.operatorName.length < 2 || input.operatorName.length > 80) throw new Error("invalid_name");
+  if (input.operatorPassword.length < 12 || input.operatorPassword !== operatorPasswordConfirmation) {
+    throw new Error("invalid_password");
+  }
   return input;
 }
 
@@ -29,9 +35,12 @@ export function parseOperatorInput(formData: FormData): OperatorInput {
   const input = {
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     displayName: String(formData.get("displayName") ?? "").trim(),
+    password: String(formData.get("password") ?? ""),
   };
+  const passwordConfirmation = String(formData.get("passwordConfirmation") ?? "");
   if (!emailPattern.test(input.email)) throw new Error("invalid_email");
   if (input.displayName.length < 2 || input.displayName.length > 80) throw new Error("invalid_name");
+  if (input.password.length < 12 || input.password !== passwordConfirmation) throw new Error("invalid_password");
   return input;
 }
 
@@ -68,7 +77,7 @@ export function safeMessage(code?: string): string | null {
     line_identity_conflict: "此 LINE 身份已綁定其他帳號，或此帳號已綁定另一個 LINE 身份。",
     line_unbind_membership_mismatch: "找不到此帳號在目前扶輪社的社籍資料，無法解除 LINE Login。",
     invite_not_found: "找不到符合目前登入信箱的有效邀請。",
-    invite_failed: "邀請已建立，但郵件暫時無法寄出；請稍後重試。",
+    invite_failed: "帳號已建立，但設定管理權限時失敗；請稍後重試。",
     invalid_password: "密碼至少需要 12 個字元，且兩次輸入必須相同。",
     recovery_invalid: "密碼重設連結無效、已過期或已使用，請重新申請。",
     line_login_failed: "LINE Login 未完成，請重新開啟邀請後再試一次。",
