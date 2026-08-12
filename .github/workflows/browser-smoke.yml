@@ -120,6 +120,15 @@ jobs:
       - name: Enable role-shell and member-home fixtures through the protected RPC
         run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
 
+      - name: Verify dynamic QR rollback with the database flag disabled
+        run: |
+          node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs checkin-disabled
+          npm run build
+          npm --prefix e2e run test:checkin-off
+
+      - name: Enable dynamic QR browser fixture through the protected RPC
+        run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
+
       - name: Build the application
         run: npm run build
 

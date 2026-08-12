@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto";
 import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -245,6 +246,57 @@ async function addMemberHomeEvents({ clubId, account }) {
   }
 }
 
+async function addDynamicCheckinBrowserFixtures({ clubId, managerAccount }) {
+  const managementEventId = "a1000000-0000-4000-8000-000000000104";
+  const scanEventId = "a1000000-0000-4000-8000-000000000105";
+  const scanSessionId = "a1000000-0000-4000-8000-000000000106";
+  const scanCredential = "d".repeat(64);
+  const now = Date.now();
+  const events = [
+    {
+      id: managementEventId, club_id: clubId, event_type: "regular_meeting", title: "本機動態 QR 管理例會",
+      location: "本機 QR 管理會館", starts_at: new Date(now - 10 * 60_000).toISOString(),
+      ends_at: new Date(now + 2 * 60 * 60_000).toISOString(), registration_deadline: new Date(now - 60 * 60_000).toISOString(),
+      counts_for_attendance: true, event_status: "published", created_by_app_account_id: managerAccount.id,
+      updated_by_app_account_id: managerAccount.id, published_at: new Date(now - 24 * 60 * 60_000).toISOString(),
+    },
+    {
+      id: scanEventId, club_id: clubId, event_type: "service", title: "本機動態 QR 掃描例會",
+      location: "本機 QR 掃描會館", starts_at: new Date(now - 10 * 60_000).toISOString(),
+      ends_at: new Date(now + 2 * 60 * 60_000).toISOString(), registration_deadline: new Date(now - 60 * 60_000).toISOString(),
+      counts_for_attendance: true, event_status: "published", created_by_app_account_id: managerAccount.id,
+      updated_by_app_account_id: managerAccount.id, published_at: new Date(now - 24 * 60 * 60_000).toISOString(),
+    },
+  ];
+  const existingEvents = await admin.from("club_events").select("id").in("id", [managementEventId, scanEventId]);
+  if (existingEvents.error) fail("could not inspect local dynamic QR events");
+  const existingIds = new Set(existingEvents.data.map((event) => event.id));
+  const insertEvents = events.filter((event) => !existingIds.has(event.id));
+  if (insertEvents.length > 0) {
+    const insert = await admin.from("club_events").insert(insertEvents);
+    if (insert.error) fail("could not create local dynamic QR events");
+  }
+
+  const existingSession = await admin.from("event_checkin_sessions").select("id").eq("id", scanSessionId).maybeSingle();
+  if (existingSession.error) fail("could not inspect local dynamic QR session");
+  if (!existingSession.data) {
+    const legacySecret = "c".repeat(64);
+    const insert = await admin.from("event_checkin_sessions").insert({
+      id: scanSessionId, club_id: clubId, event_id: scanEventId,
+      token_hash: createHash("sha256").update(legacySecret).digest("hex"), token_prefix: legacySecret.slice(0, 8),
+      session_status: "active", opens_at: new Date(now - 60_000).toISOString(),
+      expires_at: new Date(now + 24 * 60 * 60_000).toISOString(), created_by_app_account_id: managerAccount.id,
+    });
+    if (insert.error) fail("could not create local dynamic QR session");
+    const credential = await admin.from("event_checkin_qr_credentials").insert({
+      club_id: clubId, event_id: scanEventId, checkin_session_id: scanSessionId,
+      credential_hash: createHash("sha256").update(scanCredential).digest("hex"), credential_prefix: scanCredential.slice(0, 8),
+      issued_at: new Date(now - 1_000).toISOString(), expires_at: new Date(now + 55_000).toISOString(), valid_until: new Date(now + 55_000).toISOString(),
+    });
+    if (credential.error) fail("could not create local dynamic QR credential");
+  }
+}
+
 const bootstrapAccount = await admin.from("app_accounts").select("id").eq("login_email_normalized", adminEmail).maybeSingle();
 if (bootstrapAccount.error || !bootstrapAccount.data) fail("local superadmin account is missing");
 const createdBy = bootstrapAccount.data.id;
@@ -282,5 +334,6 @@ await addPlatformRole({ account: fixtures.allModes, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.revoked, status: "revoked", createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.suspended, status: "suspended", createdBy });
 await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary });
+await addDynamicCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 
 console.log("Local role-shell and member-home browser fixtures are ready. No credentials were printed.");

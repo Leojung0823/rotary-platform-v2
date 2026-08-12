@@ -2,9 +2,10 @@ import { createClient } from "@supabase/supabase-js";
 import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 
 const scenarios = {
-  disabled: { roleShells: false, memberHome: false },
-  "member-home-disabled": { roleShells: true, memberHome: false },
-  enabled: { roleShells: true, memberHome: true },
+  disabled: { roleShells: false, memberHome: false, checkinQr: false },
+  "member-home-disabled": { roleShells: true, memberHome: false, checkinQr: false },
+  "checkin-disabled": { roleShells: true, memberHome: true, checkinQr: false },
+  enabled: { roleShells: true, memberHome: true, checkinQr: true },
 };
 const scenario = scenarios[process.argv[2]] ?? null;
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -13,7 +14,7 @@ const email = process.env.BOOTSTRAP_SUPERADMIN_EMAIL?.trim().toLowerCase();
 const password = process.env.BOOTSTRAP_SUPERADMIN_PASSWORD;
 
 function fail(message) { throw new Error(`Role-shell fixture configuration failed: ${message}`); }
-if (scenario === null) fail("expected disabled, member-home-disabled, or enabled argument");
+if (scenario === null) fail("expected disabled, member-home-disabled, checkin-disabled, or enabled argument");
 if (!url || !publishableKey || !email || !password) fail("required environment variables are missing");
 
 const target = inspectBootstrapTarget(process.env);
@@ -27,6 +28,7 @@ for (const [featureKey, enabled] of [
   ["role_context_v2", scenario.roleShells],
   ["role_shells_v2", scenario.roleShells],
   ["member_home_v2", scenario.memberHome],
+  ["checkin_qr_v2", scenario.checkinQr],
 ]) {
   const { error } = await client.rpc("set_platform_feature_flag", {
     p_feature_key: featureKey,

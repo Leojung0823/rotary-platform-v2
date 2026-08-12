@@ -14,6 +14,9 @@ const memberHomeCoreTestMatch = /member-home\.e2e\.mjs/;
 const memberHomeDisabledTestMatch = /member-home-off\.e2e\.mjs/;
 const memberHomeForceTestMatch = /member-home-force-legacy\.e2e\.mjs/;
 const memberHomeRollbackScenario = process.env.E2E_MEMBER_HOME_ROLLBACK;
+const dynamicCheckinTestMatch = /dynamic-checkin\.e2e\.mjs/;
+const dynamicCheckinOffTestMatch = /dynamic-checkin-off\.e2e\.mjs/;
+const dynamicCheckinRollbackScenario = process.env.E2E_CHECKIN_QR_ROLLBACK;
 
 export default defineConfig({
   testDir: "./tests",
@@ -40,7 +43,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       use: { viewport: { width: 1440, height: 900 } },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs/,
     },
     {
       name: "android-chromium",
@@ -50,7 +53,7 @@ export default defineConfig({
         hasTouch: true,
         deviceScaleFactor: 2.625,
       },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs/,
     },
     {
       name: "role-shells-1440",
@@ -108,6 +111,19 @@ export default defineConfig({
         ? { viewport: { width, height: width === 320 ? 700 : 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
         : { viewport: { width, height: 900 } },
     })),
+    ...[1440, 1024, 768, 412, 375, 320].map((width) => ({
+      name: `dynamic-checkin-${width}`,
+      testMatch: dynamicCheckinTestMatch,
+      use: width <= 412
+        ? { viewport: { width, height: width === 320 ? 700 : 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
+        : { viewport: { width, height: 900 } },
+    })),
+    {
+      name: "dynamic-checkin-disabled",
+      testMatch: dynamicCheckinOffTestMatch,
+      testIgnore: dynamicCheckinRollbackScenario === "disabled" ? undefined : /.*/,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
     {
       name: "member-home-disabled",
       testMatch: memberHomeDisabledTestMatch,
