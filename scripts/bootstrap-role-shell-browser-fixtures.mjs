@@ -179,6 +179,72 @@ async function addClubManagementRole({ clubId, account, createdBy }) {
   if (insert.error) fail("could not create local fixture club role");
 }
 
+async function addMemberHomeEvents({ clubId, account }) {
+  const currentEventId = "a1000000-0000-4000-8000-000000000101";
+  const nextEventId = "a1000000-0000-4000-8000-000000000102";
+  const checkinSessionId = "a1000000-0000-4000-8000-000000000103";
+  const existing = await admin.from("club_events").select("id").in("id", [currentEventId, nextEventId]);
+  if (existing.error) fail("could not inspect local member-home events");
+
+  const now = Date.now();
+  const existingIds = new Set(existing.data.map((event) => event.id));
+  if (existingIds.size !== 2) {
+    const events = [
+      {
+        id: currentEventId,
+        club_id: clubId,
+        event_type: "regular_meeting",
+        title: "本機社員首頁例會",
+        location: "本機測試會館",
+        starts_at: new Date(now - 30 * 60_000).toISOString(),
+        ends_at: new Date(now + 6 * 60 * 60_000).toISOString(),
+        registration_deadline: new Date(now - 24 * 60 * 60_000).toISOString(),
+        counts_for_attendance: true,
+        event_status: "published",
+        created_by_app_account_id: account.id,
+        updated_by_app_account_id: account.id,
+        published_at: new Date(now - 24 * 60 * 60_000).toISOString(),
+      },
+      {
+        id: nextEventId,
+        club_id: clubId,
+        event_type: "service",
+        title: "本機下一場服務活動",
+        location: "本機河濱公園",
+        starts_at: new Date(now + 2 * 24 * 60 * 60_000).toISOString(),
+        ends_at: new Date(now + (2 * 24 + 2) * 60 * 60_000).toISOString(),
+        registration_deadline: new Date(now + 24 * 60 * 60_000).toISOString(),
+        counts_for_attendance: true,
+        event_status: "published",
+        created_by_app_account_id: account.id,
+        updated_by_app_account_id: account.id,
+        published_at: new Date(now - 24 * 60 * 60_000).toISOString(),
+      },
+    ].filter((event) => !existingIds.has(event.id));
+    if (events.length > 0) {
+      const insert = await admin.from("club_events").insert(events);
+      if (insert.error) fail("could not create local member-home events");
+    }
+  }
+
+  const session = await admin.from("event_checkin_sessions").select("id").eq("id", checkinSessionId).maybeSingle();
+  if (session.error) fail("could not inspect local member-home check-in session");
+  if (!session.data) {
+    const insert = await admin.from("event_checkin_sessions").insert({
+      id: checkinSessionId,
+      club_id: clubId,
+      event_id: currentEventId,
+      token_hash: "a".repeat(64),
+      token_prefix: "aaaaaaaa",
+      session_status: "active",
+      opens_at: new Date(now - 10 * 60_000).toISOString(),
+      expires_at: new Date(now + 5 * 60 * 60_000).toISOString(),
+      created_by_app_account_id: account.id,
+    });
+    if (insert.error) fail("could not create local member-home check-in session");
+  }
+}
+
 const bootstrapAccount = await admin.from("app_accounts").select("id").eq("login_email_normalized", adminEmail).maybeSingle();
 if (bootstrapAccount.error || !bootstrapAccount.data) fail("local superadmin account is missing");
 const createdBy = bootstrapAccount.data.id;
@@ -215,5 +281,6 @@ await addClubManagementRole({ clubId: memberClub.id, account: fixtures.allModes,
 await addPlatformRole({ account: fixtures.allModes, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.revoked, status: "revoked", createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.suspended, status: "suspended", createdBy });
+await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary });
 
-console.log("Local role-shell browser roles A-G plus revoked and suspended access fixtures are ready. No credentials were printed.");
+console.log("Local role-shell and member-home browser fixtures are ready. No credentials were printed.");

@@ -10,6 +10,10 @@ const roleShellDisabledTestMatch = /role-shells-off\.e2e\.mjs/;
 const roleShellForceTestMatch = /role-shells-force-legacy\.e2e\.mjs/;
 const eventCreateTestMatch = /event-create-form\.e2e\.mjs/;
 const rollbackScenario = process.env.E2E_ROLE_SHELL_ROLLBACK;
+const memberHomeCoreTestMatch = /member-home\.e2e\.mjs/;
+const memberHomeDisabledTestMatch = /member-home-off\.e2e\.mjs/;
+const memberHomeForceTestMatch = /member-home-force-legacy\.e2e\.mjs/;
+const memberHomeRollbackScenario = process.env.E2E_MEMBER_HOME_ROLLBACK;
 
 export default defineConfig({
   testDir: "./tests",
@@ -36,7 +40,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       use: { viewport: { width: 1440, height: 900 } },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs/,
     },
     {
       name: "android-chromium",
@@ -46,7 +50,7 @@ export default defineConfig({
         hasTouch: true,
         deviceScaleFactor: 2.625,
       },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs/,
     },
     {
       name: "role-shells-1440",
@@ -97,6 +101,25 @@ export default defineConfig({
         ? { viewport: { width, height: width === 320 ? 700 : 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
         : { viewport: { width, height: 900 } },
     })),
+    ...[1440, 1024, 768, 412, 375, 320].map((width) => ({
+      name: `member-home-${width}`,
+      testMatch: memberHomeCoreTestMatch,
+      use: width <= 412
+        ? { viewport: { width, height: width === 320 ? 700 : 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
+        : { viewport: { width, height: 900 } },
+    })),
+    {
+      name: "member-home-disabled",
+      testMatch: memberHomeDisabledTestMatch,
+      testIgnore: memberHomeRollbackScenario === "disabled" ? undefined : /.*/,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "member-home-force-legacy",
+      testMatch: memberHomeForceTestMatch,
+      testIgnore: memberHomeRollbackScenario === "force" ? undefined : /.*/,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
   ],
   webServer: remoteRun
     ? undefined
@@ -108,8 +131,10 @@ export default defineConfig({
         timeout: 120_000,
         stdout: "pipe",
         stderr: "pipe",
-        env: process.env.E2E_FORCE_LEGACY_ROLE_SHELLS === "true"
-          ? { ...process.env, FORCE_LEGACY_ROLE_SHELLS: "true" }
-          : process.env,
+        env: {
+          ...process.env,
+          ...(process.env.E2E_FORCE_LEGACY_ROLE_SHELLS === "true" ? { FORCE_LEGACY_ROLE_SHELLS: "true" } : {}),
+          ...(process.env.E2E_FORCE_LEGACY_MEMBER_HOME === "true" ? { FORCE_LEGACY_MEMBER_HOME: "true" } : {}),
+        },
       },
 });

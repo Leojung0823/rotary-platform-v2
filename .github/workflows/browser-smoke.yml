@@ -110,6 +110,14 @@ jobs:
           npm --prefix e2e run test:role-shells-off
 
       - name: Enable role-shell browser fixture through the protected RPC
+        run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs member-home-disabled
+
+      - name: Verify member-home rollback with the database flag disabled
+        run: |
+          npm run build
+          npm --prefix e2e run test:member-home-off
+
+      - name: Enable role-shell and member-home fixtures through the protected RPC
         run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
 
       - name: Build the application
@@ -120,6 +128,9 @@ jobs:
 
       - name: Verify role-shell rollback with the emergency kill switch
         run: E2E_FORCE_LEGACY_ROLE_SHELLS=true npm --prefix e2e run test:role-shells-force
+
+      - name: Verify member-home rollback with the emergency kill switch
+        run: E2E_FORCE_LEGACY_MEMBER_HOME=true npm --prefix e2e run test:member-home-force
 
       - name: Upload browser smoke diagnostics
         if: failure()

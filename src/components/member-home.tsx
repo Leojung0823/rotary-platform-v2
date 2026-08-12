@@ -1,0 +1,105 @@
+import Link from "next/link";
+import { Badge, Card, Notice } from "@/components/ui";
+import type { Identity } from "@/lib/auth";
+import {
+  memberHomePrimaryAction,
+  type MemberHomeCheckinState,
+  type MemberHomeEvent,
+  type MemberHomeRegistrationState,
+} from "@/lib/member-home";
+import { resolveMemberHomeProjection } from "@/lib/member-home.server";
+import styles from "./member-home.module.css";
+
+const registrationLabels: Record<MemberHomeRegistrationState, string> = {
+  not_registered: "尚未報名",
+  pending: "待確認",
+  registered: "已報名",
+  declined: "已婉拒",
+  registration_closed: "報名已截止",
+};
+
+const checkinLabels: Record<MemberHomeCheckinState, string> = {
+  not_available: "本活動不需簽到",
+  not_open: "簽到尚未開放",
+  available: "現在可簽到",
+  checked_in: "已完成簽到",
+  closed: "簽到已結束",
+};
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+function EventSummary({ event, primary = false }: { event: MemberHomeEvent; primary?: boolean }) {
+  const action = memberHomePrimaryAction(event);
+  return <Card className={primary ? styles.primaryCard : styles.nextCard}>
+    <div className={styles.eventHeading}>
+      <div>
+        <p className="eyebrow">{primary ? "優先處理" : "接下來"}</p>
+        <h2>{event.title}</h2>
+      </div>
+      <Badge tone={event.registrationState === "registered" ? "success" : "neutral"}>
+        {registrationLabels[event.registrationState]}
+      </Badge>
+    </div>
+    <dl className={styles.eventDetails}>
+      <div><dt>時間</dt><dd>{formatDateTime(event.startsAt)}</dd></div>
+      <div><dt>地點</dt><dd>{event.location || "地點待確認"}</dd></div>
+      {primary && <div><dt>簽到</dt><dd>{checkinLabels[event.checkinState]}</dd></div>}
+    </dl>
+    {primary && event.checkinState !== "checked_in" && <Link className="button" href={action.href}>
+      {action.label}
+    </Link>}
+  </Card>;
+}
+
+export async function MemberHome({ identity, activeClubId }: { identity: Identity; activeClubId: string }) {
+  const resolution = await resolveMemberHomeProjection(activeClubId);
+  if (!resolution.ok) {
+    return <div className="page-stack">
+      <header className="page-header">
+        <div>
+          <p className="eyebrow">社員首頁</p>
+          <h1>{identity.display_name}，您好</h1>
+          <p>今天與您有關的事情會顯示在這裡。</p>
+        </div>
+      </header>
+      <Notice tone="error">目前無法載入社員首頁資料，請稍後重新整理。</Notice>
+    </div>;
+  }
+
+  const { projection } = resolution;
+  return <div className={`page-stack ${styles.memberHome}`}>
+    <header className="page-header">
+      <div>
+        <p className="eyebrow">社員首頁 · {projection.club.clubCode}</p>
+        <h1>{identity.display_name}，您好</h1>
+        <h2 className={styles.todayHeading}>今天與我有關的事情</h2>
+      </div>
+      <Badge tone="success">{projection.club.clubName}</Badge>
+    </header>
+
+    {projection.primaryEvent ? <EventSummary event={projection.primaryEvent} primary /> : <Card className={styles.emptyCard}>
+      <p className="eyebrow">今天</p>
+      <h2>目前沒有需要處理的活動</h2>
+      <p>新的已發布活動會在這裡顯示。</p>
+      <Link className="button button-secondary" href="/events">查看活動</Link>
+    </Card>}
+
+    {projection.nextEvent && <section aria-labelledby="member-home-next-event">
+      <div className="section-heading">
+        <div><p className="eyebrow">下一場</p><h2 id="member-home-next-event">接下來的活動</h2></div>
+        <Link className="card-link" href="/events">查看全部活動 →</Link>
+      </div>
+      <EventSummary event={projection.nextEvent} />
+    </section>}
+  </div>;
+}
