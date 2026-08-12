@@ -90,7 +90,8 @@ p { color: var(--muted); line-height: 1.75; }
 .metric-label { display: block; color: var(--muted); font-size: 13px; font-weight: 700; }
 .metric-value { display: block; margin-top: 8px; font-size: 38px; }
 .metric-text { font-size: 24px; }
-.section-heading { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.section-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; align-items: baseline; margin-bottom: 14px; }
+.section-heading > * { min-width: 0; }
 .section-heading h2 { margin: 0; }
 .section-heading span { color: var(--muted); font-size: 13px; }
 .club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
