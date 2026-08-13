@@ -323,16 +323,12 @@ export async function GET(request: NextRequest) {
       const binding = bound.data as InvitationBinding | null;
       invitationKind = binding?.invitation_kind ?? invitationKind;
     } else {
-      const refreshed = await admin
-        .from("line_identities")
-        .update({
-          display_name: profile.displayName,
-          picture_url: profile.pictureUrl ?? null,
-          email: profile.email ?? null,
-          last_login_at: new Date().toISOString(),
-        })
-        .eq("provider_subject", profile.subject)
-        .eq("identity_status", "active");
+      const refreshed = await admin.rpc("refresh_line_identity_login", {
+        p_provider_subject: profile.subject,
+        p_display_name: profile.displayName,
+        p_picture_url: profile.pictureUrl ?? null,
+        p_email: profile.email ?? null,
+      });
       if (refreshed.error) throw new Error("LINE Login identity refresh failed.");
     }
 
