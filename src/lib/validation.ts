@@ -52,7 +52,6 @@ export function parseMemberInput(formData: FormData): MemberInput {
     birthDate: String(formData.get("birthDate") ?? "").trim() || null,
   };
   if (input.name.length < 2 || input.name.length > 80) throw new Error("invalid_name");
-  if (!input.phone && !input.email) throw new Error("missing_contact");
   if (input.email && !emailPattern.test(input.email)) throw new Error("invalid_email");
   if (input.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(input.birthDate)) throw new Error("invalid_birth_date");
   return input;

@@ -15,9 +15,9 @@ describe("club input validation", () => {
     expect(parseNewPassword(form({ password: "a-secure-local-password", passwordConfirmation: "a-secure-local-password" }))).toBe("a-secure-local-password");
     expect(() => parseNewPassword(form({ password: "too-short", passwordConfirmation: "too-short" }))).toThrow("invalid_password");
   });
-  it("keeps known member data and requires only one contact method", () => {
+  it("keeps known member data and allows a name with no contact method", () => {
     expect(parseMemberInput(form({ name: " 林社員 ", phone: "0912345678", email: "", birthDate: "1980-02-03" }))).toEqual({ name: "林社員", phone: "0912345678", email: "", birthDate: "1980-02-03" });
-    expect(() => parseMemberInput(form({ name: "林社員", phone: "", email: "", birthDate: "" }))).toThrow("missing_contact");
+    expect(parseMemberInput(form({ name: "Nick", phone: "", email: "", birthDate: "" }))).toEqual({ name: "Nick", phone: "", email: "", birthDate: null });
   });
 });
 
