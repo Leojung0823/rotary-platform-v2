@@ -12,6 +12,19 @@ type Club = {
   created_at: string;
 };
 
+const statusLabel: Record<string, string> = {
+  provisioning: "建置中",
+  active: "已啟用",
+  suspended: "已停權",
+  archived: "已封存",
+};
+const statusTone: Record<string, "success" | "warning" | "neutral"> = {
+  provisioning: "warning",
+  active: "success",
+  suspended: "warning",
+  archived: "neutral",
+};
+
 export default async function PlatformClubsPage() {
   const identity = await requireIdentity();
   if (!hasPlatformAccess(identity)) redirect("/access-denied");
@@ -55,8 +68,8 @@ export default async function PlatformClubsPage() {
                   <td><strong>{club.club_name}</strong></td>
                   <td><code>{club.club_code}</code></td>
                   <td>
-                    <Badge tone={club.club_status === "active" ? "success" : "warning"}>
-                      {club.club_status === "active" ? "已啟用" : "建置中"}
+                    <Badge tone={statusTone[club.club_status] ?? "neutral"}>
+                      {statusLabel[club.club_status] ?? club.club_status}
                     </Badge>
                   </td>
                   <td>{new Intl.DateTimeFormat("zh-TW").format(new Date(club.created_at))}</td>

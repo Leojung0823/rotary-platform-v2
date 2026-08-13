@@ -76,6 +76,36 @@ export async function createClubAction(formData: FormData) {
   redirect(`/platform/clubs/${result.club_id}?success=club_created`);
 }
 
+export async function updateClubNameAction(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = `/platform/clubs/${clubId}`;
+  const clubName = String(formData.get("clubName") ?? "").trim();
+  if (clubName.length < 2 || clubName.length > 100) redirect(errorPath(returnPath, "invalid_club_name"));
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_club_name", { p_club_id: clubId, p_club_name: clubName });
+  if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
+  redirect(`${returnPath}?success=renamed`);
+}
+
+export async function archiveClubAction(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = `/platform/clubs/${clubId}`;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("archive_club", { p_club_id: clubId });
+  if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
+  redirect(`${returnPath}?success=archived`);
+}
+
+export async function unarchiveClubAction(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = `/platform/clubs/${clubId}`;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("unarchive_club", { p_club_id: clubId });
+  if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
+  redirect(`${returnPath}?success=unarchived`);
+}
+
 export async function inviteOperatorAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
   const returnPath = `/clubs/${clubId}/operators`;
