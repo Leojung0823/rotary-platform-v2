@@ -33,8 +33,14 @@ describe("check-in camera boundary", () => {
     expect(scanner).toContain("navigator.mediaDevices.getUserMedia");
     expect(scanner).toContain('facingMode: { ideal: "environment" }');
     expect(scanner).toContain('new Detector({ formats: ["qr_code"] })');
-    expect(scanner).toContain("normalizeScannedCheckinToken(result.rawValue)");
+    expect(scanner).toContain("normalizeScannedCheckinToken(scannedValue)");
     expect(scanner).toContain("onClick={() => void startCamera()}");
+  });
+
+  it("falls back to an on-device QR decoder when BarcodeDetector is unavailable (e.g. Safari)", () => {
+    expect(scanner).toContain("jsQR(image.data");
+    expect(scanner).toContain("const Detector = browserBarcodeDetector();");
+    expect(scanner).not.toContain("!Detector) {\n      setStatus(\"unsupported\")");
   });
 
   it("stops media tracks on exit paths and when the page becomes hidden", () => {

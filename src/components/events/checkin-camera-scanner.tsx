@@ -1,5 +1,6 @@
 "use client";
 
+import jsQR from "jsqr";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { selfCheckinAction } from "@/app/checkin-actions";
 import { normalizeScannedCheckinToken } from "@/lib/checkin/scan";
@@ -14,8 +15,22 @@ function browserBarcodeDetector() {
   return (window as Window & { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector;
 }
 
+function scanWithCanvas(video: HTMLVideoElement, canvas: HTMLCanvasElement) {
+  const width = video.videoWidth;
+  const height = video.videoHeight;
+  if (width <= 0 || height <= 0) return null;
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return null;
+  context.drawImage(video, 0, 0, width, height);
+  const image = context.getImageData(0, 0, width, height);
+  return jsQR(image.data, width, height, { inversionAttempts: "dontInvert" })?.data ?? null;
+}
+
 export function CheckinCameraScanner() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanTimerRef = useRef<number | null>(null);
   const cameraRequestRef = useRef(0);
@@ -62,8 +77,7 @@ export function CheckinCameraScanner() {
   const startCamera = useCallback(async () => {
     stopCamera();
     const requestId = cameraRequestRef.current;
-    const Detector = browserBarcodeDetector();
-    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !Detector) {
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       setStatus("unsupported");
       return;
     }
@@ -90,7 +104,8 @@ export function CheckinCameraScanner() {
         return;
       }
 
-      const detector = new Detector({ formats: ["qr_code"] });
+      const Detector = browserBarcodeDetector();
+      const detector = Detector ? new Detector({ formats: ["qr_code"] }) : null;
       streamRef.current = stream;
       video.srcObject = stream;
       await video.play();
@@ -104,24 +119,27 @@ export function CheckinCameraScanner() {
       const scan = async () => {
         if (!activeRef.current) return;
         const currentVideo = videoRef.current;
-        if (currentVideo && currentVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-          try {
-            const results = await detector.detect(currentVideo);
-            if (!activeRef.current || requestId !== cameraRequestRef.current) return;
-            for (const result of results) {
-              if (result.format && result.format !== "qr_code") continue;
-              const token = normalizeScannedCheckinToken(result.rawValue);
-              if (token) {
-                submitScannedToken(token);
-                return;
-              }
+        try {
+          let scannedValue: string | null = null;
+          if (currentVideo && currentVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+            if (detector) {
+              const results = await detector.detect(currentVideo);
+              scannedValue = results.find((result) => !result.format || result.format === "qr_code")?.rawValue ?? null;
+            } else if (canvasRef.current) {
+              scannedValue = scanWithCanvas(currentVideo, canvasRef.current);
             }
-          } catch {
-            if (!activeRef.current || requestId !== cameraRequestRef.current) return;
-            stopCamera();
-            setStatus("error");
+          }
+          if (!activeRef.current || requestId !== cameraRequestRef.current) return;
+          const token = normalizeScannedCheckinToken(scannedValue);
+          if (token) {
+            submitScannedToken(token);
             return;
           }
+        } catch {
+          if (!activeRef.current || requestId !== cameraRequestRef.current) return;
+          stopCamera();
+          setStatus("error");
+          return;
         }
         if (activeRef.current && requestId === cameraRequestRef.current) {
           scanTimerRef.current = window.setTimeout(() => void scan(), 250);
@@ -152,6 +170,7 @@ export function CheckinCameraScanner() {
 
     <div className={styles.cameraFrame} data-active={status === "scanning" ? "true" : "false"}>
       <video ref={videoRef} muted playsInline aria-label="活動簽到相機預覽" />
+      <canvas ref={canvasRef} className="sr-only" aria-hidden="true" />
       {status !== "scanning" && <div className={styles.cameraPlaceholder} aria-live="polite">
         {status === "starting" ? "正在啟動相機…" : status === "submitting" || isPending ? "已讀取 QR，正在完成簽到…" : "相機只會在您點擊後啟動"}
       </div>}
@@ -159,7 +178,7 @@ export function CheckinCameraScanner() {
     </div>
 
     {status === "unsupported" && <div className="notice notice-info" role="status">
-      此瀏覽器或目前網址不支援安全相機掃描，請使用下方手動輸入。相機通常需要 HTTPS，且瀏覽器必須支援 QR 偵測。
+      此瀏覽器或目前網址不支援安全相機掃描，請使用下方手動輸入。相機通常需要 HTTPS。
     </div>}
     {status === "denied" && <div className="notice notice-error" role="alert">
       相機權限未允許。您可以調整瀏覽器權限後重試，或改用下方手動輸入。
@@ -178,6 +197,6 @@ export function CheckinCameraScanner() {
       {status === "scanning" && <button className="button button-secondary" type="button" onClick={handleStop}>停止相機</button>}
     </div>
 
-    <p className="hint">相機串流只存在目前瀏覽器記憶體；離開頁面、切到背景、停止掃描或辨識成功時，系統會停止所有相機 tracks。</p>
+    <p className="hint">相機串流只存在目前瀏覽器記憶體；離開頁面、切到背景、停止掃描或辨識成功時，系統會停止所有相機 tracks。iPhone Safari 若沒有 BarcodeDetector，會改由裝置內的 QR decoder 處理影像畫面；影像與 QR 值均不會上傳、寫入或保存在瀏覽器。</p>
   </section>;
 }
