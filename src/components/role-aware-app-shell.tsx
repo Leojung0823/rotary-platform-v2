@@ -12,7 +12,7 @@ import {
 } from "@/lib/experience-context";
 import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
-import type { Identity } from "@/lib/auth";
+import { displayableEmail, type Identity } from "@/lib/auth";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import type { FeatureFlagEvaluation } from "@/lib/product/feature-flags";
 import { recordAuthenticatedProductTelemetry } from "@/lib/product/telemetry.server";
@@ -177,7 +177,7 @@ function AccountMenu({ identity, mode }: { identity: Identity; mode: ExperienceM
       </span>
     </summary>
     <div className={styles.accountPanel}>
-      <p>{identity.email}</p>
+      {displayableEmail(identity) && <p>{displayableEmail(identity)}</p>}
       <Link href={`/me?mode=${encodeURIComponent(mode)}`}>我的帳號</Link>
       <form action="/api/auth/line/logout?redirect=1" method="post">
         <button type="submit">登出</button>

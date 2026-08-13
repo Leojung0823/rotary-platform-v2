@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Identity } from "@/lib/auth";
+import { displayableEmail, type Identity } from "@/lib/auth";
 import { Notice } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./app-shell.module.css";
@@ -51,7 +51,7 @@ export async function LegacyAppShell({
         {isPlatform && <Link href="/platform/clubs">平台管理</Link>}
       </nav>
       <div className={styles.footer}>
-        <div className="account"><div className="avatar">{identity.display_name.slice(0, 1)}</div><div><strong>{identity.display_name}</strong><small>{identity.email}</small></div></div>
+        <div className="account"><div className="avatar">{identity.display_name.slice(0, 1)}</div><div><strong>{identity.display_name}</strong>{displayableEmail(identity) && <small>{displayableEmail(identity)}</small>}</div></div>
         <form action="/api/auth/line/logout?redirect=1" method="post"><button className="link-button">登出</button></form>
       </div>
     </aside>

@@ -11,6 +11,14 @@ export type Identity = {
   platform_roles: string[];
 };
 
+// LINE-only accounts get a synthetic placeholder auth.users email
+// (line-<hash>@identity.local, see lineIdentityLoginEmail) since Supabase
+// Auth requires some email even without password/real-email login. It's an
+// internal implementation detail, not something to surface in the UI.
+export function displayableEmail(identity: Pick<Identity, "email">): string | null {
+  return identity.email.endsWith("@identity.local") ? null : identity.email;
+}
+
 export async function getAuthenticatedUser() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
