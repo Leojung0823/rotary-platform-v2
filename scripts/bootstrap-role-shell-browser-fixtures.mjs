@@ -325,6 +325,9 @@ await addMembership({ clubId: secondMemberClub.id, account: fixtures.multi, crea
 await addMembership({ clubId: memberClub.id, account: fixtures.memberManager, createdBy });
 await addClubManagementRole({ clubId: memberClub.id, account: fixtures.memberManager, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.management, createdBy });
+// Genuinely manages two clubs (never a member of either) -- exercises the
+// club switcher's "其他可管理扶輪社" grouping for a real multi-club operator.
+await addOperator({ clubId: secondMemberClub.id, account: fixtures.management, createdBy });
 await addPlatformRole({ account: fixtures.platform, createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.platformMember, createdBy });
 await addPlatformRole({ account: fixtures.platformMember, createdBy });

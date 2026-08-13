@@ -157,11 +157,17 @@ function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationI
   return <nav className={styles.navigation} aria-label="主要導覽">
     <ul style={{ "--nav-count": items.length } as CSSProperties}>
       {items.map((item) => <li key={item.id}>
-        <Link href={item.href} aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}>
-          <span className={styles.navigationIcon} aria-hidden="true">{item.icon}</span>
-          <span className={styles.desktopLabel}>{item.label}</span>
-          <span className={styles.mobileLabel}>{item.mobileLabel}</span>
-        </Link>
+        {item.forceReload
+          ? <a href={item.href} aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}>
+              <span className={styles.navigationIcon} aria-hidden="true">{item.icon}</span>
+              <span className={styles.desktopLabel}>{item.label}</span>
+              <span className={styles.mobileLabel}>{item.mobileLabel}</span>
+            </a>
+          : <Link href={item.href} aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}>
+              <span className={styles.navigationIcon} aria-hidden="true">{item.icon}</span>
+              <span className={styles.desktopLabel}>{item.label}</span>
+              <span className={styles.mobileLabel}>{item.mobileLabel}</span>
+            </Link>}
       </li>)}
     </ul>
   </nav>;
@@ -223,10 +229,13 @@ export function RoleAwareAppShell({
           <ModeSwitcher context={context} mode={mode} />
         </>}
         {/* A single club is the common case (one person, one club) and needs
-            no picker; this still shows for anyone who genuinely has more
-            than one — a platform admin, or an operator running several
-            clubs — regardless of platform access. */}
-        {clubsForExperienceMode(context, mode).length > 1 && <ClubSwitcher context={context} mode={mode} />}
+            no picker. Platform admins keep the switcher regardless of count
+            (they oversee the whole platform); everyone else only gets it if
+            they genuinely manage more than one club (a multi-club operator,
+            never a multi-club member — membership and operator status are
+            mutually exclusive). */}
+        {(context.hasPlatformAccess || clubsForExperienceMode(context, mode).length > 1)
+          && <ClubSwitcher context={context} mode={mode} />}
       </header>
       <ShellNavigation items={navigation} pathname={pathname} />
       <AccountMenu identity={identity} mode={mode} />

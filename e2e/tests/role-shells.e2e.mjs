@@ -156,9 +156,10 @@ test("mode, active-club cookie, and deep links remain bounded UX inputs", async 
     value: "00000000-0000-4000-8000-000000000099",
     url: new URL("/", process.env.E2E_BASE_URL ?? "http://localhost:3000").toString(),
   }]);
+  // A single-club member has no club switcher to interact with; the bogus
+  // cookie's fallback is proven by the shell still resolving to member mode.
   await login(rolePage, accounts.ordinary.email);
-  await rolePage.getByLabel("切換作用扶輪社").click();
-  await expect(rolePage.getByRole("button", { name: /^本機 Shell 社員社 E2E-SHELL-MEMBER/u })).toBeVisible();
+  await expectShell(rolePage, "社員模式");
   await rolePage.goto(new URL("/dashboard?mode=platform", baseURL).toString());
   await expectShell(rolePage, "社員模式");
   await rolePage.goto(new URL(`/clubs/${managedClubId}/members?mode=management`, baseURL).toString());

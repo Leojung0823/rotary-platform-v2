@@ -15,6 +15,12 @@ export type ShellNavigationItem = Readonly<{
   mobileLabel: string;
   icon: string;
   href: string;
+  // True only for links that cross a mode boundary (member -> management).
+  // The shell's mode is resolved in the shared (authenticated) layout, which
+  // Next.js's client router cache does not re-render on a soft navigation
+  // between sibling routes -- a plain anchor forces a full navigation so the
+  // new mode actually takes effect, matching ModeSwitcher's <a> tags.
+  forceReload?: boolean;
 }>;
 
 type NavigationDefinition = Readonly<{
@@ -93,7 +99,7 @@ export function roleShellNavigation(
   context: ExperienceContext,
   mode: ExperienceMode,
 ): readonly ShellNavigationItem[] {
-  const items = navigationByMode[mode].flatMap((definition) => {
+  const items: ShellNavigationItem[] = navigationByMode[mode].flatMap((definition) => {
     const href = definition.href(context, mode);
     return href ? [{
       id: definition.id,
@@ -117,6 +123,7 @@ export function roleShellNavigation(
         mobileLabel: "管理",
         icon: "⚙",
         href: withModePreference(`/clubs/${encodeURIComponent(managedClub.clubId)}/members`, "management"),
+        forceReload: true,
       });
     }
   }
