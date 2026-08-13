@@ -87,4 +87,23 @@ describe("role-aware navigation", () => {
       "/platform/clubs/new?mode=platform",
     ]);
   });
+
+  it("gives a club-level manager a direct management link inline, not the platform mode switcher", () => {
+    const managerContext = context({ member: true, management: true, platform: false });
+    expect(roleShellNavigation(managerContext, "member").map((item) => item.id)).toEqual([
+      "home", "events", "checkin", "directory", "account", "manage-club",
+    ]);
+    const manageItem = roleShellNavigation(managerContext, "member").find((item) => item.id === "manage-club");
+    expect(manageItem?.href).toBe(`/clubs/${memberClub.club_id}/members?mode=management`);
+  });
+
+  it("does not add the inline manage-club link for a plain member without manage permission", () => {
+    const plainMemberContext = context({ member: true, management: false, platform: false });
+    expect(roleShellNavigation(plainMemberContext, "member").some((item) => item.id === "manage-club")).toBe(false);
+  });
+
+  it("does not duplicate the manage-club link for platform admins, who keep the mode switcher instead", () => {
+    const platformContext = context({ member: true, management: true, platform: true });
+    expect(roleShellNavigation(platformContext, "member").some((item) => item.id === "manage-club")).toBe(false);
+  });
 });

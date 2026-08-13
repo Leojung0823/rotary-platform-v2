@@ -93,7 +93,7 @@ export function roleShellNavigation(
   context: ExperienceContext,
   mode: ExperienceMode,
 ): readonly ShellNavigationItem[] {
-  return navigationByMode[mode].flatMap((definition) => {
+  const items = navigationByMode[mode].flatMap((definition) => {
     const href = definition.href(context, mode);
     return href ? [{
       id: definition.id,
@@ -103,6 +103,25 @@ export function roleShellNavigation(
       href: withModePreference(href, mode),
     }] : [];
   });
+
+  // Club-level managers (president/secretary/operator) get a direct link
+  // into their own club's management pages inline in the member nav,
+  // instead of the mode-switcher UI reserved for platform admins who
+  // actually manage many clubs.
+  if (mode === "member" && context.canManage && !context.hasPlatformAccess) {
+    const managedClub = activeClubForMode(context, "management");
+    if (managedClub) {
+      items.push({
+        id: "manage-club",
+        label: "社團管理",
+        mobileLabel: "管理",
+        icon: "⚙",
+        href: withModePreference(`/clubs/${encodeURIComponent(managedClub.clubId)}/members`, "management"),
+      });
+    }
+  }
+
+  return items;
 }
 
 export const roleShellModeLabels: Readonly<Record<ExperienceMode, string>> = {

@@ -71,18 +71,16 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     const rolePage = await context.newPage();
     await login(rolePage, accounts.memberManager.email);
     await expectShell(rolePage, "社員模式");
-    const managementMode = rolePage.getByRole("navigation", { name: "切換工作模式" }).getByRole("link", { name: "社務管理模式" });
-    await managementMode.focus();
+    // One person, one club: no mode switcher or club picker for a
+    // non-platform manager of their own single club. They reach management
+    // through the inline "社團管理" link in the main nav instead.
+    await expect(rolePage.getByRole("navigation", { name: "切換工作模式" })).toHaveCount(0);
+    await expect(rolePage.getByLabel("切換作用扶輪社")).toHaveCount(0);
+    const manageLink = rolePage.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "社團管理" });
+    await manageLink.focus();
     await rolePage.keyboard.press("Enter");
     await expect(rolePage).toHaveURL(/mode=management/u);
     await expectShell(rolePage, "社務管理模式");
-    await rolePage.getByLabel("切換作用扶輪社").focus();
-    await rolePage.keyboard.press("Enter");
-    await expect(rolePage.getByRole("region", { name: "我的扶輪社" })).toBeVisible();
-    await expect(rolePage.getByRole("region", { name: "其他可管理扶輪社" })).toHaveCount(0);
-
-    await rolePage.getByRole("navigation", { name: "切換工作模式" }).getByRole("link", { name: "社員模式" }).click();
-    await expectShell(rolePage, "社員模式");
     await context.close();
 
     const managementContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });

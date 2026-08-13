@@ -218,9 +218,15 @@ export function RoleAwareAppShell({
           </span>
         </Link>
         <p className={styles.modeName}>{roleShellModeLabels[mode]}</p>
-        <MobileShellContext context={context} mode={mode} />
-        <ModeSwitcher context={context} mode={mode} />
-        <ClubSwitcher context={context} mode={mode} />
+        {context.hasPlatformAccess && <>
+          <MobileShellContext context={context} mode={mode} />
+          <ModeSwitcher context={context} mode={mode} />
+        </>}
+        {/* A single club is the common case (one person, one club) and needs
+            no picker; this still shows for anyone who genuinely has more
+            than one — a platform admin, or an operator running several
+            clubs — regardless of platform access. */}
+        {clubsForExperienceMode(context, mode).length > 1 && <ClubSwitcher context={context} mode={mode} />}
       </header>
       <ShellNavigation items={navigation} pathname={pathname} />
       <AccountMenu identity={identity} mode={mode} />
