@@ -41,6 +41,7 @@ const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefin
   ],
   management: [
     { id: "overview", label: "社務總覽", mobileLabel: "總覽", icon: "⌂", href: () => "/dashboard" },
+    { id: "events", label: "活動", mobileLabel: "活動", icon: "◇", href: () => "/events" },
     {
       id: "members",
       label: "社員管理",

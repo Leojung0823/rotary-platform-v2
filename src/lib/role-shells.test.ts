@@ -77,6 +77,7 @@ describe("role-aware navigation", () => {
     ]);
     expect(roleShellNavigation(projected, "management").map((item) => item.href)).toEqual([
       "/dashboard?mode=management",
+      "/events?mode=management",
       `/clubs/${memberClub.club_id}/members?mode=management`,
       `/clubs/${memberClub.club_id}/invitations?mode=management`,
       `/clubs/${memberClub.club_id}/identity?mode=management`,
