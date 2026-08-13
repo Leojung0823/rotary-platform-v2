@@ -74,10 +74,11 @@
 
 @media (max-width: 840px) {
   .shell { display: block; }
-  .rail { position: static; height: auto; min-height: 68px; display: block; padding: 13px 16px; }
+  .rail { position: relative; height: auto; min-height: 0; display: block; padding: 10px 52px 10px 16px; }
   .header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
-  .brand { flex: 1; font-size: 14px; }
-  .brandMark { width: 34px; height: 34px; font-size: 20px; }
+  .brand { flex: 0 1 auto; min-width: 0; font-size: 13px; }
+  .brand small { display: none; }
+  .brandMark { width: 30px; height: 30px; font-size: 18px; }
   .modeName { display: none; }
   .mobileContext { flex: 1 1 calc(100% - 50px); display: block; overflow: hidden; margin: 0; color: #bdd4df; font-size: 11px; font-weight: 750; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
   .modeSwitcher { flex: 1 0 100%; order: 3; }
@@ -88,7 +89,7 @@
   .clubSwitcher { display: block; }
   .clubPanel { position: fixed; z-index: 40; top: auto; right: 12px; bottom: calc(78px + env(safe-area-inset-bottom)); left: 12px; width: auto; max-height: min(420px, 62vh); }
   .scopeLabel { display: block; }
-  .accountMenu { margin: 0; padding: 0; border: 0; }
+  .accountMenu { position: absolute; top: 10px; right: 16px; margin: 0; padding: 0; border: 0; }
   .accountSummary { display: none; }
   .accountPanel { position: fixed; z-index: 40; top: 66px; right: 12px; bottom: auto; left: auto; }
   .navigation { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; margin: 0; padding: 8px max(8px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right)); border-top: 1px solid var(--line); background: rgba(255,255,255,.96); box-shadow: 0 -8px 24px rgba(18,48,74,.08); backdrop-filter: blur(12px); }

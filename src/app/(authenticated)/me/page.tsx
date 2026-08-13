@@ -17,6 +17,7 @@ type Center = {
     email: string | null;
     birth_date: string | null;
     avatar_url: string | null;
+    occupation: string | null;
     profile_completed_at: string | null;
   };
   line_identity: {
@@ -109,6 +110,7 @@ export default async function IdentityCenterPage({
           <Field label="手機"><Input name="phone" maxLength={40} defaultValue={center.profile.phone ?? ""} autoComplete="tel" inputMode="tel" /></Field>
           <Field label="Email"><Input name="email" type="email" maxLength={320} defaultValue={center.profile.email ?? ""} autoComplete="email" /></Field>
           <Field label="生日"><Input name="birthDate" type="date" defaultValue={center.profile.birth_date ?? ""} /></Field>
+          <Field label="職業" hint="會顯示在社員名冊卡片上"><Input name="occupation" maxLength={100} defaultValue={center.profile.occupation ?? ""} /></Field>
           <Button type="submit">儲存基本資料</Button>
         </form>
       </Card>

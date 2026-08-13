@@ -16,12 +16,15 @@ export async function updateMyProfileAction(formData: FormData) {
     redirect(errorPath(error instanceof Error ? error.message : "unexpected"));
   }
 
+  const occupation = String(formData.get("occupation") ?? "").trim().slice(0, 100);
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_my_profile", {
     p_name: input.name,
     p_phone: input.phone || null,
     p_email: input.email || null,
     p_birth_date: input.birthDate,
+    p_occupation: occupation || null,
   });
 
   if (error) redirect(errorPath(mapDatabaseError(error.message)));

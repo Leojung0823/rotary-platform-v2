@@ -55,12 +55,12 @@ export default async function MemberDirectoryPage({
     </header>
 
     <form className="inline-form" action="/directory">
-      <label className="field">
+      {clubs.length > 1 && <label className="field">
         <span className="label">扶輪社</span>
         <select className="input" name="clubId" defaultValue={selectedClub.club_id}>
           {clubs.map((club) => <option key={club.club_id} value={club.club_id}>{club.club_name}</option>)}
         </select>
-      </label>
+      </label>}
       <label className="field">
         <span className="label">搜尋社員姓名</span>
         <input className="input" name="q" defaultValue={query.q ?? ""} maxLength={80} placeholder="輸入姓名" />
@@ -88,7 +88,7 @@ export default async function MemberDirectoryPage({
                 <strong>{member.display_name}</strong>
                 <span className="directory-role-badge">{directoryRoleLabel(member.role_key)}{member.is_self ? " · 我" : ""}</span>
               </div>
-              <div className="directory-card-meta">{member.email ?? member.phone ?? "聯絡資料未公開"}</div>
+              <div className="directory-card-meta">{member.occupation ?? "未填寫"}</div>
             </div>
             <span className="directory-chevron" aria-hidden="true">›</span>
           </Link>)}

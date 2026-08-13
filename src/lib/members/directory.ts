@@ -9,6 +9,7 @@ export type DirectoryMember = {
   display_name: string;
   avatar_url: string | null;
   role_key: "president" | "secretary" | "finance" | "member";
+  occupation: string | null;
   email: string | null;
   phone: string | null;
   birth_year: number | null;
@@ -56,6 +57,7 @@ export function parseDirectoryMembers(value: unknown): DirectoryMember[] {
       || typeof item.display_name !== "string"
       || !roleKeys.has(item.role_key as DirectoryMember["role_key"])
       || (item.avatar_url !== null && typeof item.avatar_url !== "string")
+      || (item.occupation !== null && typeof item.occupation !== "string")
       || (item.email !== null && typeof item.email !== "string")
       || (item.phone !== null && typeof item.phone !== "string")
       || (item.birth_year !== null && (!Number.isInteger(item.birth_year) || Number(item.birth_year) < 1900 || Number(item.birth_year) > 2200))
@@ -66,6 +68,7 @@ export function parseDirectoryMembers(value: unknown): DirectoryMember[] {
       display_name: item.display_name,
       avatar_url: item.avatar_url,
       role_key: item.role_key as DirectoryMember["role_key"],
+      occupation: item.occupation,
       email: item.email,
       phone: item.phone,
       birth_year: item.birth_year === null ? null : Number(item.birth_year),
