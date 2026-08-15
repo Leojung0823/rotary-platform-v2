@@ -65,8 +65,8 @@ async function recordResolutionTelemetry({
   startedAt: number;
   resolution: ExperienceContextResolution;
 }) {
-  const event = experienceContextTelemetryEvent(resolution, performance.now() - startedAt);
   try {
+    const event = experienceContextTelemetryEvent(resolution, performance.now() - startedAt);
     await recordAuthenticatedProductTelemetry(event);
   } catch {
     // Telemetry cannot change a routing or authorization outcome.
@@ -89,6 +89,8 @@ export const resolveExperienceContext = cache(async function resolveExperienceCo
     resolution = { ok: false, reason: "unexpected" };
   }
 
-  await recordResolutionTelemetry({ startedAt, resolution });
+  // Diagnostics are not part of the page's critical path. Persist them in the
+  // background so a slow telemetry sink cannot delay the member's homepage.
+  void recordResolutionTelemetry({ startedAt, resolution });
   return resolution;
 });

@@ -29,4 +29,12 @@ describe("performance-first navigation boundaries", () => {
     const auth = source("src/lib/auth.ts");
     expect(auth).toContain("export const requireIdentity = cache(resolveIdentity)");
   });
+
+  it("does not wait for diagnostic writes before rendering the homepage", () => {
+    const context = source("src/lib/experience-context.server.ts");
+    const memberHome = source("src/lib/member-home.server.ts");
+
+    expect(context).toContain("void recordResolutionTelemetry");
+    expect(memberHome).toContain("void recordProjectionTelemetry");
+  });
 });

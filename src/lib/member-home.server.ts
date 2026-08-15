@@ -58,6 +58,8 @@ export const resolveMemberHomeProjection = cache(async function resolveMemberHom
     resolution = { ok: false, reason: "unexpected" };
   }
 
-  await recordProjectionTelemetry(resolution, startedAt);
+  // Diagnostics are not part of the page's critical path. Persist them in the
+  // background so a slow telemetry sink cannot delay the member's homepage.
+  void recordProjectionTelemetry(resolution, startedAt);
   return resolution;
 });

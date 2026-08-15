@@ -180,7 +180,7 @@ export default async function DashboardPage({
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
   ]);
   if (!evaluation.enabled) {
-    await recordRoleContextFlagFailure(evaluation);
+    void recordRoleContextFlagFailure(evaluation);
     return <LegacyDashboard identity={identity} />;
   }
 
@@ -208,7 +208,7 @@ export default async function DashboardPage({
         subjectUuid: identity.id,
       });
       if (!memberHomeEvaluation.enabled) {
-        await recordMemberHomeFlagFailure(memberHomeEvaluation);
+        void recordMemberHomeFlagFailure(memberHomeEvaluation);
       } else {
         const activeClub = activeClubForMode(context.context, "member");
         if (activeClub) return <MemberHome identity={identity} activeClubId={activeClub.clubId} />;
