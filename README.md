@@ -53,6 +53,16 @@ npm run dev
 
 Bootstrap 預設只接受 `localhost`、`127.0.0.1` 或 `::1` 的 Supabase URL。日常開發與本地驗證不得使用非本機 override。
 
+### 本機資料庫 reset 後
+
+`npx supabase db reset --local` 或 `npm run verify:db` 會清除本機 Auth、社員與測試資料。完成 reset 後，重新建立本機平台管理員：
+
+```bash
+node --env-file=.env.local scripts/bootstrap-superadmin.mjs
+```
+
+若要重跑本機身份流程，再執行 `npm run verify:auth`。這些指令只允許指向 local Supabase；不要把 `.env.local` 或任何 credential 帶到 staging／production。
+
 ## 身份與 LINE 本機垂直流程
 
 1. 以 bootstrap 建立的帳號登入 `/login`。

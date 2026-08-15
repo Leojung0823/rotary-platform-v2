@@ -39,6 +39,15 @@ describe("deployment environment validation", () => {
     });
   });
 
+  it("records staging mock LINE OA as a non-blocking deployment warning", () => {
+    const report = inspectDeploymentEnvironment({
+      ...stagingEnvironment,
+      LINE_OA_MODE: "mock",
+    });
+    expect(report.ok).toBe(true);
+    expect(report.warnings).toContain("STAGING_LINE_OA_IS_MOCK");
+  });
+
   it("rejects public staging over HTTP or with a local Supabase URL", () => {
     const report = inspectDeploymentEnvironment({
       ...stagingEnvironment,
