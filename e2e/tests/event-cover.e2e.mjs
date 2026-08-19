@@ -53,7 +53,18 @@ test("a manager uploads a cover, and the browser shrinks it first", async ({ pag
 
   await page.reload();
   const cover = page.locator("img.event-cover").first();
+  await expect(cover).toBeAttached();
+  // The card carries loading="lazy", so the picture only fetches once it is
+  // near the viewport -- exactly as it behaves for a member scrolling the list.
+  await cover.scrollIntoViewIfNeeded();
   await expect(cover).toBeVisible();
+
+  // Asserting on the decoded pixels rather than mere visibility: it proves the
+  // signed link actually resolved, and it is the resize itself under test.
+  await expect.poll(
+    () => cover.evaluate((image) => image.naturalWidth),
+    { timeout: 15_000 },
+  ).toBeGreaterThan(0);
 
   const painted = await cover.evaluate((image) => ({
     width: image.naturalWidth,
