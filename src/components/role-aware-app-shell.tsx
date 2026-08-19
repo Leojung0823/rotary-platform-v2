@@ -163,7 +163,11 @@ function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationI
               <span className={styles.desktopLabel}>{item.label}</span>
               <span className={styles.mobileLabel}>{item.mobileLabel}</span>
             </a>
-          : <Link href={item.href} aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}>
+          : <Link
+              href={item.href}
+              prefetch={false}
+              aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}
+            >
               <span className={styles.navigationIcon} aria-hidden="true">{item.icon}</span>
               <span className={styles.desktopLabel}>{item.label}</span>
               <span className={styles.mobileLabel}>{item.mobileLabel}</span>
@@ -184,7 +188,7 @@ function AccountMenu({ identity, mode }: { identity: Identity; mode: ExperienceM
     </summary>
     <div className={styles.accountPanel}>
       {displayableEmail(identity) && <p>{displayableEmail(identity)}</p>}
-      <Link href={`/me?mode=${encodeURIComponent(mode)}`}>我的帳號</Link>
+      <Link href={`/me?mode=${encodeURIComponent(mode)}`} prefetch={false}>我的帳號</Link>
       <form action="/api/auth/line/logout?redirect=1" method="post">
         <button type="submit">登出</button>
       </form>
@@ -216,7 +220,7 @@ export function RoleAwareAppShell({
   return <div className={`${styles.shell} ${styles[`shell${mode[0].toUpperCase()}${mode.slice(1)}`]}`}>
     <aside className={styles.rail}>
       <header className={styles.header}>
-        <Link href={modeHref(mode)} className={styles.brand}>
+        <Link href={modeHref(mode)} prefetch={false} className={styles.brand}>
           <span className={styles.brandMark} aria-hidden="true">R</span>
           <span>
             扶輪管理平台

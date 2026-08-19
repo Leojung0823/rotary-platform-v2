@@ -39,6 +39,13 @@ describe("performance-first navigation boundaries", () => {
     expect(memberHome).toContain("<MemberHomeContent activeClubId={activeClub.clubId} />");
   });
 
+  it("does not eagerly prefetch authenticated homepage destinations", () => {
+    const shell = source("src/components/role-aware-app-shell.tsx");
+    const memberHome = source("src/components/member-home.tsx");
+    expect(shell.match(/<Link/gu)?.length).toBe(shell.match(/prefetch=\{false\}/gu)?.length);
+    expect(memberHome.match(/<Link/gu)?.length).toBe(memberHome.match(/prefetch=\{false\}/gu)?.length);
+  });
+
   it("does not wait for diagnostic writes before rendering the homepage", () => {
     const context = source("src/lib/experience-context.server.ts");
     const memberHome = source("src/lib/member-home.server.ts");
