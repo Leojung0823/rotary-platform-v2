@@ -27,7 +27,16 @@ describe("performance-first navigation boundaries", () => {
 
   it("deduplicates identity resolution inside one server render", () => {
     const auth = source("src/lib/auth.ts");
+    const supabase = source("src/lib/supabase/server.ts");
     expect(auth).toContain("export const requireIdentity = cache(resolveIdentity)");
+    expect(supabase).toContain("export const createClient = cache(createClientForRequest)");
+    expect(supabase).not.toContain("unstable_cache");
+  });
+
+  it("streams member-home activity after the verified account and club heading", () => {
+    const memberHome = source("src/components/member-home.tsx");
+    expect(memberHome).toContain("<Suspense fallback={<MemberHomeContentLoading />}>");
+    expect(memberHome).toContain("<MemberHomeContent activeClubId={activeClub.clubId} />");
   });
 
   it("does not wait for diagnostic writes before rendering the homepage", () => {

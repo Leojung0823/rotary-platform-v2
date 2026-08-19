@@ -175,23 +175,24 @@ export default async function DashboardPage({
   searchParams: Promise<{ mode?: string }>;
 }) {
   const identity = await requireIdentity();
-  const [evaluation, roleShellsEvaluation] = await Promise.all([
+  const [evaluation, roleShellsEvaluation, memberHomeEvaluation] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_context_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "member_home_v2", subjectUuid: identity.id }),
   ]);
   if (!evaluation.enabled) {
     void recordRoleContextFlagFailure(evaluation);
     return <LegacyDashboard identity={identity} />;
   }
 
-  const cookieStore = await cookies();
+  const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
   const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
   const context = await resolveExperienceContext(preferredClubId);
   if (!context.ok && context.reason === "authorization_denied") redirect("/access-denied");
   const resolved = resolveDashboardRoleContext({
     roleContextEnabled: true,
     context: context.ok ? context.context : null,
-    requestedMode: (await searchParams).mode,
+    requestedMode: query.mode,
   });
   if (resolved.kind === "legacy") {
     return <LegacyDashboard identity={identity} contextUnavailable={resolved.contextUnavailable} />;
@@ -203,15 +204,11 @@ export default async function DashboardPage({
 
   if (roleShellsEvaluation.enabled) {
     if (resolved.resolution.mode === "member") {
-      const memberHomeEvaluation = await evaluateCurrentFeatureFlag({
-        key: "member_home_v2",
-        subjectUuid: identity.id,
-      });
       if (!memberHomeEvaluation.enabled) {
         void recordMemberHomeFlagFailure(memberHomeEvaluation);
       } else {
         const activeClub = activeClubForMode(context.context, "member");
-        if (activeClub) return <MemberHome identity={identity} activeClubId={activeClub.clubId} />;
+        if (activeClub) return <MemberHome identity={identity} activeClub={activeClub} />;
       }
     }
     return <RoleAwareDashboardLanding
