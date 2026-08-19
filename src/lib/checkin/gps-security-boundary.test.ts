@@ -54,7 +54,7 @@ describe("GPS check-in application boundary", () => {
 });
 
 describe("GPS check-in database boundary", () => {
-  const gps = migration("20260819000100_gps_checkin_v2.sql");
+  const gps = migration("20260819000200_gps_checkin_v2.sql");
 
   it("stores a venue but has no column able to hold a member position", () => {
     expect(gps).toContain("add column venue_latitude");
