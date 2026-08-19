@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 const password = process.env.E2E_ROLE_PASSWORD;
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const memberEmail = "e2e-shell-ordinary@example.test";
-// Checking in mutates attendance for the whole run, so the flow that does it
-// is pinned to one project; the rest only assert the panel renders responsively.
+// Checking in mutates attendance for the whole run, so the flows that do it are
+// pinned to one project; the rest only assert the panel renders responsively.
 const mutatingProject = "location-checkin-1440";
 
 // Matches the venue on the local fixture event (本機定位簽到例會).
@@ -18,10 +18,10 @@ function requireCredentials() {
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for location check-in browser smoke tests.");
 }
 
-async function login(page, email) {
+async function login(page) {
   requireCredentials();
   await page.goto(new URL("/login", baseURL).toString());
-  await page.getByLabel("電子郵件").fill(email);
+  await page.getByLabel("電子郵件").fill(memberEmail);
   await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/dashboard$/u);
@@ -35,66 +35,63 @@ async function expectNoHorizontalOverflow(page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
-async function locatedContext(browser, viewport, geolocation) {
-  const context = await browser.newContext({ viewport, geolocation });
-  await context.grantPermissions(["geolocation"], { origin: baseURL });
-  return context;
+// Each scenario needs its own signed-in context, and one login plus navigation
+// is most of a test's time budget on CI -- so they stay separate tests rather
+// than sharing one that would run three logins back to back.
+async function openCheckinPage(browser, viewport, geolocation) {
+  const context = await browser.newContext(
+    geolocation ? { viewport, geolocation } : { viewport, permissions: [] },
+  );
+  if (geolocation) await context.grantPermissions(["geolocation"], { origin: baseURL });
+  const page = await context.newPage();
+  await login(page);
+  await page.goto(new URL("/events/checkin", baseURL).toString());
+  await expect(page.getByRole("heading", { name: "用定位簽到" })).toBeVisible();
+  return { context, page };
 }
 
-test("location check-in accepts a member at the venue and refuses one who is not", async ({ browser }, testInfo) => {
-  requireCredentials();
+test("the location panel renders and explains a denied permission", async ({ browser }, testInfo) => {
   const viewport = testInfo.project.use.viewport ?? { width: 1440, height: 900 };
+  const { context, page } = await openCheckinPage(browser, viewport, null);
+  await expectNoHorizontalOverflow(page);
 
-  // Denied permission must degrade to an explanation, never a silent failure.
-  const deniedContext = await browser.newContext({ viewport, permissions: [] });
-  const deniedPage = await deniedContext.newPage();
-  await login(deniedPage, memberEmail);
-  await deniedPage.goto(new URL("/events/checkin", baseURL).toString());
-  await expect(deniedPage.getByRole("heading", { name: "用定位簽到" })).toBeVisible();
-  await expectNoHorizontalOverflow(deniedPage);
-
-  const deniedButton = deniedPage.getByRole("button", { name: "用定位簽到" });
-  if (await deniedButton.count()) {
-    await deniedButton.click();
-    await expect(deniedPage.getByText("定位權限未允許。", { exact: false })).toBeVisible();
-    await expectNoHorizontalOverflow(deniedPage);
+  const button = page.getByRole("button", { name: "用定位簽到" });
+  if (await button.count()) {
+    await button.click();
+    await expect(page.getByText("定位權限未允許。", { exact: false })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
   }
-  await deniedContext.close();
+  await context.close();
+});
 
-  if (testInfo.project.name !== mutatingProject) return;
+test("a member away from the venue is refused without being told the distance", async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== mutatingProject, "One project drives the server-side geofence decision.");
+  const viewport = testInfo.project.use.viewport ?? { width: 1440, height: 900 };
+  const { context, page } = await openCheckinPage(browser, viewport, farAway);
 
-  // Outside the radius: refused, and the refusal must not disclose a distance.
-  const farContext = await locatedContext(browser, viewport, farAway);
-  const farPage = await farContext.newPage();
-  await login(farPage, memberEmail);
-  await farPage.goto(new URL("/events/checkin", baseURL).toString());
-  await farPage.getByRole("button", { name: "用定位簽到" }).click();
-  await expect(farPage.getByText("您目前的位置不在活動場地範圍內。", { exact: false })).toBeVisible();
-  await expect(farPage.locator("body")).not.toContainText("公尺外");
-  await farContext.close();
+  await page.getByRole("button", { name: "用定位簽到" }).click();
+  await expect(page.getByText("您目前的位置不在活動場地範圍內。", { exact: false })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("公尺外");
+  await context.close();
+});
 
-  // At the venue: check-in succeeds, and repeating it stays idempotent.
-  const atVenueContext = await locatedContext(browser, viewport, atVenue);
-  const atVenuePage = await atVenueContext.newPage();
-  await login(atVenuePage, memberEmail);
-  await atVenuePage.goto(new URL("/events/checkin", baseURL).toString());
-  await atVenuePage.getByRole("button", { name: "用定位簽到" }).click();
-  await expect(atVenuePage.getByText("簽到成功", { exact: false })).toBeVisible();
-  await expectNoHorizontalOverflow(atVenuePage);
+test("a member at the venue checks in, and repeating it stays idempotent", async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== mutatingProject, "Checking in mutates attendance for the whole run.");
+  const viewport = testInfo.project.use.viewport ?? { width: 1440, height: 900 };
+  const { context, page } = await openCheckinPage(browser, viewport, atVenue);
 
-  await atVenuePage.reload();
-  await expect(atVenuePage.getByText("已簽到", { exact: true })).toBeVisible();
-  await atVenueContext.close();
+  await page.getByRole("button", { name: "用定位簽到" }).click();
+  await expect(page.getByText("簽到成功", { exact: false })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.reload();
+  await expect(page.getByText("已簽到", { exact: true })).toBeVisible();
+  await context.close();
 });
 
 test("the venue coordinate never reaches the member's browser", async ({ browser }, testInfo) => {
-  requireCredentials();
   const viewport = testInfo.project.use.viewport ?? { width: 1440, height: 900 };
-  const context = await locatedContext(browser, viewport, atVenue);
-  const page = await context.newPage();
-  await login(page, memberEmail);
-  await page.goto(new URL("/events/checkin", baseURL).toString());
-  await expect(page.getByRole("heading", { name: "用定位簽到" })).toBeVisible();
+  const { context, page } = await openCheckinPage(browser, viewport, atVenue);
 
   // The page tells the member which events are eligible, but the geofence
   // centre stays server-side so it cannot be read off and spoofed against.
