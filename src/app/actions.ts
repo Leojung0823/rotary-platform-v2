@@ -11,6 +11,7 @@ import {
   parseMemberInput,
   parseNewPassword,
   parseOperatorInput,
+  isValidClubName,
 } from "@/lib/validation";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -78,9 +79,12 @@ export async function createClubAction(formData: FormData) {
 
 export async function updateClubNameAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
-  const returnPath = `/platform/clubs/${clubId}`;
+  const managementReturnPath = `/clubs/${clubId}/identity`;
+  const returnPath = String(formData.get("returnPath") ?? "") === managementReturnPath
+    ? managementReturnPath
+    : `/platform/clubs/${clubId}`;
   const clubName = String(formData.get("clubName") ?? "").trim();
-  if (clubName.length < 2 || clubName.length > 100) redirect(errorPath(returnPath, "invalid_club_name"));
+  if (!isValidClubName(clubName)) redirect(errorPath(returnPath, "invalid_club_name"));
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_club_name", { p_club_id: clubId, p_club_name: clubName });

@@ -11,6 +11,11 @@ export type MemberInput = { name: string; phone: string; email: string; birthDat
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clubCodePattern = /^[A-Za-z0-9][A-Za-z0-9_-]{1,31}$/;
+const clubNameControlCharacterPattern = /[\u0000-\u001F\u007F-\u009F]/u;
+
+export function isValidClubName(value: string) {
+  return value.length >= 2 && value.length <= 100 && !clubNameControlCharacterPattern.test(value);
+}
 
 export function parseClubInput(formData: FormData): ClubInput {
   const input = {
@@ -22,7 +27,7 @@ export function parseClubInput(formData: FormData): ClubInput {
   };
   const operatorPasswordConfirmation = String(formData.get("operatorPasswordConfirmation") ?? "");
   if (!clubCodePattern.test(input.clubCode)) throw new Error("invalid_club_code");
-  if (input.clubName.length < 2 || input.clubName.length > 100) throw new Error("invalid_club_name");
+  if (!isValidClubName(input.clubName)) throw new Error("invalid_club_name");
   if (!emailPattern.test(input.operatorEmail)) throw new Error("invalid_email");
   if (input.operatorName.length < 2 || input.operatorName.length > 80) throw new Error("invalid_name");
   if (input.operatorPassword.length < 12 || input.operatorPassword !== operatorPasswordConfirmation) {
@@ -103,6 +108,7 @@ export function parseNewPassword(formData: FormData) {
 }
 
 export function mapDatabaseError(message: string): string {
+  if (message.includes("invalid_club_name")) return "invalid_club_name";
   if (message.includes("last_active_superadmin")) return "last_superadmin";
   if (message.includes("shared_identity") || message.includes("cross_club_identity")) return "shared_identity";
   if (message.includes("self_account_status") || message.includes("self_membership_suspend")) return "self_status_change";
