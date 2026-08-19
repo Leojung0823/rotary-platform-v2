@@ -1,0 +1,31 @@
+.report { display: grid; gap: 2.25rem; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.metrics > div { display: grid; gap: 0.35rem; padding: 1.2rem; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 16px; background: #fff; }
+.metrics span, .metrics small { color: #64748b; }
+.metrics strong { font-size: clamp(1.35rem, 3vw, 2rem); overflow-wrap: anywhere; }
+.sectionHeading { display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 1rem; }
+.sectionHeading h2 { margin: 0; }
+.sectionHeading > span { color: #64748b; }
+.eyebrow { margin: 0 0 0.3rem; color: #8a6618; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; }
+.tableWrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; }
+.tableWrap table { width: 100%; min-width: 720px; border-collapse: collapse; }
+.tableWrap th, .tableWrap td { padding: 0.85rem 1rem; border-bottom: 1px solid #e2e8f0; text-align: right; vertical-align: middle; }
+.tableWrap th { background: #f8fafc; color: #475569; font-size: 0.8rem; }
+.tableWrap th:first-child, .tableWrap td:first-child { text-align: left; }
+.tableWrap td small { display: block; margin-top: 0.2rem; color: #64748b; }
+.monthBar { position: relative; display: block; width: 120px; height: 5px; margin-top: 0.5rem; overflow: hidden; border-radius: 999px; background: #e2e8f0; }
+.monthBar::after { position: absolute; inset: 0 auto 0 0; width: var(--bar-width); border-radius: inherit; background: #c49a2c; content: ""; }
+.received { color: #166534; font-weight: 750; }
+.outstanding { color: #b45309; font-weight: 750; }
+.statuses { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.3rem; }
+.statuses small { display: inline-flex !important; min-height: 28px; align-items: center; margin: 0 !important; border-radius: 999px; padding: 0.2rem 0.55rem; font-weight: 750; }
+.paid { background: #ecfdf5; color: #166534 !important; }
+.partial { background: #fff7ed; color: #9a3412 !important; }
+.unpaid { background: #fef2f2; color: #991b1b !important; }
+.empty { display: grid; gap: 0.35rem; justify-items: center; padding: 2.2rem 1rem; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; color: #64748b; text-align: center; }
+.empty strong { color: #1e293b; }
+
+@media (max-width: 760px) {
+  .metrics { grid-template-columns: 1fr; }
+  .sectionHeading { align-items: flex-start; }
+}

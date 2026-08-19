@@ -13,7 +13,7 @@ function assertExactSet(actual: readonly string[], expected: readonly string[]) 
 }
 
 const featureFlagMigration = readFileSync(
-  resolve(process.cwd(), "supabase/migrations/20260806000100_product_rollout_feature_flags.sql"),
+  resolve(process.cwd(), "supabase/migrations/20260820000300_blessing_iou_rotary_year_reporting.sql"),
   "utf8",
 );
 const telemetryMigration = readFileSync(
@@ -24,7 +24,7 @@ const telemetryMigration = readFileSync(
 describe("product rollout TypeScript and database contracts", () => {
   it("keeps the TypeScript feature-key union exactly equal to the database constraint", () => {
     const featureConstraint = featureFlagMigration.match(
-      /feature_key text primary key check \(feature_key in \(([\s\S]+?)\)\s*\)/,
+      /add constraint platform_feature_flags_feature_key_check check \(feature_key in \(([\s\S]+?)\)\);/,
     );
     expect(featureConstraint?.[1]).toBeDefined();
     assertExactSet(quotedValues(featureConstraint?.[1] ?? ""), featureFlagKeys);

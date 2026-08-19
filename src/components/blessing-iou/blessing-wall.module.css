@@ -1,0 +1,383 @@
+.wall {
+  display: grid;
+  gap: 2rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.composer,
+.entry,
+.empty,
+.message,
+.forbidden,
+.loadingCard {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+.composer {
+  padding: 1.4rem;
+  border-color: rgba(176, 133, 33, 0.35);
+  background: linear-gradient(145deg, #fffdf7 0%, #fff9e9 100%);
+}
+
+.composer h2,
+.listHeading h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.composer > div > p:last-child {
+  margin-bottom: 0;
+  color: #64748b;
+}
+
+.eyebrow {
+  margin: 0 0 0.3rem;
+  color: #8a6618;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.composer form,
+.editor,
+.fields {
+  display: grid;
+  gap: 1rem;
+}
+
+.composer form,
+.editor {
+  margin-top: 1.1rem;
+}
+
+.fields label:not(.privacyChoice) {
+  display: grid;
+  gap: 0.45rem;
+  color: #334155;
+  font-weight: 750;
+}
+
+.fields textarea,
+.fields input[type="number"] {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+}
+
+.fields textarea {
+  min-height: 112px;
+  resize: vertical;
+  padding: 0.85rem 1rem;
+  line-height: 1.65;
+}
+
+.fields textarea:focus,
+.fields input[type="number"]:focus {
+  outline: 3px solid rgba(176, 133, 33, 0.18);
+  border-color: #9b741c;
+}
+
+.fields label > small {
+  justify-self: end;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.amountInput {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.amountInput b {
+  padding: 0 0.85rem;
+  color: #475569;
+}
+
+.amountInput input[type="number"] {
+  min-height: 50px;
+  border: 0;
+  border-left: 1px solid #cbd5e1;
+  border-radius: 0;
+  padding: 0.75rem;
+}
+
+.privacyChoice {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  min-height: 52px;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d9c58f;
+  border-radius: 12px;
+  background: #fffdf7;
+  cursor: pointer;
+}
+
+.privacyChoice input {
+  width: 22px;
+  height: 22px;
+  margin: 0.1rem 0 0;
+  accent-color: #8a6618;
+}
+
+.privacyChoice span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.privacyChoice small,
+.privacyNotice {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.privacyNotice {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #f1f5f9;
+}
+
+.formActions,
+.editorActions,
+.listHeading,
+.entry header,
+.entry footer {
+  display: flex;
+  align-items: center;
+}
+
+.formActions,
+.editorActions {
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.formActions button,
+.editorActions button,
+.secondaryButton,
+.textButton,
+.dangerButton {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 1.1rem;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+}
+
+.formActions button,
+.editorActions button:not(.secondaryButton) {
+  background: #8a6618;
+  color: #fff;
+}
+
+.formActions button:disabled,
+.editorActions button:disabled,
+.secondaryButton:disabled,
+.textButton:disabled,
+.dangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.overLimit {
+  color: #b91c1c !important;
+  font-weight: 750 !important;
+}
+
+.message,
+.forbidden {
+  padding: 1rem 1.2rem;
+}
+
+.message {
+  border-color: rgba(71, 85, 105, 0.2);
+  background: #f8fafc;
+  color: #334155;
+}
+
+.forbidden {
+  border-color: rgba(180, 83, 9, 0.24);
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.listHeading {
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.secondaryButton {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+}
+
+.list {
+  display: grid;
+  gap: 1rem;
+}
+
+.entry,
+.loadingCard {
+  padding: 1.25rem;
+}
+
+.loadingCard {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.entry header {
+  gap: 0.8rem;
+}
+
+.entry header > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.entry header span {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.avatar {
+  position: relative;
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #f5e8bd;
+  color: #6f5113;
+  font-weight: 800;
+}
+
+.avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content {
+  margin: 1rem 0;
+  color: #1e293b;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.publicAmount,
+.privateAmount,
+.blessingOnly {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 34px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.publicAmount {
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.privateAmount {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.blessingOnly {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.entry footer {
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-top: 1rem;
+}
+
+.textButton,
+.dangerButton {
+  padding: 0.45rem 0.8rem;
+  background: transparent;
+}
+
+.textButton {
+  color: #1d4ed8;
+}
+
+.dangerButton {
+  color: #b91c1c;
+}
+
+.empty {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  padding: 2.5rem 1rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.empty strong {
+  color: #1e293b;
+}
+
+.loadMore {
+  display: flex;
+  justify-content: center;
+  padding-top: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .wall {
+    gap: 1.25rem;
+  }
+
+  .composer,
+  .entry,
+  .loadingCard {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
+  .listHeading {
+    align-items: flex-end;
+  }
+
+  .formActions button {
+    width: 100%;
+  }
+
+  .editorActions {
+    flex-wrap: wrap;
+  }
+}

@@ -99,6 +99,7 @@ export function resolveRoleShell({
 export function roleShellNavigation(
   context: ExperienceContext,
   mode: ExperienceMode,
+  { blessingIouEnabled = false }: { blessingIouEnabled?: boolean } = {},
 ): readonly ShellNavigationItem[] {
   const items: ShellNavigationItem[] = navigationByMode[mode].flatMap((definition) => {
     const href = definition.href(context, mode);
@@ -110,6 +111,25 @@ export function roleShellNavigation(
       href: withModePreference(href, mode),
     }] : [];
   });
+
+  if (mode === "management" && blessingIouEnabled) {
+    const managedClub = activeClubForMode(context, "management");
+    if (managedClub) {
+      const clubSettingsIndex = items.findIndex((item) => item.id === "club-settings");
+      const blessingIouItem: ShellNavigationItem = {
+        id: "blessing-iou",
+        label: "祝福 IOU",
+        mobileLabel: "IOU",
+        icon: "♡",
+        href: withModePreference(
+          `/clubs/${encodeURIComponent(managedClub.clubId)}/blessing-iou`,
+          "management",
+        ),
+      };
+      if (clubSettingsIndex === -1) items.push(blessingIouItem);
+      else items.splice(clubSettingsIndex, 0, blessingIouItem);
+    }
+  }
 
   // Club-level managers (president/secretary/operator) get a direct link
   // into their own club's management pages inline in the member nav,

@@ -34,6 +34,9 @@ The only accepted keys are:
 - `checkin_gps_v2`
 - `attendance_ui_v2`
 - `announcements_v09`
+- `blessing_iou_v1`
+- `blessing_iou_collections_v1`
+- `blessing_iou_reporting_v1`
 
 The evaluator has this fixed order:
 
@@ -47,7 +50,7 @@ The evaluator has this fixed order:
 
 Malformed kill-switch values, invalid records, invalid environment data, database-read errors, absent pepper, absent subject, and HMAC errors all fail closed. `0` enables nobody and `100` enables every otherwise eligible subject. Failure selects the existing legacy path through `selectFeaturePath`; it does not turn a safe legacy page into a 500.
 
-`FORCE_LEGACY_ROLE_SHELLS`, `FORCE_LEGACY_MEMBER_HOME`, and `DISABLE_GPS_CHECKIN` are each read directly from server runtime configuration on every evaluation. They only force the legacy path and can never enable a database-disabled feature. Flag-record reads use React request-scoped memoization only: there is no cross-request TTL, so a kill switch has no cache propagation delay and a flag mutation is visible on the next request.
+`FORCE_LEGACY_ROLE_SHELLS`, `FORCE_LEGACY_MEMBER_HOME`, `DISABLE_GPS_CHECKIN`, `DISABLE_BLESSING_IOU`, `DISABLE_BLESSING_IOU_COLLECTIONS`, and `DISABLE_BLESSING_IOU_REPORTING` are each read directly from server runtime configuration on every evaluation. They only force the legacy path and can never enable a database-disabled feature. Flag-record reads use React request-scoped memoization only: there is no cross-request TTL, so a kill switch has no cache propagation delay and a flag mutation is visible on the next request.
 
 For partial rollout, the subject is a server-derived internal UUID, never a name, Email, phone number, LINE identifier, display name, token, or other personal value. The exact bucket is:
 

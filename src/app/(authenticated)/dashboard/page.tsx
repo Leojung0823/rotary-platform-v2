@@ -191,10 +191,11 @@ export default async function DashboardPage({
 
   const identity = await requireIdentity();
   await flagRecordsPromise;
-  const [evaluation, roleShellsEvaluation, memberHomeEvaluation] = await Promise.all([
+  const [evaluation, roleShellsEvaluation, memberHomeEvaluation, blessingIouEvaluation] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_context_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "member_home_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
   ]);
   if (!evaluation.enabled) {
     void contextPromise;
@@ -223,7 +224,11 @@ export default async function DashboardPage({
         void recordMemberHomeFlagFailure(memberHomeEvaluation);
       } else {
         const activeClub = activeClubForMode(context.context, "member");
-        if (activeClub) return <MemberHome identity={identity} activeClub={activeClub} />;
+        if (activeClub) return <MemberHome
+          identity={identity}
+          activeClub={activeClub}
+          blessingIouEnabled={blessingIouEvaluation.enabled}
+        />;
       }
     }
     return <RoleAwareDashboardLanding
