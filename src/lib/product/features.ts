@@ -124,11 +124,12 @@ export const productFeatures: ProductFeature[] = [
   },
   {
     slug: "birthday-and-care",
-    title: "生日與關懷",
-    summary: "生日提醒、賀卡、歡喜與社員關懷紀錄。",
+    title: "生日祝福",
+    summary: "社員自願公開生日月日，同社社員可送出、修改與刪除年度祝福，幹部可隱藏不當內容。",
     category: "溝通與內容",
-    status: "developing",
-    phase: "V1.0",
+    status: "available",
+    phase: "V1.0 可測試",
+    href: "/birthdays",
   },
   {
     slug: "dues-and-iou",
