@@ -1,13 +1,17 @@
 .shell {
   --shell-accent: #1677a8;
+  /* The accent drawn as text on a light surface. Kept separate because a hue
+     that reads well as a filled pill is not always legible as a label: the
+     management amber only clears WCAG AA once darkened. */
+  --shell-accent-ink: #1677a8;
   min-height: 100vh;
   display: grid;
   grid-template-columns: 288px minmax(0, 1fr);
 }
 
-.shellMember { --shell-accent: #1677a8; }
-.shellManagement { --shell-accent: #a86f16; }
-.shellPlatform { --shell-accent: #7b4ca3; }
+.shellMember { --shell-accent: #1677a8; --shell-accent-ink: #1677a8; }
+.shellManagement { --shell-accent: #a86f16; --shell-accent-ink: #9c6714; }
+.shellPlatform { --shell-accent: #7b4ca3; --shell-accent-ink: #7b4ca3; }
 
 .rail {
   position: sticky;
@@ -96,7 +100,13 @@
   .navigation ul { grid-template-columns: repeat(var(--nav-count, 5), minmax(0, 1fr)); display: grid; gap: 2px; }
   .navigation li { min-width: 0; }
   .navigation a { min-height: 54px; flex-direction: column; justify-content: center; gap: 2px; padding: 5px 2px; color: var(--navy); font-size: 11px; text-align: center; }
-  .navigation a[aria-current="page"] { color: white; }
+  /* The mobile bar is white, so the desktop rule's white label is only legible
+     because of the accent pill behind it -- and if that pill does not paint,
+     the current tab turns white-on-white and vanishes, which is what iOS users
+     hit. Tint the label instead: legible on the white bar on its own, with a
+     literal fallback so a custom property that fails to resolve cannot hide it
+     either. */
+  .navigation a[aria-current="page"] { color: var(--shell-accent-ink, #1677a8); background: none; }
   .navigationIcon { height: 20px; font-size: 18px; }
   .desktopLabel { display: none; }
   .mobileLabel { display: block; overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
