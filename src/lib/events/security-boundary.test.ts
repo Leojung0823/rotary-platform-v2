@@ -30,9 +30,12 @@ describe("event application boundary", () => {
   });
 
   it("keeps event authorization self-contained and uses RPC-only mutations", () => {
-    expect(page).toContain('rpc("list_my_event_clubs")');
+    // The page reads its club list through the events domain's own RPC, which
+    // now returns the selected club's events in the same call.
+    expect(page).toContain('rpc("list_my_event_page"');
     expect(page).toContain("selectedClub.can_register");
     expect(page).not.toContain("list_my_board_clubs");
+    expect(page).not.toContain("list_my_directory_clubs");
     for (const rpc of [
       "create_club_event",
       "publish_club_event",

@@ -17,13 +17,21 @@ export default async function MemberDirectoryPage({
   await requireIdentity();
   const query = await searchParams;
   const supabase = await createClient();
-  const clubsResult = await supabase.rpc("list_my_directory_clubs");
+  const search = query.q?.trim().slice(0, 80) || null;
+  // One call: the database picks the club the same way this page used to --
+  // the one named in the query string, otherwise the first -- so the member
+  // rows come back with the club list instead of a round trip behind it.
+  const pageResult = await supabase.rpc("list_my_directory_page", {
+    p_club_id: query.clubId ?? null,
+    p_query: search,
+  });
 
-  if (clubsResult.error) {
+  if (pageResult.error) {
     return <Notice tone="error">目前無法載入您可查看的社員名冊。</Notice>;
   }
 
-  const clubs = parseDirectoryClubs(clubsResult.data);
+  const projection = (pageResult.data ?? {}) as { clubs?: unknown; members?: unknown };
+  const clubs = parseDirectoryClubs(projection.clubs);
   if (clubs.length === 0) {
     return <div className="page-stack">
       <header className="page-header"><div><p className="eyebrow">社員與身份</p><h1>社員名冊</h1></div></header>
@@ -32,17 +40,7 @@ export default async function MemberDirectoryPage({
   }
 
   const selectedClub = clubs.find((club) => club.club_id === query.clubId) ?? clubs[0];
-  const search = query.q?.trim().slice(0, 80) || null;
-  const membersResult = await supabase.rpc("list_club_member_directory", {
-    p_club_id: selectedClub.club_id,
-    p_query: search,
-  });
-
-  if (membersResult.error) {
-    return <Notice tone="error">目前無法讀取這個扶輪社的社員名冊。</Notice>;
-  }
-
-  const members = parseDirectoryMembers(membersResult.data);
+  const members = parseDirectoryMembers(projection.members);
 
   return <div className="page-stack">
     <header className="page-header">
