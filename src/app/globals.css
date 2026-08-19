@@ -225,3 +225,15 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   .card { padding: 19px; }
   td, th { padding: 13px; }
 }
+
+/* Event cover: fixed aspect so a portrait phone photo cannot push the rest of
+   the card off the screen, and so the list keeps a predictable rhythm. */
+.event-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: #edf4f7;
+}

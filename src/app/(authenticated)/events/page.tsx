@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import {
   cancelEventAction,
@@ -6,6 +7,8 @@ import {
 } from "@/app/event-actions";
 import { EventCreateForm } from "@/components/events/event-create-form";
 import { requireIdentity } from "@/lib/auth";
+import { EventCoverUpload } from "@/components/events/event-cover-upload";
+import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { createClient } from "@/lib/supabase/server";
 
 type EventClub = {
@@ -36,6 +39,7 @@ type ClubEvent = {
   my_guest_count: number;
   my_note: string;
   can_manage: boolean;
+  cover_image_path: string | null;
   registration_open: boolean;
 };
 
@@ -99,6 +103,7 @@ function isClubEvent(value: unknown): value is ClubEvent {
     && typeof event.ends_at === "string"
     && typeof event.registration_deadline === "string"
     && (typeof event.capacity === "number" || event.capacity === null)
+    && (typeof event.cover_image_path === "string" || event.cover_image_path === null || event.cover_image_path === undefined)
     && typeof event.counts_for_attendance === "boolean"
     && (event.status === "draft" || event.status === "published" || event.status === "cancelled" || event.status === "completed")
     && typeof event.version === "number"
@@ -182,6 +187,8 @@ export default async function EventsPage({
     else events = parsed;
   }
 
+  const coverUrls = await signCoverImageUrls(events.map((event) => event.cover_image_path));
+
   return <div className="page-stack">
     <EventHeader />
 
@@ -236,6 +243,16 @@ export default async function EventsPage({
 
       <div className="form-stack">
         {events.map((event) => <article className="card" key={event.id}>
+          {/* Plain <img> rather than next/image: the URL is signed and
+              expires, so the optimizer cannot cache it, and optimizing on a
+              0.1 CPU instance would cost more than it saves. The browser
+              already resized the picture before uploading it. */}
+          {event.cover_image_path && coverUrls.get(event.cover_image_path) && <img
+            className="event-cover"
+            src={coverUrls.get(event.cover_image_path)}
+            alt=""
+            loading="lazy"
+          />}
           <div className="section-heading">
             <div>
               <div className="status-pair">
@@ -294,6 +311,12 @@ export default async function EventsPage({
               href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}`}
             >管理簽到</Link>}
           </div>}
+
+          {selectedClub.can_manage && event.status !== "cancelled" && <EventCoverUpload
+            clubId={selectedClub.club_id}
+            eventId={event.id}
+            hasCover={Boolean(event.cover_image_path)}
+          />}
 
           {selectedClub.can_manage && event.status === "draft" && <form action={publishEventAction} className="form-actions">
             <input type="hidden" name="clubId" value={selectedClub.club_id} />
