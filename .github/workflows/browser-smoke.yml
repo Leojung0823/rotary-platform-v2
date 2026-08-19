@@ -33,7 +33,22 @@ jobs:
         run: npm ci --prefix e2e
 
       - name: Install Chromium and operating-system dependencies
-        run: npm --prefix e2e run install:chromium
+        shell: bash
+        run: |
+          # Installing OS dependencies reaches the runner's Ubuntu mirror, which
+          # stalls rather than failing when the mirror is unreachable -- that
+          # turns a transient outage into a job that burns its entire timeout.
+          # Bound each attempt so a stall fails fast, and retry, because the
+          # mirror has consistently recovered within minutes.
+          for attempt in 1 2 3; do
+            if timeout 360 npm --prefix e2e run install:chromium; then
+              exit 0
+            fi
+            echo "Chromium install attempt ${attempt} failed or stalled; retrying."
+            sleep 20
+          done
+          echo "Chromium install did not succeed after 3 attempts."
+          exit 1
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v2
