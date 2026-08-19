@@ -1,4 +1,5 @@
 supabase/verification/core_identity_baseline.sql
+supabase/verification/club_profile_rename_security.sql
 supabase/verification/provisioning_security.sql
 supabase/verification/operator_expiry_consistency.sql
 supabase/verification/invitation_selection.sql
