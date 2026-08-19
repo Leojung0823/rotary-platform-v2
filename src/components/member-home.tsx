@@ -60,7 +60,7 @@ function EventSummary({ event, primary = false }: { event: MemberHomeEvent; prim
       <div><dt>地點</dt><dd>{event.location || "地點待確認"}</dd></div>
       {primary && <div><dt>簽到</dt><dd>{checkinLabels[event.checkinState]}</dd></div>}
     </dl>
-    {primary && event.checkinState !== "checked_in" && <Link className="button" href={action.href}>
+    {primary && event.checkinState !== "checked_in" && <Link className="button" href={action.href} prefetch={false}>
       {action.label}
     </Link>}
   </Card>;
@@ -100,13 +100,13 @@ async function MemberHomeContent({ activeClubId }: { activeClubId: string }) {
       <p className="eyebrow">今天</p>
       <h2>目前沒有需要處理的活動</h2>
       <p>新的已發布活動會在這裡顯示。</p>
-      <Link className="button button-secondary" href="/events">查看活動</Link>
+      <Link className="button button-secondary" href="/events" prefetch={false}>查看活動</Link>
     </Card>}
 
     {projection.nextEvent && <section aria-labelledby="member-home-next-event">
       <div className="section-heading">
         <div><p className="eyebrow">下一場</p><h2 id="member-home-next-event">接下來的活動</h2></div>
-        <Link className="card-link" href="/events">查看全部活動 →</Link>
+        <Link className="card-link" href="/events" prefetch={false}>查看全部活動 →</Link>
       </div>
       <EventSummary event={projection.nextEvent} />
     </section>}
@@ -114,7 +114,7 @@ async function MemberHomeContent({ activeClubId }: { activeClubId: string }) {
     {projection.recentEvents.length > 0 && <section aria-labelledby="member-home-recent-events">
       <div className="section-heading">
         <div><p className="eyebrow">回顧</p><h2 id="member-home-recent-events">近期社團回顧</h2></div>
-        <Link className="card-link" href="/events">查看全部活動 →</Link>
+        <Link className="card-link" href="/events" prefetch={false}>查看全部活動 →</Link>
       </div>
       <div className={styles.recentList}>
         {projection.recentEvents.map((event, index) => <RecentEventRow key={`${event.title}-${index}`} event={event} />)}
