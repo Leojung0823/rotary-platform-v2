@@ -39,6 +39,11 @@ async function oversizedPhoto(page) {
 
 test("a manager uploads a cover, and the browser shrinks it first", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "event-cover-1440", "Uploading mutates the fixture event for the whole run.");
+  // This one genuinely does a lot of real work: it generates an 11MB photo in
+  // the page, decodes it, resizes it, uploads it to Storage, reloads and waits
+  // for the signed link to paint. That fits the default budget locally but not
+  // on a CI runner, and the point of the test is that the whole chain works.
+  test.setTimeout(120_000);
   await login(page, managerEmail);
   await page.goto(new URL("/events?mode=management", baseURL).toString());
 
