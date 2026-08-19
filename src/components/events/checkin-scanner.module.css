@@ -89,3 +89,37 @@
     width: 100%;
   }
 }
+
+.locationEventList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.locationEventList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid rgba(16, 42, 65, .12);
+  border-radius: 12px;
+}
+
+.locationEventList small {
+  display: block;
+  color: #5a6b7c;
+}
+
+@media (max-width: 540px) {
+  .locationEventList li {
+    align-items: stretch;
+  }
+
+  .locationEventList li button {
+    width: 100%;
+  }
+}

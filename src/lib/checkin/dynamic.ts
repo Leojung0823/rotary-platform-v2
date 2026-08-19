@@ -69,6 +69,8 @@ export type CheckinSafeErrorCode =
   | "expired"
   | "session_closed"
   | "not_found"
+  | "out_of_range"
+  | "venue_missing"
   | "temporary";
 
 export function mapCheckinSafeError(message: string | undefined): CheckinSafeErrorCode {
@@ -80,6 +82,10 @@ export function mapCheckinSafeError(message: string | undefined): CheckinSafeErr
   if (message?.includes("checkin_session_not_active")) return "session_closed";
   if (message?.includes("checkin_token_invalid_or_expired") || message?.includes("invalid_checkin_token")) return "expired";
   if (message?.includes("attendance_not_available")) return "not_found";
+  // Deliberately collapses to a single code: the caller is told it is not at
+  // the venue, never how far away it is.
+  if (message?.includes("checkin_location_out_of_range")) return "out_of_range";
+  if (message?.includes("event_venue_location_missing")) return "venue_missing";
   if (message?.includes("invalid_checkin") || message?.includes("reason_required")) return "invalid_input";
   return "temporary";
 }

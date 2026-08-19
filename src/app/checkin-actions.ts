@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  parseCheckinCoordinates,
   parseCheckinDuration,
   parseCheckinReason,
   parseCheckinToken,
@@ -28,6 +29,11 @@ export type DynamicQrActionState =
 
 
 export type DynamicSelfCheckinActionState =
+  | { status: "idle" }
+  | { status: "success"; result: "checked_in" | "already_checked_in" }
+  | { status: "error"; code: CheckinSafeErrorCode };
+
+export type LocationSelfCheckinActionState =
   | { status: "idle" }
   | { status: "success"; result: "checked_in" | "already_checked_in" }
   | { status: "error"; code: CheckinSafeErrorCode };
@@ -145,6 +151,42 @@ export async function selfDynamicCheckinAction(
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("check_in_to_dynamic_event", { p_credential: credential });
+  if (error) return { status: "error", code: mapCheckinSafeError(error.message) };
+
+  const result = parseDynamicCheckinResult(data);
+  if (!result) return { status: "error", code: "temporary" };
+  revalidatePath("/events");
+  return { status: "success", result: result.idempotent ? "already_checked_in" : "checked_in" };
+}
+
+export async function selfLocationCheckinAction(
+  _previousState: LocationSelfCheckinActionState,
+  formData: FormData,
+): Promise<LocationSelfCheckinActionState> {
+  let clubId: string;
+  let eventId: string;
+  let latitude: number;
+  let longitude: number;
+  try {
+    clubId = parseCheckinUuid(formData.get("clubId"));
+    eventId = parseCheckinUuid(formData.get("eventId"));
+    ({ latitude, longitude } = parseCheckinCoordinates(
+      formData.get("latitude"),
+      formData.get("longitude"),
+    ));
+  } catch {
+    return { status: "error", code: "invalid_input" };
+  }
+
+  const supabase = await createClient();
+  // The coordinates are passed straight through to the RPC and never logged,
+  // stored in action state, or written to a URL.
+  const { data, error } = await supabase.rpc("check_in_to_event_by_location", {
+    p_club_id: clubId,
+    p_event_id: eventId,
+    p_latitude: latitude,
+    p_longitude: longitude,
+  });
   if (error) return { status: "error", code: mapCheckinSafeError(error.message) };
 
   const result = parseDynamicCheckinResult(data);

@@ -297,6 +297,53 @@ async function addDynamicCheckinBrowserFixtures({ clubId, managerAccount }) {
   }
 }
 
+// Venue-anchored event with an open session, so the browser suite can drive a
+// real location check-in with a mocked device position.
+async function addLocationCheckinBrowserFixtures({ clubId, managerAccount }) {
+  const now = Date.now();
+  const eventTitle = "本機定位簽到例會";
+
+  // Attendance is append-only by design, so a previously checked-in fixture
+  // event can never be cleaned up. Instead retire the old session and stand up
+  // a fresh event, which keeps exactly one venue event live per bootstrap.
+  const previous = await admin.from("club_events").select("id").eq("club_id", clubId).eq("title", eventTitle);
+  if (previous.error) fail("could not inspect local gps check-in events");
+  const previousIds = previous.data.map((event) => event.id);
+  if (previousIds.length > 0) {
+    const close = await admin.from("event_checkin_sessions")
+      .update({
+        session_status: "closed",
+        closed_at: new Date(now).toISOString(),
+        close_reason: "local_fixture_reset",
+      })
+      .in("event_id", previousIds)
+      .eq("session_status", "active");
+    if (close.error) fail("could not retire previous local gps check-in sessions");
+  }
+
+  const event = await admin.from("club_events").insert({
+    club_id: clubId, event_type: "regular_meeting", title: eventTitle,
+    location: "本機定位會館",
+    venue_latitude: 25.033964, venue_longitude: 121.564468,
+    starts_at: new Date(now - 10 * 60_000).toISOString(),
+    ends_at: new Date(now + 2 * 60 * 60_000).toISOString(),
+    registration_deadline: new Date(now - 60 * 60_000).toISOString(),
+    counts_for_attendance: true, event_status: "published",
+    created_by_app_account_id: managerAccount.id, updated_by_app_account_id: managerAccount.id,
+    published_at: new Date(now - 24 * 60 * 60_000).toISOString(),
+  }).select("id").single();
+  if (event.error || !event.data) fail("could not create local gps check-in event");
+
+  const secret = createHash("sha256").update(`gps-${now}`).digest("hex");
+  const session = await admin.from("event_checkin_sessions").insert({
+    club_id: clubId, event_id: event.data.id,
+    token_hash: createHash("sha256").update(secret).digest("hex"), token_prefix: secret.slice(0, 8),
+    session_status: "active", opens_at: new Date(now - 60_000).toISOString(),
+    expires_at: new Date(now + 24 * 60 * 60_000).toISOString(), created_by_app_account_id: managerAccount.id,
+  });
+  if (session.error) fail("could not create local gps check-in session");
+}
+
 const bootstrapAccount = await admin.from("app_accounts").select("id").eq("login_email_normalized", adminEmail).maybeSingle();
 if (bootstrapAccount.error || !bootstrapAccount.data) fail("local superadmin account is missing");
 const createdBy = bootstrapAccount.data.id;
@@ -338,5 +385,6 @@ await addOperator({ clubId: managedClub.id, account: fixtures.revoked, status: "
 await addMembership({ clubId: memberClub.id, account: fixtures.suspended, status: "suspended", createdBy });
 await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary });
 await addDynamicCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
+await addLocationCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 
 console.log("Local role-shell and member-home browser fixtures are ready. No credentials were printed.");

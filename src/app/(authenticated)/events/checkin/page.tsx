@@ -2,8 +2,14 @@ import Link from "next/link";
 import { selfCheckinAction } from "@/app/checkin-actions";
 import { CheckinCameraScanner } from "@/components/events/checkin-camera-scanner";
 import { DynamicCheckinCameraScanner } from "@/components/events/dynamic-checkin-camera-scanner";
+import {
+  LocationCheckinPanel,
+  type LocationCheckinEvent,
+} from "@/components/events/location-checkin-panel";
 import { requireIdentity } from "@/lib/auth";
+import { parseLocationCheckinEvents } from "@/lib/checkin/location";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
+import { createClient } from "@/lib/supabase/server";
 
 const successMessages: Record<string, string> = {
   checked_in: "簽到成功，系統已記錄您的社員社籍與簽到時間。",
@@ -24,7 +30,17 @@ export default async function EventCheckinPage({
 }) {
   const params = await searchParams;
   const identity = await requireIdentity();
-  const checkinV2 = await evaluateCurrentFeatureFlag({ key: "checkin_qr_v2", subjectUuid: identity.id });
+  const [checkinV2, gpsCheckin] = await Promise.all([
+    evaluateCurrentFeatureFlag({ key: "checkin_qr_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "checkin_gps_v2", subjectUuid: identity.id }),
+  ]);
+
+  let locationEvents: readonly LocationCheckinEvent[] = [];
+  if (gpsCheckin.enabled) {
+    const supabase = await createClient();
+    const { data } = await supabase.rpc("list_my_location_checkin_events");
+    locationEvents = parseLocationCheckinEvents(data);
+  }
   return <div className="page-stack narrow">
     <header className="page-header">
       <div>
@@ -45,6 +61,8 @@ export default async function EventCheckinPage({
     </div>}
 
     {checkinV2.enabled ? <DynamicCheckinCameraScanner /> : <CheckinCameraScanner />}
+
+    {gpsCheckin.enabled && <LocationCheckinPanel events={locationEvents} />}
 
     {!checkinV2.enabled && <section className="card">
       <div className="section-heading">

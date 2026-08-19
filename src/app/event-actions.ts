@@ -88,6 +88,8 @@ export async function createEventAction(
       p_registration_deadline: validated.input.registrationDeadline,
       p_capacity: validated.input.capacity,
       p_counts_for_attendance: validated.input.countsForAttendance,
+      p_venue_latitude: validated.input.venue?.latitude ?? null,
+      p_venue_longitude: validated.input.venue?.longitude ?? null,
     });
     rpcError = result.error;
   } catch {

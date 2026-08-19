@@ -24,6 +24,29 @@ export function parseCheckinToken(value: FormDataEntryValue | null) {
   return token;
 }
 
+const coordinatePattern = /^-?\d{1,3}(?:\.\d{1,8})?$/u;
+
+// The browser supplies these from the Geolocation API. They are validated for
+// shape and range only; the server never persists or logs them.
+export function parseCheckinCoordinates(
+  latitudeValue: FormDataEntryValue | null,
+  longitudeValue: FormDataEntryValue | null,
+) {
+  const latitudeText = typeof latitudeValue === "string" ? latitudeValue.trim() : "";
+  const longitudeText = typeof longitudeValue === "string" ? longitudeValue.trim() : "";
+  if (!coordinatePattern.test(latitudeText) || !coordinatePattern.test(longitudeText)) {
+    throw new Error("invalid_checkin_location");
+  }
+  const latitude = Number(latitudeText);
+  const longitude = Number(longitudeText);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
+    || latitude < -90 || latitude > 90
+    || longitude < -180 || longitude > 180) {
+    throw new Error("invalid_checkin_location");
+  }
+  return { latitude, longitude };
+}
+
 export function parseCheckinReason(value: FormDataEntryValue | null) {
   const reason = typeof value === "string" ? value.trim() : "";
   if (!reason || reason.length > 500) throw new Error("invalid_checkin_reason");

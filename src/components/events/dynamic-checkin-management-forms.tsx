@@ -22,6 +22,8 @@ const errorMessages: Record<CheckinSafeErrorCode, string> = {
   invalid_token: "輸入內容無效。",
   expired: "此項操作已過期，請重新整理後再試。",
   session_closed: "簽到場次已關閉。",
+  out_of_range: "定位不在活動場地範圍內。",
+  venue_missing: "這個活動沒有設定場地座標，無法用定位簽到。",
   not_found: "找不到可操作的簽到紀錄。",
   temporary: "目前無法完成操作，請稍後再試；輸入內容已保留。",
 };

@@ -16,6 +16,7 @@ const fieldLabels: Record<EventCreateField, string> = {
   registrationDeadline: "報名截止",
   capacity: "名額",
   location: "地點",
+  venueLocation: "定位簽到座標",
   countsForAttendance: "計入出席",
   description: "活動說明",
 };
@@ -92,6 +93,11 @@ export function EventCreateForm({ clubId, eventTypeLabels }: EventCreateFormProp
       <label className="field" htmlFor="event-create-location"><span className="label">地點</span>
         <input className="input" id="event-create-location" name="location" maxLength={300} defaultValue={values.location} aria-invalid={Boolean(errorFor("location"))} aria-describedby={describedBy("location")} />
         {errorFor("location") && <span className="field-error" id="event-create-location-error">{errorFor("location")}</span>}
+      </label>
+      <label className="field" htmlFor="event-create-venueLocation"><span className="label">定位簽到座標（選填）</span>
+        <input className="input" id="event-create-venueLocation" name="venueLocation" maxLength={2048} inputMode="text" placeholder="貼上地圖連結，或 25.033964, 121.564468" defaultValue={values.venueLocation} aria-invalid={Boolean(errorFor("venueLocation"))} aria-describedby={errorFor("venueLocation") ? "event-create-venueLocation-error" : "event-create-venueLocation-hint"} />
+        <span className="hint" id="event-create-venueLocation-hint">填了之後，社員到現場可以直接用手機定位簽到（{"場地 200 公尺內"}），不必掃 QR。留空則此活動只能用 QR 簽到。</span>
+        {errorFor("venueLocation") && <span className="field-error" id="event-create-venueLocation-error">{errorFor("venueLocation")}</span>}
       </label>
       <label className="checkbox-row" htmlFor="event-create-countsForAttendance">
         <input id="event-create-countsForAttendance" type="checkbox" name="countsForAttendance" defaultChecked={values.countsForAttendance} aria-invalid={Boolean(errorFor("countsForAttendance"))} aria-describedby={describedBy("countsForAttendance")} />

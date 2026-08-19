@@ -24,6 +24,8 @@ const errorMessages: Record<CheckinSafeErrorCode, string> = {
   invalid_token: "QR 資訊無效，請重新產生。",
   expired: "QR 已過期，請重新產生。",
   session_closed: "簽到場次已關閉，無法產生 QR。",
+  out_of_range: "定位不在活動場地範圍內。",
+  venue_missing: "這個活動沒有設定場地座標，無法用定位簽到。",
   not_found: "找不到可操作的簽到紀錄。",
   temporary: "目前無法更新 QR，現有未過期 QR 仍可使用；請稍後重試。",
 };
