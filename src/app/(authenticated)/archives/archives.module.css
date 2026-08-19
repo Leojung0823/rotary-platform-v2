@@ -1,0 +1,180 @@
+.managerPanel {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: white;
+}
+
+.managerPanel summary,
+.documentCard summary,
+.yearSummary summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.managerPanel[open] summary,
+.documentCard details[open] summary,
+.yearSummary details[open] summary {
+  margin-bottom: 16px;
+}
+
+.yearSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+}
+
+.yearActions {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.documentList,
+.checklistList {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.documentCard {
+  display: grid;
+  gap: 16px;
+}
+
+.documentHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tags span {
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #145c7e;
+  background: #e6f4fa;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.versionList {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f7f9fb;
+}
+
+.versionRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.versionRow span,
+.versionRow small {
+  display: block;
+}
+
+.versionRow small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.managementGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.managementGrid > * {
+  min-width: 0;
+}
+
+.checklistCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.checklistCard small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.checklistForm {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1.3fr .8fr 1.3fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.confirmations {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.confirmations > div {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.confirmations span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.confirmButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 820px) {
+  .yearSummary,
+  .managementGrid,
+  .checklistForm {
+    grid-template-columns: 1fr;
+  }
+
+  .yearActions {
+    justify-items: stretch;
+  }
+
+  .documentHeading,
+  .versionRow {
+    display: grid;
+  }
+
+  .confirmations > div {
+    grid-template-columns: 1fr;
+  }
+}
