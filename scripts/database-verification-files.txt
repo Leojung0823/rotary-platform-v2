@@ -23,3 +23,4 @@ supabase/verification/product_rollout_controls_security.sql
 supabase/verification/experience_context_security.sql
 supabase/verification/member_home_projection_security.sql
 supabase/verification/gps_checkin_v2_security.sql
+supabase/verification/name_only_member_join_security.sql

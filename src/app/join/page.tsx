@@ -16,6 +16,7 @@ type Preview = {
   invitation_kind: "member_join" | "line_rebind";
   name: string;
   has_email: boolean;
+  viewer_matches: boolean;
   phone: string | null;
   email: string | null;
   birth_date: string | null;
@@ -88,8 +89,9 @@ export default async function JoinPage({
     </Card></main>;
   }
 
-  const viewerMatchesInvitation = Boolean(preview.email || preview.phone || preview.birth_date);
-  if (!viewerMatchesInvitation) {
+  // Asked of the server directly. Inferring it from whether any contact detail
+  // came back would lock out a member the club recorded by name alone.
+  if (!preview.viewer_matches) {
     return <main className="center-page"><Card className="accept-card">
       <p className="eyebrow">{preview.club_name}</p>
       <h1>目前登入帳號與邀請不相符</h1>
