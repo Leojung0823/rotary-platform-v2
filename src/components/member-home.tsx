@@ -126,9 +126,11 @@ async function MemberHomeContent({ activeClubId }: { activeClubId: string }) {
 export function MemberHome({
   identity,
   activeClub,
+  blessingIouEnabled = false,
 }: {
   identity: Identity;
   activeClub: Pick<ClubContext, "clubId" | "clubCode" | "clubName">;
+  blessingIouEnabled?: boolean;
 }) {
   return <div className={`page-stack ${styles.memberHome}`}>
     <header className="page-header">
@@ -139,6 +141,15 @@ export function MemberHome({
       </div>
       <Badge tone="success">{activeClub.clubName}</Badge>
     </header>
+    {blessingIouEnabled && <Link
+      className={styles.blessingShortcut}
+      href={`/blessings?clubId=${encodeURIComponent(activeClub.clubId)}&mode=member`}
+      prefetch={false}
+    >
+      <span className={styles.blessingIcon} aria-hidden="true">♡</span>
+      <span><strong>祝福 IOU</strong><small>分享祝福，也可以留下希望捐贈的金額</small></span>
+      <b aria-hidden="true">→</b>
+    </Link>}
     <Suspense fallback={<MemberHomeContentLoading />}>
       <MemberHomeContent activeClubId={activeClub.clubId} />
     </Suspense>

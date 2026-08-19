@@ -14,9 +14,15 @@
 .recentItem > div { min-width: 0; }
 .recentItem strong { display: block; overflow-wrap: anywhere; }
 .recentItem small { color: var(--muted); }
+.blessingShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 72px; padding: 14px 18px; border: 1px solid #d8c17f; border-radius: 16px; background: linear-gradient(145deg, #fffdf7 0%, #fff8df 100%); color: #49370d; text-decoration: none; }
+.blessingShortcut:hover { border-color: #a77d1c; transform: translateY(-1px); }
+.blessingShortcut > span:not(.blessingIcon) { display: grid; gap: 2px; min-width: 0; }
+.blessingShortcut small { color: #6f5a27; overflow-wrap: anywhere; }
+.blessingIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #f4e2a9; font-size: 24px; }
 
 @media (max-width: 640px) {
   .eventHeading { display: grid; gap: 10px; }
   .eventDetails { grid-template-columns: 1fr; gap: 10px; }
   .primaryCard .button, .emptyCard .button { width: 100%; }
+  .blessingShortcut { min-height: 80px; padding: 14px; }
 }

@@ -133,6 +133,7 @@ describe("feature flag evaluation truth table", () => {
       "checkin_gps_v2",
       "attendance_ui_v2",
       "announcements_v09",
+      "blessing_iou_v1",
     ].map((key) => calculateFeatureRolloutBucket(subjectUuid, key, pepper));
     expect(new Set(buckets).size).toBeGreaterThan(1);
   });
@@ -176,6 +177,16 @@ describe("feature flag evaluation truth table", () => {
     } as const;
     expect(evaluateFeatureFlag({ ...input, env: { FORCE_LEGACY_MEMBER_HOME: "false" } }).enabled).toBe(true);
     expect(evaluateFeatureFlag({ ...input, env: { FORCE_LEGACY_MEMBER_HOME: "true" } }).enabled).toBe(false);
+  });
+
+  it("lets the emergency switch hide the blessing IOU domain", () => {
+    expect(evaluateFeatureFlag({
+      key: "blessing_iou_v1",
+      record: enabledRecord,
+      environment: "staging",
+      pepper,
+      env: { DISABLE_BLESSING_IOU: "true" },
+    })).toMatchObject({ enabled: false, reason: "kill_switch" });
   });
 });
 
