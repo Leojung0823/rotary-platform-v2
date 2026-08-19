@@ -1,7 +1,9 @@
+import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
-export async function createClient() {
+async function createClientForRequest() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -29,3 +31,9 @@ export async function createClient() {
     },
   });
 }
+
+// A single authenticated render can resolve identity, feature flags, role
+// context, and page data through the same cookie-bound Supabase client. React's
+// cache is discarded after the server request, so no session or tenant data is
+// shared with a later request or another user.
+export const createClient = cache(createClientForRequest);

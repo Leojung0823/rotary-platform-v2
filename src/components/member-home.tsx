@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Badge, Card, Notice } from "@/components/ui";
 import type { Identity } from "@/lib/auth";
+import type { ClubContext } from "@/lib/experience-context";
 import {
   memberHomePrimaryAction,
   type MemberHomeCheckinState,
@@ -27,16 +29,18 @@ const checkinLabels: Record<MemberHomeCheckinState, string> = {
   closed: "簽到已結束",
 };
 
+const memberHomeDateTimeFormatter = new Intl.DateTimeFormat("zh-TW", {
+  timeZone: "Asia/Taipei",
+  month: "long",
+  day: "numeric",
+  weekday: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
 function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("zh-TW", {
-    timeZone: "Asia/Taipei",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(value));
+  return memberHomeDateTimeFormatter.format(new Date(value));
 }
 
 function EventSummary({ event, primary = false }: { event: MemberHomeEvent; primary?: boolean }) {
@@ -72,32 +76,26 @@ function RecentEventRow({ event }: { event: MemberHomeRecentEvent }) {
   </div>;
 }
 
-export async function MemberHome({ identity, activeClubId }: { identity: Identity; activeClubId: string }) {
+function MemberHomeContentLoading() {
+  return <section aria-busy="true" aria-live="polite">
+    <span className="sr-only">正在載入今天的活動</span>
+    <div className="skeleton-card">
+      <span className="skeleton skeleton-eyebrow" />
+      <span className="skeleton skeleton-card-title" />
+      <span className="skeleton skeleton-copy skeleton-copy-wide" />
+      <span className="skeleton skeleton-copy" />
+    </div>
+  </section>;
+}
+
+async function MemberHomeContent({ activeClubId }: { activeClubId: string }) {
   const resolution = await resolveMemberHomeProjection(activeClubId);
   if (!resolution.ok) {
-    return <div className="page-stack">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">社員首頁</p>
-          <h1>{identity.display_name}，您好</h1>
-          <p>今天與您有關的事情會顯示在這裡。</p>
-        </div>
-      </header>
-      <Notice tone="error">目前無法載入社員首頁資料，請稍後重新整理。</Notice>
-    </div>;
+    return <Notice tone="error">目前無法載入社員首頁資料，請稍後重新整理。</Notice>;
   }
 
   const { projection } = resolution;
-  return <div className={`page-stack ${styles.memberHome}`}>
-    <header className="page-header">
-      <div>
-        <p className="eyebrow">社員首頁 · {projection.club.clubCode}</p>
-        <h1>{identity.display_name}，您好</h1>
-        <h2 className={styles.todayHeading}>今天與我有關的事情</h2>
-      </div>
-      <Badge tone="success">{projection.club.clubName}</Badge>
-    </header>
-
+  return <>
     {projection.primaryEvent ? <EventSummary event={projection.primaryEvent} primary /> : <Card className={styles.emptyCard}>
       <p className="eyebrow">今天</p>
       <h2>目前沒有需要處理的活動</h2>
@@ -122,5 +120,27 @@ export async function MemberHome({ identity, activeClubId }: { identity: Identit
         {projection.recentEvents.map((event, index) => <RecentEventRow key={`${event.title}-${index}`} event={event} />)}
       </div>
     </section>}
+  </>;
+}
+
+export function MemberHome({
+  identity,
+  activeClub,
+}: {
+  identity: Identity;
+  activeClub: Pick<ClubContext, "clubId" | "clubCode" | "clubName">;
+}) {
+  return <div className={`page-stack ${styles.memberHome}`}>
+    <header className="page-header">
+      <div>
+        <p className="eyebrow">社員首頁 · {activeClub.clubCode}</p>
+        <h1>{identity.display_name}，您好</h1>
+        <h2 className={styles.todayHeading}>今天與我有關的事情</h2>
+      </div>
+      <Badge tone="success">{activeClub.clubName}</Badge>
+    </header>
+    <Suspense fallback={<MemberHomeContentLoading />}>
+      <MemberHomeContent activeClubId={activeClub.clubId} />
+    </Suspense>
   </div>;
 }
