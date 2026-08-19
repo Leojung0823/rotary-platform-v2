@@ -8,7 +8,10 @@ import {
 } from "@/components/events/location-checkin-panel";
 import { requireIdentity } from "@/lib/auth";
 import { parseLocationCheckinEvents } from "@/lib/checkin/location";
-import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
+import {
+  evaluateCurrentFeatureFlag,
+  readFeatureFlagRecords,
+} from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 
 const successMessages: Record<string, string> = {
@@ -29,7 +32,12 @@ export default async function EventCheckinPage({
   searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const params = await searchParams;
+  // The flag records do not depend on who the caller is -- only the rollout
+  // evaluation does -- so the read starts alongside the identity check rather
+  // than a round trip behind it.
+  const flagRecordsPromise = readFeatureFlagRecords();
   const identity = await requireIdentity();
+  await flagRecordsPromise;
   const [checkinV2, gpsCheckin] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "checkin_qr_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "checkin_gps_v2", subjectUuid: identity.id }),
