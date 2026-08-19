@@ -25,3 +25,4 @@ supabase/verification/member_home_projection_security.sql
 supabase/verification/gps_checkin_v2_security.sql
 supabase/verification/name_only_member_join_security.sql
 supabase/verification/event_cover_storage_security.sql
+supabase/verification/blessing_iou_core_security.sql

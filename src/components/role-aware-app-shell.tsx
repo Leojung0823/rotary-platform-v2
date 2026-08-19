@@ -208,15 +208,17 @@ export function RoleAwareAppShell({
   context,
   mode,
   pathname,
+  blessingIouEnabled = false,
   children,
 }: {
   identity: Identity;
   context: ExperienceContext;
   mode: ExperienceMode;
   pathname: string;
+  blessingIouEnabled?: boolean;
   children: ReactNode;
 }) {
-  const navigation = roleShellNavigation(context, mode);
+  const navigation = roleShellNavigation(context, mode, { blessingIouEnabled });
   return <div className={`${styles.shell} ${styles[`shell${mode[0].toUpperCase()}${mode.slice(1)}`]}`}>
     <aside className={styles.rail}>
       <header className={styles.header}>
@@ -266,7 +268,10 @@ export async function RoleAwareAppShellBoundary({
     readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value),
   );
 
-  const evaluation = await evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id });
+  const [evaluation, blessingIouEvaluation] = await Promise.all([
+    evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
+  ]);
   if (!evaluation.enabled) {
     void contextPromise;
     void recordRoleShellFlagFailure(evaluation);
@@ -293,6 +298,7 @@ export async function RoleAwareAppShellBoundary({
     context={contextResolution.context}
     mode={shell.mode}
     pathname={headerStore.get("x-rotary-pathname") ?? "/dashboard"}
+    blessingIouEnabled={blessingIouEvaluation.enabled}
   >
     {children}
   </RoleAwareAppShell>;

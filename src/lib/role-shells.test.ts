@@ -107,4 +107,15 @@ describe("role-aware navigation", () => {
     const platformContext = context({ member: true, management: true, platform: true });
     expect(roleShellNavigation(platformContext, "member").some((item) => item.id === "manage-club")).toBe(false);
   });
+
+  it("adds the complete blessing IOU domain only to management navigation when enabled", () => {
+    const projected = context();
+    expect(roleShellNavigation(projected, "management", { blessingIouEnabled: true }).map((item) => item.id))
+      .toEqual(["overview", "events", "members", "invitations", "blessing-iou", "club-settings"]);
+    expect(roleShellNavigation(projected, "management", { blessingIouEnabled: true })
+      .find((item) => item.id === "blessing-iou")?.href)
+      .toBe(`/clubs/${memberClub.club_id}/blessing-iou?mode=management`);
+    expect(roleShellNavigation(projected, "member", { blessingIouEnabled: true })
+      .some((item) => item.id === "blessing-iou")).toBe(false);
+  });
 });
