@@ -255,16 +255,25 @@ export async function RoleAwareAppShellBoundary({
   identity: Identity;
   children: ReactNode;
 }) {
+  // A hosted Supabase round trip is the dominant cost of rendering an
+  // authenticated page, so what matters is how many of them sit on the
+  // critical path. The flag read and the role-context RPC do not depend on
+  // each other, so they are issued together rather than one after the other.
+  // Neither rejects -- both resolve to a failure value -- so the flag-disabled
+  // path can return without awaiting the context.
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const contextPromise = resolveExperienceContext(
+    readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value),
+  );
+
   const evaluation = await evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id });
   if (!evaluation.enabled) {
+    void contextPromise;
     void recordRoleShellFlagFailure(evaluation);
     return <LegacyAppShell identity={identity}>{children}</LegacyAppShell>;
   }
 
-  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
-  const contextResolution = await resolveExperienceContext(
-    readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value),
-  );
+  const contextResolution = await contextPromise;
   const shell = resolveRoleShell({
     roleShellsEnabled: true,
     context: contextResolution.ok ? contextResolution.context : null,

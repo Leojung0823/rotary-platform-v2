@@ -14,7 +14,10 @@ import {
 } from "@/lib/experience-context-cookie";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
 import { dashboardAccessPresentation } from "@/lib/dashboard-access";
-import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
+import {
+  evaluateCurrentFeatureFlag,
+  readFeatureFlagRecords,
+} from "@/lib/product/feature-flag-adapter.server";
 import type { FeatureFlagEvaluation } from "@/lib/product/feature-flags";
 import { recordAuthenticatedProductTelemetry } from "@/lib/product/telemetry.server";
 import { createClient } from "@/lib/supabase/server";
@@ -174,20 +177,32 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ mode?: string }>;
 }) {
+  // Identity, the feature-flag records and the role context are each
+  // authorised by this request's own cookies, so none of them needs another's
+  // answer first. Issue all three before awaiting any: on hosted Supabase each
+  // round trip costs roughly a third of a second, and this page used to spend
+  // three of them in a row before it could read the member's home projection.
+  // None of these rejects -- each resolves to a failure value -- so an early
+  // return cannot strand a pending promise.
+  const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
+  const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
+  const flagRecordsPromise = readFeatureFlagRecords();
+  const contextPromise = resolveExperienceContext(preferredClubId);
+
   const identity = await requireIdentity();
+  await flagRecordsPromise;
   const [evaluation, roleShellsEvaluation, memberHomeEvaluation] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_context_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "member_home_v2", subjectUuid: identity.id }),
   ]);
   if (!evaluation.enabled) {
+    void contextPromise;
     void recordRoleContextFlagFailure(evaluation);
     return <LegacyDashboard identity={identity} />;
   }
 
-  const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
-  const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
-  const context = await resolveExperienceContext(preferredClubId);
+  const context = await contextPromise;
   if (!context.ok && context.reason === "authorization_denied") redirect("/access-denied");
   const resolved = resolveDashboardRoleContext({
     roleContextEnabled: true,
