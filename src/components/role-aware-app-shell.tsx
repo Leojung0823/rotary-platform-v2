@@ -253,7 +253,7 @@ export async function RoleAwareAppShellBoundary({
 }) {
   const evaluation = await evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id });
   if (!evaluation.enabled) {
-    await recordRoleShellFlagFailure(evaluation);
+    void recordRoleShellFlagFailure(evaluation);
     return <LegacyAppShell identity={identity}>{children}</LegacyAppShell>;
   }
 

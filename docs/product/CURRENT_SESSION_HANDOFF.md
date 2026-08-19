@@ -36,8 +36,14 @@ checks: { configuration: true, database: true }
   ```
 - Go-Live 最後一關「hosted member acceptance」會用真實 staging 帳號登入驗收；如果 staging 上的測試社團（Rotary Platform Staging Test Club）被封存過，這關會失敗（登入成功但首頁抓不到，因為封存社的舊社員會看到錯誤頁）。記得測完封存/解封功能後要把測試資料復原。
 
-## 尚未處理、留意事項
+## 當時尚未處理、留意事項（截至 2026-08-13）
 
-- Health check 一直帶著 `"warnings":["DEPLOYMENT_WARNING"]`，這是既有狀態、不是這次新出現的，還沒查過代表什麼，不影響目前功能。
-- `docs/product/LEGACY_PORT_CANDIDATES.md` 原本規劃的「首頁瘦身」（比照舊專案 6 區塊結構重做 dashboard）**這次沒有做**，優先度被權限/CI/相機這幾個緊急問題蓋過去了，仍然是待辦。
+- Health check 當時一直帶著 `"warnings":["DEPLOYMENT_WARNING"]`，尚未調查提醒來源，不影響目前功能。
+- `docs/product/LEGACY_PORT_CANDIDATES.md` 原本規劃的「首頁瘦身」（比照舊專案 6 區塊結構重做 dashboard）當時尚未做。
 - 本機開發時常需要重跑 `node --env-file=.env.local scripts/bootstrap-superadmin.mjs`，因為本機 Supabase 資料在多次 `db reset --local` 之後會被清空。
+
+## 後續處理（2026-08-15）
+
+- 已確認 `DEPLOYMENT_WARNING` 的程式機制是環境檢查的非阻擋提醒。staging runbook 明確使用 `LINE_OA_MODE=mock`，這本身會產生 `STAGING_LINE_OA_IS_MOCK`；若 Render runtime 另外保留 hosted bootstrap／operator 驗證密碼，也會產生其他提醒。公開 health 只回傳泛化的 warning，因此無法僅靠公開 endpoint 判定 Render 目前是哪一項；本次沒有修改 hosted 設定。
+- 已移除 legacy dashboard 中過時的 V0.7 roadmap 卡片；社員旗標開啟時的 `MemberHome` 已保留任務型首頁。舊專案的生日／完整歷史活動／名錄六區塊仍缺少目前資料契約，未直接照搬。
+- 已在 README 補上 local database reset 後重新執行 `bootstrap-superadmin` 與 `verify:auth` 的恢復流程。

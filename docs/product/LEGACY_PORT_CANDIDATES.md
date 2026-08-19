@@ -36,11 +36,12 @@
 - 現況：`rotary-platform-v2` 的「留言板」(`board/page.tsx`) 是社員互動討論區，性質不同，不是廣播工具
 - 判斷：**對象選擇 + 發送前預覽這個互動流程值得搬，不要照抄檔案結構或耦合方式**
 
-### 4. 首頁瘦身（目前正在做）
+### 4. 首頁瘦身（社員首頁已完成第一版，legacy fallback 已清理）
 - 舊 repo 6/29 版本（commit `69f1964`）：475 行，6 個乾淨區塊 — 歡迎橫幅、近期活動、歷史活動、名錄卡片、生日卡片
 - 舊 repo 目前 HEAD：膨脹到 1233 行，多塞了捷徑提醒、社團回顧、社團調查卡片 — 驗證了「越改越不人性化」
-- `rotary-platform-v2` 現況：`src/app/(authenticated)/dashboard/page.tsx`，190 行
-- 判斷：**參考 6/29 那版的精簡結構重新設計現在的 dashboard，避免繼續往上疊小工具**
+- `rotary-platform-v2` 現況：社員旗標開啟時由 `src/components/member-home.tsx` 提供「今天與我有關的事情」、優先活動、下一場與近期回顧；legacy fallback 位於 `src/app/(authenticated)/dashboard/page.tsx`
+- 本次已移除 legacy fallback 中過時的 V0.7 roadmap 卡片，保留功能總覽與既有權限導向，避免把歷史開發狀態混進首頁。
+- 判斷：**現有社員首頁已完成第一版精簡結構；舊專案的生日卡片、完整歷史活動與名錄卡片尚無目前資料契約，不能直接照搬，另列為有明確資料需求的後續 UX 工作。**
 
 ### 5. 公開網站 + 活動自動顯示
 - 舊 repo 確實有一個真正在用的公開網站（首頁/新聞/相簿/幹部/社史/服務計畫/聯絡我們），後台用 draft/published/archived 狀態管理內容（`public-website-tab.tsx`，1522 行）

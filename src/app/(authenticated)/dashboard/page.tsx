@@ -115,18 +115,6 @@ async function LegacyDashboard({
         </div>
       </header>
 
-      <Card>
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">下一階段</p>
-            <h2>V0.7 社員系統與可上線前端骨架</h2>
-          </div>
-          <Badge tone="warning">開發中</Badge>
-        </div>
-        <p>優先完善社員名冊、個人資料、邀請與登入流程，再建立 Hosted Supabase／HTTPS 測試站。其他預定功能已先放入功能地圖並清楚標示開發狀態。</p>
-        <Link className="card-link" href="/features">查看完整功能地圖 →</Link>
-      </Card>
-
       {error ? (
         <Notice tone="error">目前無法讀取扶輪社資料，請稍後重新整理。</Notice>
       ) : (
@@ -192,7 +180,7 @@ export default async function DashboardPage({
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
   ]);
   if (!evaluation.enabled) {
-    await recordRoleContextFlagFailure(evaluation);
+    void recordRoleContextFlagFailure(evaluation);
     return <LegacyDashboard identity={identity} />;
   }
 
@@ -220,7 +208,7 @@ export default async function DashboardPage({
         subjectUuid: identity.id,
       });
       if (!memberHomeEvaluation.enabled) {
-        await recordMemberHomeFlagFailure(memberHomeEvaluation);
+        void recordMemberHomeFlagFailure(memberHomeEvaluation);
       } else {
         const activeClub = activeClubForMode(context.context, "member");
         if (activeClub) return <MemberHome identity={identity} activeClubId={activeClub.clubId} />;
