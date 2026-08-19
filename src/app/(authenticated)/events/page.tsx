@@ -158,10 +158,14 @@ export default async function EventsPage({
   await requireIdentity();
   const params = await searchParams;
   const supabase = await createClient();
-  const clubsResult = await supabase.rpc("list_my_event_clubs");
+  // One call: the database picks the club the same way this page used to --
+  // the one named in the query string, otherwise the first -- so the events
+  // come back with the club list instead of a round trip behind it.
+  const pageResult = await supabase.rpc("list_my_event_page", { p_club_id: params.clubId ?? null });
+  const projection = (pageResult.data ?? {}) as { clubs?: unknown; events?: unknown };
 
-  const clubRows = clubsResult.data ?? [];
-  if (clubsResult.error || !Array.isArray(clubRows) || !clubRows.every(isEventClub)) {
+  const clubRows = Array.isArray(projection.clubs) ? projection.clubs : null;
+  if (pageResult.error || !clubRows || !clubRows.every(isEventClub)) {
     return <div className="page-stack">
       <EventHeader />
       <div className="notice notice-error" role="alert">目前無法確認活動社別與權限，請稍後重新整理。</div>
@@ -173,8 +177,7 @@ export default async function EventsPage({
   let events: ClubEvent[] = [];
   let eventsUnavailable = false;
   if (selectedClub) {
-    const eventsResult = await supabase.rpc("list_club_events", { p_club_id: selectedClub.club_id });
-    const parsed = eventsResult.error ? null : parseEvents(eventsResult.data);
+    const parsed = parseEvents({ events: projection.events });
     if (!parsed) eventsUnavailable = true;
     else events = parsed;
   }

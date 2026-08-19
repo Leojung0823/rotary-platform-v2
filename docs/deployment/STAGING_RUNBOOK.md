@@ -35,6 +35,9 @@ LINE_OA_MODE=mock
 ```
 
 `LINE_OA_MODE=mock` 在 staging 只會產生提醒；production 不允許使用 mock。
+這個提醒就是 `/api/health` 長期顯示的 `DEPLOYMENT_WARNING` 來源（`src/lib/deployment-env.mjs` 的 `STAGING_LINE_OA_IS_MOCK`），屬於預期行為。
+
+區域搬遷（Render 換機房）另見 `RENDER_REGION_MIGRATION.md`。
 
 不要把任何實際值寫入 Git、PR、Issue、截圖或聊天訊息。
 

@@ -13,7 +13,7 @@ function assertExactSet(actual: readonly string[], expected: readonly string[]) 
 }
 
 const featureFlagMigration = readFileSync(
-  resolve(process.cwd(), "supabase/migrations/20260819000600_blessing_iou_rotary_year_reporting.sql"),
+  resolve(process.cwd(), "supabase/migrations/20260820000300_blessing_iou_rotary_year_reporting.sql"),
   "utf8",
 );
 const telemetryMigration = readFileSync(
