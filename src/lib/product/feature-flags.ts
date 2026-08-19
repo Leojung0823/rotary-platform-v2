@@ -11,6 +11,7 @@ export const featureFlagKeys = [
   "announcements_v09",
   "blessing_iou_v1",
   "blessing_iou_collections_v1",
+  "blessing_iou_reporting_v1",
 ] as const;
 
 export type FeatureFlagKey = (typeof featureFlagKeys)[number];
@@ -52,6 +53,7 @@ export const emergencyKillSwitches: Readonly<Partial<Record<FeatureFlagKey, stri
   checkin_gps_v2: "DISABLE_GPS_CHECKIN",
   blessing_iou_v1: "DISABLE_BLESSING_IOU",
   blessing_iou_collections_v1: "DISABLE_BLESSING_IOU_COLLECTIONS",
+  blessing_iou_reporting_v1: "DISABLE_BLESSING_IOU_REPORTING",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
