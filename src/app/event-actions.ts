@@ -11,6 +11,7 @@ import {
   readEventCreateFormValues,
   validateEventCreateForm,
 } from "@/lib/events/validation";
+import { COVER_BUCKET } from "@/lib/events/cover-image";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -98,6 +99,43 @@ export async function createEventAction(
   if (rpcError) return createEventRpcFailure(values, revision, rpcError.message);
   revalidatePath("/events");
   redirect(eventPath(clubId, "success", "event_created"));
+}
+
+export async function recordEventCoverAction({
+  clubId,
+  eventId,
+  path,
+}: {
+  clubId: string;
+  eventId: string;
+  path: string | null;
+}) {
+  let club: string;
+  let event: string;
+  try {
+    club = parseUuid(clubId);
+    event = parseUuid(eventId);
+  } catch {
+    return;
+  }
+
+  const supabase = await createClient();
+  // The upload already proved the caller may write to this club's folder; this
+  // proves the key belongs to the event it is being attached to.
+  const { error } = await supabase.rpc("set_club_event_cover", {
+    p_club_id: club,
+    p_event_id: event,
+    p_cover_image_path: path,
+  });
+  if (error) return;
+
+  if (path === null) {
+    // Leaving the object behind would keep consuming the storage allowance for
+    // an image nothing renders.
+    await supabase.storage.from(COVER_BUCKET).remove([`${club}/${event}`]);
+  }
+  revalidatePath("/events");
+  revalidatePath("/dashboard");
 }
 
 export async function publishEventAction(formData: FormData) {

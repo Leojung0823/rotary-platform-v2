@@ -92,7 +92,31 @@ jobs:
         run: npm ci --prefix e2e
 
       - name: Install Chromium and operating-system dependencies
-        run: npm --prefix e2e run install:chromium
+        shell: bash
+        run: |
+          # Installing OS dependencies reaches the runner's Ubuntu mirror, which
+          # stalls rather than failing when the mirror is unreachable -- that
+          # turns a transient outage into a job that burns its entire timeout.
+          # Bound each attempt so a stall fails fast, and retry, because the
+          # mirror has consistently recovered within minutes.
+          for attempt in 1 2 3; do
+            if timeout -k 30 240 npm --prefix e2e run install:chromium; then
+              exit 0
+            fi
+            echo "Chromium install attempt ${attempt} failed or stalled; retrying."
+            # timeout only kills its direct child, so the apt-get underneath
+            # survives and keeps /var/lib/apt/lists/lock -- which made every
+            # later attempt fail instantly on the lock instead of retrying the
+            # download. Clear it before trying again. The runner is ephemeral,
+            # so there is nothing else here worth preserving.
+            sudo pkill -9 -x apt-get 2>/dev/null || true
+            sudo pkill -9 -x dpkg 2>/dev/null || true
+            sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock 2>/dev/null || true
+            sudo dpkg --configure -a 2>/dev/null || true
+            sleep 20
+          done
+          echo "Chromium install did not succeed after 3 attempts."
+          exit 1
 
       - name: Validate protected go-live inputs and credentials
         id: go_live_inputs
