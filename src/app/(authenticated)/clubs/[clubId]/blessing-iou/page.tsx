@@ -13,10 +13,10 @@ export default async function BlessingIouManagementPage({
   params: Promise<{ clubId: string }>;
 }) {
   const [identity, { clubId }] = await Promise.all([requireIdentity(), params]);
-  const evaluation = await evaluateCurrentFeatureFlag({
-    key: "blessing_iou_v1",
-    subjectUuid: identity.id,
-  });
+  const [evaluation, collectionsEvaluation] = await Promise.all([
+    evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "blessing_iou_collections_v1", subjectUuid: identity.id }),
+  ]);
   if (!evaluation.enabled) notFound();
 
   const supabase = await createClient();
@@ -48,13 +48,20 @@ export default async function BlessingIouManagementPage({
         <h1>祝福 IOU</h1>
         <p>{context.clubName}的祝福牆與金額公開設定。</p>
       </div>
-      <Link
-        className="button button-secondary"
-        href={`/blessings?clubId=${encodeURIComponent(context.clubId)}&mode=member`}
-      >查看社員畫面</Link>
+      <div className="form-actions">
+        {collectionsEvaluation.enabled && <Link
+          className="button"
+          href={`/clubs/${encodeURIComponent(context.clubId)}/blessing-iou/collections?mode=management`}
+        >收款管理</Link>}
+        <Link
+          className="button button-secondary"
+          href={`/blessings?clubId=${encodeURIComponent(context.clubId)}&mode=member`}
+        >查看社員畫面</Link>
+      </div>
     </header>
-    <Notice>
-      這一版管理祝福內容與承諾金額；收款、部分收款、批次收款與扶輪年度統計會在後續獨立功能中加入。
+    <Notice>{collectionsEvaluation.enabled
+      ? "收款管理支援單筆、部分與多筆批次登錄；錯帳只能沖銷，不能刪除。扶輪年度統計會在下一個獨立功能加入。"
+      : "祝福牆核心已開放；收款功能目前仍關閉，可先檢查祝福內容與金額隱私設定。"}
     </Notice>
     <BlessingIouManagement initialContext={context} />
   </div>;

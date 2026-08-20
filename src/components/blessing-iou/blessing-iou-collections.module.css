@@ -1,0 +1,66 @@
+.collections { display: grid; gap: 2rem; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.metrics > div { display: grid; gap: 0.35rem; padding: 1.2rem; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 16px; background: #fff; }
+.metrics span, .metrics small { color: #64748b; }
+.metrics strong { font-size: clamp(1.35rem, 3vw, 2rem); overflow-wrap: anywhere; }
+.message { margin: 0; padding: 0.9rem 1rem; border: 1px solid #cbd5e1; border-radius: 12px; background: #f8fafc; color: #334155; }
+.collectionForm { display: grid; gap: 2rem; }
+.receiptSettings, .memberCard, .empty { border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 18px; background: #fff; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05); }
+.receiptSettings { display: grid; gap: 1rem; padding: 1.25rem; }
+.receiptSettings h2, .sectionHeading h2 { margin: 0; }
+.receiptSettings > p { margin: 0; color: #64748b; }
+.eyebrow { margin: 0 0 0.3rem; color: #8a6618; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; }
+.settingsGrid { display: grid; grid-template-columns: minmax(150px, 0.7fr) minmax(150px, 0.7fr) minmax(240px, 1.6fr); gap: 1rem; }
+.settingsGrid label { display: grid; gap: 0.4rem; color: #334155; font-weight: 750; }
+.settingsGrid input, .settingsGrid select { min-height: 50px; width: 100%; border: 1px solid #cbd5e1; border-radius: 12px; padding: 0.7rem 0.8rem; background: #fff; color: #0f172a; font: inherit; }
+.sectionHeading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.memberList { display: grid; gap: 1rem; }
+.memberCard { overflow: hidden; }
+.memberCard > header { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: 1.15rem 1.25rem; background: #fffbeb; }
+.memberCard h3 { margin: 0; font-size: 1.2rem; }
+.memberCard header span { color: #78601f; font-size: 0.9rem; }
+.memberCard dl { display: flex; gap: 1.25rem; margin: 0; }
+.memberCard dl div { display: grid; gap: 0.1rem; text-align: right; }
+.memberCard dt { color: #64748b; font-size: 0.75rem; }
+.memberCard dd { margin: 0; font-weight: 800; }
+.entryList { display: grid; }
+.entryRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(210px, 280px); gap: 1rem; align-items: center; padding: 1rem 1.25rem; border-top: 1px solid #e2e8f0; }
+.entryCopy { min-width: 0; }
+.entryCopy p { margin: 0.45rem 0; line-height: 1.65; overflow-wrap: anywhere; white-space: pre-wrap; }
+.entryCopy small { color: #64748b; }
+.unpaidBadge, .partialBadge, .paidBadge, .postedBadge, .reversedBadge { display: inline-flex; width: fit-content; min-height: 30px; align-items: center; border-radius: 999px; padding: 0.25rem 0.65rem; font-size: 0.8rem; font-weight: 800; }
+.unpaidBadge { background: #fef2f2; color: #991b1b; }
+.partialBadge { background: #fff7ed; color: #9a3412; }
+.paidBadge, .postedBadge { background: #ecfdf5; color: #166534; }
+.reversedBadge { background: #f1f5f9; color: #475569; }
+.amountField { display: grid; gap: 0.4rem; color: #334155; font-size: 0.85rem; font-weight: 750; }
+.amountField > span:last-of-type { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 12px; }
+.amountField b { padding: 0 0.65rem; color: #64748b; }
+.amountField input { min-height: 48px; width: 100%; border: 0; border-left: 1px solid #cbd5e1; padding: 0.65rem; font: inherit; }
+.amountField button { min-height: 40px; border: 0; background: transparent; color: #1d4ed8; cursor: pointer; font: inherit; font-weight: 750; text-align: right; }
+.settled { justify-self: end; color: #166534; }
+.submitBar { position: sticky; bottom: 12px; z-index: 2; display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: 0.9rem 1rem; border: 1px solid #d8c17f; border-radius: 16px; background: rgba(255, 253, 247, 0.96); box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15); backdrop-filter: blur(10px); }
+.submitBar span { color: #6f5a27; }
+.submitBar button, .reverseButton { min-height: 48px; border: 0; border-radius: 999px; padding: 0.7rem 1.1rem; cursor: pointer; font: inherit; font-weight: 750; }
+.submitBar button { background: #8a6618; color: #fff; }
+.submitBar button:disabled, .reverseButton:disabled, .amountField button:disabled { cursor: not-allowed; opacity: 0.55; }
+.empty { display: grid; gap: 0.35rem; justify-items: center; padding: 2.2rem 1rem; color: #64748b; text-align: center; }
+.empty strong { color: #1e293b; }
+.tableWrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; }
+.tableWrap table { width: 100%; min-width: 760px; border-collapse: collapse; }
+.tableWrap th, .tableWrap td { padding: 0.85rem 1rem; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+.tableWrap th { background: #f8fafc; color: #475569; font-size: 0.8rem; }
+.tableWrap td > strong, .tableWrap td > small { display: block; }
+.tableWrap td small { margin-top: 0.2rem; color: #64748b; }
+.reverseButton { min-height: 42px; border: 1px solid #fecaca; background: #fff; color: #b91c1c; }
+
+@media (max-width: 760px) {
+  .metrics, .settingsGrid { grid-template-columns: 1fr; }
+  .memberCard > header { display: grid; }
+  .memberCard dl { justify-content: space-between; gap: 0.5rem; }
+  .memberCard dl div { text-align: left; }
+  .entryRow { grid-template-columns: 1fr; }
+  .settled { justify-self: start; }
+  .submitBar { bottom: 78px; display: grid; }
+  .submitBar button { width: 100%; }
+}

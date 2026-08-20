@@ -134,6 +134,7 @@ describe("feature flag evaluation truth table", () => {
       "attendance_ui_v2",
       "announcements_v09",
       "blessing_iou_v1",
+      "blessing_iou_collections_v1",
     ].map((key) => calculateFeatureRolloutBucket(subjectUuid, key, pepper));
     expect(new Set(buckets).size).toBeGreaterThan(1);
   });
@@ -186,6 +187,16 @@ describe("feature flag evaluation truth table", () => {
       environment: "staging",
       pepper,
       env: { DISABLE_BLESSING_IOU: "true" },
+    })).toMatchObject({ enabled: false, reason: "kill_switch" });
+  });
+
+  it("can stop collections without hiding the blessing wall", () => {
+    expect(evaluateFeatureFlag({
+      key: "blessing_iou_collections_v1",
+      record: enabledRecord,
+      environment: "staging",
+      pepper,
+      env: { DISABLE_BLESSING_IOU_COLLECTIONS: "true" },
     })).toMatchObject({ enabled: false, reason: "kill_switch" });
   });
 });
