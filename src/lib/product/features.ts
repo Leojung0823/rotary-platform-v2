@@ -116,11 +116,12 @@ export const productFeatures: ProductFeature[] = [
   },
   {
     slug: "documents",
-    title: "社務文件中心",
-    summary: "會議紀錄、章程、表單與附件的社別權限、版本及搜尋。",
+    title: "文件中心與年度交接",
+    summary: "依扶輪年度管理社務文件、不可覆蓋的版本、保密級別、缺件提醒與具名交接確認。",
     category: "溝通與內容",
-    status: "developing",
-    phase: "V0.9",
+    status: "available",
+    phase: "V0.9 可測試",
+    href: "/archives",
   },
   {
     slug: "birthday-and-care",

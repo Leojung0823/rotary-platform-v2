@@ -25,6 +25,7 @@ describe("auth session proxy", () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it("refreshes only protected and session-sensitive page routes", () => {
+    expect(shouldRefreshAuthSession("/archives")).toBe(true);
     expect(shouldRefreshAuthSession("/birthdays")).toBe(true);
     expect(shouldRefreshAuthSession("/dashboard")).toBe(true);
     expect(shouldRefreshAuthSession("/clubs/club-id/members")).toBe(true);
