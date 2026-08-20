@@ -27,3 +27,4 @@ supabase/verification/name_only_member_join_security.sql
 supabase/verification/event_cover_storage_security.sql
 supabase/verification/blessing_iou_core_security.sql
 supabase/verification/blessing_iou_collections_security.sql
+supabase/verification/blessing_iou_reporting_security.sql

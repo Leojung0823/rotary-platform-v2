@@ -133,10 +133,10 @@ export const productFeatures: ProductFeature[] = [
   {
     slug: "blessing-iou",
     title: "祝福 IOU",
-    summary: "社員分享祝福與捐款承諾；幹部管理金額隱私、部分與批次收款及沖銷。",
+    summary: "社員分享祝福與捐款承諾；幹部管理收款、沖銷與 7 月起算的扶輪年度統計。",
     category: "財務與營運",
     status: "available",
-    phase: "核心與收款可測試",
+    phase: "核心、收款與報表可測試",
     href: "/blessings",
   },
   {

@@ -47,7 +47,11 @@ test("a manager uploads a cover, and the browser shrinks it first", async ({ pag
   await login(page, managerEmail);
   await page.goto(new URL("/events?mode=management", baseURL).toString());
 
-  await expect(page.getByRole("button", { name: "上傳圖片" }).first()).toBeVisible();
+  // The control reads "上傳圖片" for an event with no picture yet and "更換圖片"
+  // for one that already has it. Both are valid starting states -- an earlier
+  // run leaves a cover behind -- and the upload path under test is the same.
+  const control = page.getByRole("button", { name: /^(上傳圖片|更換圖片)$/u }).first();
+  await expect(control).toBeVisible();
   const bytes = await oversizedPhoto(page);
   await page.setInputFiles('input[type="file"]', {
     name: "photo.png",
