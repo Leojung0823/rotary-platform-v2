@@ -1,0 +1,125 @@
+.privacyCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.preferenceForm {
+  display: grid;
+  gap: 18px;
+}
+
+.preferenceForm small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.inlineLink {
+  color: var(--blue);
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.birthdayGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.birthdayCard {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+}
+
+.memberHeading {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.memberHeading h3 {
+  margin-bottom: 2px;
+}
+
+.date {
+  color: #8a6710;
+  font-size: 18px;
+}
+
+.wishList {
+  display: grid;
+  gap: 14px;
+}
+
+.wishCard {
+  display: grid;
+  gap: 14px;
+}
+
+.wishMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wishMeta strong,
+.wishMeta span {
+  display: block;
+}
+
+.wishMeta span,
+.wishMeta time {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.wishContent {
+  margin: 0;
+  color: var(--ink);
+  font-size: 17px;
+  white-space: pre-wrap;
+}
+
+.wishActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.wishActions details {
+  min-width: min(100%, 320px);
+}
+
+.wishActions summary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.wishActions details[open] form {
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .privacyCard {
+    grid-template-columns: 1fr;
+  }
+
+  .birthdayGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .wishMeta {
+    display: grid;
+  }
+}

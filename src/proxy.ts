@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // redirected to /login before the (authenticated) layout's Suspense
 // fallback can stream a 200.
 const PROTECTED_SESSION_PATHS = [
+  "/birthdays",
   "/board",
   "/club",
   "/clubs",
@@ -97,6 +98,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/birthdays/:path*",
     "/board/:path*",
     "/club/:path*",
     "/clubs/:path*",
