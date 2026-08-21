@@ -30,3 +30,4 @@ supabase/verification/blessing_iou_collections_security.sql
 supabase/verification/blessing_iou_reporting_security.sql
 supabase/verification/birthday_wishes_security.sql
 supabase/verification/archive_handover_security.sql
+supabase/verification/attendance_page_projections_security.sql

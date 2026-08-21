@@ -99,7 +99,10 @@ export function resolveRoleShell({
 export function roleShellNavigation(
   context: ExperienceContext,
   mode: ExperienceMode,
-  { blessingIouEnabled = false }: { blessingIouEnabled?: boolean } = {},
+  { blessingIouEnabled = false, attendanceEnabled = false }: {
+    blessingIouEnabled?: boolean;
+    attendanceEnabled?: boolean;
+  } = {},
 ): readonly ShellNavigationItem[] {
   const items: ShellNavigationItem[] = navigationByMode[mode].flatMap((definition) => {
     const href = definition.href(context, mode);
@@ -111,6 +114,23 @@ export function roleShellNavigation(
       href: withModePreference(href, mode),
     }] : [];
   });
+
+  // Both entries are gated on the same flag as the pages they open, so the
+  // nav can never offer a link that renders notFound().
+  if (attendanceEnabled && (mode === "member" || mode === "management")) {
+    const isMember = mode === "member";
+    const anchorId = isMember ? "directory" : "members";
+    const anchorIndex = items.findIndex((item) => item.id === anchorId);
+    const attendanceItem: ShellNavigationItem = {
+      id: "attendance",
+      label: isMember ? "我的出席" : "出席管理",
+      mobileLabel: "出席",
+      icon: "％",
+      href: withModePreference(isMember ? "/attendance" : "/attendance/manage", mode),
+    };
+    if (anchorIndex === -1) items.push(attendanceItem);
+    else items.splice(anchorIndex, 0, attendanceItem);
+  }
 
   if (mode === "management" && blessingIouEnabled) {
     const managedClub = activeClubForMode(context, "management");

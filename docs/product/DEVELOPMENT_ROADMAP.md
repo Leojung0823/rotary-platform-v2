@@ -53,7 +53,10 @@
 
 ### Phase 3 — Integration & Hardening
 
-1. **PR-37B — Attendance UI / Statistics Integration**
+1. ~~**PR-37B — Attendance UI / Statistics Integration**~~ — 已完成（2026-08-21）。
+   `/attendance` 與 `/attendance/manage` 建在 PR #61 既有的 canonical attendance RPC 之上，
+   未新增第二套 attendance authority；PR #37 的 migration 因此不採用。
+   受 `attendance_ui_v2` flag 控管，預設關閉。
 2. **PR #40 更新 — Announcements / In-app Notifications Integration**
 3. **PR-07a — 我的／帳號安全／登入協助**
 4. **PR-07b — Legacy UI Cleanup / Accessibility Hardening**

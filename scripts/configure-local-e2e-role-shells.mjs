@@ -2,10 +2,10 @@ import { createClient } from "@supabase/supabase-js";
 import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 
 const scenarios = {
-  disabled: { roleShells: false, memberHome: false, checkinQr: false, gpsCheckin: false },
-  "member-home-disabled": { roleShells: true, memberHome: false, checkinQr: false, gpsCheckin: false },
-  "checkin-disabled": { roleShells: true, memberHome: true, checkinQr: false, gpsCheckin: false },
-  enabled: { roleShells: true, memberHome: true, checkinQr: true, gpsCheckin: true },
+  disabled: { roleShells: false, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false },
+  "member-home-disabled": { roleShells: true, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false },
+  "checkin-disabled": { roleShells: true, memberHome: true, checkinQr: false, gpsCheckin: false, attendanceUi: false },
+  enabled: { roleShells: true, memberHome: true, checkinQr: true, gpsCheckin: true, attendanceUi: true },
 };
 const scenario = scenarios[process.argv[2]] ?? null;
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -30,6 +30,7 @@ for (const [featureKey, enabled] of [
   ["member_home_v2", scenario.memberHome],
   ["checkin_qr_v2", scenario.checkinQr],
   ["checkin_gps_v2", scenario.gpsCheckin],
+  ["attendance_ui_v2", scenario.attendanceUi],
 ]) {
   const { error } = await client.rpc("set_platform_feature_flag", {
     p_feature_key: featureKey,

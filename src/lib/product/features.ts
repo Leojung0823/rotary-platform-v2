@@ -94,8 +94,9 @@ export const productFeatures: ProductFeature[] = [
     title: "出席率、請假與補出席",
     summary: "定義出席分母、公假、請假、補出席與社員趨勢報表。",
     category: "社務與活動",
-    status: "developing",
-    phase: "V0.8",
+    status: "available",
+    phase: "目前可測試",
+    href: "/attendance",
   },
   {
     slug: "message-board",

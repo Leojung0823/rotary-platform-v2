@@ -118,4 +118,27 @@ describe("role-aware navigation", () => {
     expect(roleShellNavigation(projected, "member", { blessingIouEnabled: true })
       .some((item) => item.id === "blessing-iou")).toBe(false);
   });
+
+  it("hides attendance entirely while the flag is off, so the nav never links to a notFound page", () => {
+    const projected = context();
+    for (const mode of ["member", "management"] as const) {
+      expect(roleShellNavigation(projected, mode).some((item) => item.id === "attendance")).toBe(false);
+    }
+  });
+
+  it("gives each mode its own attendance destination when enabled", () => {
+    const projected = context();
+    const member = roleShellNavigation(projected, "member", { attendanceEnabled: true });
+    const management = roleShellNavigation(projected, "management", { attendanceEnabled: true });
+
+    // The member sees their own rate; the manager lands on the club roster.
+    expect(member.find((item) => item.id === "attendance")?.href).toBe("/attendance?mode=member");
+    expect(management.find((item) => item.id === "attendance")?.href)
+      .toBe("/attendance/manage?mode=management");
+
+    expect(member.map((item) => item.id))
+      .toEqual(["home", "events", "checkin", "attendance", "directory", "account"]);
+    expect(management.map((item) => item.id))
+      .toEqual(["overview", "events", "attendance", "members", "invitations", "club-settings"]);
+  });
 });
