@@ -52,7 +52,11 @@ insert into public.club_events (
   -- A 例會: open to the whole club and counted, so it must stay counted.
   ('8c000000-0000-4000-8000-000000000002', '5c000000-0000-4000-8000-000000000001', 'regular_meeting', '全社例會',
    now() + interval '3 days', now() + interval '3 days' + interval '2 hours', now() + interval '1 day',
-   true, 'published', '3c000000-0000-4000-8000-000000000001', '3c000000-0000-4000-8000-000000000001', now() - interval '5 days', null, null);
+   true, 'published', '3c000000-0000-4000-8000-000000000001', '3c000000-0000-4000-8000-000000000001', now() - interval '5 days', null, null),
+  -- Named participants with nothing in common but this one outing.
+  ('8c000000-0000-4000-8000-000000000003', '5c000000-0000-4000-8000-000000000001', 'other', '高爾夫球比賽',
+   now() + interval '4 days', now() + interval '4 days' + interval '5 hours', now() + interval '1 day',
+   false, 'published', '3c000000-0000-4000-8000-000000000001', '3c000000-0000-4000-8000-000000000001', now() - interval '5 days', null, null);
 
 do $grants$
 begin
@@ -126,6 +130,26 @@ begin
     '8c000000-0000-4000-8000-000000000001',
     array[tag_id]
   );
+  -- The golf outing is addressed to named members, with no tag involved.
+  perform public.set_club_event_audience(
+    '5c000000-0000-4000-8000-000000000001',
+    '8c000000-0000-4000-8000-000000000003',
+    '{}'::uuid[],
+    array['6c000000-0000-4000-8000-000000000003'::uuid]
+  );
+
+  -- A membership from another club cannot be named as an audience.
+  begin
+    perform public.set_club_event_audience(
+      '5c000000-0000-4000-8000-000000000001',
+      '8c000000-0000-4000-8000-000000000003',
+      '{}'::uuid[],
+      array['6c000000-0000-4000-8000-000000000003'::uuid, gen_random_uuid()]
+    );
+    raise exception 'An unknown membership was accepted as an audience.';
+  exception when invalid_parameter_value then null;
+  end;
+
   perform set_config('tags.board', tag_id::text, true);
 end $officer$;
 reset role;
@@ -137,6 +161,17 @@ begin
     update public.club_events set counts_for_attendance = true
     where id = '8c000000-0000-4000-8000-000000000001';
     raise exception 'A targeted event was switched to count for attendance.';
+  exception when invalid_parameter_value then null;
+  end;
+
+  begin
+    insert into public.club_event_audience_members (event_id, membership_id, club_id)
+    values (
+      '8c000000-0000-4000-8000-000000000002',
+      '6c000000-0000-4000-8000-000000000002',
+      '5c000000-0000-4000-8000-000000000001'
+    );
+    raise exception 'A named audience was attached to an event that counts for attendance.';
   exception when invalid_parameter_value then null;
   end;
 
@@ -163,6 +198,34 @@ begin
     raise exception 'A member was excluded from a club-wide meeting.';
   end if;
 end $invariant$;
+
+-- The named-member audience is independent of tags: the member excluded from
+-- the tagged event is exactly the one invited to the golf outing.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '1c000000-0000-4000-8000-000000000003', true);
+do $named$
+declare
+  events jsonb;
+begin
+  events := public.list_club_events('5c000000-0000-4000-8000-000000000001') -> 'events';
+  if events::text not like '%8c000000-0000-4000-8000-000000000003%' then
+    raise exception 'A named participant could not see the outing they were invited to.';
+  end if;
+end $named$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '1c000000-0000-4000-8000-000000000002', true);
+do $not_named$
+declare
+  events jsonb;
+begin
+  events := public.list_club_events('5c000000-0000-4000-8000-000000000001') -> 'events';
+  if events::text like '%8c000000-0000-4000-8000-000000000003%' then
+    raise exception 'A member who was not named saw the outing.';
+  end if;
+end $not_named$;
+reset role;
 
 -- And the excluded member cannot see the event at all, while the officer can.
 set local role authenticated;
