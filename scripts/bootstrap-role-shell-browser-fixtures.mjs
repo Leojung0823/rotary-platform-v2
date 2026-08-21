@@ -307,6 +307,43 @@ async function addDynamicCheckinBrowserFixtures({ clubId, managerAccount }) {
 // Done through an officer's own session rather than the service-role client:
 // the settings table has a trigger that rejects any write it cannot attribute
 // to an app account, which a service-role connection has no way to satisfy.
+// A pledge with no blessing text, so the ledger on 我的 has something to show.
+//
+// Created through the member's own session rather than the browser: a local
+// `next start` runs with NODE_ENV=production, and the blessing mutation guard
+// refuses a non-https origin there, so the publish path cannot be exercised
+// over plain http locally. The database-level verification covers that path;
+// this fixture exists so the ledger UI can be.
+async function addBlessingIouLedgerFixture({ clubId, email }) {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
+
+  const member = createClient(url, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const signIn = await member.auth.signInWithPassword({ email, password });
+  if (signIn.error) fail("blessing ledger fixture sign-in did not succeed");
+
+  // Asked through the member's own ledger RPC rather than a service-role
+  // select: the entries table grants nothing to service_role by design, so a
+  // direct read there fails rather than returning an empty list.
+  const summary = await member.rpc("get_my_blessing_iou_summary", { p_club_id: clubId });
+  if (summary.error) fail("blessing ledger fixture lookup did not succeed");
+
+  // Entries are append-only by design, so only ever add the first one.
+  if ((summary.data?.totals?.entry_count ?? 0) === 0) {
+    const { error } = await member.rpc("create_blessing_iou_entry", {
+      p_club_id: clubId,
+      p_blessing_text: "",
+      p_pledged_amount: 1234,
+      p_hide_amount: true,
+    });
+    if (error) fail("blessing ledger fixture entry was not created");
+  }
+
+  await member.auth.signOut();
+}
+
 async function allowPublicBlessingAmounts({ clubId, email }) {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
@@ -415,6 +452,10 @@ await addLocationCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount:
 await allowPublicBlessingAmounts({
   clubId: memberClub.id,
   email: "e2e-shell-member-manager@example.test",
+});
+await addBlessingIouLedgerFixture({
+  clubId: memberClub.id,
+  email: "e2e-shell-ordinary@example.test",
 });
 
 console.log("Local role-shell and member-home browser fixtures are ready. No credentials were printed.");

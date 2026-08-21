@@ -52,7 +52,11 @@ function parseAmountInput(value: string) {
 
 function entryValidationMessage(text: string, amountInput: string) {
   const textLength = codePointLength(text);
-  if (textLength === 0) return "請輸入祝福的話。";
+  // The text is optional, so a member may post a pledge alone -- but an entry
+  // carrying neither words nor an amount would say nothing at all.
+  if (textLength === 0 && amountInput.trim() === "") {
+    return "請填寫祝福的話或捐款金額，至少其中一項。";
+  }
   if (textLength > BLESSING_IOU_TEXT_MAX_CODE_POINTS) {
     return `祝福最多 ${BLESSING_IOU_TEXT_MAX_CODE_POINTS} 個字。`;
   }
@@ -144,14 +148,14 @@ function EntryFields({
   const hasAmount = amountInput.trim() !== "";
   return <div className={styles.fields}>
     <label htmlFor={`${idPrefix}-text`}>
-      <span>祝福的話</span>
+      <span>祝福的話（選填）</span>
       <textarea
         id={`${idPrefix}-text`}
         value={text}
         onChange={(event) => onTextChange(event.target.value)}
         rows={4}
         maxLength={2000}
-        placeholder="例如：祝福本月壽星平安健康、事事順心！"
+        placeholder="例如：祝福本月壽星平安健康、事事順心！留白也可以，只留捐款金額。"
         disabled={disabled}
         aria-invalid={textLength > BLESSING_IOU_TEXT_MAX_CODE_POINTS}
       />

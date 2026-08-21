@@ -24,11 +24,13 @@ export function blessingTextLength(value: string) {
   return Array.from(value).length;
 }
 
+// The text is optional -- a member may simply pledge -- so an empty string is
+// a valid value here. What an entry may not be is empty of both text and
+// amount, which is checked once both are known.
 export function normalizeBlessingText(value: unknown) {
   if (typeof value !== "string") throw new Error("invalid_blessing_text");
   const normalized = value.replace(/\r\n?/gu, "\n").trim();
-  const length = blessingTextLength(normalized);
-  if (length < 1 || length > BLESSING_IOU_TEXT_MAX_CODE_POINTS) {
+  if (blessingTextLength(normalized) > BLESSING_IOU_TEXT_MAX_CODE_POINTS) {
     throw new Error("invalid_blessing_text");
   }
   return normalized;
@@ -51,11 +53,12 @@ export function parseBlessingEntryBody(value: unknown) {
     || typeof value.hideAmount !== "boolean") {
     throw new Error("invalid_blessing_entry_body");
   }
-  return {
-    blessingText: normalizeBlessingText(value.blessingText),
-    pledgedAmount: parsePledgedAmount(value.pledgedAmount),
-    hideAmount: value.hideAmount,
-  };
+  const blessingText = normalizeBlessingText(value.blessingText);
+  const pledgedAmount = parsePledgedAmount(value.pledgedAmount);
+  if (!blessingText && pledgedAmount === null) {
+    throw new Error("invalid_blessing_entry_body");
+  }
+  return { blessingText, pledgedAmount, hideAmount: value.hideAmount };
 }
 
 export function parseBlessingDeleteBody(value: unknown) {

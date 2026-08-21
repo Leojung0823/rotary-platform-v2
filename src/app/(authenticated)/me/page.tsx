@@ -64,6 +64,46 @@ const providerLabels: Record<string, string> = {
   invite: "邀請",
 };
 
+
+type LedgerEntry = {
+  entry_id: string;
+  blessing_text: string;
+  pledged_amount: string | number | null;
+  currency_code: string;
+  amount_is_public: boolean;
+  pledged_on: string;
+  collected_amount: string | number;
+  outstanding_amount: string | number;
+};
+
+type Ledger = {
+  totals: {
+    entry_count: number;
+    pledged_total: string | number;
+    collected_total: string | number;
+    outstanding_total: string | number;
+  };
+  entries: LedgerEntry[];
+};
+
+/** Numeric columns arrive as strings over PostgREST, so money is parsed once. */
+function money(value: string | number | null | undefined) {
+  const amount = typeof value === "string" ? Number(value) : value ?? 0;
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function formatMoney(value: string | number | null | undefined) {
+  return `NT$${money(value).toLocaleString("zh-TW")}`;
+}
+
+function parseLedger(value: unknown): Ledger | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const payload = value as Record<string, unknown>;
+  if (!payload.totals || typeof payload.totals !== "object") return null;
+  if (!Array.isArray(payload.entries)) return null;
+  return payload as unknown as Ledger;
+}
+
 export default async function IdentityCenterPage({
   searchParams,
 }: {
@@ -72,12 +112,22 @@ export default async function IdentityCenterPage({
   const [query, identity] = await Promise.all([searchParams, requireIdentity()]);
   // Both are request-cached and already resolved by the shell, so this costs
   // no additional round trip.
-  const attendance = await evaluateCurrentFeatureFlag({
-    key: "attendance_ui_v2",
-    subjectUuid: identity.id,
-  });
+  const [attendance, blessingIou] = await Promise.all([
+    evaluateCurrentFeatureFlag({ key: "attendance_ui_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
+  ]);
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_my_identity_center");
+  // Issued together: the ledger is a separate question from the identity
+  // centre, and waiting for one before asking the other would cost a round
+  // trip for no reason.
+  const [centerResult, ledgerResult] = await Promise.all([
+    supabase.rpc("get_my_identity_center"),
+    blessingIou.enabled
+      ? supabase.rpc("get_my_blessing_iou_summary", { p_club_id: null })
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  const { data, error } = centerResult;
+  const ledger = parseLedger(ledgerResult.error ? null : ledgerResult.data);
 
   if (error || !data) return <Notice tone="error">無法載入會員中心。</Notice>;
 
@@ -109,6 +159,45 @@ export default async function IdentityCenterPage({
       <Card><span className="metric-label">LINE Login</span><strong className="metric-value metric-text">{center.line_identity?.status === "active" ? "已綁定" : "未綁定"}</strong></Card>
       <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>
     </div>
+
+    {ledger && ledger.totals.entry_count > 0 && <Card>
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">祝福 IOU</p>
+          <h2>我的捐款</h2>
+        </div>
+        <Link className="button button-secondary" href="/blessings">前往祝福牆</Link>
+      </div>
+      <div className="metric-grid">
+        <Card>
+          <span className="metric-label">承諾金額</span>
+          <strong className="metric-value">{formatMoney(ledger.totals.pledged_total)}</strong>
+        </Card>
+        <Card>
+          <span className="metric-label">已收</span>
+          <strong className="metric-value metric-text">{formatMoney(ledger.totals.collected_total)}</strong>
+        </Card>
+        <Card>
+          <span className="metric-label">未收</span>
+          <strong className="metric-value metric-text">{formatMoney(ledger.totals.outstanding_total)}</strong>
+        </Card>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead><tr><th>日期</th><th>內容</th><th>承諾</th><th>已收</th><th>未收</th></tr></thead>
+          <tbody>
+            {ledger.entries.map((entry) => <tr key={entry.entry_id}>
+              <td>{entry.pledged_on}</td>
+              <td>{entry.blessing_text.trim() || <span className="subtle">（僅捐款，未留文字）</span>}</td>
+              <td>{entry.pledged_amount === null ? "—" : formatMoney(entry.pledged_amount)}</td>
+              <td>{formatMoney(entry.collected_amount)}</td>
+              <td>{formatMoney(entry.outstanding_amount)}</td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>
+      <p className="hint">「已收」由社務幹部登記；金額是否對同社公開由您在祝福牆自行決定，這份明細只有您看得到。</p>
+    </Card>}
 
     {attendance.enabled && <Card>
       <div className="section-heading">
