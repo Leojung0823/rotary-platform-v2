@@ -151,6 +151,25 @@ export function roleShellNavigation(
     }
   }
 
+  // The way back. Club-level managers do not get the mode switcher, so
+  // without this the inline link below is a one-way door: a president could
+  // enter management and had no control to return to the member experience.
+  // Only offered to officers who are themselves members -- a club operator
+  // with no membership has no member mode to return to.
+  if (mode === "management" && !context.hasPlatformAccess
+    && context.availableModes.includes("member")) {
+    items.push({
+      id: "member-mode",
+      label: "回社員模式",
+      // Not "社員": the management nav already has a 社員管理 tab whose mobile
+      // label is 社員, and two identically named tabs is no way back.
+      mobileLabel: "返回",
+      icon: "↩",
+      href: withModePreference("/dashboard", "member"),
+      forceReload: true,
+    });
+  }
+
   // Club-level managers (president/secretary/operator) get a direct link
   // into their own club's management pages inline in the member nav,
   // instead of the mode-switcher UI reserved for platform admins who

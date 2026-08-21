@@ -119,6 +119,33 @@ describe("role-aware navigation", () => {
       .some((item) => item.id === "blessing-iou")).toBe(false);
   });
 
+  it("gives a club officer a way back out of management mode", () => {
+    // A president is a member who also manages. Without the mode switcher --
+    // which only platform admins get -- the inline management link would be a
+    // one-way door.
+    const officer = context({ member: true, management: true, platform: false });
+    const memberNav = roleShellNavigation(officer, "member");
+    const managementNav = roleShellNavigation(officer, "management");
+
+    expect(memberNav.find((item) => item.id === "manage-club")).toBeTruthy();
+    const back = managementNav.find((item) => item.id === "member-mode");
+    expect(back?.href).toBe("/dashboard?mode=member");
+    // Crossing a mode boundary needs a full navigation, not a soft one.
+    expect(back?.forceReload).toBe(true);
+  });
+
+  it("does not offer a member mode to an operator who has no membership", () => {
+    const operator = context({ member: false, management: true, platform: false });
+    expect(roleShellNavigation(operator, "management").some((item) => item.id === "member-mode"))
+      .toBe(false);
+  });
+
+  it("leaves the platform admin's mode switcher as the only way to change mode", () => {
+    const admin = context({ member: true, management: true, platform: true });
+    expect(roleShellNavigation(admin, "management").some((item) => item.id === "member-mode"))
+      .toBe(false);
+  });
+
   it("hides attendance entirely while the flag is off, so the nav never links to a notFound page", () => {
     const projected = context();
     for (const mode of ["member", "management"] as const) {
