@@ -1,49 +1,98 @@
-# 交接筆記（2026-08-13）
+# 交接筆記（2026-08-21）
 
-> 這份文件取代先前留在本機 scratchpad、尚未執行的舊交接提示（內容是接續做「首頁瘦身」，但實際這次對話走向不同，先處理了更急迫的權限與部署問題）。以下是目前真實的狀態。
+> 這份文件取代 2026-08-13 版本。它的用途是讓另一個在別處工作的代理（Codex 或任何新開的 session）能在動手前對齊現況。
+>
+> **先讀根目錄的 `AGENTS.md`。** 那份是工作約定，記錄的是這個 repo 實際出過事的地方；本文件只補上「現在做到哪裡」。兩者不重複。
 
-## 目前基線
+## 先確認你在看哪一份程式碼
 
-`main` 最新 commit：`0178f93`，已完整部署到 staging（Render + Hosted Supabase），health check 正常：
+權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件描述的狀態對應 `fd9201e`。
+
+本機若有 `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 這類獨立快照，那是 8/15 的複本、不在 git 裡，內容已落後。動手前請：
+
+```bash
+git fetch && git checkout main && git pull
+```
+
+## 目前狀態
+
+主線已完成「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部階段。
+
+Phase 2 標記為完成，Phase 3 只剩公告通知未實作。細節見 `DEVELOPMENT_ROADMAP.md`，該文件已於 8/21 與實際程式碼對齊過。
+
+### 8/15 之後合併的 migration
+
+| 功能 | 檔案 |
+|---|---|
+| 扶輪社名稱編輯 | `20260819000100_club_profile_rename_hardening.sql` |
+| GPS 定位簽到 | `20260819000200_gps_checkin_v2.sql` |
+| 邀請預覽身份比對修正 | `20260819000300_invitation_preview_viewer_match.sql` |
+| 單次往返頁面查詢 | `20260819000400_single_round_trip_list_pages.sql` |
+| 活動封面圖片 | `20260820000100_event_cover_images.sql` |
+| 祝福 IOU（core / collections / reporting） | `20260820000200` · `000300` · `000400` |
+| 生日祝福 | `20260820001000_birthday_wishes.sql` |
+| 文件中心與年度交接 | `20260820002000_archive_handover.sql` |
+| 出席 UI 投影層 | `20260821000100_attendance_page_projections.sql` |
+| 幹部的社員模式 | `20260821000200_event_member_view.sql` |
+
+**下一個可用編號是 `20260821000300`。** 撞號在這個 repo 已發生四次，開檔前先 `ls supabase/migrations/ | tail`。
+
+### 不在原路線圖但已完成的工程工作
+
+- 各頁查詢改為組合型 RPC，單頁循序往返由 2.7–4.1 次降到約 1.8 次。
+- Render 機房由 Virginia 遷至新加坡，`/api/health` p50 由 520ms 降至 269ms。
+
+## 三件最容易寫錯的事
+
+### 1. 出席領域只有一套
+
+canonical 是 `20260811000100_attendance_domain_core.sql`（PR #61），共 14 個函式。
+
+PR #37 已關閉，它的 `20260731000100_v08_attendance_management.sql` 宣告了**同名的同樣 14 個函式**且時間戳較早。採用它會讓出席率的分母規則、公假與補出席折抵改由另一套定義生效，且不會有任何錯誤訊息。**不要使用該檔案。**
+
+出席 UI 已於 8/21 完成，做法是在既有 RPC 之上加投影層：`get_my_attendance_page`、`get_club_attendance_page`、`list_club_attendance_events`。
+
+### 2. 兩個函式簽章已變更
 
 ```
-revision: 0178f93
-status: ok
-checks: { configuration: true, database: true }
+list_club_events(uuid)     ->  list_club_events(uuid, boolean)
+list_my_event_page(uuid)   ->  list_my_event_page(uuid, boolean)
 ```
 
-## 這次對話完成的工作
+新增的 `p_as_member` 讓具管理權的人以一般社員身分提問，供社務幹部在社員模式下使用。舊的單參數呼叫已不存在。
 
-### 1. 執行秘書權限補齊
-- 執行秘書（club_operator_permissions，`permission_level = 'club_manager'`）現在擁有社內完整權限，與平台管理員唯一差異是沒有跨社管理權。補了 `finance.read`、`profile.self`、`event.manage`（原本 DB 層就有，但 UI 導覽沒有入口）。
-- 社務管理模式的主導覽新增「活動」項目，純執行秘書（沒有社員身份）現在點得到建立活動的頁面。
+### 3. 改寫既有函式不要憑記憶重打
 
-### 2. Browser Smoke CI 修復（三個獨立問題疊加）
-- **真的 bug**：「社團管理」連結用 Next.js client-side navigation 跨模式（member → management），但模式判斷邏輯在共用 layout 裡，client router 不會重新執行——網址變了畫面沒變。改用一般 `<a>` 強制整頁刷新，比照既有 ModeSwitcher 的作法。
-- **切換扶輪社顯示邏輯**：漏掉「平台管理員一律顯示」的例外，只看是否管理超過 1 個社。已加回。
-- **過時測試**：`operator-invitation.e2e.mjs` 還在測已經被 `d13a15d`（改成管理員直接設密碼，不寄邀請信）拿掉的舊流程。已重寫。
+用程式化方式從原始 migration 擷取，只改要改的那一行。這裡發生過重寫 `complete_member_invitation` 時漏掉「授予 member 角色」、重寫 `list_club_events` 時用錯欄位名。
 
-### 3. 社員簽到相機無法開啟（已修復）
-- 根因：`checkin-camera-scanner.tsx`（社員自助簽到）要求瀏覽器要有 `window.BarcodeDetector` 才會啟動相機，但 **Safari（含 iPhone）完全不支援這個 API**，所以連相機權限都不會詢問，直接顯示「不支援」。
-- 管理端的動態 QR 掃描器（`dynamic-checkin-camera-scanner.tsx`）早就用 `jsQR` 套件做了 canvas 備援，社員這邊沒跟上。已補上相同邏輯。
+## 提交前的閘門
 
-## 這次發現、值得記住的維運知識
+```bash
+npm run typecheck && npm run lint && npm test   # 目前 507 tests
+npm run verify:db          # 完整 db reset + 33 個驗證 SQL
+npm run check:migrations
+```
 
-- **GitHub 的 `staging` Environment 設了 required reviewer**（只有帳號owner可核准）。Plan / Go-Live workflow 卡在 `waiting` 狀態，**不是帳單問題**，是在等這個手動核准。核准方式：
-  ```
-  echo '{"environment_ids":[19012774915],"state":"approved","comment":"..."}' \
-    | gh api repos/Leojung0823/rotary-platform-v2/actions/runs/<run_id>/pending_deployments -X POST --input -
-  ```
-- Go-Live 最後一關「hosted member acceptance」會用真實 staging 帳號登入驗收；如果 staging 上的測試社團（Rotary Platform Staging Test Club）被封存過，這關會失敗（登入成功但首頁抓不到，因為封存社的舊社員會看到錯誤頁）。記得測完封存/解封功能後要把測試資料復原。
+改到 UI 或流程要另跑 `e2e/`。**不要標 `[skip ci]`**——這個 repo 曾因此累積上萬行未經 CI 驗證的程式碼。
 
-## 當時尚未處理、留意事項（截至 2026-08-13）
+新增資料表或 RPC 一律要有對應的 `supabase/verification/*.sql`，註冊進 `scripts/database-verification-files.txt`，且要測「誰**不能**做什麼」，涵蓋一般社員、外社社員、停權帳號。
 
-- Health check 當時一直帶著 `"warnings":["DEPLOYMENT_WARNING"]`，尚未調查提醒來源，不影響目前功能。
-- `docs/product/LEGACY_PORT_CANDIDATES.md` 原本規劃的「首頁瘦身」（比照舊專案 6 區塊結構重做 dashboard）當時尚未做。
-- 本機開發時常需要重跑 `node --env-file=.env.local scripts/bootstrap-superadmin.mjs`，因為本機 Supabase 資料在多次 `db reset --local` 之後會被清空。
+## Feature flag：「已完成」不等於「看得到」
 
-## 後續處理（2026-08-15）
+多數新功能的 flag 預設關閉，包含 `attendance_ui_v2`。
 
-- 已確認 `DEPLOYMENT_WARNING` 的程式機制是環境檢查的非阻擋提醒。staging runbook 明確使用 `LINE_OA_MODE=mock`，這本身會產生 `STAGING_LINE_OA_IS_MOCK`；若 Render runtime 另外保留 hosted bootstrap／operator 驗證密碼，也會產生其他提醒。公開 health 只回傳泛化的 warning，因此無法僅靠公開 endpoint 判定 Render 目前是哪一項；本次沒有修改 hosted 設定。
-- 已移除 legacy dashboard 中過時的 V0.7 roadmap 卡片；社員旗標開啟時的 `MemberHome` 已保留任務型首頁。舊專案的生日／完整歷史活動／名錄六區塊仍缺少目前資料契約，未直接照搬。
-- 已在 README 補上 local database reset 後重新執行 `bootstrap-superadmin` 與 `verify:auth` 的恢復流程。
+允許的 key 定義在 `20260820000400` 的 check constraint。新增 key 必須同時修改三個地方：`platform_feature_flags` 的約束、`platform_feature_flag_audit` 的約束，以及 `set_platform_feature_flag` 內的白名單。
+
+導覽項目要與它開啟的頁面綁**同一個** flag，否則會出現點了顯示 404 的按鈕。
+
+## 待辦
+
+1. **PR #40 公告 / 站內通知**——唯一仍未實作的產品切片。該分支落後 113 個 commit 且與現行 dashboard／layout／多個 E2E 衝突，當設計參考即可，不要合併。
+2. 補上生日祝福、文件交接、留言板的 feature flag。這三項目前沒有 flag，違反本專案自己的 rollback 原則；因導覽未連結、僅能以網址進入，風險有限但落差存在。
+3. PR-07a 帳號安全與登入協助、PR-07b legacy cleanup，之後進入 M1 五位使用者形成性測試。
+
+## 已關閉的 PR
+
+- **#8** — 由根目錄的 `AGENTS.md` 取代。
+- **#10** — PR-03 的決策紀錄，該功能早已上線。
+- **#37** — 出席統計，功能已以投影層重新實作（見上）。
