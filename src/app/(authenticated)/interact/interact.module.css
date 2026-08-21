@@ -1,0 +1,55 @@
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: white;
+  box-shadow: var(--shadow);
+  color: inherit;
+  text-decoration: none;
+}
+
+.card:hover,
+.card:focus-visible {
+  border-color: var(--navy-2);
+}
+
+.icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(22, 119, 168, .1);
+  color: var(--navy);
+}
+
+.text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.text strong { font-size: 16px; }
+.text small { color: var(--muted); font-size: 13px; }
+
+.chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+/* One card per row once two would each be narrower than their own text. */
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+}

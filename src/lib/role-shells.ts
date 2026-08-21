@@ -1,3 +1,4 @@
+import type { ShellIconName } from "@/components/shell-icons";
 import {
   activeClubForMode,
   resolveExperienceMode,
@@ -13,7 +14,7 @@ export type ShellNavigationItem = Readonly<{
   id: string;
   label: string;
   mobileLabel: string;
-  icon: string;
+  icon: ShellIconName;
   href: string;
   // True only for links that cross a mode boundary (member -> management).
   // The shell's mode is resolved in the shared (authenticated) layout, which
@@ -27,26 +28,28 @@ type NavigationDefinition = Readonly<{
   id: string;
   label: string;
   mobileLabel: string;
-  icon: string;
+  icon: ShellIconName;
   href: (context: ExperienceContext, mode: ExperienceMode) => string | null;
 }>;
 
 const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefinition[]>> = {
+  // 簽到 is deliberately absent: it is reached from the events page, where the
+  // member already knows which event they are checking in to. 我的 is not here
+  // either -- it is appended last so it stays at the end of the bar, after the
+  // conditional entries.
   member: [
-    { id: "home", label: "首頁", mobileLabel: "首頁", icon: "⌂", href: () => "/dashboard" },
-    { id: "events", label: "活動", mobileLabel: "活動", icon: "◇", href: () => "/events" },
-    { id: "checkin", label: "簽到", mobileLabel: "簽到", icon: "✓", href: () => "/events/checkin" },
-    { id: "directory", label: "社員名錄", mobileLabel: "名錄", icon: "◎", href: () => "/directory" },
-    { id: "account", label: "我的", mobileLabel: "我的", icon: "◉", href: () => "/me" },
+    { id: "home", label: "首頁", mobileLabel: "首頁", icon: "home", href: () => "/dashboard" },
+    { id: "events", label: "活動", mobileLabel: "活動", icon: "calendar", href: () => "/events" },
+    { id: "directory", label: "社員名錄", mobileLabel: "名錄", icon: "users", href: () => "/directory" },
   ],
   management: [
-    { id: "overview", label: "社務總覽", mobileLabel: "總覽", icon: "⌂", href: () => "/dashboard" },
-    { id: "events", label: "活動", mobileLabel: "活動", icon: "◇", href: () => "/events" },
+    { id: "overview", label: "社務總覽", mobileLabel: "總覽", icon: "home", href: () => "/dashboard" },
+    { id: "events", label: "活動", mobileLabel: "活動", icon: "calendar", href: () => "/events" },
     {
       id: "members",
       label: "社員管理",
       mobileLabel: "社員",
-      icon: "◎",
+      icon: "users",
       href: (context) => activeClubForMode(context, "management")
         ? `/clubs/${encodeURIComponent(activeClubForMode(context, "management")!.clubId)}/members`
         : null,
@@ -55,7 +58,7 @@ const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefin
       id: "invitations",
       label: "邀請管理",
       mobileLabel: "邀請",
-      icon: "+",
+      icon: "userPlus",
       href: (context) => activeClubForMode(context, "management")
         ? `/clubs/${encodeURIComponent(activeClubForMode(context, "management")!.clubId)}/invitations`
         : null,
@@ -64,16 +67,16 @@ const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefin
       id: "club-settings",
       label: "社務資料",
       mobileLabel: "社務",
-      icon: "≡",
+      icon: "gear",
       href: (context) => activeClubForMode(context, "management")
         ? `/clubs/${encodeURIComponent(activeClubForMode(context, "management")!.clubId)}/identity`
         : null,
     },
   ],
   platform: [
-    { id: "overview", label: "平台總覽", mobileLabel: "總覽", icon: "⌂", href: () => "/dashboard" },
-    { id: "clubs", label: "扶輪社管理", mobileLabel: "扶輪社", icon: "◎", href: () => "/platform/clubs" },
-    { id: "new-club", label: "建立扶輪社", mobileLabel: "建立", icon: "+", href: () => "/platform/clubs/new" },
+    { id: "overview", label: "平台總覽", mobileLabel: "總覽", icon: "home", href: () => "/dashboard" },
+    { id: "clubs", label: "扶輪社管理", mobileLabel: "扶輪社", icon: "building", href: () => "/platform/clubs" },
+    { id: "new-club", label: "建立扶輪社", mobileLabel: "建立", icon: "plus", href: () => "/platform/clubs/new" },
   ],
 };
 
@@ -125,7 +128,7 @@ export function roleShellNavigation(
       id: "attendance",
       label: isMember ? "我的出席" : "出席管理",
       mobileLabel: "出席",
-      icon: "％",
+      icon: "chart",
       href: withModePreference(isMember ? "/attendance" : "/attendance/manage", mode),
     };
     if (anchorIndex === -1) items.push(attendanceItem);
@@ -140,7 +143,7 @@ export function roleShellNavigation(
         id: "blessing-iou",
         label: "祝福 IOU",
         mobileLabel: "IOU",
-        icon: "♡",
+        icon: "heart",
         href: withModePreference(
           `/clubs/${encodeURIComponent(managedClub.clubId)}/blessing-iou`,
           "management",
@@ -149,6 +152,19 @@ export function roleShellNavigation(
       if (clubSettingsIndex === -1) items.push(blessingIouItem);
       else items.splice(clubSettingsIndex, 0, blessingIouItem);
     }
+  }
+
+  // One entry for the social features. They are three separate pages that had
+  // no way in at all; giving each its own tab would have pushed the member bar
+  // to eight items, which does not fit 320px.
+  if (mode === "member") {
+    items.push({
+      id: "interact",
+      label: "社內互動",
+      mobileLabel: "互動",
+      icon: "chat",
+      href: withModePreference("/interact", "member"),
+    });
   }
 
   // The way back. Club-level managers do not get the mode switcher, so
@@ -164,7 +180,7 @@ export function roleShellNavigation(
       // Not "社員": the management nav already has a 社員管理 tab whose mobile
       // label is 社員, and two identically named tabs is no way back.
       mobileLabel: "返回",
-      icon: "↩",
+      icon: "arrowLeft",
       href: withModePreference("/dashboard", "member"),
       forceReload: true,
     });
@@ -181,11 +197,23 @@ export function roleShellNavigation(
         id: "manage-club",
         label: "社團管理",
         mobileLabel: "管理",
-        icon: "⚙",
+        icon: "gear",
         href: withModePreference(`/clubs/${encodeURIComponent(managedClub.clubId)}/members`, "management"),
         forceReload: true,
       });
     }
+  }
+
+  // Last, so the account entry stays at the end of the bar whether or not the
+  // officer link before it is present.
+  if (mode === "member") {
+    items.push({
+      id: "account",
+      label: "我的",
+      mobileLabel: "我的",
+      icon: "user",
+      href: withModePreference("/me", "member"),
+    });
   }
 
   return items;

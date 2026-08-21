@@ -89,6 +89,8 @@ npm run check:migrations   # migration 前向性
 2. **不要斷言在「起始狀態」上。** 例如按鈕文字會因為前一輪測試留下的資料而改變。要斷言受測的**行為**。
 3. **會改變資料的測試只在單一 viewport 執行**（用 `test.skip(testInfo.project.name !== ...)`），否則後面的 viewport 會看到被改過的狀態。
 4. **`loading="lazy"` 的圖片要先捲動到可見範圍**才會載入，否則會被判定為 hidden。
+5. **`count()` 不會等待，`expect()` 才會。** 外殼是在 Suspense 邊界後串流進來的，直接 `count()` 會數到還沒渲染的空頁面而得到 0。要數之前先 `await expect(locator.first()).toBeVisible()`。
+6. **導覽連結的可及名稱只包含當前斷點看得見的那個標籤。** 桌機是完整名稱、手機是短標籤（`display: none` 的文字不計入可及名稱），所以跨尺寸的測試要用 regex 同時涵蓋兩者。
 
 本機連續跑兩次完整測試前，要重跑 fixture：
 

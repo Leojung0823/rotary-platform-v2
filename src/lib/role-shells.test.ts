@@ -71,8 +71,8 @@ describe("role-aware navigation", () => {
     expect(roleShellNavigation(projected, "member").map((item) => item.href)).toEqual([
       "/dashboard?mode=member",
       "/events?mode=member",
-      "/events/checkin?mode=member",
       "/directory?mode=member",
+      "/interact?mode=member",
       "/me?mode=member",
     ]);
     expect(roleShellNavigation(projected, "management").map((item) => item.href)).toEqual([
@@ -92,10 +92,23 @@ describe("role-aware navigation", () => {
   it("gives a club-level manager a direct management link inline, not the platform mode switcher", () => {
     const managerContext = context({ member: true, management: true, platform: false });
     expect(roleShellNavigation(managerContext, "member").map((item) => item.id)).toEqual([
-      "home", "events", "checkin", "directory", "account", "manage-club",
+      // 我的 stays last, after the officer's inline management link.
+      "home", "events", "directory", "interact", "manage-club", "account",
     ]);
     const manageItem = roleShellNavigation(managerContext, "member").find((item) => item.id === "manage-club");
     expect(manageItem?.href).toBe(`/clubs/${memberClub.club_id}/members?mode=management`);
+  });
+
+  it("keeps 我的 last and no longer spends a tab on check-in", () => {
+    // Check-in is reached from the events page, where the member has already
+    // chosen which event they are checking in to.
+    for (const flags of [{}, { attendanceEnabled: true }]) {
+      for (const projected of [context(), context({ member: true, management: true, platform: false })]) {
+        const items = roleShellNavigation(projected, "member", flags);
+        expect(items.some((item) => item.href.startsWith("/events/checkin"))).toBe(false);
+        expect(items.at(-1)?.id).toBe("account");
+      }
+    }
   });
 
   it("does not add the inline manage-club link for a plain member without manage permission", () => {
@@ -164,7 +177,7 @@ describe("role-aware navigation", () => {
       .toBe("/attendance/manage?mode=management");
 
     expect(member.map((item) => item.id))
-      .toEqual(["home", "events", "checkin", "attendance", "directory", "account"]);
+      .toEqual(["home", "events", "attendance", "directory", "interact", "account"]);
     expect(management.map((item) => item.id))
       .toEqual(["overview", "events", "attendance", "members", "invitations", "club-settings"]);
   });

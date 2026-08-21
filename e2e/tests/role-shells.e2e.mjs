@@ -136,9 +136,14 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     await expectBottomNavigationClearance(page);
   }
   if (["role-shells-412", "role-shells-375", "role-shells-320"].includes(testInfo.project.name)) {
-    await expect(page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "簽到" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "名錄" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "我的" })).toBeVisible();
+    const bar = page.getByRole("navigation", { name: "主要導覽" });
+    await expect(bar.getByRole("link", { name: "名錄" })).toBeVisible();
+    await expect(bar.getByRole("link", { name: "互動" })).toBeVisible();
+    // Check-in no longer spends a tab; it is reached from the events page.
+    await expect(bar.getByRole("link", { name: "簽到" })).toHaveCount(0);
+    // 我的 is the last tab in the bar.
+    const labels = await bar.getByRole("link").allInnerTexts();
+    expect(labels.at(-1)).toContain("我的");
   }
 });
 

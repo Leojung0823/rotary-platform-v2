@@ -10,6 +10,7 @@ import {
   type ExperienceContext,
   type ExperienceMode,
 } from "@/lib/experience-context";
+import { ShellIcon } from "@/components/shell-icons";
 import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
 import { displayableEmail, type Identity } from "@/lib/auth";
@@ -159,7 +160,7 @@ function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationI
       {items.map((item) => <li key={item.id}>
         {item.forceReload
           ? <a href={item.href} aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}>
-              <span className={styles.navigationIcon} aria-hidden="true">{item.icon}</span>
+              <span className={styles.navigationIcon}><ShellIcon name={item.icon} /></span>
               <span className={styles.desktopLabel}>{item.label}</span>
               <span className={styles.mobileLabel}>{item.mobileLabel}</span>
             </a>
@@ -168,7 +169,7 @@ function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationI
               prefetch={false}
               aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}
             >
-              <span className={styles.navigationIcon} aria-hidden="true">{item.icon}</span>
+              <span className={styles.navigationIcon}><ShellIcon name={item.icon} /></span>
               <span className={styles.desktopLabel}>{item.label}</span>
               <span className={styles.mobileLabel}>{item.mobileLabel}</span>
             </Link>}
