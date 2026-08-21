@@ -274,4 +274,58 @@ begin
 end $manager_view$;
 reset role;
 
+-- The shared resolver: one definition of the addressed set, and only for a
+-- caller who may manage members.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '1c000000-0000-4000-8000-000000000003', true);
+do $resolver_denied$
+begin
+  begin
+    perform public.resolve_club_audience('5c000000-0000-4000-8000-000000000001');
+    raise exception 'A plain member resolved a club audience.';
+  exception when insufficient_privilege then null;
+  end;
+end $resolver_denied$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '1c000000-0000-4000-8000-000000000001', true);
+do $resolver$
+declare
+  everyone jsonb;
+  tagged jsonb;
+  named jsonb;
+begin
+  everyone := public.resolve_club_audience('5c000000-0000-4000-8000-000000000001');
+  if not (everyone ->> 'whole_club')::boolean or (everyone ->> 'member_count')::integer <> 3 then
+    raise exception 'An empty audience did not resolve to the whole club.';
+  end if;
+
+  tagged := public.resolve_club_audience(
+    '5c000000-0000-4000-8000-000000000001',
+    array[current_setting('tags.board')::uuid]
+  );
+  if (tagged ->> 'whole_club')::boolean or (tagged ->> 'member_count')::integer <> 1 then
+    raise exception 'A tag audience did not resolve to its tagged members.';
+  end if;
+
+  named := public.resolve_club_audience(
+    '5c000000-0000-4000-8000-000000000001',
+    '{}'::uuid[],
+    array['6c000000-0000-4000-8000-000000000003'::uuid]
+  );
+  if (named ->> 'member_count')::integer <> 1 then
+    raise exception 'A named audience did not resolve to the named member.';
+  end if;
+
+  -- Nobody in these fixtures has paired a LINE OA identity, so the addressed
+  -- set is larger than the set a push can actually reach. The two counts are
+  -- reported separately precisely so that gap is visible before sending.
+  if (everyone ->> 'reachable_count')::integer <> 0
+     or jsonb_array_length(everyone -> 'oa_user_ids') <> 0 then
+    raise exception 'Unpaired members were counted as reachable by LINE.';
+  end if;
+end $resolver$;
+reset role;
+
 rollback;
