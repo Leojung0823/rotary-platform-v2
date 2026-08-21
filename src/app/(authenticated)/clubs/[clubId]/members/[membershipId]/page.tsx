@@ -4,6 +4,9 @@ import { assignClubRoleAction, setMemberStatusAction, unbindLineIdentityAction, 
 import { setMemberAccountStatusAction } from "@/app/identity-actions";
 import { ClubAdminNav } from "@/components/club-admin-nav";
 import { Badge, Button, Card, Field, Input, Notice, Select } from "@/components/ui";
+import { setMembershipTagsAction } from "@/app/tag-actions";
+
+type MembershipTag = { tag_id: string; tag_name: string; description: string | null; assigned: boolean };
 import { createClient } from "@/lib/supabase/server";
 import { safeMessage } from "@/lib/validation";
 import type { MemberRow } from "../page";
@@ -44,10 +47,18 @@ export default async function MemberDetailPage({ params, searchParams }: {
   const member = ((data ?? []) as MemberRow[]).find((item) => item.membership_id === membershipId);
   if (!member) notFound();
 
-  const lifecycleResult = await supabase.rpc("get_member_account_lifecycle_admin", {
-    p_club_id: clubId,
-    p_membership_id: membershipId,
-  });
+  // Both depend on the membership having been found, so they go together.
+  const [lifecycleResult, tagResult] = await Promise.all([
+    supabase.rpc("get_member_account_lifecycle_admin", {
+      p_club_id: clubId,
+      p_membership_id: membershipId,
+    }),
+    supabase.rpc("get_membership_tag_assignment", {
+      p_club_id: clubId,
+      p_membership_id: membershipId,
+    }),
+  ]);
+  const memberTags = ((tagResult.data as { tags?: MembershipTag[] } | null)?.tags ?? []) as MembershipTag[];
   const lifecycle = lifecycleResult.error || !lifecycleResult.data
     ? null
     : lifecycleResult.data as AccountLifecycle;
@@ -72,6 +83,30 @@ export default async function MemberDetailPage({ params, searchParams }: {
     {query.success === "role_updated" && <Notice tone="success">社員角色與權限已更新。</Notice>}
     {query.success === "account_status_updated" && <Notice tone="success">平台帳號狀態已更新；停權時既有工作階段與裝置已立即撤銷。</Notice>}
     {query.success === "unbound" && <Notice tone="success">LINE Login 已解除、所有 session 已失效，歷史資料與社籍均保留。</Notice>}
+    {query.success === "tags_saved" && <Notice tone="success">社員標籤已更新。</Notice>}
+
+    <Card>
+      <div className="section-heading">
+        <div><p className="eyebrow">分眾</p><h2>標籤</h2></div>
+        <Link href={`/clubs/${clubId}/members`}>管理標籤 →</Link>
+      </div>
+      {memberTags.length === 0
+        ? <p className="subtle">這個扶輪社還沒有建立標籤。先在社員列表頁建立，才能用來指定活動與訊息的對象。</p>
+        : <form action={setMembershipTagsAction} className="form-stack">
+            <input type="hidden" name="clubId" value={clubId} />
+            <input type="hidden" name="membershipId" value={membershipId} />
+            {/* The whole set is submitted every time, so saving replaces the
+                member's tags rather than merging with whatever was there when
+                the page was opened. */}
+            <div className="tag-picker">
+              {memberTags.map((tag) => <label className="tag-option" key={tag.tag_id}>
+                <input type="checkbox" name="tagIds" value={tag.tag_id} defaultChecked={tag.assigned} />
+                <span>{tag.tag_name}</span>
+              </label>)}
+            </div>
+            <div className="form-actions"><Button type="submit">儲存標籤</Button></div>
+          </form>}
+    </Card>
     {query.token && <Card><h2>重新綁定邀請</h2><p>請安全地將此一次性連結交給社員：</p>
       <div className="token-value">{`${siteUrl}/join?token=${query.token}`}</div></Card>}
 

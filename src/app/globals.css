@@ -237,3 +237,28 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   border-radius: 12px;
   background: #edf4f7;
 }
+
+/* Tag picker: click-to-toggle pills rather than a column of checkboxes, so a
+   member's tags read as a set at a glance. The native checkbox stays in the
+   DOM and keeps the label association, it is just not what is painted. */
+.tag-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-option { position: relative; display: inline-flex; }
+.tag-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.tag-option span {
+  display: inline-block;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: white;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tag-option input:checked + span {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: white;
+}
+/* Keyboard users must be able to see which pill they are on. */
+.tag-option input:focus-visible + span { outline: 2px solid var(--navy-2); outline-offset: 2px; }
