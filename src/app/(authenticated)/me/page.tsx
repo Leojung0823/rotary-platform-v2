@@ -266,12 +266,18 @@ export default async function IdentityCenterPage({
             ["showEmail", "向同社社員顯示 Email", privacy.show_email_to_club],
             ["showPhone", "向同社社員顯示手機", privacy.show_phone_to_club],
             ["showBirthYear", "向同社社員顯示出生年份", privacy.show_birthday_year],
-            ["analyticsConsent", "匿名使用分析", privacy.analytics_consent],
           ].map(([name, label, checked]) => <label className="checkbox-row" key={String(name)}>
             <input type="checkbox" name={String(name)} defaultChecked={checked === true} />
             <span>{String(label)}</span>
           </label>)}
           <Notice>名冊不公開完整生日、登入資料、LINE subject 或管理識別碼。</Notice>
+          {/* Stated rather than offered as a choice: the platform always
+              collects this, so presenting a switch would promise a control
+              that does not exist. */}
+          <p className="subtle">
+            平台會收集不具名的使用狀況以改善速度與穩定性。這些紀錄不包含姓名、
+            聯絡方式或可回推到您帳號的識別碼。
+          </p>
           <Button type="submit">儲存設定</Button>
         </div>
       </form>

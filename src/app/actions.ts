@@ -319,7 +319,8 @@ export async function updateIdentitySettingsAction(formData: FormData) {
       show_email_to_club: bool("showEmail"),
       show_phone_to_club: bool("showPhone"),
       show_birthday_year: bool("showBirthYear"),
-      analytics_consent: bool("analyticsConsent"),
+      // analytics_consent is deliberately not sent: the RPC forces it true, so
+      // supplying it here would only suggest the client had a say.
     },
   });
   if (error) redirect("/me?error=unexpected");
