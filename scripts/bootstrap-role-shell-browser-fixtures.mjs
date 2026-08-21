@@ -299,6 +299,32 @@ async function addDynamicCheckinBrowserFixtures({ clubId, managerAccount }) {
 
 // Venue-anchored event with an open session, so the browser suite can drive a
 // real location check-in with a mocked device position.
+// The blessing wall only offers the "hide my amount" choice when the club has
+// opted into public amounts, and that setting defaults to off -- so without
+// this the browser test would assert against a club where the control is
+// correctly absent.
+//
+// Done through an officer's own session rather than the service-role client:
+// the settings table has a trigger that rejects any write it cannot attribute
+// to an app account, which a service-role connection has no way to satisfy.
+async function allowPublicBlessingAmounts({ clubId, email }) {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
+
+  const officer = createClient(url, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const signIn = await officer.auth.signInWithPassword({ email, password });
+  if (signIn.error) fail("club officer sign-in did not succeed");
+
+  const { error } = await officer.rpc("set_blessing_iou_amount_visibility", {
+    p_club_id: clubId,
+    p_allow_public_amounts: true,
+  });
+  if (error) fail("blessing IOU amount visibility RPC did not succeed");
+  await officer.auth.signOut();
+}
+
 async function addLocationCheckinBrowserFixtures({ clubId, managerAccount }) {
   const now = Date.now();
   const eventTitle = "本機定位簽到例會";
@@ -386,5 +412,9 @@ await addMembership({ clubId: memberClub.id, account: fixtures.suspended, status
 await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary });
 await addDynamicCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 await addLocationCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
+await allowPublicBlessingAmounts({
+  clubId: memberClub.id,
+  email: "e2e-shell-member-manager@example.test",
+});
 
 console.log("Local role-shell and member-home browser fixtures are ready. No credentials were printed.");

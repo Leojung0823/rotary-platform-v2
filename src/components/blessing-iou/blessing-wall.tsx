@@ -177,17 +177,28 @@ function EntryFields({
         />
       </span>
     </label>
-    {hasAmount && (allowPublicAmounts
-      ? <label className={styles.privacyChoice}>
+    {allowPublicAmounts
+      ? <label className={hasAmount ? styles.privacyChoice : styles.privacyChoicePending}>
+          {/* Always rendered, not revealed once an amount is typed: a member
+              told they may hide the amount scans the form for the control, and
+              a choice that only appears after filling a different field reads
+              as a choice that does not exist. It stays disabled until there is
+              an amount to hide, which is the only state where it means
+              anything. */}
           <input
             type="checkbox"
             checked={hideAmount}
             onChange={(event) => onHideAmountChange(event.target.checked)}
-            disabled={disabled}
+            disabled={disabled || !hasAmount}
           />
-          <span><strong>隱藏我的金額</strong><small>勾選後，其他社員只知道您有填捐款，不會看到金額。</small></span>
+          <span>
+            <strong>隱藏我的金額</strong>
+            <small>{hasAmount
+              ? "勾選後，其他社員只知道您有填捐款，不會看到金額。"
+              : "填入上方金額後可以選擇。未填金額時不會顯示任何捐款資訊。"}</small>
+          </span>
         </label>
-      : <p className={styles.privacyNotice}>本社目前不公開捐款金額；只有本人與授權幹部看得到。</p>)}
+      : <p className={styles.privacyNotice}>本社目前不公開捐款金額；只有本人與授權幹部看得到。</p>}
   </div>;
 }
 

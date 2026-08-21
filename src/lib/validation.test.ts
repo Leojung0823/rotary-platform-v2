@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidClubName, mapDatabaseError, parseClubInput, parseMemberInput, parseNewPassword, parseOperatorInput, safeMessage, safeRedirectPath } from "./validation";
+import { isPlausibleBirthDate, isValidClubName, mapDatabaseError, parseClubInput, parseMemberInput, parseNewPassword, parseOperatorInput, safeMessage, safeRedirectPath, taipeiToday } from "./validation";
 
 function form(values: Record<string, string>) { const data = new FormData(); Object.entries(values).forEach(([key, value]) => data.set(key, value)); return data; }
 
@@ -47,5 +47,53 @@ describe("safe error and redirect handling", () => {
     expect(safeRedirectPath("/invite/accept")).toBe("/invite/accept");
     expect(safeRedirectPath("//evil.example", "/login")).toBe("/login");
     expect(safeRedirectPath("https://evil.example", "/login")).toBe("/login");
+  });
+});
+
+describe("birth date plausibility", () => {
+  const now = new Date("2026-08-21T12:00:00Z");
+
+  it("accepts a real past date and today in Taipei", () => {
+    expect(isPlausibleBirthDate("1980-02-03", now)).toBe(true);
+    expect(isPlausibleBirthDate("1900-01-01", now)).toBe(true);
+    expect(isPlausibleBirthDate(taipeiToday(now), now)).toBe(true);
+  });
+
+  it("rejects the range the database rejects, instead of leaving it to fail there", () => {
+    expect(isPlausibleBirthDate("2027-01-01", now)).toBe(false);
+    expect(isPlausibleBirthDate("1899-12-31", now)).toBe(false);
+  });
+
+  it("rejects dates the calendar does not have", () => {
+    expect(isPlausibleBirthDate("1990-02-30", now)).toBe(false);
+    expect(isPlausibleBirthDate("1990-13-01", now)).toBe(false);
+    expect(isPlausibleBirthDate("1990-1-1", now)).toBe(false);
+  });
+
+  it("uses the Taipei day, so an evening birthday is not called a future date", () => {
+    // 2026-08-21 08:00 Taipei is still 2026-08-20 in UTC.
+    expect(isPlausibleBirthDate("2026-08-21", new Date("2026-08-21T00:30:00Z"))).toBe(true);
+  });
+
+  it("is enforced by the shared member parser", () => {
+    expect(() => parseMemberInput(form({
+      name: "林社員", phone: "0912345678", email: "", birthDate: "2099-01-01",
+    }))).toThrow("invalid_birth_date");
+  });
+
+  it("still allows a member with a name and no contact details", () => {
+    // Secretary-created and invited members legitimately have neither.
+    expect(parseMemberInput(form({ name: "Nick", phone: "", email: "", birthDate: "" })))
+      .toEqual({ name: "Nick", phone: "", email: "", birthDate: null });
+  });
+});
+
+describe("self-profile database errors", () => {
+  it("names the reason instead of suggesting a transient failure", () => {
+    // Six different rules share this one database code, so the message has to
+    // list them; what it must not do is say "try again later" for a typo.
+    expect(mapDatabaseError("invalid_self_profile_input")).toBe("invalid_profile_input");
+    expect(safeMessage("invalid_profile_input")).toContain("生日介於 1900 年與今天之間");
+    expect(safeMessage("invalid_profile_input")).not.toContain("稍後再試");
   });
 });

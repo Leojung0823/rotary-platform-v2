@@ -16,6 +16,11 @@ export async function updateMyProfileAction(formData: FormData) {
     redirect(errorPath(error instanceof Error ? error.message : "unexpected"));
   }
 
+  // update_my_profile requires a contact, unlike the shared member parser --
+  // a member the secretary created may legitimately have neither. Checking it
+  // here turns a generic database rejection into the specific reason.
+  if (!input.phone && !input.email) redirect(errorPath("missing_contact"));
+
   const occupation = String(formData.get("occupation") ?? "").trim().slice(0, 100);
 
   const supabase = await createClient();

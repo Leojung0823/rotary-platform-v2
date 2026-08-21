@@ -126,6 +126,13 @@
   cursor: pointer;
 }
 
+.privacyChoicePending {
+  composes: privacyChoice;
+  border-style: dashed;
+  background: #fbfaf6;
+  color: #64748b;
+}
+
 .privacyChoice input {
   width: 22px;
   height: 22px;

@@ -49,6 +49,36 @@ export function parseOperatorInput(formData: FormData): OperatorInput {
   return input;
 }
 
+/** Today in Asia/Taipei as YYYY-MM-DD, so "today" is not rejected as future. */
+export function taipeiToday(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/**
+ * Mirrors the range the database enforces (1900-01-01 to today). Without this
+ * the browser accepted anything shaped like a date, the database rejected it
+ * with a single generic code, and the member was told "please try again later"
+ * for what was really a typo in the year.
+ */
+export function isPlausibleBirthDate(value: string, now = new Date()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(0);
+  parsed.setUTCFullYear(year, month - 1, day);
+  if (parsed.getUTCFullYear() !== year
+    || parsed.getUTCMonth() !== month - 1
+    || parsed.getUTCDate() !== day) {
+    return false;
+  }
+  // ISO dates compare correctly as strings.
+  return value >= "1900-01-01" && value <= taipeiToday(now);
+}
+
 export function parseMemberInput(formData: FormData): MemberInput {
   const input = {
     name: String(formData.get("name") ?? "").trim(),
@@ -58,7 +88,11 @@ export function parseMemberInput(formData: FormData): MemberInput {
   };
   if (input.name.length < 2 || input.name.length > 80) throw new Error("invalid_name");
   if (input.email && !emailPattern.test(input.email)) throw new Error("invalid_email");
-  if (input.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(input.birthDate)) throw new Error("invalid_birth_date");
+  if (input.birthDate && !isPlausibleBirthDate(input.birthDate)) throw new Error("invalid_birth_date");
+  // Deliberately no "phone or email is required" rule here: this parser is
+  // shared with secretary-created members and the invitation flow, where a
+  // name-only member is legitimate. Only the self-profile RPC requires a
+  // contact, so that check belongs to the caller that hits it.
   return input;
 }
 
@@ -88,7 +122,8 @@ export function safeMessage(code?: string): string | null {
     line_login_no_active_access: "此 LINE 身份已綁定平台帳號，但尚未完成啟用中的社籍或平台權限。請使用社務管理員最新重發的邀請連結完成加入，不要直接從登入頁重新登入。",
     line_invitation_identity_conflict: "此 LINE 身份已屬於另一筆社員資料。請社務管理員不要重複新增社員，改從原社員紀錄重送邀請，或先合併重複資料。",
     missing_contact: "手機與電子郵件至少需要填寫一項。",
-    invalid_birth_date: "生日格式不正確。",
+    invalid_birth_date: "生日不正確。請輸入 1900 年 1 月 1 日至今天之間的實際日期。",
+    invalid_profile_input: "資料未通過檢查。請確認：姓名必填、手機與電子郵件至少填寫一項、生日介於 1900 年與今天之間。",
     invitation_invalid: "邀請不存在、已取消、已接受或已過期。",
     invitation_email_mismatch: "輸入的 Email 與扶輪社預建的社員資料不一致，請聯絡秘書確認。",
     use_existing_account: "這個 Email 可能已有平台帳號，請先登入；忘記密碼可使用重設功能。",
@@ -108,6 +143,7 @@ export function parseNewPassword(formData: FormData) {
 }
 
 export function mapDatabaseError(message: string): string {
+  if (message.includes("invalid_self_profile_input")) return "invalid_profile_input";
   if (message.includes("invalid_club_name")) return "invalid_club_name";
   if (message.includes("last_active_superadmin")) return "last_superadmin";
   if (message.includes("shared_identity") || message.includes("cross_club_identity")) return "shared_identity";

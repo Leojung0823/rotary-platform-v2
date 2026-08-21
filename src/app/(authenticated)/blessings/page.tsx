@@ -77,7 +77,7 @@ export default async function BlessingsPage({
         </section>
         <Notice>
           祝福內容會讓本社社員看見。{selectedClub.allowPublicAmounts
-            ? "填寫捐款時，您可以自己決定是否隱藏金額。"
+            ? "捐款金額為選填；填入金額後，可以用下方的「隱藏我的金額」自行決定是否公開。"
             : "捐款金額不公開，只有本人與授權幹部看得到。"}
         </Notice>
         <BlessingWall
