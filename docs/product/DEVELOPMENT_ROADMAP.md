@@ -1,6 +1,6 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-08-12
+更新日期：2026-08-21
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
@@ -13,7 +13,11 @@
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
 
-目前主線已完成「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到」階段。下一個產品切片是 PR-04 GPS Check-in；出席 UI 整合必須繼續使用 canonical Attendance RPC，不能另建 authority。
+自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。以下功能也已合併並部署至 staging：扶輪社名稱編輯、祝福 IOU（含募集與年度報表）、生日祝福、文件中心與年度交接、社內留言板、活動封面圖片。
+
+另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
+
+出席 UI 整合已完成，並且如原本要求的那樣繼續使用 PR #61 的 canonical Attendance RPC，未另建 authority。
 
 ## 開發原則
 
@@ -36,20 +40,34 @@
 - [x] PR-01a / #57 — ExperienceContext / server routing（PR #60）
 - [x] PR-01b — Role-aware Member / Management / Platform Shells（PR #62）
 
-### Phase 2 — Member Experience：進行中
+### Phase 2 — Member Experience：完成
 
 - [x] **P1 Hotfix — Event Create Form State Preservation / 活動建立失敗保留輸入內容**（PR #67）
   - 建立活動失敗保留所有欄位，提供可行動的欄位級錯誤；成功才清空。
 - [x] **PR-02 — Member Home V2 / 社員任務型首頁**（PR #64）
 - [x] **PR-03 — 完整簽到政策、Dynamic QR、Manual Check-in**
-- [ ] **PR-04 — GPS Check-in**
+- [x] **PR-04 — GPS Check-in**（`20260819000200_gps_checkin_v2.sql`）
+  - 200 公尺半徑、haversine 判定；不保存社員原始座標。
+  - 受 `checkin_gps_v2` flag 控管。
+  - 修正過程中發現應用程式自身的 `Permissions-Policy: geolocation=()` 會讓定位簽到永遠無法運作，已改為 `geolocation=(self)`。
 
 平行小切片：
 
-- **PR-01c — Club Profile Editing / 扶輪社基本資料編輯**
-  - 不阻塞 PR-02。
-  - 可以與 PR-02 平行開發。
-  - 建議最晚在 PR-03 前完成，讓社務設定與後續社員首頁／活動體驗都能使用正確的扶輪社顯示名稱。
+- [x] **PR-01c — Club Profile Editing / 扶輪社基本資料編輯**（`20260819000100_club_profile_rename_hardening.sql`）
+  - `/clubs/[clubId]/identity`；`club_code` 政策與稽核依本文件後段規格實作。
+
+Phase 2 之後追加並完成的社務功能：
+
+- [x] **祝福 IOU**（core / collections / rotary-year reporting 三個 migration）
+  - `/blessings`、`/clubs/[clubId]/blessing-iou`（含 collections、reports）。
+  - 受 `blessing_iou_v1`、`blessing_iou_collections_v1`、`blessing_iou_reporting_v1` 控管。
+- [x] **生日祝福**（`20260820001000_birthday_wishes.sql`）— `/birthdays`
+- [x] **文件中心與年度交接**（`20260820002000_archive_handover.sql`）— `/archives`
+- [x] **社內留言板** — `/board`
+- [x] **活動封面圖片**（`20260820000100_event_cover_images.sql`）
+  - 瀏覽器端壓縮後直傳私有 bucket，位元組不經過應用伺服器；Storage row policy 即授權邊界。
+- [x] **社務幹部的社員模式**（`20260821000200_event_member_view.sql`）
+  - 社長等幹部在社員模式下看到與一般社員相同的活動頁並可本人簽到；管理模式提供返回社員模式的入口。
 
 ### Phase 3 — Integration & Hardening
 
@@ -62,7 +80,13 @@
 4. **PR-07b — Legacy UI Cleanup / Accessibility Hardening**
 5. **M1 — 五位目標使用者形成性測試**
 
-PR-37B 應使用 PR #61 的 canonical attendance RPC，並等 PR-03 / PR-04 的 check-in policy 穩定後再做最終出席 UI 整合，避免再建立第二套 attendance authority。
+## 已知落差
+
+以下是實作與本文件原則之間目前存在的落差，記錄於此以免被誤認為已處理：
+
+- **生日祝福、文件中心與年度交接、社內留言板沒有 feature flag。** 本文件要求「Feature Flag 與 kill switch 必須保留完整 legacy rollback path」，這三項未遵守，出問題時只能靠回滾部署。目前導覽未連結這三個頁面，僅能以網址進入，風險因此有限但落差仍在。
+- **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
+- PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40（公告通知）仍未實作。
 
 ---
 
@@ -309,25 +333,19 @@ PR-01c 不做：
 ## Dependency Map
 
 ```text
-P1 Event Form State Hotfix ────────────────────────────────> PR-02 Member Home
-                                                               │
-PR #59 Rollout Controls ─┐                                    │
-PR #60 ExperienceContext ├─> PR #62 Role-aware Shells ────────┘ ─> PR-03 Dynamic QR ─> PR-04 GPS
-PR #61 Attendance Core ──┘                                                               │               │
-                                                                                          └───────────────┤
-                                                                                                          v
-                                                                                                  PR-37B Attendance UI
+[完成] P1 Event Form Hotfix ─> PR-02 Member Home ─┐
+[完成] PR #59 / #60 / #61 / #62 基礎 ─────────────┴─> PR-03 Dynamic QR ─> PR-04 GPS ─> PR-37B Attendance UI
+[完成] PR-01c Club Profile Editing
+[完成] 祝福 IOU · 生日祝福 · 文件交接 · 留言板 · 活動封面 · 幹部社員模式
 
-PR-01c Club Profile Editing ── parallel with PR-02, recommended before PR-03
-
-PR-37B ─> PR #40 Announcements/Notifications update ─> PR-07a ─> PR-07b ─> M1 User Testing
+[待辦] PR #40 Announcements/Notifications ─> PR-07a 帳號安全 ─> PR-07b Legacy Cleanup ─> M1 使用者測試
 ```
 
 ## Current Next Actions
 
-1. 實作 **PR-04 GPS Check-in**，保持 QR credential 與 GPS privacy boundary 分離。
-2. PR-01c Club Profile Editing 可作為獨立、小範圍工作，不與 PR-04 混合。
-3. PR-03 / PR-04 policy 穩定後，再實作 PR-37B Attendance UI / Statistics Integration。
-4. 之後才處理 PR #40 Announcements / Notifications 更新與帳號安全、legacy cleanup。
+1. 決定哪些已完成功能要對社員開啟：多數 flag 目前預設關閉，`attendance_ui_v2` 亦然。
+2. 補上生日祝福、文件交接、留言板的 feature flag，讓它們符合本文件的 rollback 原則。
+3. 實作 **PR #40 Announcements / In-app Notifications**（唯一仍未實作的產品切片）。
+4. 之後處理 PR-07a 帳號安全與登入協助、PR-07b legacy cleanup，再進入 M1 使用者測試。
 
 目前採本地開發、完整驗證、清楚 commit 後直接同步 `main` 的節奏；不得自行 auto merge、修改 staging / production、執行 Hosted Supabase migration 或使用真實社員資料驗證。
