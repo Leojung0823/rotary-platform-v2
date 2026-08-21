@@ -166,18 +166,20 @@ describe("role-aware navigation", () => {
     }
   });
 
-  it("gives each mode its own attendance destination when enabled", () => {
+  it("gives management an attendance tab and keeps the member's own inside 我的", () => {
     const projected = context();
     const member = roleShellNavigation(projected, "member", { attendanceEnabled: true });
     const management = roleShellNavigation(projected, "management", { attendanceEnabled: true });
 
-    // The member sees their own rate; the manager lands on the club roster.
-    expect(member.find((item) => item.id === "attendance")?.href).toBe("/attendance?mode=member");
+    // Rosters and adjustments are repeated work and earn a tab. A member's own
+    // rate is checked occasionally, so it lives in 我的 rather than the bar.
     expect(management.find((item) => item.id === "attendance")?.href)
       .toBe("/attendance/manage?mode=management");
+    expect(member.some((item) => item.id === "attendance")).toBe(false);
+    expect(member.some((item) => item.href.startsWith("/attendance"))).toBe(false);
 
     expect(member.map((item) => item.id))
-      .toEqual(["home", "events", "attendance", "directory", "interact", "account"]);
+      .toEqual(["home", "events", "directory", "interact", "account"]);
     expect(management.map((item) => item.id))
       .toEqual(["overview", "events", "attendance", "members", "invitations", "club-settings"]);
   });

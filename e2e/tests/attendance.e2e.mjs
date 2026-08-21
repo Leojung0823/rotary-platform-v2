@@ -18,6 +18,22 @@ async function login(page, email) {
   await expect(page).toHaveURL(/\/dashboard$/u);
 }
 
+test("a member reaches their attendance from 我的, not from a tab of its own", async ({ page }) => {
+  await login(page, memberEmail);
+
+  const bar = page.getByRole("navigation", { name: "主要導覽" });
+  await expect(bar.getByRole("link", { name: "我的" })).toBeVisible();
+  // The tab was merged into 我的; nothing in the bar points at it any more.
+  await expect(bar.getByRole("link", { name: /出席/u })).toHaveCount(0);
+
+  await page.goto(new URL("/me", baseURL).toString());
+  const entry = page.getByRole("link", { name: "開啟出席紀錄" });
+  await expect(entry).toBeVisible();
+  await entry.click();
+  await expect(page).toHaveURL(/\/attendance/u);
+  await expect(page.getByRole("heading", { name: "我的出席" })).toBeVisible();
+});
+
 test("a member sees their own attendance rate and the events behind it", async ({ page }) => {
   await login(page, memberEmail);
   await page.goto(new URL("/attendance?mode=member", baseURL).toString());

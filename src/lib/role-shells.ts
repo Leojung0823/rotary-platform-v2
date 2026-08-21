@@ -118,18 +118,19 @@ export function roleShellNavigation(
     }] : [];
   });
 
-  // Both entries are gated on the same flag as the pages they open, so the
-  // nav can never offer a link that renders notFound().
-  if (attendanceEnabled && (mode === "member" || mode === "management")) {
-    const isMember = mode === "member";
-    const anchorId = isMember ? "directory" : "members";
-    const anchorIndex = items.findIndex((item) => item.id === anchorId);
+  // Management keeps a tab of its own, because taking rosters and recording
+  // adjustments is a job done repeatedly. A member's own attendance is
+  // something they check occasionally, so it lives inside 我的 instead of
+  // spending a tab. Gated on the same flag as the page it opens, so the nav
+  // can never offer a link that renders notFound().
+  if (attendanceEnabled && mode === "management") {
+    const anchorIndex = items.findIndex((item) => item.id === "members");
     const attendanceItem: ShellNavigationItem = {
       id: "attendance",
-      label: isMember ? "我的出席" : "出席管理",
+      label: "出席管理",
       mobileLabel: "出席",
       icon: "chart",
-      href: withModePreference(isMember ? "/attendance" : "/attendance/manage", mode),
+      href: withModePreference("/attendance/manage", "management"),
     };
     if (anchorIndex === -1) items.push(attendanceItem);
     else items.splice(anchorIndex, 0, attendanceItem);

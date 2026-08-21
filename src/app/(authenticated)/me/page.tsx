@@ -1,7 +1,10 @@
 import { revokeDeviceAction, updateIdentitySettingsAction } from "@/app/actions";
 import { unbindMyLineIdentityAction } from "@/app/identity-actions";
 import { updateMyProfileAction } from "@/app/profile-actions";
+import Link from "next/link";
 import { Badge, Button, Card, Field, Input, Notice } from "@/components/ui";
+import { requireIdentity } from "@/lib/auth";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import { safeMessage } from "@/lib/validation";
 
@@ -66,7 +69,13 @@ export default async function IdentityCenterPage({
 }: {
   searchParams: Promise<{ success?: string; error?: string }>;
 }) {
-  const query = await searchParams;
+  const [query, identity] = await Promise.all([searchParams, requireIdentity()]);
+  // Both are request-cached and already resolved by the shell, so this costs
+  // no additional round trip.
+  const attendance = await evaluateCurrentFeatureFlag({
+    key: "attendance_ui_v2",
+    subjectUuid: identity.id,
+  });
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_my_identity_center");
 
@@ -100,6 +109,17 @@ export default async function IdentityCenterPage({
       <Card><span className="metric-label">LINE Login</span><strong className="metric-value metric-text">{center.line_identity?.status === "active" ? "已綁定" : "未綁定"}</strong></Card>
       <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>
     </div>
+
+    {attendance.enabled && <Card>
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">出席紀錄</p>
+          <h2>我的出席</h2>
+        </div>
+        <Link className="button button-secondary" href="/attendance">開啟出席紀錄</Link>
+      </div>
+      <p>本扶輪年度的出席率、逐月趨勢，以及每一場計入出席活動的結果。</p>
+    </Card>}
 
     <div className="two-column">
       <Card>
