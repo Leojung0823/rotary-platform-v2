@@ -1,3 +1,4 @@
+import { createInterface } from "node:readline";
 import { createClient } from "@supabase/supabase-js";
 import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 
@@ -46,14 +47,40 @@ for (const key of keys) {
   }
 }
 
+/**
+ * Asks for the password on the terminal with the echo suppressed, so it never
+ * reaches the shell history, the process list, or a file. Only used when the
+ * variable is absent and there is a terminal to ask on -- CI keeps passing it
+ * through the environment.
+ */
+async function promptForPassword() {
+  const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+  process.stdout.write("Platform admin password (input hidden): ");
+  const muted = (chunk, encoding, callback) => {
+    if (!rl.line) process.stdout.write(chunk, encoding);
+    callback();
+  };
+  const original = rl.output._write.bind(rl.output);
+  rl.output._write = muted;
+  try {
+    return await new Promise((resolve) => rl.question("", resolve));
+  } finally {
+    rl.output._write = original;
+    rl.close();
+    process.stdout.write("\n");
+  }
+}
+
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const email = process.env.PLATFORM_ADMIN_EMAIL?.trim().toLowerCase()
   ?? process.env.BOOTSTRAP_SUPERADMIN_EMAIL?.trim().toLowerCase();
-const password = process.env.PLATFORM_ADMIN_PASSWORD ?? process.env.BOOTSTRAP_SUPERADMIN_PASSWORD;
-if (!url || !publishableKey || !email || !password) {
-  fail("required environment variables are missing");
+let password = process.env.PLATFORM_ADMIN_PASSWORD ?? process.env.BOOTSTRAP_SUPERADMIN_PASSWORD;
+if (!url || !publishableKey || !email) {
+  fail("NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY and PLATFORM_ADMIN_EMAIL are required");
 }
+if (!password && process.stdin.isTTY) password = await promptForPassword();
+if (!password) fail("no password supplied and no terminal to ask on");
 
 // Reuses the bootstrap boundary: automatic locally, explicitly confirmable on
 // staging, and refused outright on production.
