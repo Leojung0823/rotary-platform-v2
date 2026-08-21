@@ -27,6 +27,7 @@ export type FeatureFlagEvaluationReason =
   | "enabled"
   | "kill_switch"
   | "missing_configuration"
+  | "default_enabled"
   | "database_read_error"
   | "invalid_configuration"
   | "invalid_environment"
@@ -158,8 +159,21 @@ export function evaluateFeatureFlag({
   if (killSwitchValue === "true") return { enabled: false, key, reason: "kill_switch" };
 
   if (databaseReadFailed) return { enabled: false, key, reason: "database_read_error" };
+
+  // A feature with no flag record is on. Every feature this platform ships is
+  // meant to be available, and requiring a row to be written before anyone can
+  // use it meant finished work sat invisible.
+  //
+  // Note precisely what this does and does not change. Absence is now consent;
+  // *failure* is still not. A database read error, a malformed record, an
+  // unrecognised environment, and every kill switch above all still resolve to
+  // disabled, because none of those mean "nobody configured this yet" -- they
+  // mean the answer is unknown, and an unknown answer must never expose a
+  // feature. An explicit record still wins, so a flag can be turned off.
   if (record === null || record === undefined) {
-    return { enabled: false, key, reason: "missing_configuration" };
+    return isAppEnvironment(environment)
+      ? { enabled: true, key, reason: "default_enabled" }
+      : { enabled: false, key, reason: "invalid_environment" };
   }
   const parsedRecord = parseFeatureFlagRecord(record);
   if (!parsedRecord) return { enabled: false, key, reason: "invalid_configuration" };

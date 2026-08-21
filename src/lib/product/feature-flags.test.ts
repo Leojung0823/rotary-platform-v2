@@ -57,8 +57,8 @@ describe("feature flag evaluation truth table", () => {
     })).toMatchObject({ enabled: false, reason: "disabled" });
   });
 
-  it("fails closed for missing, malformed, and database-disabled configuration", () => {
-    for (const record of [null, { ...enabledRecord, rolloutPercentage: 101 }, { ...enabledRecord, enabled: false }]) {
+  it("fails closed for malformed and explicitly disabled configuration", () => {
+    for (const record of [{ ...enabledRecord, rolloutPercentage: 101 }, { ...enabledRecord, enabled: false }]) {
       expect(evaluateFeatureFlag({
         key: "role_context_v2",
         record,
@@ -66,6 +66,47 @@ describe("feature flag evaluation truth table", () => {
         pepper,
       }).enabled).toBe(false);
     }
+  });
+
+  it("treats an absent record as consent, but never treats a failure as one", () => {
+    // Nobody having configured the flag means the feature is simply on. That
+    // is the one case that changed; every way of *not knowing* the answer must
+    // still resolve to disabled.
+    expect(evaluateFeatureFlag({
+      key: "role_context_v2",
+      record: null,
+      environment: "staging",
+      pepper,
+    })).toMatchObject({ enabled: true, reason: "default_enabled" });
+    expect(evaluateFeatureFlag({
+      key: "role_context_v2",
+      record: undefined,
+      environment: "staging",
+      pepper,
+    }).enabled).toBe(true);
+
+    for (const failure of [
+      { record: null, databaseReadFailed: true },
+      { record: { nonsense: true }, databaseReadFailed: false },
+      { record: null, environment: "preview" },
+    ]) {
+      expect(evaluateFeatureFlag({
+        key: "role_context_v2",
+        environment: "staging",
+        pepper,
+        ...failure,
+      }).enabled).toBe(false);
+    }
+
+    // A kill switch still overrides the default, so an unconfigured feature can
+    // be shut off without first creating a record for it.
+    expect(evaluateFeatureFlag({
+      key: "checkin_gps_v2",
+      record: null,
+      environment: "staging",
+      pepper,
+      env: { DISABLE_GPS_CHECKIN: "true" },
+    })).toMatchObject({ enabled: false, reason: "kill_switch" });
   });
 
   it("fails closed when the bounded database read reports an error", () => {
@@ -159,8 +200,10 @@ describe("feature flag evaluation truth table", () => {
   it("selects the legacy path on every failed evaluation instead of throwing", () => {
     const result = selectFeaturePath(
       evaluateFeatureFlag({
+        // Malformed rather than absent: absence is now a valid "on" answer, so
+        // it no longer exercises the failure path this test is about.
         key: "member_home_v2",
-        record: null,
+        record: { enabled: "yes" },
         environment: "production",
         pepper,
       }),
