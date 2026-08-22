@@ -56,7 +56,7 @@ begin
   end if;
 
   if has_function_privilege('anon', 'public.list_board_posts(uuid,timestamptz,uuid,integer)', 'EXECUTE')
-     or has_function_privilege('anon', 'public.create_board_post(uuid,text)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.create_board_post(uuid,text,uuid[])', 'EXECUTE')
      or has_function_privilege('anon', 'public.update_own_board_post(uuid,uuid,text)', 'EXECUTE')
      or has_function_privilege('anon', 'public.delete_own_board_post(uuid,uuid)', 'EXECUTE') then
     raise exception 'anon gained board RPC execute';
@@ -64,7 +64,7 @@ begin
 
   if not has_function_privilege('authenticated', 'public.list_my_board_clubs()', 'EXECUTE')
      or not has_function_privilege('authenticated', 'public.list_board_posts(uuid,timestamptz,uuid,integer)', 'EXECUTE')
-     or not has_function_privilege('authenticated', 'public.create_board_post(uuid,text)', 'EXECUTE')
+     or not has_function_privilege('authenticated', 'public.create_board_post(uuid,text,uuid[])', 'EXECUTE')
      or not has_function_privilege('authenticated', 'public.update_own_board_post(uuid,uuid,text)', 'EXECUTE')
      or not has_function_privilege('authenticated', 'public.delete_own_board_post(uuid,uuid)', 'EXECUTE') then
     raise exception 'authenticated board RPC grant missing';

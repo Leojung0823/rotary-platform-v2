@@ -51,6 +51,17 @@ export default async function BoardPage({
   const requested = (await searchParams).clubId;
   const selectedClub = clubs.find((club) => club.club_id === requested) ?? clubs[0] ?? null;
 
+  // Offered only to someone who may manage members: addressing a tag means
+  // choosing which members see the post. The RPC refuses anyone else, so an
+  // error simply leaves the composer open to the whole club.
+  let audienceTags: { tag_id: string; tag_name: string; member_count: number }[] = [];
+  if (selectedClub) {
+    const tagsResult = await supabase.rpc("list_club_member_tags", { p_club_id: selectedClub.club_id });
+    if (!tagsResult.error) {
+      audienceTags = ((tagsResult.data as { tags?: typeof audienceTags } | null)?.tags ?? []);
+    }
+  }
+
   return <div className="page-stack">
     <BoardHeader />
 
@@ -75,7 +86,7 @@ export default async function BoardPage({
         <section className="section-heading">
           <div><p className="eyebrow">目前社別</p><h2>{selectedClub.club_name}</h2></div>
         </section>
-        <MessageBoard clubId={selectedClub.club_id} />
+        <MessageBoard clubId={selectedClub.club_id} audienceTags={audienceTags} />
       </>}
   </div>;
 }

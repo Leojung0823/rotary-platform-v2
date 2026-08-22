@@ -12,7 +12,7 @@ import {
   decodeBoardCursor,
   encodeBoardCursor,
   parseBoardClubId,
-  parseBoardContentBody,
+  parseBoardCreateBody,
   parseBoardLimit,
 } from "@/lib/message-board/validation";
 
@@ -49,10 +49,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const clubId = parseBoardClubId(request.nextUrl.searchParams.get("club_id"));
-    const body = parseBoardContentBody(await readBoardJson(request));
+    const body = parseBoardCreateBody(await readBoardJson(request));
     const { data, error } = await client.rpc("create_board_post", {
       p_club_id: clubId,
       p_content: body.content,
+      p_tag_ids: body.tagIds,
     });
     if (error) return boardRpcFailure(error);
     return boardSuccess(parseBoardPostProjection(data), 201);

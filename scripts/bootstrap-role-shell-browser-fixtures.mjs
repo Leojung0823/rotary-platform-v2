@@ -319,6 +319,33 @@ async function addDynamicCheckinBrowserFixtures({ clubId, managerAccount }) {
 // through an officer's session because configure_line_oa is a protected RPC;
 // no secret is involved -- the channel secret and access token are read from
 // server environment keys, never stored here.
+// A durable tag, so the audience pickers have something to offer. Without it
+// those tests would depend on another suite having created one first, which
+// makes them pass or fail on project ordering rather than on behaviour.
+async function addMemberTagFixture({ clubId, email }) {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
+
+  const officer = createClient(url, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const signIn = await officer.auth.signInWithPassword({ email, password });
+  if (signIn.error) fail("member tag fixture sign-in did not succeed");
+
+  const existing = await officer.rpc("list_club_member_tags", { p_club_id: clubId });
+  if (existing.error) fail("member tag fixture lookup did not succeed");
+  const named = (existing.data?.tags ?? []).some((tag) => tag.tag_name === "理事會");
+  if (!named) {
+    const { error } = await officer.rpc("create_club_member_tag", {
+      p_club_id: clubId,
+      p_tag_name: "理事會",
+      p_description: "瀏覽器測試用的固定標籤",
+    });
+    if (error) fail("member tag fixture creation did not succeed");
+  }
+  await officer.auth.signOut();
+}
+
 async function configureLineOaFixture({ clubId, email }) {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
@@ -475,6 +502,10 @@ await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary })
 await addDynamicCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 await addLocationCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 await allowPublicBlessingAmounts({
+  clubId: memberClub.id,
+  email: "e2e-shell-member-manager@example.test",
+});
+await addMemberTagFixture({
   clubId: memberClub.id,
   email: "e2e-shell-member-manager@example.test",
 });

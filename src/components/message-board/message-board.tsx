@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element, react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { BoardPost } from "@/lib/message-board/contracts";
+import type { AudienceTag } from "@/components/audience/audience-picker";
 import styles from "./message-board.module.css";
 
 const BOARD_CONTENT_MAX_CODE_POINTS = 1000;
@@ -69,7 +70,15 @@ function boardEndpoint(clubId: string, postId?: string, parameters?: URLSearchPa
   return `${path}?${query.toString()}`;
 }
 
-export function MessageBoard({ clubId }: { clubId: string }) {
+export function MessageBoard({
+  clubId,
+  audienceTags = [],
+}: {
+  clubId: string;
+  /** Empty for a member who may not address part of the club. */
+  audienceTags?: readonly AudienceTag[];
+}) {
+  const [audienceTagIds, setAudienceTagIds] = useState<readonly string[]>([]);
   const [posts, setPosts] = useState<BoardPost[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [content, setContent] = useState("");
@@ -145,11 +154,14 @@ export function MessageBoard({ clubId }: { clubId: string }) {
       const response = await fetch(boardEndpoint(clubId), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        // Only sent when something is selected, so an ordinary member's post
+        // carries no audience field at all.
+        body: JSON.stringify(audienceTagIds.length > 0 ? { content, tagIds: [...audienceTagIds] } : { content }),
       });
       const post = await readResponse<BoardPost>(response);
       setPosts(current => [post, ...current]);
       setContent("");
+      setAudienceTagIds([]);
     } catch (error) {
       handleError(error);
     } finally {
@@ -220,6 +232,27 @@ export function MessageBoard({ clubId }: { clubId: string }) {
           disabled={publishing || sessionExpired}
           aria-invalid={contentCount > BOARD_CONTENT_MAX_CODE_POINTS}
         />
+        {audienceTags.length > 0 && <div className={styles.audience}>
+          <span className={styles.audienceLabel}>發送對象</span>
+          <div className="tag-picker">
+            {audienceTags.map(tag => <label className="tag-option" key={tag.tag_id}>
+              <input
+                type="checkbox"
+                checked={audienceTagIds.includes(tag.tag_id)}
+                onChange={() => setAudienceTagIds(current => current.includes(tag.tag_id)
+                  ? current.filter(id => id !== tag.tag_id)
+                  : [...current, tag.tag_id])}
+                disabled={publishing || sessionExpired}
+              />
+              <span>{tag.tag_name}（{tag.member_count}）</span>
+            </label>)}
+          </div>
+          <span className={styles.audienceHint}>
+            {audienceTagIds.length === 0
+              ? "未選擇時，這則留言全社都看得到。"
+              : "只有帶有所選標籤的社員看得到這則留言。"}
+          </span>
+        </div>}
         <div className={styles.composerFooter}>
           <span className={contentCount > BOARD_CONTENT_MAX_CODE_POINTS ? styles.overLimit : undefined}>
             {contentCount} / {BOARD_CONTENT_MAX_CODE_POINTS}

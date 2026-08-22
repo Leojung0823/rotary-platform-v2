@@ -43,6 +43,31 @@ export function parseBoardContentBody(value: unknown) {
   return { content: normalizeBoardContent(value.content) };
 }
 
+// A club's tag list is small; a longer array is a malformed or probing request.
+const MAX_AUDIENCE_TAGS = 50;
+
+/**
+ * Creating a post may carry an audience; editing one may not. They are
+ * separate parsers so an edit cannot quietly change who a post was sent to
+ * after people have already read it.
+ */
+export function parseBoardCreateBody(value: unknown) {
+  if (!isPlainRecord(value)) throw new Error("invalid_body");
+  const keys = Object.keys(value);
+  if (!keys.every((key) => key === "content" || key === "tagIds")) throw new Error("invalid_body");
+  if (!keys.includes("content")) throw new Error("invalid_body");
+
+  const raw = value.tagIds;
+  if (raw !== undefined && !Array.isArray(raw)) throw new Error("invalid_body");
+  const tagIds = Array.from(new Set((raw ?? []) as unknown[]))
+    .map((entry) => (typeof entry === "string" ? entry.trim() : ""));
+  if (tagIds.length > MAX_AUDIENCE_TAGS || tagIds.some((id) => !uuidPattern.test(id))) {
+    throw new Error("invalid_body");
+  }
+
+  return { content: normalizeBoardContent(value.content), tagIds };
+}
+
 export function parseBoardLimit(value: string | null) {
   if (value === null || value === "") return 20;
   if (!/^\d+$/.test(value)) throw new Error("invalid_limit");

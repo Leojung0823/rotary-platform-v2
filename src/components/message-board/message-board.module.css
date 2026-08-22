@@ -270,3 +270,10 @@
     margin-right: auto;
   }
 }
+
+/* Only rendered for someone who may address part of the club, so it sits
+   inside the composer rather than above it -- it is part of writing the post,
+   not a separate decision made beforehand. */
+.audience { display: grid; gap: 8px; padding: 12px 0 0; }
+.audienceLabel { color: #334155; font-size: 13px; font-weight: 750; }
+.audienceHint { color: #64748b; font-size: 12px; }
