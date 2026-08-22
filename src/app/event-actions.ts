@@ -16,9 +16,30 @@ import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-function eventPath(clubId: string, key: "success" | "error", code: string) {
+function eventPath(clubId: string, key: "success" | "error", code: string, mode?: string) {
   const params = new URLSearchParams({ clubId, [key]: code });
+  // The mode has to survive the redirect. Without it a manager who has just
+  // created a draft lands back in the member view, where drafts are correctly
+  // hidden -- so the event they just made appears not to exist.
+  if (mode === "management") params.set("mode", mode);
   return `/events?${params.toString()}`;
+}
+
+function readMode(formData: FormData) {
+  const mode = formData.get("mode");
+  return mode === "management" ? "management" : undefined;
+}
+
+/** Repeated form entries, filtered to well-formed ids. */
+function readUuidList(formData: FormData, name: string) {
+  const values = formData.getAll(name).map((value) => String(value).trim());
+  return Array.from(new Set(values.filter((value) => uuidPattern.test(value))));
+}
+
+function readEventId(data: unknown) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const id = (data as Record<string, unknown>).event_id ?? (data as Record<string, unknown>).id;
+  return typeof id === "string" && uuidPattern.test(id) ? id : null;
 }
 
 function parseUuid(value: FormDataEntryValue | null) {
@@ -75,7 +96,17 @@ export async function createEventAction(
     return createEventFailure(values, revision, "請修正下列欄位後再建立活動草稿。", validated.fieldErrors);
   }
 
+  // An event addressed to particular people is not a 例會, so it cannot count
+  // for attendance. The form disables the control, and the value is forced
+  // here as well so a request that supplies both cannot reach the database and
+  // be refused by the trigger with an error the officer cannot act on.
+  const audienceTagIds = readUuidList(formData, "audienceTagIds");
+  const audienceMembershipIds = readUuidList(formData, "audienceMembershipIds");
+  const targeted = audienceTagIds.length > 0 || audienceMembershipIds.length > 0;
+  const countsForAttendance = validated.input.countsForAttendance && !targeted;
+
   let rpcError: { message?: string } | null = null;
+  let createdEventId: string | null = null;
   try {
     const supabase = await createClient();
     const result = await supabase.rpc("create_club_event", {
@@ -88,17 +119,37 @@ export async function createEventAction(
       p_ends_at: validated.input.endsAt,
       p_registration_deadline: validated.input.registrationDeadline,
       p_capacity: validated.input.capacity,
-      p_counts_for_attendance: validated.input.countsForAttendance,
+      p_counts_for_attendance: countsForAttendance,
       p_venue_latitude: validated.input.venue?.latitude ?? null,
       p_venue_longitude: validated.input.venue?.longitude ?? null,
     });
     rpcError = result.error;
+    createdEventId = readEventId(result.data);
+
+    if (!rpcError && targeted && createdEventId) {
+      const audience = await supabase.rpc("set_club_event_audience", {
+        p_club_id: clubId,
+        p_event_id: createdEventId,
+        p_tag_ids: audienceTagIds,
+        p_membership_ids: audienceMembershipIds,
+      });
+      // The draft exists at this point. Saying so matters: reporting a plain
+      // failure would send the officer to create it again and leave two.
+      if (audience.error) {
+        revalidatePath("/events");
+        return createEventFailure(
+          values,
+          revision,
+          "活動草稿已建立，但發送對象未儲存。請在活動列表確認草稿，並重新設定對象。",
+        );
+      }
+    }
   } catch {
     return createEventFailure(values, revision, "目前無法建立活動草稿，請稍後再試。已輸入的內容仍保留，可直接重試。");
   }
   if (rpcError) return createEventRpcFailure(values, revision, rpcError.message);
   revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "event_created"));
+  redirect(eventPath(clubId, "success", "event_created", readMode(formData)));
 }
 
 export async function recordEventCoverAction({

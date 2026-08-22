@@ -198,6 +198,21 @@ export default async function EventsPage({
     else events = parsed;
   }
 
+  // Only a manager can address an audience, and only in management mode, so
+  // the tag and member lists are fetched only then -- a member's events page
+  // gains no query for a control it will never see.
+  let audienceTags: { tag_id: string; tag_name: string; member_count: number }[] = [];
+  let audienceMembers: { membership_id: string; display_name: string }[] = [];
+  if (canManageHere && selectedClub) {
+    const [tagsResult, membersResult] = await Promise.all([
+      supabase.rpc("list_club_member_tags", { p_club_id: selectedClub.club_id }),
+      supabase.rpc("list_club_members", { p_club_id: selectedClub.club_id, p_query: null, p_status: "active" }),
+    ]);
+    audienceTags = ((tagsResult.data as { tags?: typeof audienceTags } | null)?.tags ?? []);
+    audienceMembers = ((membersResult.data ?? []) as { membership_id: string; display_name: string }[])
+      .map((member) => ({ membership_id: member.membership_id, display_name: member.display_name }));
+  }
+
   const coverUrls = await signCoverImageUrls(events.map((event) => event.cover_image_path));
 
   return <div className="page-stack">
@@ -236,7 +251,12 @@ export default async function EventsPage({
         <div><p className="eyebrow">活動管理</p><h2>建立活動草稿</h2></div>
         <span>{selectedClub.club_name}</span>
       </div>
-      <EventCreateForm clubId={selectedClub.club_id} eventTypeLabels={eventTypeLabels} />
+      <EventCreateForm
+        clubId={selectedClub.club_id}
+        eventTypeLabels={eventTypeLabels}
+        tags={audienceTags}
+        members={audienceMembers}
+      />
     </section>}
 
     {selectedClub && <section>

@@ -1,0 +1,34 @@
+.picker { display: grid; gap: 12px; }
+
+.modes { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.mode { position: relative; display: inline-flex; }
+.mode input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.mode span {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  color: var(--muted);
+  font-weight: 750;
+  cursor: pointer;
+}
+.mode input:checked + span { border-color: var(--navy); background: var(--navy); color: white; }
+.mode input:focus-visible + span { outline: 2px solid var(--navy-2); outline-offset: 2px; }
+
+.summary { margin: 0; color: var(--ink); font-size: 14px; font-weight: 700; }
+.hint { margin: 0; color: var(--muted); font-size: 13px; }
+
+/* The gap between "addressed" and "actually reachable" is the thing an officer
+   most needs to see before sending, so it is called out rather than folded
+   into the summary line. */
+.warning {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #d9c58f;
+  border-radius: 10px;
+  background: #fffdf7;
+  color: #7a5a12;
+  font-size: 13px;
+}

@@ -1,7 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { createEventAction } from "@/app/event-actions";
+import { AudiencePicker, type AudienceMember, type AudienceTag } from "@/components/audience/audience-picker";
+import { addressesWholeClub, type AudienceSelection } from "@/lib/audience/selection";
 import {
   EVENT_CREATE_FIELDS,
   initialEventCreateActionState,
@@ -24,9 +26,15 @@ const fieldLabels: Record<EventCreateField, string> = {
 type EventCreateFormProps = {
   clubId: string;
   eventTypeLabels: Record<string, string>;
+  tags: readonly AudienceTag[];
+  members: readonly AudienceMember[];
 };
 
-export function EventCreateForm({ clubId, eventTypeLabels }: EventCreateFormProps) {
+export function EventCreateForm({ clubId, eventTypeLabels, tags, members }: EventCreateFormProps) {
+  const [targeted, setTargeted] = useState(false);
+  const handleAudienceChange = useCallback((selection: AudienceSelection) => {
+    setTargeted(!addressesWholeClub(selection));
+  }, []);
   const [state, formAction, pending] = useActionState(createEventAction, initialEventCreateActionState);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const values = state.values;
@@ -46,6 +54,9 @@ export function EventCreateForm({ clubId, eventTypeLabels }: EventCreateFormProp
 
   return <form action={formAction} className="form-stack" key={state.revision} noValidate>
     <input type="hidden" name="clubId" value={clubId} />
+    {/* Carried so the redirect after creating a draft returns to the
+        management view; the member view hides drafts. */}
+    <input type="hidden" name="mode" value="management" />
     {state.status === "error" && <div className="notice notice-error form-error-summary" role="alert" aria-label="建立活動錯誤" tabIndex={-1} ref={errorSummaryRef}>
       <strong>{state.formError}</strong>
       {Object.keys(state.fieldErrors).length > 0 && <ul>
@@ -99,12 +110,27 @@ export function EventCreateForm({ clubId, eventTypeLabels }: EventCreateFormProp
         <span className="hint" id="event-create-venueLocation-hint">填了之後，社員到現場可以直接用手機定位簽到（{"場地 200 公尺內"}），不必掃 QR。留空則此活動只能用 QR 簽到。</span>
         {errorFor("venueLocation") && <span className="field-error" id="event-create-venueLocation-error">{errorFor("venueLocation")}</span>}
       </label>
+      {/* Disabled rather than merely ignored when the event is addressed to
+          particular people: a targeted event is not a 例會, so counting it
+          would put an absence on the record of everyone who was never asked.
+          The action forces the same thing server-side. */}
       <label className="checkbox-row" htmlFor="event-create-countsForAttendance">
-        <input id="event-create-countsForAttendance" type="checkbox" name="countsForAttendance" defaultChecked={values.countsForAttendance} aria-invalid={Boolean(errorFor("countsForAttendance"))} aria-describedby={describedBy("countsForAttendance")} />
-        <span><strong>計入出席</strong><br /><span className="hint">已發布且計入出席的活動可在活動前後 24 小時內開啟短效簽到 token。</span></span>
+        <input id="event-create-countsForAttendance" type="checkbox" name="countsForAttendance" defaultChecked={values.countsForAttendance} disabled={targeted} aria-invalid={Boolean(errorFor("countsForAttendance"))} aria-describedby={describedBy("countsForAttendance")} />
+        <span><strong>計入出席</strong><br /><span className="hint">{targeted
+          ? "已指定發送對象，因此不是例會，不會計入出席率。"
+          : "已發布且計入出席的活動可在活動前後 24 小時內開啟短效簽到 token。"}</span></span>
         {errorFor("countsForAttendance") && <span className="field-error" id="event-create-countsForAttendance-error">{errorFor("countsForAttendance")}</span>}
       </label>
     </div>
+    <fieldset className="field">
+      <legend className="label">發送對象</legend>
+      <AudiencePicker
+        clubId={clubId}
+        tags={tags}
+        members={members}
+        onSelectionChange={handleAudienceChange}
+      />
+    </fieldset>
     <label className="field" htmlFor="event-create-description"><span className="label">活動說明</span>
       <textarea className="input" id="event-create-description" name="description" maxLength={5000} rows={4} defaultValue={values.description} aria-invalid={Boolean(errorFor("description"))} aria-describedby={describedBy("description")} />
       {errorFor("description") && <span className="field-error" id="event-create-description-error">{errorFor("description")}</span>}
