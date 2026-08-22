@@ -22,7 +22,9 @@
     "check:migrations": "bash scripts/check-migration-history.sh",
     "check:db-verifications": "node scripts/check-database-verification-manifest.mjs",
     "flags:enable": "node scripts/set-feature-flags.mjs enable",
-    "flags:disable": "node scripts/set-feature-flags.mjs disable"
+    "flags:disable": "node scripts/set-feature-flags.mjs disable",
+    "flags:enable:staging": "node --env-file=.env.staging scripts/set-feature-flags.mjs enable",
+    "flags:disable:staging": "node --env-file=.env.staging scripts/set-feature-flags.mjs disable"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.3",

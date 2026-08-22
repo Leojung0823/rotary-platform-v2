@@ -203,6 +203,34 @@ npm run bootstrap:superadmin
 
 不得透過 GitHub Actions log、Issue、PR 或聊天傳送 bootstrap 密碼。
 
+## 6b. 對 staging 開啟功能
+
+部署完成不等於社員看得到。多數 flag 預設關閉，而列在 `flagsRequiringExplicitEnable`
+（`src/lib/product/feature-flags.ts`）的 key **沒有紀錄時一律視為關閉**，必須明確開啟才會出現。
+目前這類 key 是 `announcements_v09`（訊息中心）。
+
+把 `.env.staging.example` 複製成 `.env.staging`（已被 git 忽略），填入三個**非機密**值：
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://<staging-project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<staging publishable / anon key>
+PLATFORM_ADMIN_EMAIL=<staging 平台管理員帳號>
+BOOTSTRAP_CONFIRM_SUPABASE_HOST=<staging-project-ref>.supabase.co
+```
+
+URL 與 publishable key 是瀏覽器本來就會收到的值，可以從 Supabase 專案的 API 設定或部署平台的
+環境變數取得。**不要**把 `PLATFORM_ADMIN_PASSWORD` 寫進這個檔案——留空，腳本會在終端機以隱藏
+輸入詢問，密碼因此不會進入檔案、shell 歷史或 process list。
+
+```bash
+npm run flags:enable:staging announcements_v09
+# 關閉：
+npm run flags:disable:staging announcements_v09
+```
+
+腳本走的是與其他 rollout 變更同一支受保護 RPC，因此會留下稽核紀錄；它也拒絕把 flag 指向
+production 目標。
+
 ## 7. 自動 smoke test
 
 Go-Live 等待 exact revision 成功後會自動執行 smoke test。也可以在可信任的管理環境單獨執行：

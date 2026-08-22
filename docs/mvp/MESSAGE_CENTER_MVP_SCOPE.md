@@ -49,10 +49,11 @@
 
 因此新增 `flagsRequiringExplicitEnable`（`src/lib/product/feature-flags.ts`），列在裡面的 key 在**沒有紀錄時視為關閉**（`missing_configuration`）。目前只有 `announcements_v09`。
 
-要對社員開啟：
+要對社員開啟（staging 的步驟見 `docs/deployment/STAGING_RUNBOOK.md` §6b）：
 
 ```bash
-npm run flags:enable announcements_v09
+npm run flags:enable announcements_v09          # 本機
+npm run flags:enable:staging announcements_v09  # staging，需要 .env.staging
 ```
 
 > 沒有改資料庫的 flag 觸發器來「在 migration 裡插入停用列」：那需要同時放寬 `platform_feature_flags` 與 append-only 稽核表的 actor 要求，代價是削弱 rollout 控制本身的安全模型。改在應用層要求明確啟用，得到同樣的 fail-closed 行為而不動那條邊界。
