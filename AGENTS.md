@@ -43,6 +43,12 @@
 - `CREATE OR REPLACE FUNCTION` **無法**改變回傳型別或參數列表。要加參數或改 `RETURNS TABLE` 必須先 `DROP FUNCTION`。
 - 改動「已套用過」的 migration 檔案，`db push` 不會重跑（它只認檔名）。必須 `npx supabase db reset --local`。
 
+### 改動函式簽章時，記得驗證檔會寫死簽章
+
+`supabase/verification/*.sql` 裡的 `has_function_privilege('...', 'public.fn(uuid,text)', 'EXECUTE')` 是**完整簽章字串**。加參數並 DROP 重建之後，舊的驗證檔會失敗並顯示「function does not exist」。
+
+只跑新寫的驗證檔不會發現，一定要跑完整的 `npm run verify:db`。
+
 ### 改寫既有函式時
 
 不要憑記憶重打整個函式。用程式化方式從原始 migration 擷取，只改要改的那一行。曾經發生過重寫時漏掉「授予 member 角色」「建立通知設定」等關鍵步驟。
@@ -90,7 +96,8 @@ npm run check:migrations   # migration 前向性
 3. **會改變資料的測試只在單一 viewport 執行**（用 `test.skip(testInfo.project.name !== ...)`），否則後面的 viewport 會看到被改過的狀態。
 4. **`loading="lazy"` 的圖片要先捲動到可見範圍**才會載入，否則會被判定為 hidden。
 5. **`count()` 不會等待，`expect()` 才會。** 外殼是在 Suspense 邊界後串流進來的，直接 `count()` 會數到還沒渲染的空頁面而得到 0。要數之前先 `await expect(locator.first()).toBeVisible()`。
-6. **導覽連結的可及名稱只包含當前斷點看得見的那個標籤。** 桌機是完整名稱、手機是短標籤（`display: none` 的文字不計入可及名稱），所以跨尺寸的測試要用 regex 同時涵蓋兩者。
+6. **`next start` 會沿用 3000 埠上已存在的 server。** 如果前一次的 server 沒關掉，Playwright 會直接重用它，跑的是**舊的 build**——症狀是程式明明改了、`.next` 產物裡也有新字串，但畫面就是舊的。懷疑之前先 `lsof -ti:3000 | xargs kill`。今天為此誤判過兩次。
+7. **導覽連結的可及名稱只包含當前斷點看得見的那個標籤。** 桌機是完整名稱、手機是短標籤（`display: none` 的文字不計入可及名稱），所以跨尺寸的測試要用 regex 同時涵蓋兩者。
 
 本機連續跑兩次完整測試前，要重跑 fixture：
 
@@ -101,6 +108,35 @@ node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
 ```
 
 （本機 Supabase 資料在 `db reset` 後會清空，superadmin 需要重建。）
+
+### `db reset` 之後可能要重啟整個 stack
+
+`npm run verify:db` 會做 `db reset`，而 **GoTrue 的 auth schema migration 只在容器啟動時套用**。重置後 `auth.users` 可能缺欄位（實際遇過缺 `banned_until`），任何 admin API 呼叫都會失敗，症狀是 bootstrap 腳本回報「could not inspect Auth users」，接著所有瀏覽器測試因為登入失敗而全掛。
+
+不是程式問題。修法：
+
+```bash
+npx supabase stop && npx supabase start
+npx supabase db reset --local
+```
+
+然後重跑上面的 fixture 指令。
+
+### 本機跑多個會改資料的測試專案要加 `--workers=1`
+
+CI 設定就是 `workers: 1`，本機預設會依 CPU 開多工。多個專案同時對同一個測試社建標籤、建活動、發訊息會互相踩到，症狀是好幾個不相干的套件同時失敗、但單獨跑都過。
+
+```bash
+npx playwright test --workers=1 --project=... --project=...
+```
+
+### 測試不要依賴別的套件留下的資料
+
+需要標籤、活動、LINE OA 帳號之類的前提時，加進 `scripts/bootstrap-role-shell-browser-fixtures.mjs`，不要假設別的測試會先建好——否則測試是依專案執行順序決定成敗，不是依行為。
+
+### `notFound()` 在串流開始後只能回 200
+
+標頭已經送出了，所以不要斷言 404 狀態碼。要斷言的是**畫面上沒有洩漏任何內容**，那才是真正要保證的事。
 
 ## 7. 部署
 
