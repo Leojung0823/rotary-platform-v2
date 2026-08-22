@@ -291,7 +291,7 @@ export default async function EventsPage({
                 <span className="badge badge-neutral">{eventTypeLabels[event.event_type] ?? "其他"}</span>
                 {event.counts_for_attendance && <span className="badge badge-neutral">計入出席</span>}
               </div>
-              <h2>{event.title}</h2>
+              <h2><Link href={`/events/${encodeURIComponent(event.id)}`}>{event.title}</Link></h2>
             </div>
             <span>版本 {event.version}</span>
           </div>

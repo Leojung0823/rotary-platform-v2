@@ -328,4 +328,41 @@ begin
 end $resolver$;
 reset role;
 
+-- The detail page must not become a way around the audience: an event that
+-- was not addressed to a member is indistinguishable from one that is not
+-- there, rather than returning a permission error that confirms it exists.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '1c000000-0000-4000-8000-000000000003', true);
+do $detail_excluded$
+begin
+  if public.get_my_club_event('8c000000-0000-4000-8000-000000000001') is not null then
+    raise exception 'An untagged member fetched a targeted event by id.';
+  end if;
+  -- The outing they were named for is still theirs to open.
+  if public.get_my_club_event('8c000000-0000-4000-8000-000000000003') is null then
+    raise exception 'A named participant could not open their own event by id.';
+  end if;
+end $detail_excluded$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '1c000000-0000-4000-8000-000000000002', true);
+do $detail_included$
+declare
+  payload jsonb;
+begin
+  payload := public.get_my_club_event('8c000000-0000-4000-8000-000000000001');
+  if payload is null then
+    raise exception 'A tagged member could not open the event addressed to them.';
+  end if;
+  if (payload ->> 'club_id')::uuid <> '5c000000-0000-4000-8000-000000000001' then
+    raise exception 'The detail payload named the wrong club.';
+  end if;
+  -- Both clock decisions come from the database, not the caller.
+  if payload -> 'happening_now' is null or payload -> 'is_past' is null then
+    raise exception 'The detail payload did not decide the event timing.';
+  end if;
+end $detail_included$;
+reset role;
+
 rollback;

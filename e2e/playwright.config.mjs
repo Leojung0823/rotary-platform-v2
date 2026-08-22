@@ -25,6 +25,7 @@ const memberTagsTestMatch = /member-tags\.e2e\.mjs/;
 const eventAudienceTestMatch = /event-audience\.e2e\.mjs/;
 const lineOaAudienceTestMatch = /line-oa-audience\.e2e\.mjs/;
 const boardAudienceTestMatch = /board-audience\.e2e\.mjs/;
+const eventDetailTestMatch = /event-detail\.e2e\.mjs/;
 const eventCoverTestMatch = /event-cover\.e2e\.mjs/;
 const dynamicCheckinOffTestMatch = /dynamic-checkin-off\.e2e\.mjs/;
 const dynamicCheckinRollbackScenario = process.env.E2E_CHECKIN_QR_ROLLBACK;
@@ -140,6 +141,13 @@ export default defineConfig({
       name: `mobile-nav-${width}`,
       testMatch: mobileNavTestMatch,
       use: { viewport: { width, height: width === 320 ? 700 : 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+    })),
+    ...[1440, 375].map((width) => ({
+      name: `event-detail-${width}`,
+      testMatch: eventDetailTestMatch,
+      use: width <= 412
+        ? { viewport: { width, height: 812 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
+        : { viewport: { width, height: 900 } },
     })),
     {
       name: "board-audience-1440",
