@@ -314,6 +314,31 @@ async function addDynamicCheckinBrowserFixtures({ clubId, managerAccount }) {
 // refuses a non-https origin there, so the publish path cannot be exercised
 // over plain http locally. The database-level verification covers that path;
 // this fixture exists so the ledger UI can be.
+// The LINE OA send form only exists once an account is configured, so without
+// this the audience picker there has nothing to render into. Configured
+// through an officer's session because configure_line_oa is a protected RPC;
+// no secret is involved -- the channel secret and access token are read from
+// server environment keys, never stored here.
+async function configureLineOaFixture({ clubId, email }) {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
+
+  const officer = createClient(url, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const signIn = await officer.auth.signInWithPassword({ email, password });
+  if (signIn.error) fail("LINE OA fixture sign-in did not succeed");
+
+  const { error } = await officer.rpc("configure_line_oa", {
+    p_club_id: clubId,
+    p_display_name: "本機測試 OA",
+    p_basic_id: "@e2e-rotary",
+    p_channel_id: "0000000000",
+  });
+  if (error) fail("LINE OA fixture configuration did not succeed");
+  await officer.auth.signOut();
+}
+
 async function addBlessingIouLedgerFixture({ clubId, email }) {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
@@ -450,6 +475,10 @@ await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary })
 await addDynamicCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 await addLocationCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 await allowPublicBlessingAmounts({
+  clubId: memberClub.id,
+  email: "e2e-shell-member-manager@example.test",
+});
+await configureLineOaFixture({
   clubId: memberClub.id,
   email: "e2e-shell-member-manager@example.test",
 });
