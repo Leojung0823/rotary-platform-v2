@@ -16,6 +16,9 @@ export type ShellNavigationItem = Readonly<{
   mobileLabel: string;
   icon: ShellIconName;
   href: string;
+  // Unread work waiting behind this tab. Omitted rather than zero when there
+  // is nothing waiting, so a quiet inbox draws no attention at all.
+  badgeCount?: number;
   // True only for links that cross a mode boundary (member -> management).
   // The shell's mode is resolved in the shared (authenticated) layout, which
   // Next.js's client router cache does not re-render on a soft navigation
@@ -102,9 +105,16 @@ export function resolveRoleShell({
 export function roleShellNavigation(
   context: ExperienceContext,
   mode: ExperienceMode,
-  { blessingIouEnabled = false, attendanceEnabled = false }: {
+  {
+    blessingIouEnabled = false,
+    attendanceEnabled = false,
+    messageCenterEnabled = false,
+    unreadMessageCount = 0,
+  }: {
     blessingIouEnabled?: boolean;
     attendanceEnabled?: boolean;
+    messageCenterEnabled?: boolean;
+    unreadMessageCount?: number;
   } = {},
 ): readonly ShellNavigationItem[] {
   const items: ShellNavigationItem[] = navigationByMode[mode].flatMap((definition) => {
@@ -153,6 +163,23 @@ export function roleShellNavigation(
       if (clubSettingsIndex === -1) items.push(blessingIouItem);
       else items.splice(clubSettingsIndex, 0, blessingIouItem);
     }
+  }
+
+  // The message centre gets a tab of its own rather than sitting inside 社內
+  // 互動: an unread count that nobody can see is not a notification. It is in
+  // both member and management navigation because an officer writes messages
+  // from the same page a member reads them on, and should not have to leave
+  // management mode to send one. Gated on the same flag as the page it opens,
+  // so the nav can never offer a link that renders notFound().
+  if (mode !== "platform" && messageCenterEnabled) {
+    items.push({
+      id: "messages",
+      label: "訊息中心",
+      mobileLabel: "訊息",
+      icon: "bell",
+      href: withModePreference("/messages", mode),
+      ...(unreadMessageCount > 0 ? { badgeCount: unreadMessageCount } : {}),
+    });
   }
 
   // One entry for the social features. They are three separate pages that had

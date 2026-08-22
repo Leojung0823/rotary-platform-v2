@@ -9,8 +9,9 @@ import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 // signs in rather than using a service-role key.
 
 // Every key the platform currently knows about, and whether the feature behind
-// it is actually built. announcements_v09 is declared but unimplemented: PR #40
-// was never merged, so enabling it would expose nothing at best.
+// it is actually built. The list is empty of unimplemented keys today; keep the
+// split, because a key is usually declared before the feature lands and
+// enabling one of those exposes nothing at best.
 const IMPLEMENTED = [
   "role_context_v2",
   "role_shells_v2",
@@ -18,11 +19,12 @@ const IMPLEMENTED = [
   "checkin_qr_v2",
   "checkin_gps_v2",
   "attendance_ui_v2",
+  "announcements_v09",
   "blessing_iou_v1",
   "blessing_iou_collections_v1",
   "blessing_iou_reporting_v1",
 ];
-const UNIMPLEMENTED = ["announcements_v09"];
+const UNIMPLEMENTED = [];
 
 function fail(message) {
   throw new Error(`Feature flag update failed: ${message}`);

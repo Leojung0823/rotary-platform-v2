@@ -28,6 +28,7 @@ describe("auth session proxy", () => {
     expect(shouldRefreshAuthSession("/archives")).toBe(true);
     expect(shouldRefreshAuthSession("/birthdays")).toBe(true);
     expect(shouldRefreshAuthSession("/dashboard")).toBe(true);
+    expect(shouldRefreshAuthSession("/messages")).toBe(true);
     expect(shouldRefreshAuthSession("/clubs/club-id/members")).toBe(true);
     expect(shouldRefreshAuthSession("/invite/accept")).toBe(true);
     expect(shouldRefreshAuthSession("/reset-password")).toBe(true);

@@ -1,0 +1,155 @@
+.center {
+  display: grid;
+  gap: 2rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.composer {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+  padding: 1.4rem;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 132px;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  color: #0f172a;
+  font: inherit;
+  line-height: 1.6;
+}
+
+.textarea:focus {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 1px;
+}
+
+.list {
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+}
+
+.item,
+.unread {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 16px;
+  background: #fff;
+  padding: 1rem 1.15rem;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+}
+
+/* Unread is carried by a border and a dot rather than by colour alone, so it
+   survives a monochrome screen and a colour-blind reader. */
+.unread {
+  border-left: 4px solid #1d4ed8;
+  background: #f8fafc;
+}
+
+.itemHeading {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: none;
+  text-align: start;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.itemTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #1d4ed8;
+  flex: none;
+}
+
+.meta {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.body {
+  margin: 0.85rem 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.sentList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.sentItem {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 16px;
+  background: #fff;
+  padding: 1rem 1.15rem;
+}
+
+.sentHeading {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.sentActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.deliveries {
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
+  padding-top: 0.75rem;
+}
+
+.hint {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.notice,
+.error {
+  margin: 0;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+}
+
+.notice {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}

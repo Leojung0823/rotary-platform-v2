@@ -35,3 +35,4 @@ supabase/verification/blessing_iou_my_ledger_security.sql
 supabase/verification/member_tags_audiences_security.sql
 supabase/verification/privacy_defaults_security.sql
 supabase/verification/board_post_audience_security.sql
+supabase/verification/club_message_center_security.sql

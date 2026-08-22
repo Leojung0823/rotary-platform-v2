@@ -15,6 +15,7 @@ const PROTECTED_SESSION_PATHS = [
   "/events",
   "/features",
   "/me",
+  "/messages",
   "/platform",
 ] as const;
 

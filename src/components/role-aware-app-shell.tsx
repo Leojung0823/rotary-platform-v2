@@ -14,6 +14,7 @@ import { ShellIcon } from "@/components/shell-icons";
 import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
 import { displayableEmail, type Identity } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import type { FeatureFlagEvaluation } from "@/lib/product/feature-flags";
 import { recordAuthenticatedProductTelemetry } from "@/lib/product/telemetry.server";
@@ -59,6 +60,23 @@ async function recordRoleShellFlagFailure(evaluation: FeatureFlagEvaluation) {
 
 function modeHref(mode: ExperienceMode) {
   return `/dashboard?mode=${encodeURIComponent(mode)}`;
+}
+
+/**
+ * Unread messages across every club the member belongs to. Read as a plain
+ * number: the shell has no use for the per-club breakdown, and a shell must
+ * never fail to render because a count could not be fetched.
+ */
+async function readUnreadMessageCount() {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("count_my_unread_club_messages");
+    if (error || typeof data !== "object" || data === null) return 0;
+    const total = (data as { total?: unknown }).total;
+    return typeof total === "number" && Number.isInteger(total) && total > 0 ? total : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function isCurrentNavigationItem(item: ShellNavigationItem, pathname: string) {
@@ -154,6 +172,16 @@ function ClubSwitcher({ context, mode }: { context: ExperienceContext; mode: Exp
   </details>;
 }
 
+function NavigationBadge({ count }: { count?: number }) {
+  if (!count) return null;
+  // The number is announced, not just drawn: a dot that only sighted users can
+  // see is not a notification either.
+  return <span className={styles.navigationBadge}>
+    <span aria-hidden="true">{count > 99 ? "99+" : count}</span>
+    <span className="sr-only">{count} 則未讀訊息</span>
+  </span>;
+}
+
 function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationItem[]; pathname: string }) {
   return <nav className={styles.navigation} aria-label="主要導覽">
     <ul style={{ "--nav-count": items.length } as CSSProperties}>
@@ -163,6 +191,7 @@ function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationI
               <span className={styles.navigationIcon}><ShellIcon name={item.icon} /></span>
               <span className={styles.desktopLabel}>{item.label}</span>
               <span className={styles.mobileLabel}>{item.mobileLabel}</span>
+              <NavigationBadge count={item.badgeCount} />
             </a>
           : <Link
               href={item.href}
@@ -172,6 +201,7 @@ function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationI
               <span className={styles.navigationIcon}><ShellIcon name={item.icon} /></span>
               <span className={styles.desktopLabel}>{item.label}</span>
               <span className={styles.mobileLabel}>{item.mobileLabel}</span>
+              <NavigationBadge count={item.badgeCount} />
             </Link>}
       </li>)}
     </ul>
@@ -211,6 +241,8 @@ export function RoleAwareAppShell({
   pathname,
   blessingIouEnabled = false,
   attendanceEnabled = false,
+  messageCenterEnabled = false,
+  unreadMessageCount = 0,
   children,
 }: {
   identity: Identity;
@@ -219,9 +251,16 @@ export function RoleAwareAppShell({
   pathname: string;
   blessingIouEnabled?: boolean;
   attendanceEnabled?: boolean;
+  messageCenterEnabled?: boolean;
+  unreadMessageCount?: number;
   children: ReactNode;
 }) {
-  const navigation = roleShellNavigation(context, mode, { blessingIouEnabled, attendanceEnabled });
+  const navigation = roleShellNavigation(context, mode, {
+    blessingIouEnabled,
+    attendanceEnabled,
+    messageCenterEnabled,
+    unreadMessageCount,
+  });
   return <div className={`${styles.shell} ${styles[`shell${mode[0].toUpperCase()}${mode.slice(1)}`]}`}>
     <aside className={styles.rail}>
       <header className={styles.header}>
@@ -271,10 +310,21 @@ export async function RoleAwareAppShellBoundary({
     readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value),
   );
 
-  const [evaluation, blessingIouEvaluation, attendanceEvaluation] = await Promise.all([
+  // The unread count joins this group rather than following the flag read:
+  // issued together it costs no additional sequential round trip, and the
+  // result is simply discarded when the message centre is switched off.
+  const [
+    evaluation,
+    blessingIouEvaluation,
+    attendanceEvaluation,
+    messageCenterEvaluation,
+    unreadMessageCount,
+  ] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "attendance_ui_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "announcements_v09", subjectUuid: identity.id }),
+    readUnreadMessageCount(),
   ]);
   if (!evaluation.enabled) {
     void contextPromise;
@@ -304,6 +354,8 @@ export async function RoleAwareAppShellBoundary({
     pathname={headerStore.get("x-rotary-pathname") ?? "/dashboard"}
     blessingIouEnabled={blessingIouEvaluation.enabled}
     attendanceEnabled={attendanceEvaluation.enabled}
+    messageCenterEnabled={messageCenterEvaluation.enabled}
+    unreadMessageCount={unreadMessageCount}
   >
     {children}
   </RoleAwareAppShell>;

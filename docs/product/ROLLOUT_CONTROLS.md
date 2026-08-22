@@ -38,6 +38,14 @@ The only accepted keys are:
 - `blessing_iou_collections_v1`
 - `blessing_iou_reporting_v1`
 
+A key with no database record resolves to **enabled** (`default_enabled`): every feature the
+platform has already shipped is meant to be available, and requiring a row before anyone can use
+it left finished work invisible. The exception is `flagsRequiringExplicitEnable` in
+`src/lib/product/feature-flags.ts` — currently `announcements_v09` — where absence resolves to
+**disabled** (`missing_configuration`), so a feature nobody has seen yet does not go live merely
+by being deployed. Turn one on with `npm run flags:enable <key>`, which goes through the audited
+RPC like any other rollout change.
+
 The evaluator has this fixed order:
 
 | Order | Condition | Result when not satisfied |

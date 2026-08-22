@@ -48,6 +48,13 @@ type ServerEnvironment = Readonly<Record<string, string | undefined>>;
 const appEnvironments: readonly AppEnvironment[] = ["local", "staging", "production"];
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
+// Absence means enabled for everything the platform has already shipped (see
+// evaluateFeatureFlag). A feature nobody has ever seen is different: shipping
+// it dark and letting a club turn it on is the whole point of having a flag,
+// and that is impossible if deploying the migration is itself the rollout. A
+// key listed here therefore needs an explicit record before it is on.
+export const flagsRequiringExplicitEnable: readonly FeatureFlagKey[] = ["announcements_v09"];
+
 export const emergencyKillSwitches: Readonly<Partial<Record<FeatureFlagKey, string>>> = {
   role_shells_v2: "FORCE_LEGACY_ROLE_SHELLS",
   member_home_v2: "FORCE_LEGACY_MEMBER_HOME",
@@ -171,6 +178,9 @@ export function evaluateFeatureFlag({
   // mean the answer is unknown, and an unknown answer must never expose a
   // feature. An explicit record still wins, so a flag can be turned off.
   if (record === null || record === undefined) {
+    if (flagsRequiringExplicitEnable.includes(key)) {
+      return { enabled: false, key, reason: "missing_configuration" };
+    }
     return isAppEnvironment(environment)
       ? { enabled: true, key, reason: "default_enabled" }
       : { enabled: false, key, reason: "invalid_environment" };

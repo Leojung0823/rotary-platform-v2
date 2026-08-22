@@ -75,7 +75,10 @@ Phase 2 之後追加並完成的社務功能：
    `/attendance` 與 `/attendance/manage` 建在 PR #61 既有的 canonical attendance RPC 之上，
    未新增第二套 attendance authority；PR #37 的 migration 因此不採用。
    受 `attendance_ui_v2` flag 控管，預設關閉。
-2. **PR #40 更新 — Announcements / In-app Notifications Integration**
+2. ~~**PR #40 更新 — Announcements / In-app Notifications Integration**~~ — 已完成（2026-08-22）。
+   `/messages` 訊息中心：幹部依受眾發布、每位收件人各自的已讀狀態、導覽未讀徽章、
+   幹部可見的已讀名單與收回。受 `announcements_v09` flag 控管，**預設關閉且必須明確開啟**
+   （見 `docs/mvp/MESSAGE_CENTER_MVP_SCOPE.md`）。
 3. **PR-07a — 我的／帳號安全／登入協助**
 4. **PR-07b — Legacy UI Cleanup / Accessibility Hardening**
 5. **M1 — 五位目標使用者形成性測試**
@@ -86,7 +89,7 @@ Phase 2 之後追加並完成的社務功能：
 
 - **生日祝福、文件中心與年度交接、社內留言板沒有 feature flag。** 本文件要求「Feature Flag 與 kill switch 必須保留完整 legacy rollback path」，這三項未遵守，出問題時只能靠回滾部署。目前導覽未連結這三個頁面，僅能以網址進入，風險因此有限但落差仍在。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
-- PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40（公告通知）仍未實作。
+- PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40（公告通知）已於 2026-08-22 實作，未沿用該分支的程式碼。
 
 ---
 
@@ -338,14 +341,15 @@ PR-01c 不做：
 [完成] PR-01c Club Profile Editing
 [完成] 祝福 IOU · 生日祝福 · 文件交接 · 留言板 · 活動封面 · 幹部社員模式
 
-[待辦] PR #40 Announcements/Notifications ─> PR-07a 帳號安全 ─> PR-07b Legacy Cleanup ─> M1 使用者測試
+[完成] PR #40 Announcements/Notifications（訊息中心）
+[待辦] PR-07a 帳號安全 ─> PR-07b Legacy Cleanup ─> M1 使用者測試
 ```
 
 ## Current Next Actions
 
 1. 決定哪些已完成功能要對社員開啟：多數 flag 目前預設關閉，`attendance_ui_v2` 亦然。
 2. 補上生日祝福、文件交接、留言板的 feature flag，讓它們符合本文件的 rollback 原則。
-3. 實作 **PR #40 Announcements / In-app Notifications**（唯一仍未實作的產品切片）。
+3. 決定何時對社員開啟訊息中心：`npm run flags:enable announcements_v09`（預設關閉）。
 4. 之後處理 PR-07a 帳號安全與登入協助、PR-07b legacy cleanup，再進入 M1 使用者測試。
 
 目前採本地開發、完整驗證、清楚 commit 後直接同步 `main` 的節奏；不得自行 auto merge、修改 staging / production、執行 Hosted Supabase migration 或使用真實社員資料驗證。

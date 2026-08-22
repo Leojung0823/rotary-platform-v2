@@ -19,9 +19,14 @@ export type ShellIconName =
   | "heart"
   | "arrowLeft"
   | "building"
-  | "plus";
+  | "plus"
+  | "bell";
 
 const paths: Record<ShellIconName, ReactNode> = {
+  bell: <>
+    <path d="M12 3.4a5.6 5.6 0 0 0-5.6 5.6c0 4.2-1.3 5.6-2 6.4h15.2c-.7-.8-2-2.2-2-6.4A5.6 5.6 0 0 0 12 3.4Z" />
+    <path d="M10.1 18.4a2 2 0 0 0 3.8 0" />
+  </>,
   home: <>
     <path d="M3.5 10.2 12 3.8l8.5 6.4" />
     <path d="M5.6 9v10.2h12.8V9" />

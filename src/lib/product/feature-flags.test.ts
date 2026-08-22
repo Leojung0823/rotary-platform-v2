@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateFeatureRolloutBucket,
   evaluateFeatureFlag,
+  flagsRequiringExplicitEnable,
   resolveAppEnvironment,
   resolveRuntimeAppEnvironment,
   selectFeaturePath,
@@ -281,4 +282,24 @@ describe("deterministic rollout distribution", () => {
       expect(selected).toBeLessThanOrEqual(percentage * 10 + 40);
     });
   }
+});
+
+describe("features that must be turned on deliberately", () => {
+  it("stays off with no record, and honours one that turns it on", () => {
+    for (const key of flagsRequiringExplicitEnable) {
+      expect(evaluateFeatureFlag({ key, record: null, environment: "staging", pepper }))
+        .toMatchObject({ enabled: false, reason: "missing_configuration" });
+      expect(evaluateFeatureFlag({ key, record: enabledRecord, environment: "staging", pepper }))
+        .toMatchObject({ enabled: true, reason: "enabled" });
+    }
+  });
+
+  it("leaves every other key on the platform default", () => {
+    expect(evaluateFeatureFlag({
+      key: "blessing_iou_v1",
+      record: null,
+      environment: "staging",
+      pepper,
+    })).toMatchObject({ enabled: true, reason: "default_enabled" });
+  });
 });

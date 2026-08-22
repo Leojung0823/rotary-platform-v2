@@ -184,3 +184,37 @@ describe("role-aware navigation", () => {
       .toEqual(["overview", "events", "attendance", "members", "invitations", "club-settings"]);
   });
 });
+
+describe("message centre navigation", () => {
+  const projected = context();
+
+  it("is absent until the feature is enabled, then reachable from member and management", () => {
+    expect(roleShellNavigation(projected, "member").some((item) => item.id === "messages")).toBe(false);
+    expect(roleShellNavigation(projected, "member", { messageCenterEnabled: true })
+      .find((item) => item.id === "messages")?.href).toBe("/messages?mode=member");
+    expect(roleShellNavigation(projected, "management", { messageCenterEnabled: true })
+      .find((item) => item.id === "messages")?.href).toBe("/messages?mode=management");
+    expect(roleShellNavigation(projected, "platform", { messageCenterEnabled: true })
+      .some((item) => item.id === "messages")).toBe(false);
+  });
+
+  it("carries a badge only while something is unread", () => {
+    const withoutUnread = roleShellNavigation(projected, "member", { messageCenterEnabled: true })
+      .find((item) => item.id === "messages");
+    expect(withoutUnread?.badgeCount).toBeUndefined();
+
+    const withUnread = roleShellNavigation(projected, "member", {
+      messageCenterEnabled: true,
+      unreadMessageCount: 3,
+    }).find((item) => item.id === "messages");
+    expect(withUnread?.badgeCount).toBe(3);
+  });
+
+  it("keeps 我的 last in member navigation", () => {
+    const items = roleShellNavigation(projected, "member", {
+      messageCenterEnabled: true,
+      unreadMessageCount: 2,
+    });
+    expect(items.at(-1)?.id).toBe("account");
+  });
+});

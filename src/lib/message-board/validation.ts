@@ -1,15 +1,10 @@
+import { CURSOR_MAX_LENGTH, decodeCursor, encodeCursor } from "@/lib/api/cursor";
+
 export const BOARD_CONTENT_MAX_CODE_POINTS = 1000;
-export const BOARD_CURSOR_MAX_LENGTH = 512;
+export const BOARD_CURSOR_MAX_LENGTH = CURSOR_MAX_LENGTH;
 export const BOARD_REQUEST_MAX_BYTES = 4096;
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const base64UrlPattern = /^[A-Za-z0-9_-]+$/;
-
-type CursorPayload = {
-  v: 1;
-  created_at: string;
-  id: string;
-};
 
 export type DecodedBoardCursor = {
   createdAt: string;
@@ -90,89 +85,15 @@ export function parseBoardPostId(value: string) {
   return parseUuid(value, "invalid_post_id");
 }
 
-function parseCursorPayload(value: unknown): CursorPayload {
-  if (!isPlainRecord(value) || !hasExactKeys(value, ["created_at", "id", "v"])) {
-    throw new Error("invalid_cursor");
-  }
-  if (value.v !== 1 || typeof value.created_at !== "string" || typeof value.id !== "string") {
-    throw new Error("invalid_cursor");
-  }
-  const timestamp = new Date(value.created_at);
-  if (Number.isNaN(timestamp.getTime()) || !uuidPattern.test(value.id)) throw new Error("invalid_cursor");
-  return { v: 1, created_at: timestamp.toISOString(), id: value.id.toLowerCase() };
-}
-
 export function encodeBoardCursor(value: unknown): string | null {
-  if (value === null || value === undefined) return null;
-  const payload = parseCursorPayload(value);
-  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  return encodeCursor(value, "created_at");
 }
 
 export function decodeBoardCursor(value: string | null): DecodedBoardCursor | null {
-  if (value === null || value === "") return null;
-  if (value.length > BOARD_CURSOR_MAX_LENGTH || !base64UrlPattern.test(value)) throw new Error("invalid_cursor");
-
-  let decoded: Buffer;
-  try {
-    decoded = Buffer.from(value, "base64url");
-  } catch {
-    throw new Error("invalid_cursor");
-  }
-
-  if (decoded.toString("base64url") !== value) throw new Error("invalid_cursor");
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(decoded.toString("utf8"));
-  } catch {
-    throw new Error("invalid_cursor");
-  }
-
-  const payload = parseCursorPayload(parsed);
-  return { createdAt: payload.created_at, id: payload.id };
+  const decoded = decodeCursor(value, "created_at");
+  return decoded && { createdAt: decoded.timestamp, id: decoded.id };
 }
 
-export function isJsonContentType(value: string | null) {
-  return value?.split(";", 1)[0].trim().toLowerCase() === "application/json";
-}
-
-function trustedOrigin(value: string, production: boolean) {
-  try {
-    const url = new URL(value);
-    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password
-      || url.pathname !== "/" || url.search || url.hash) {
-      return null;
-    }
-    if (production && url.protocol !== "https:") return null;
-    return url.origin;
-  } catch {
-    return null;
-  }
-}
-
-export function isSameOriginMutation(input: {
-  requestOrigin: string;
-  origin: string | null;
-  fetchSite: string | null;
-  configuredSiteUrl?: string;
-}) {
-  const production = process.env.APP_ENV === "production" || process.env.NODE_ENV === "production";
-  const configured = input.configuredSiteUrl?.trim();
-  const expectedOrigin = configured
-    ? trustedOrigin(configured, production)
-    : production
-      ? null
-      : trustedOrigin(input.requestOrigin, false);
-
-  if (!expectedOrigin || !input.origin) return false;
-
-  let suppliedOrigin: string;
-  try {
-    suppliedOrigin = new URL(input.origin).origin;
-  } catch {
-    return false;
-  }
-
-  if (suppliedOrigin !== expectedOrigin) return false;
-  return !input.fetchSite || input.fetchSite === "same-origin";
-}
+// Moved to the shared API module once a second feature needed them; still
+// exported here so the board's callers and tests keep one import.
+export { isJsonContentType, isSameOriginMutation } from "@/lib/api/json-request";
