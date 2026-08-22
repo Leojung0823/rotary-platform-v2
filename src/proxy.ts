@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Paths that require an authenticated session: anonymous visitors are
 // redirected to /login before the (authenticated) layout's Suspense
 // fallback can stream a 200.
-const PROTECTED_SESSION_PATHS = [
+export const PROTECTED_SESSION_PATHS = [
   "/archives",
   "/birthdays",
   "/board",
@@ -24,7 +24,7 @@ const PROTECTED_SESSION_PATHS = [
 // an invite, resetting a password). They still benefit from an opportunistic
 // refresh for an already-logged-in visitor, but must never be redirected to
 // /login just for lacking one — that would make invitation links unusable.
-const SESSION_REFRESH_ONLY_PATHS = ["/invite/accept", "/join", "/reset-password"] as const;
+export const SESSION_REFRESH_ONLY_PATHS = ["/invite/accept", "/join", "/reset-password"] as const;
 
 const AUTH_SESSION_PATHS = [...PROTECTED_SESSION_PATHS, ...SESSION_REFRESH_ONLY_PATHS] as const;
 
@@ -98,6 +98,10 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// Next requires a statically analysable matcher, so this repeats the lists
+// above rather than deriving from them. A path present in one and missing from
+// the other silently loses its protection -- the middleware simply never runs
+// for it -- so `proxy.test.ts` asserts the two stay in step.
 export const config = {
   matcher: [
     "/archives/:path*",
@@ -110,6 +114,7 @@ export const config = {
     "/events/:path*",
     "/features/:path*",
     "/me/:path*",
+    "/messages/:path*",
     "/platform/:path*",
     "/invite/accept",
     "/join",

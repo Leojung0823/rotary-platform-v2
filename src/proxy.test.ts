@@ -9,7 +9,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }));
 
-import { buildForwardedRequestHeaders, proxy, shouldRefreshAuthSession } from "./proxy";
+import {
+  PROTECTED_SESSION_PATHS,
+  SESSION_REFRESH_ONLY_PATHS,
+  buildForwardedRequestHeaders,
+  config,
+  proxy,
+  shouldRefreshAuthSession,
+} from "./proxy";
 
 describe("auth session proxy", () => {
   beforeEach(() => {
@@ -166,5 +173,18 @@ describe("auth session proxy", () => {
     expect(forwarded.get("x-rotary-requested-mode")).toBe("management");
     expect(response.headers.get("x-middleware-request-x-rotary-pathname")).toBe("/dashboard");
     expect(response.headers.get("x-middleware-request-x-rotary-requested-mode")).toBe("management");
+  });
+});
+
+describe("middleware matcher", () => {
+  it("runs the middleware for exactly the paths that declare they need it", () => {
+    // A path listed as protected but absent from the matcher is not protected
+    // at all: the middleware never runs, so an anonymous visitor gets a 200
+    // shell that redirects itself from the client instead of a 307 before any
+    // of the page streams. That is how /messages shipped the first time.
+    expect(config.matcher).toEqual([
+      ...PROTECTED_SESSION_PATHS.map((path) => `${path}/:path*`),
+      ...SESSION_REFRESH_ONLY_PATHS,
+    ]);
   });
 });
