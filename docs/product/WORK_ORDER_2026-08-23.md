@@ -1,5 +1,7 @@
 # 今日工單：三線平行修復與 Staging 發布（2026-08-23）
 
+> 執行狀態：三條工作線與工頭補正已完成，本機發布閘門通過；後續發布結果以 GitHub Actions 與 staging `/api/health` 的 exact SHA 為準，避免為回寫 run id 再製造一個未發布 commit。
+
 ## 今日目標
 
 在不覆蓋現有生日祝福企劃、不修改 production、不放寬登入／權限／社團隔離的前提下，完成三條互不相依的工作線；由工頭整合、驗證、同步 `main`，再依 `Staging Release → Staging Go-Live` 發布測試站。
@@ -91,6 +93,46 @@
 4. 只有全部必要閘門通過才 commit 並 push `main`；失敗就停止發布並回報。
 5. 以整合後的精確 SHA 執行 `Staging Release`，通過後再執行 `Staging Go-Live`。
 6. 最後檢查 `/api/health` 的 revision 與整合 SHA 相同，且 `issues` 為空。
+
+## 執行回報
+
+### AI 一號
+
+- 根因：`/me` 上方的祝福 IOU 表格把 grid track 撐寬，412px viewport 實際變成 417px，Chromium shrink-to-fit 後讓點擊座標偏移。
+- 修正：ledger 卡允許縮小、表格維持自己的水平捲動區；出席入口提升為 48px；E2E 新增整頁無水平溢出與點擊區尺寸斷言。
+- 整合 commit：`c7c1156`
+
+### AI 二號
+
+- 根因：留言板兩段三元運算式被當作獨立 statement，觸發 `no-unused-expressions`。
+- 修正：改為等價且清楚的 `if/else`，不變更載入狀態或 API 行為。
+- 整合 commit：`1073fa3`
+
+### AI 三號
+
+- 根因：三個既有領域沒有完整的 TypeScript key、資料庫約束／RPC 白名單、直接頁面與互動中心 gate。
+- 修正：新增三個 rollback key、forward-only migration、DB verification、頁面及互動中心 gate。
+- 整合 commit：`5bc5353`
+- 注意：代理最初在非權威工作路徑產生草稿；工頭確認其 parent 是正確基線 `5d6cc42`、逐檔審查後才移植到權威 repo，沒有採用該路徑的其他 commit 或未追蹤檔案。
+
+### 工頭補正
+
+- 補上舊版 shell 的留言板入口 gate。
+- 補上產品功能總覽的留言板、生日祝福與文件中心入口 gate。
+- 更新 rollout DB contract test，使其讀取最新 feature-key migration。
+- 補正 commit：`5cb63c5`
+
+### 本機驗證
+
+- `npm test`：85 個測試檔、560 項測試全部通過。
+- `npm run lint`：通過，0 warning。
+- `npm run typecheck`：循序重跑通過。
+- `npm run build`：通過。
+- `npm run check:migrations`：通過。
+- `npm run check:db-verifications`：39 份 SQL 全部登錄。
+- `npm run verify:db`：39 份 DB verification 全部通過；保留 3 個既有 DB lint warning，沒有新增 warning。
+- 出席 E2E（1440px、412px、單 worker）：11 passed、1 skipped；手機真實點擊通過。
+- `git diff --check`：通過。
 
 ## 完成定義
 
