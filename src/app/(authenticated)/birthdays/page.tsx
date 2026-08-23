@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   createBirthdayWishAction,
   deleteBirthdayWishAction,
@@ -10,6 +11,7 @@ import { DirectoryAvatar } from "@/components/directory-avatar";
 import { Badge, Button, Card, EmptyState, Field, Notice, Select } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
 import { parseBirthdayPageProjection } from "@/lib/birthdays/contracts";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./birthdays.module.css";
 
@@ -51,8 +53,13 @@ export default async function BirthdayPage({
 }: {
   searchParams: Promise<{ clubId?: string; success?: string; error?: string }>;
 }) {
-  await requireIdentity();
-  const query = await searchParams;
+  const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
+  const evaluation = await evaluateCurrentFeatureFlag({
+    key: "birthday_wishes_v1",
+    subjectUuid: identity.id,
+  });
+  if (!evaluation.enabled) notFound();
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_my_birthday_page", {
     p_club_id: query.clubId ?? null,

@@ -20,6 +20,7 @@ supabase/verification/member_password_invitation_security.sql
 supabase/verification/member_line_account_lifecycle_security.sql
 supabase/verification/line_unbind_invited_membership_security.sql
 supabase/verification/product_rollout_controls_security.sql
+supabase/verification/existing_domain_feature_flags_security.sql
 supabase/verification/experience_context_security.sql
 supabase/verification/member_home_projection_security.sql
 supabase/verification/gps_checkin_v2_security.sql

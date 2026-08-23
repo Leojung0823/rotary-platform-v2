@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateFeatureRolloutBucket,
   evaluateFeatureFlag,
+  featureFlagKeys,
   flagsRequiringExplicitEnable,
   resolveAppEnvironment,
   resolveRuntimeAppEnvironment,
@@ -16,6 +17,11 @@ const enabledRecord: FeatureFlagRecord = {
   enabledEnvironments: ["local", "staging", "production"],
   rolloutPercentage: 100,
 };
+const existingDomainRollbackKeys = [
+  "birthday_wishes_v1",
+  "message_board_v1",
+  "archive_handover_v1",
+] as const;
 
 describe("feature flag evaluation truth table", () => {
   it("lets a kill switch disable an otherwise enabled database record", () => {
@@ -167,18 +173,7 @@ describe("feature flag evaluation truth table", () => {
   });
 
   it("includes the feature key in the HMAC input", () => {
-    const buckets = [
-      "role_context_v2",
-      "role_shells_v2",
-      "member_home_v2",
-      "checkin_qr_v2",
-      "checkin_gps_v2",
-      "attendance_ui_v2",
-      "announcements_v09",
-      "blessing_iou_v1",
-      "blessing_iou_collections_v1",
-      "blessing_iou_reporting_v1",
-    ].map((key) => calculateFeatureRolloutBucket(subjectUuid, key, pepper));
+    const buckets = featureFlagKeys.map((key) => calculateFeatureRolloutBucket(subjectUuid, key, pepper));
     expect(new Set(buckets).size).toBeGreaterThan(1);
   });
 
@@ -301,5 +296,53 @@ describe("features that must be turned on deliberately", () => {
       environment: "staging",
       pepper,
     })).toMatchObject({ enabled: true, reason: "default_enabled" });
+  });
+});
+
+describe("rollback flags for already-shipped domains", () => {
+  it("keeps current visibility when a successful read has no row", () => {
+    for (const key of existingDomainRollbackKeys) {
+      expect(featureFlagKeys).toContain(key);
+      expect(flagsRequiringExplicitEnable).not.toContain(key);
+      expect(evaluateFeatureFlag({ key, record: null, environment: "staging", pepper }))
+        .toMatchObject({ enabled: true, reason: "default_enabled" });
+    }
+  });
+
+  it("honours explicit disable and enable records", () => {
+    for (const key of existingDomainRollbackKeys) {
+      expect(evaluateFeatureFlag({
+        key,
+        record: { ...enabledRecord, enabled: false },
+        environment: "staging",
+        pepper,
+      })).toMatchObject({ enabled: false, reason: "disabled" });
+      expect(evaluateFeatureFlag({ key, record: enabledRecord, environment: "staging", pepper }))
+        .toMatchObject({ enabled: true, reason: "enabled" });
+    }
+  });
+
+  it("fails closed when evaluation cannot trust the database or configuration", () => {
+    for (const key of existingDomainRollbackKeys) {
+      expect(evaluateFeatureFlag({
+        key,
+        record: enabledRecord,
+        databaseReadFailed: true,
+        environment: "staging",
+        pepper,
+      })).toMatchObject({ enabled: false, reason: "database_read_error" });
+      expect(evaluateFeatureFlag({
+        key,
+        record: { ...enabledRecord, rolloutPercentage: 101 },
+        environment: "staging",
+        pepper,
+      })).toMatchObject({ enabled: false, reason: "invalid_configuration" });
+      expect(evaluateFeatureFlag({
+        key,
+        record: enabledRecord,
+        environment: "preview",
+        pepper,
+      })).toMatchObject({ enabled: false, reason: "invalid_environment" });
+    }
   });
 });

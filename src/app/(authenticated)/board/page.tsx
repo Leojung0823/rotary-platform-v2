@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { MessageBoard } from "@/components/message-board/message-board";
 import { requireIdentity } from "@/lib/auth";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 
 type BoardClub = {
@@ -32,7 +34,13 @@ export default async function BoardPage({
 }: {
   searchParams: Promise<{ clubId?: string }>;
 }) {
-  await requireIdentity();
+  const identity = await requireIdentity();
+  const evaluation = await evaluateCurrentFeatureFlag({
+    key: "message_board_v1",
+    subjectUuid: identity.id,
+  });
+  if (!evaluation.enabled) notFound();
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("list_my_board_clubs");
   const rows = data ?? [];

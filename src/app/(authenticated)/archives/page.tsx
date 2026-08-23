@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   archiveArchiveItemAction,
   confirmArchiveHandoverAction,
@@ -20,6 +21,7 @@ import {
   type ChecklistStatus,
   type HandoverStatus,
 } from "@/lib/archive/contracts";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./archives.module.css";
 
@@ -73,8 +75,13 @@ export default async function ArchivesPage({
 }: {
   searchParams: Promise<{ clubId?: string; yearId?: string; q?: string; category?: string; success?: string; error?: string }>;
 }) {
-  await requireIdentity();
-  const query = await searchParams;
+  const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
+  const evaluation = await evaluateCurrentFeatureFlag({
+    key: "archive_handover_v1",
+    subjectUuid: identity.id,
+  });
+  if (!evaluation.enabled) notFound();
+
   const supabase = await createClient();
   const result = await supabase.rpc("get_my_archive_page", {
     p_club_id: query.clubId ?? null,

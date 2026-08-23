@@ -12,6 +12,9 @@ export const featureFlagKeys = [
   "blessing_iou_v1",
   "blessing_iou_collections_v1",
   "blessing_iou_reporting_v1",
+  "birthday_wishes_v1",
+  "message_board_v1",
+  "archive_handover_v1",
 ] as const;
 
 export type FeatureFlagKey = (typeof featureFlagKeys)[number];

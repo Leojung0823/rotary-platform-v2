@@ -13,27 +13,31 @@ type InteractionEntry = {
 
 export default async function InteractPage() {
   const identity = await requireIdentity();
-  // 祝福 IOU renders notFound() when its flag is off, so it is only offered
-  // here when it will actually open. The other two carry no flag.
-  const blessingIou = await evaluateCurrentFeatureFlag({
-    key: "blessing_iou_v1",
-    subjectUuid: identity.id,
-  });
+  // Each destination renders notFound() when its flag is off, so only offer a
+  // card when the same server-side evaluation says the page will open.
+  const [messageBoard, birthdayWishes, blessingIou] = await Promise.all([
+    evaluateCurrentFeatureFlag({ key: "message_board_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
+  ]);
 
-  const entries: InteractionEntry[] = [
-    {
+  const entries: InteractionEntry[] = [];
+  if (messageBoard.enabled) {
+    entries.push({
       href: "/board",
       title: "留言板",
       body: "在社內公開留言、回覆與討論。",
       icon: "chat",
-    },
-    {
+    });
+  }
+  if (birthdayWishes.enabled) {
+    entries.push({
       href: "/birthdays",
       title: "生日祝福",
       body: "看看接下來誰過生日，留下今年的祝福。",
       icon: "heart",
-    },
-  ];
+    });
+  }
   if (blessingIou.enabled) {
     entries.push({
       href: "/blessings",
