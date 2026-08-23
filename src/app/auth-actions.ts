@@ -1,5 +1,7 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
@@ -52,6 +54,38 @@ export async function requestPasswordResetAction(formData: FormData) {
   }
 
   redirect("/forgot-password?success=sent");
+}
+
+export async function confirmPasswordRecoveryAction(formData: FormData) {
+  const siteUrl = trustedSiteUrl();
+  const failureUrl = new URL("/login", siteUrl);
+  failureUrl.searchParams.set("error", "recovery_invalid");
+
+  const code = String(formData.get("code") ?? "").trim();
+  const tokenHash = String(formData.get("tokenHash") ?? "").trim();
+  const type = String(formData.get("type") ?? "").trim() as EmailOtpType;
+  const validCode = code.length > 0 && code.length <= 2048;
+  const validToken = tokenHash.length > 0 && tokenHash.length <= 2048 && type === "recovery";
+  if (!validCode && !validToken) redirect(failureUrl.toString());
+
+  const supabase = await createClient();
+  const result = validCode
+    ? await supabase.auth.exchangeCodeForSession(code)
+    : await supabase.auth.verifyOtp({ type: "recovery", token_hash: tokenHash });
+  if (result.error) redirect(failureUrl.toString());
+
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect(failureUrl.toString());
+
+  const store = await cookies();
+  store.set("rotary_recovery", randomBytes(24).toString("hex"), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: siteUrl.protocol === "https:",
+    path: "/",
+    maxAge: 15 * 60,
+  });
+  redirect(new URL("/reset-password", siteUrl).toString());
 }
 
 export async function resetPasswordAction(formData: FormData) {

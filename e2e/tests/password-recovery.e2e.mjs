@@ -92,7 +92,7 @@ async function findRecoveryLink(recipient) {
   return null;
 }
 
-test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入", async ({ page }, testInfo) => {
+test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入", async ({ page, browser }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop-chromium", "完整密碼 recovery 閉環只需在桌面專案執行一次。");
   requireCredentials();
 
@@ -114,7 +114,19 @@ test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入
     if (!recoveryHref) throw new Error("Mailpit recovery link was not found.");
     expect(recoveryHref).not.toContain("access_token=");
 
+    // A mail-security scanner follows the GET in an isolated browser, but
+    // never presses the app-owned confirmation button. That prefetch must not
+    // consume the member's one-time recovery credential.
+    const scannerContext = await browser.newContext();
+    const scannerPage = await scannerContext.newPage();
+    await scannerPage.goto(recoveryHref);
+    await expect(scannerPage).toHaveURL(/\/auth\/recovery\/confirm/u);
+    await expect(scannerPage.getByRole("heading", { level: 1, name: "確認重設密碼" })).toBeVisible();
+    await scannerContext.close();
+
     await page.goto(recoveryHref);
+    await expect(page).toHaveURL(/\/auth\/recovery\/confirm/u);
+    await page.getByRole("button", { name: "確認是我本人，繼續重設" }).click();
     await expect(page).toHaveURL(/\/reset-password$/u);
     await expect(page.getByRole("heading", { level: 1, name: "設定新密碼" })).toBeVisible();
     await page.getByLabel("新密碼", { exact: true }).fill(newPassword);

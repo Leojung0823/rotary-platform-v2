@@ -55,32 +55,32 @@ describe("GET /auth/callback", () => {
 
   afterEach(() => vi.unstubAllEnvs());
 
-  it("redirects a successful internal Render recovery callback to public HTTPS with a Secure marker", async () => {
+  it("sends a recovery GET to the public confirmation page without consuming the code", async () => {
     const response = await route.GET(callbackRequest("code=test-only-code&next=/reset-password"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(`${PUBLIC_ORIGIN}/reset-password`);
+    expect(response.headers.get("location")).toBe(
+      `${PUBLIC_ORIGIN}/auth/recovery/confirm?code=test-only-code&next=%2Freset-password`,
+    );
     expect(response.headers.get("location")).not.toContain("0.0.0.0");
-    expect(mocks.exchangeCodeForSession).toHaveBeenCalledWith("test-only-code");
-
-    const marker = response.cookies.get("rotary_recovery");
-    expect(marker?.value).toMatch(/^[0-9a-f]{48}$/u);
-    const setCookie = response.headers.get("set-cookie") ?? "";
-    expect(setCookie).toContain("rotary_recovery=");
-    expect(setCookie).toContain("Max-Age=900");
-    expect(setCookie).toContain("Secure");
-    expect(setCookie).toContain("HttpOnly");
-    expect(setCookie).toContain("SameSite=lax");
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled();
+    expect(response.headers.get("set-cookie")).toBeNull();
   });
 
-  it("redirects a failed callback to the public login origin without leaking the Auth error", async () => {
+  it("does not inspect an invalid recovery code until the member confirms", async () => {
     mocks.exchangeCodeForSession.mockResolvedValue({ error: { message: "test-only-auth-error" } });
 
     const response = await route.GET(callbackRequest("code=invalid-code&next=/reset-password"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(`${PUBLIC_ORIGIN}/login?error=recovery_invalid`);
+    expect(response.headers.get("location")).toBe(
+      `${PUBLIC_ORIGIN}/auth/recovery/confirm?code=invalid-code&next=%2Freset-password`,
+    );
     expect(response.headers.get("location")).not.toContain("test-only-auth-error");
+    expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled();
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
@@ -91,21 +91,38 @@ describe("GET /auth/callback", () => {
 
       const response = await route.GET(callbackRequest("code=test-only-code&next=/reset-password"));
 
-      expect(response.headers.get("location")).toBe(`${PUBLIC_ORIGIN}/reset-password`);
+      expect(response.headers.get("location")).toBe(
+        `${PUBLIC_ORIGIN}/auth/recovery/confirm?code=test-only-code&next=%2Freset-password`,
+      );
     },
   );
 
-  it("preserves the recovery OTP verification path", async () => {
+  it("preserves a recovery token for the explicit confirmation POST", async () => {
     const response = await route.GET(callbackRequest(
       "token_hash=test-only-token-hash&type=recovery&next=/reset-password",
     ));
 
-    expect(mocks.verifyOtp).toHaveBeenCalledWith({
-      type: "recovery",
-      token_hash: "test-only-token-hash",
-    });
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
     expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled();
-    expect(response.headers.get("location")).toBe(`${PUBLIC_ORIGIN}/reset-password`);
+    expect(response.headers.get("location")).toBe(
+      `${PUBLIC_ORIGIN}/auth/recovery/confirm?token_hash=test-only-token-hash&type=recovery&next=%2Freset-password`,
+    );
+  });
+
+  it("still exchanges non-recovery callbacks on GET", async () => {
+    const response = await route.GET(callbackRequest("code=test-only-code&next=/dashboard"));
+
+    expect(mocks.exchangeCodeForSession).toHaveBeenCalledWith("test-only-code");
+    expect(response.headers.get("location")).toBe(`${PUBLIC_ORIGIN}/dashboard`);
+  });
+
+  it("keeps non-recovery callback failures on the trusted public origin", async () => {
+    mocks.exchangeCodeForSession.mockResolvedValue({ error: { message: "test-only-auth-error" } });
+
+    const response = await route.GET(callbackRequest("code=invalid-code&next=/dashboard"));
+
+    expect(response.headers.get("location")).toBe(`${PUBLIC_ORIGIN}/login?error=recovery_invalid`);
+    expect(response.headers.get("location")).not.toContain("test-only-auth-error");
   });
 
   it("fails closed before Auth work when both hosted origins are invalid", async () => {
@@ -129,7 +146,9 @@ describe("GET /auth/callback", () => {
       "http://localhost:3000/auth/callback?code=test-only-code&next=/reset-password",
     ));
 
-    expect(response.headers.get("location")).toBe("http://localhost:3000/reset-password");
-    expect(response.headers.get("set-cookie")).not.toContain("Secure");
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/auth/recovery/confirm?code=test-only-code&next=%2Freset-password",
+    );
+    expect(response.headers.get("set-cookie")).toBeNull();
   });
 });
