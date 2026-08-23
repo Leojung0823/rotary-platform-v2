@@ -101,7 +101,11 @@ export function MessageBoard({
   }, []);
 
   const loadPosts = useCallback(async (nextCursor: string | null, append: boolean) => {
-    append ? setLoadingMore(true) : setLoading(true);
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setStateMessage(null);
     try {
       const query = new URLSearchParams({ limit: "20" });
@@ -113,7 +117,11 @@ export function MessageBoard({
     } catch (error) {
       handleError(error);
     } finally {
-      append ? setLoadingMore(false) : setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   }, [clubId, handleError]);
 
