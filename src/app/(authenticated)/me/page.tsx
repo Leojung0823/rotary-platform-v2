@@ -4,6 +4,10 @@ import { updateMyProfileAction } from "@/app/profile-actions";
 import Link from "next/link";
 import { Badge, Button, Card, Field, Input, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
+import {
+  parseMyBlessingIouLedger,
+  parseRotaryYearFilter,
+} from "@/lib/blessing-iou/my-ledger";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import { safeMessage } from "@/lib/validation";
@@ -65,27 +69,6 @@ const providerLabels: Record<string, string> = {
 };
 
 
-type LedgerEntry = {
-  entry_id: string;
-  blessing_text: string;
-  pledged_amount: string | number | null;
-  currency_code: string;
-  amount_is_public: boolean;
-  pledged_on: string;
-  collected_amount: string | number;
-  outstanding_amount: string | number;
-};
-
-type Ledger = {
-  totals: {
-    entry_count: number;
-    pledged_total: string | number;
-    collected_total: string | number;
-    outstanding_total: string | number;
-  };
-  entries: LedgerEntry[];
-};
-
 /** Numeric columns arrive as strings over PostgREST, so money is parsed once. */
 function money(value: string | number | null | undefined) {
   const amount = typeof value === "string" ? Number(value) : value ?? 0;
@@ -96,18 +79,22 @@ function formatMoney(value: string | number | null | undefined) {
   return `NT$${money(value).toLocaleString("zh-TW")}`;
 }
 
-function parseLedger(value: unknown): Ledger | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const payload = value as Record<string, unknown>;
-  if (!payload.totals || typeof payload.totals !== "object") return null;
-  if (!Array.isArray(payload.entries)) return null;
-  return payload as unknown as Ledger;
+function rotaryYearLabel(year: number | null) {
+  return year === null ? "全部年度總計" : `${year}–${String(year + 1).slice(-2)} 扶輪年度`;
 }
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 export default async function IdentityCenterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string; error?: string }>;
+  searchParams: Promise<{
+    success?: string;
+    error?: string;
+    clubId?: string;
+    rotaryYear?: string;
+    mode?: string;
+  }>;
 }) {
   const [query, identity] = await Promise.all([searchParams, requireIdentity()]);
   // Both are request-cached and already resolved by the shell, so this costs
@@ -117,21 +104,33 @@ export default async function IdentityCenterPage({
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
   ]);
   const supabase = await createClient();
+  const selectedLedgerClub = typeof query.clubId === "string" && uuidPattern.test(query.clubId)
+    ? query.clubId
+    : null;
+  const selectedRotaryYear = parseRotaryYearFilter(query.rotaryYear);
   // Issued together: the ledger is a separate question from the identity
   // centre, and waiting for one before asking the other would cost a round
   // trip for no reason.
   const [centerResult, ledgerResult] = await Promise.all([
     supabase.rpc("get_my_identity_center"),
     blessingIou.enabled
-      ? supabase.rpc("get_my_blessing_iou_summary", { p_club_id: null })
+      ? supabase.rpc("get_my_blessing_iou_ledger", {
+          p_club_id: selectedLedgerClub,
+          p_rotary_year_start: selectedRotaryYear,
+        })
       : Promise.resolve({ data: null, error: null }),
   ]);
   const { data, error } = centerResult;
-  const ledger = parseLedger(ledgerResult.error ? null : ledgerResult.data);
+  const ledger = parseMyBlessingIouLedger(ledgerResult.error ? null : ledgerResult.data);
 
   if (error || !data) return <Notice tone="error">無法載入會員中心。</Notice>;
 
   const center = data as Center;
+  const ledgerYears = ledger?.selected_year !== null
+    && ledger?.selected_year !== undefined
+    && !ledger.available_years.includes(ledger.selected_year)
+    ? [ledger.selected_year, ...ledger.available_years]
+    : (ledger?.available_years ?? []);
   const notification = center.notification_settings ?? {};
   const privacy = center.privacy_settings ?? {};
   const completed = [
@@ -160,14 +159,32 @@ export default async function IdentityCenterPage({
       <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>
     </div>
 
-    {ledger && ledger.totals.entry_count > 0 && <Card className="identity-ledger-card">
+    {ledger?.selected_club_id && ledger.totals && <Card className="identity-ledger-card">
       <div className="section-heading">
         <div>
           <p className="eyebrow">祝福 IOU</p>
           <h2>我的捐款</h2>
+          <p>{rotaryYearLabel(ledger.selected_year)}</p>
         </div>
         <Link className="button button-secondary" href="/blessings">前往祝福牆</Link>
       </div>
+      <form className="inline-form" action="/me">
+        {query.mode && <input type="hidden" name="mode" value={query.mode} />}
+        {ledger.clubs.length > 1 ? <label className="field">
+          <span className="label">扶輪社</span>
+          <select className="input" name="clubId" defaultValue={ledger.selected_club_id}>
+            {ledger.clubs.map((club) => <option key={club.club_id} value={club.club_id}>{club.club_name}</option>)}
+          </select>
+        </label> : <input type="hidden" name="clubId" value={ledger.selected_club_id} />}
+        <label className="field">
+          <span className="label">查看期間</span>
+          <select className="input" name="rotaryYear" defaultValue={ledger.selected_year === null ? "all" : String(ledger.selected_year)}>
+            {ledgerYears.map((year) => <option key={year} value={year}>{rotaryYearLabel(year)}</option>)}
+            <option value="all">全部年度總計</option>
+          </select>
+        </label>
+        <Button type="submit">套用</Button>
+      </form>
       <div className="metric-grid">
         <Card>
           <span className="metric-label">承諾金額</span>
@@ -182,7 +199,7 @@ export default async function IdentityCenterPage({
           <strong className="metric-value metric-text">{formatMoney(ledger.totals.outstanding_total)}</strong>
         </Card>
       </div>
-      <div className="table-wrap">
+      {ledger.entries.length === 0 ? <p className="subtle">這個期間還沒有捐款承諾。</p> : <div className="table-wrap">
         <table>
           <thead><tr><th>日期</th><th>內容</th><th>承諾</th><th>已收</th><th>未收</th></tr></thead>
           <tbody>
@@ -195,7 +212,7 @@ export default async function IdentityCenterPage({
             </tr>)}
           </tbody>
         </table>
-      </div>
+      </div>}
       <p className="hint">「已收」由社務幹部登記；金額是否對同社公開由您在祝福牆自行決定，這份明細只有您看得到。</p>
     </Card>}
 
