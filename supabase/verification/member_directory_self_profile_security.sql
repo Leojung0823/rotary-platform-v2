@@ -11,10 +11,12 @@ insert into auth.users (
   ('00000000-0000-0000-0000-000000000000', '14000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'directory-target@example.test', '', now(), '{}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '14000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'directory-other@example.test', '', now(), '{}', '{}', now(), now());
 
-insert into public.people (id, canonical_name, primary_email, primary_phone, birth_date) values
-  ('24000000-0000-4000-8000-000000000001', '名冊測試社員', 'directory-caller@example.test', '0911111111', '1985-06-01'),
-  ('24000000-0000-4000-8000-000000000002', '隱私社員', 'private-target@example.test', '0922222222', '1988-08-08'),
-  ('24000000-0000-4000-8000-000000000003', '其他社社員', 'directory-other@example.test', '0933333333', '1990-09-09');
+insert into public.people (
+  id, canonical_name, primary_email, primary_phone, birth_date, occupation
+) values
+  ('24000000-0000-4000-8000-000000000001', '名冊測試社員', 'directory-caller@example.test', '0911111111', '1985-06-01', '工程師'),
+  ('24000000-0000-4000-8000-000000000002', '隱私社員', 'private-target@example.test', '0922222222', '1988-08-08', '會計師'),
+  ('24000000-0000-4000-8000-000000000003', '其他社社員', 'directory-other@example.test', '0933333333', '1990-09-09', '醫師');
 
 insert into public.app_accounts (
   id, auth_user_id, person_id, login_email, account_display_name
@@ -63,6 +65,16 @@ begin
   end;
 
   begin
+    perform public.get_club_member_directory_profile(
+      '44000000-0000-4000-8000-000000000001',
+      '54000000-0000-4000-8000-000000000002'
+    );
+    raise exception 'Anonymous caller executed get_club_member_directory_profile.';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  begin
     perform public.update_my_profile('匿名', '0900000000', null, null);
     raise exception 'Anonymous caller executed update_my_profile.';
   exception when insufficient_privilege then
@@ -79,6 +91,8 @@ do $$
 declare
   target record;
   own record;
+  target_profile jsonb;
+  own_profile jsonb;
 begin
   if (select count(*) from public.list_my_directory_clubs()) <> 1 then
     raise exception 'Caller did not receive exactly one active directory club.';
@@ -98,6 +112,20 @@ begin
     raise exception 'Target member was incorrectly marked as self.';
   end if;
 
+  target_profile := public.get_club_member_directory_profile(
+    '44000000-0000-4000-8000-000000000001',
+    '54000000-0000-4000-8000-000000000002'
+  );
+  if target_profile is null
+     or target_profile ->> 'occupation' <> '會計師'
+     or target_profile ->> 'role_key' <> 'president'
+     or (target_profile ->> 'is_self')::boolean
+     or target_profile ->> 'email' is not null
+     or target_profile ->> 'phone' is not null
+     or target_profile ->> 'birth_year' is not null then
+    raise exception 'Same-club profile occupation or privacy projection is incorrect: %', target_profile;
+  end if;
+
   select * into own
   from public.list_club_member_directory('44000000-0000-4000-8000-000000000001', null)
   where membership_id = '54000000-0000-4000-8000-000000000001';
@@ -107,6 +135,19 @@ begin
      or own.birth_year <> 1985
      or not own.is_self then
     raise exception 'Caller could not see their own full directory projection.';
+  end if;
+
+  own_profile := public.get_club_member_directory_profile(
+    '44000000-0000-4000-8000-000000000001',
+    '54000000-0000-4000-8000-000000000001'
+  );
+  if own_profile is null
+     or own_profile ->> 'occupation' <> '工程師'
+     or own_profile ->> 'email' <> 'directory-caller@example.test'
+     or own_profile ->> 'phone' <> '0911111111'
+     or (own_profile ->> 'birth_year')::integer <> 1985
+     or not (own_profile ->> 'is_self')::boolean then
+    raise exception 'Caller profile did not retain the complete self projection: %', own_profile;
   end if;
 
   if exists (
@@ -146,7 +187,9 @@ where app_account_id = '34000000-0000-4000-8000-000000000002';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '14000000-0000-4000-8000-000000000001', true);
 do $$
-declare target record;
+declare
+  target record;
+  target_profile jsonb;
 begin
   select * into target
   from public.list_club_member_directory('44000000-0000-4000-8000-000000000001', '隱私社員')
@@ -156,6 +199,17 @@ begin
      or target.phone <> '0922222222'
      or target.birth_year <> 1988 then
     raise exception 'Opted-in directory fields were not projected.';
+  end if;
+
+  target_profile := public.get_club_member_directory_profile(
+    '44000000-0000-4000-8000-000000000001',
+    '54000000-0000-4000-8000-000000000002'
+  );
+  if target_profile ->> 'occupation' <> '會計師'
+     or target_profile ->> 'email' <> 'private-target@example.test'
+     or target_profile ->> 'phone' <> '0922222222'
+     or (target_profile ->> 'birth_year')::integer <> 1988 then
+    raise exception 'Profile did not follow opted-in privacy settings: %', target_profile;
   end if;
 end;
 $$;
@@ -224,6 +278,12 @@ begin
     select 1 from public.list_club_member_directory('44000000-0000-4000-8000-000000000001', null)
   ) then
     raise exception 'Suspended membership retained directory access.';
+  end if;
+  if public.get_club_member_directory_profile(
+    '44000000-0000-4000-8000-000000000001',
+    '54000000-0000-4000-8000-000000000002'
+  ) is not null then
+    raise exception 'Suspended membership retained directory profile access.';
   end if;
 end;
 $$;
