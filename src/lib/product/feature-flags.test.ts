@@ -249,6 +249,16 @@ describe("feature flag evaluation truth table", () => {
       env: { DISABLE_BLESSING_IOU_REPORTING: "true" },
     })).toMatchObject({ enabled: false, reason: "kill_switch" });
   });
+
+  it("can force birthday V2 back to the complete V1 path", () => {
+    expect(evaluateFeatureFlag({
+      key: "birthday_wishes_v2",
+      record: enabledRecord,
+      environment: "staging",
+      pepper,
+      env: { DISABLE_BIRTHDAY_WISHES_V2: "true" },
+    })).toMatchObject({ enabled: false, reason: "kill_switch" });
+  });
 });
 
 describe("server environment resolution", () => {
@@ -296,6 +306,15 @@ describe("features that must be turned on deliberately", () => {
       environment: "staging",
       pepper,
     })).toMatchObject({ enabled: true, reason: "default_enabled" });
+  });
+
+  it("keeps birthday V2 off when its row is missing", () => {
+    expect(evaluateFeatureFlag({
+      key: "birthday_wishes_v2",
+      record: null,
+      environment: "staging",
+      pepper,
+    })).toMatchObject({ enabled: false, reason: "missing_configuration" });
   });
 });
 

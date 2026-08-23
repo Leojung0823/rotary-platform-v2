@@ -23,6 +23,7 @@ const IMPLEMENTED = [
   "blessing_iou_v1",
   "blessing_iou_collections_v1",
   "blessing_iou_reporting_v1",
+  "birthday_wishes_v2",
 ];
 const UNIMPLEMENTED = [];
 

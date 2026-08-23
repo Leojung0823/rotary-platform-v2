@@ -7,6 +7,7 @@ export type BirthdayClub = Readonly<{
 export type BirthdayPreference = Readonly<{
   membershipId: string;
   hasBirthDate: boolean;
+  hasPreference: boolean;
   isListed: boolean;
   allowWishes: boolean;
 }>;
@@ -17,6 +18,8 @@ export type BirthdayMember = Readonly<{
   avatarUrl: string | null;
   birthMonth: number;
   birthDay: number;
+  age: number | null;
+  daysUntil: number | null;
   allowWishes: boolean;
   isSelf: boolean;
 }>;
@@ -25,7 +28,8 @@ export type BirthdayWish = Readonly<{
   id: string;
   recipientMembershipId: string;
   recipientName: string;
-  authorName: string;
+  authorName: string | null;
+  authorIsHidden: boolean;
   content: string;
   createdAt: string;
   updatedAt: string;
@@ -86,6 +90,14 @@ function monthOrDay(value: unknown, maximum: number): number {
   return Number(value);
 }
 
+function nullableInteger(value: unknown, maximum: number): number | null {
+  if (value === null || value === undefined) return null;
+  if (!Number.isInteger(value) || Number(value) < 0 || Number(value) > maximum) {
+    throw new Error("invalid_birthday_projection");
+  }
+  return Number(value);
+}
+
 export function parseBirthdayPageProjection(value: unknown): BirthdayPageProjection {
   const source = record(value);
   const clubs = array(source.clubs).map((item) => {
@@ -107,6 +119,7 @@ export function parseBirthdayPageProjection(value: unknown): BirthdayPageProject
     return {
       membershipId: uuid(preference.membership_id),
       hasBirthDate: bool(preference.has_birth_date),
+      hasPreference: preference.has_preference === undefined ? true : bool(preference.has_preference),
       isListed: bool(preference.is_listed),
       allowWishes: bool(preference.allow_wishes),
     };
@@ -122,6 +135,8 @@ export function parseBirthdayPageProjection(value: unknown): BirthdayPageProject
       avatarUrl,
       birthMonth: monthOrDay(birthday.birth_month, 12),
       birthDay: monthOrDay(birthday.birth_day, 31),
+      age: nullableInteger(birthday.age, 150),
+      daysUntil: nullableInteger(birthday.days_until, 366),
       allowWishes: bool(birthday.allow_wishes),
       isSelf: bool(birthday.is_self),
     };
@@ -129,11 +144,19 @@ export function parseBirthdayPageProjection(value: unknown): BirthdayPageProject
 
   const wishes = array(source.wishes).map((item) => {
     const wish = record(item);
+    const authorName = wish.author_name === null ? null : text(wish.author_name, 160);
+    const authorIsHidden = wish.author_is_hidden === undefined
+      ? authorName === null
+      : bool(wish.author_is_hidden);
+    if ((authorIsHidden && authorName !== null) || (!authorIsHidden && authorName === null)) {
+      throw new Error("invalid_birthday_projection");
+    }
     return {
       id: uuid(wish.id),
       recipientMembershipId: uuid(wish.recipient_membership_id),
       recipientName: text(wish.recipient_name, 160),
-      authorName: text(wish.author_name, 160),
+      authorName,
+      authorIsHidden,
       content: text(wish.content, 500),
       createdAt: isoDate(wish.created_at),
       updatedAt: isoDate(wish.updated_at),

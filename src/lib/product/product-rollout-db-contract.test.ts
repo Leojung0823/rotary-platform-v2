@@ -15,7 +15,7 @@ function assertExactSet(actual: readonly string[], expected: readonly string[]) 
 const featureFlagMigration = readFileSync(
   // Keep this pointed at the newest forward-only migration that redeclares
   // the feature-key constraint and mutation allow-list.
-  resolve(process.cwd(), "supabase/migrations/20260823000100_existing_domain_feature_flags.sql"),
+  resolve(process.cwd(), "supabase/migrations/20260824000400_birthday_wishes_v2_core.sql"),
   "utf8",
 );
 const telemetryMigration = readFileSync(
@@ -43,5 +43,13 @@ describe("product rollout TypeScript and database contracts", () => {
     );
     expect(eventConstraint?.[1]).toBeDefined();
     assertExactSet(quotedValues(eventConstraint?.[1] ?? ""), productTelemetryEventNames);
+  });
+
+  it("allows telemetry failures for every registered feature key", () => {
+    const telemetryFeatureKeys = featureFlagMigration.match(
+      /when 'feature_flag_evaluation_failure'[\s\S]+?feature_key', ''\) in \(([\s\S]+?)\)\s+and coalesce/u,
+    );
+    expect(telemetryFeatureKeys?.[1]).toBeDefined();
+    assertExactSet(quotedValues(telemetryFeatureKeys?.[1] ?? ""), featureFlagKeys);
   });
 });

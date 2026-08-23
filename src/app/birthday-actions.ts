@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { requireIdentity } from "@/lib/auth";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -24,11 +26,21 @@ function wishContent(formData: FormData) {
 }
 
 function errorCode(message: string) {
-  if (message.includes("already_exists") || message.includes("23505")) return "already_wished";
+  if (message.includes("already_exists")) return "already_wished";
+  if (message.includes("daily_limit_reached")) return "daily_limit_reached";
   if (message.includes("birth_date_required")) return "birth_date_required";
   if (message.includes("not_accepting")) return "not_accepting";
   if (message.includes("required") || message.includes("42501")) return "forbidden";
   return "unexpected";
+}
+
+async function birthdayV2Enabled() {
+  const identity = await requireIdentity();
+  const evaluation = await evaluateCurrentFeatureFlag({
+    key: "birthday_wishes_v2",
+    subjectUuid: identity.id,
+  });
+  return evaluation.enabled;
 }
 
 export async function setBirthdayPreferenceAction(formData: FormData) {
@@ -41,12 +53,15 @@ export async function setBirthdayPreferenceAction(formData: FormData) {
 
   const isListed = formData.get("isListed") === "on";
   const allowWishes = isListed && formData.get("allowWishes") === "on";
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("set_my_birthday_preference", {
+  const [supabase, useV2] = await Promise.all([createClient(), birthdayV2Enabled()]);
+  const { error } = await supabase.rpc(
+    useV2 ? "set_my_birthday_preference_v2" : "set_my_birthday_preference",
+    {
     p_club_id: clubId,
     p_is_listed: isListed,
     p_allow_wishes: allowWishes,
-  });
+    },
+  );
   if (error) redirect(birthdayPath(clubId, "error", errorCode(error.message)));
   redirect(birthdayPath(clubId, "success", "preference_saved"));
 }
@@ -62,8 +77,8 @@ export async function createBirthdayWishAction(formData: FormData) {
   } catch {
     redirect("/birthdays?error=invalid_input");
   }
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("create_birthday_wish", {
+  const [supabase, useV2] = await Promise.all([createClient(), birthdayV2Enabled()]);
+  const { error } = await supabase.rpc(useV2 ? "create_birthday_wish_v2" : "create_birthday_wish", {
     p_club_id: clubId,
     p_recipient_membership_id: recipientMembershipId,
     p_content: content,
@@ -83,12 +98,15 @@ export async function updateBirthdayWishAction(formData: FormData) {
   } catch {
     redirect("/birthdays?error=invalid_input");
   }
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("update_own_birthday_wish", {
+  const [supabase, useV2] = await Promise.all([createClient(), birthdayV2Enabled()]);
+  const { error } = await supabase.rpc(
+    useV2 ? "update_own_birthday_wish_v2" : "update_own_birthday_wish",
+    {
     p_club_id: clubId,
     p_wish_id: wishId,
     p_content: content,
-  });
+    },
+  );
   if (error) redirect(birthdayPath(clubId, "error", errorCode(error.message)));
   redirect(birthdayPath(clubId, "success", "wish_updated"));
 }

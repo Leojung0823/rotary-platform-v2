@@ -13,6 +13,7 @@ export const featureFlagKeys = [
   "blessing_iou_collections_v1",
   "blessing_iou_reporting_v1",
   "birthday_wishes_v1",
+  "birthday_wishes_v2",
   "message_board_v1",
   "archive_handover_v1",
 ] as const;
@@ -56,7 +57,10 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 // it dark and letting a club turn it on is the whole point of having a flag,
 // and that is impossible if deploying the migration is itself the rollout. A
 // key listed here therefore needs an explicit record before it is on.
-export const flagsRequiringExplicitEnable: readonly FeatureFlagKey[] = ["announcements_v09"];
+export const flagsRequiringExplicitEnable: readonly FeatureFlagKey[] = [
+  "announcements_v09",
+  "birthday_wishes_v2",
+];
 
 export const emergencyKillSwitches: Readonly<Partial<Record<FeatureFlagKey, string>>> = {
   role_shells_v2: "FORCE_LEGACY_ROLE_SHELLS",
@@ -65,6 +69,7 @@ export const emergencyKillSwitches: Readonly<Partial<Record<FeatureFlagKey, stri
   blessing_iou_v1: "DISABLE_BLESSING_IOU",
   blessing_iou_collections_v1: "DISABLE_BLESSING_IOU_COLLECTIONS",
   blessing_iou_reporting_v1: "DISABLE_BLESSING_IOU_REPORTING",
+  birthday_wishes_v2: "DISABLE_BIRTHDAY_WISHES_V2",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
