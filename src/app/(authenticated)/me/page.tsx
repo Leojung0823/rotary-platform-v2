@@ -160,7 +160,7 @@ export default async function IdentityCenterPage({
       <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>
     </div>
 
-    {ledger && ledger.totals.entry_count > 0 && <Card>
+    {ledger && ledger.totals.entry_count > 0 && <Card className="identity-ledger-card">
       <div className="section-heading">
         <div>
           <p className="eyebrow">祝福 IOU</p>
@@ -205,7 +205,7 @@ export default async function IdentityCenterPage({
           <p className="eyebrow">出席紀錄</p>
           <h2>我的出席</h2>
         </div>
-        <Link className="button button-secondary" href="/attendance">開啟出席紀錄</Link>
+        <Link className="button button-secondary attendance-entry-link" href="/attendance">開啟出席紀錄</Link>
       </div>
       <p>本扶輪年度的出席率、逐月趨勢，以及每一場計入出席活動的結果。</p>
     </Card>}

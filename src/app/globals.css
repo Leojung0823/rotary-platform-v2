@@ -86,6 +86,7 @@ p { color: var(--muted); line-height: 1.75; }
 .subtle, .hint { color: var(--muted); font-size: 13px; }
 .back-link { display: inline-block; margin-bottom: 28px; color: var(--blue); font-weight: 700; font-size: 14px; }
 .card { padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
+.identity-ledger-card { min-width: 0; }
 .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .metric-label { display: block; color: var(--muted); font-size: 13px; font-weight: 700; }
 .metric-value { display: block; margin-top: 8px; font-size: 38px; }
@@ -118,6 +119,7 @@ p { color: var(--muted); line-height: 1.75; }
 .button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 10px 18px; border: 1px solid var(--navy); border-radius: 10px; color: white; background: var(--navy); cursor: pointer; font-weight: 800; box-shadow: 0 4px 12px rgba(18,48,74,.14); }
 .button:hover { background: var(--navy-2); }
 .button-secondary { color: var(--navy); background: white; border-color: #b7c5d0; box-shadow: none; }
+.attendance-entry-link { min-height: 48px; }
 .button-danger { background: var(--danger); border-color: var(--danger); }
 .line-button { background: #06c755; border-color: #06c755; color: white; }
 .line-button:hover { background: #05aa49; }

@@ -29,6 +29,17 @@ test("a member reaches their attendance from 我的, not from a tab of its own",
   await page.goto(new URL("/me", baseURL).toString());
   const entry = page.getByRole("link", { name: "開啟出席紀錄" });
   await expect(entry).toBeVisible();
+  const pageWidth = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  expect(pageWidth.scroll).toBeLessThanOrEqual(pageWidth.client);
+  const touchTarget = await entry.evaluate((element) => {
+    const { width, height } = element.getBoundingClientRect();
+    return { width, height };
+  });
+  expect(touchTarget.width).toBeGreaterThanOrEqual(48);
+  expect(touchTarget.height).toBeGreaterThanOrEqual(48);
   await entry.click();
   await expect(page).toHaveURL(/\/attendance/u);
   await expect(page.getByRole("heading", { name: "我的出席" })).toBeVisible();
