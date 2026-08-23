@@ -332,8 +332,8 @@ export async function revokeDeviceAction(formData: FormData) {
   const { error } = await supabase.rpc("revoke_my_device", {
     p_device_id: String(formData.get("deviceId") ?? ""),
   });
-  if (error) redirect("/me?error=unexpected");
-  redirect("/me?success=device_revoked");
+  if (error) redirect("/me/security?error=unexpected");
+  redirect("/me/security?success=device_revoked");
 }
 
 export async function configureLineOaAction(formData: FormData) {
