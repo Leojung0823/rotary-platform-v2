@@ -40,7 +40,8 @@ insert into public.club_role_assignments (
 ) values
   ('7a000000-0000-4000-8000-000000000001', '5a000000-0000-4000-8000-000000000001', '3a000000-0000-4000-8000-000000000001', 'president', 'active', '3a000000-0000-4000-8000-000000000001');
 
--- One attendance-eligible event in each club. Fixed dates rather than
+-- One regular meeting in each club, plus all non-regular event types in club A.
+-- Fixed dates rather than
 -- now()-relative ones so the assertions below do not depend on which side of
 -- 1 July the verification happens to run on.
 insert into public.club_events (
@@ -56,7 +57,16 @@ insert into public.club_events (
    true, 'completed', '3a000000-0000-4000-8000-000000000001', '3a000000-0000-4000-8000-000000000001', timestamptz '2026-03-01 10:00+08', null, null),
   ('8a000000-0000-4000-8000-000000000003', '5a000000-0000-4000-8000-000000000001', 'service', '不計出席活動',
    timestamptz '2026-03-12 10:00+08', timestamptz '2026-03-12 12:00+08', timestamptz '2026-03-11 10:00+08',
-   false, 'completed', '3a000000-0000-4000-8000-000000000001', '3a000000-0000-4000-8000-000000000001', timestamptz '2026-03-01 10:00+08', null, null);
+   false, 'completed', '3a000000-0000-4000-8000-000000000001', '3a000000-0000-4000-8000-000000000001', timestamptz '2026-03-01 10:00+08', null, null),
+  ('8a000000-0000-4000-8000-000000000004', '5a000000-0000-4000-8000-000000000001', 'other', '其他活動仍勾選出席',
+   timestamptz '2026-03-13 10:00+08', timestamptz '2026-03-13 12:00+08', timestamptz '2026-03-12 10:00+08',
+   true, 'completed', '3a000000-0000-4000-8000-000000000001', '3a000000-0000-4000-8000-000000000001', timestamptz '2026-03-01 10:00+08', null, null),
+  ('8a000000-0000-4000-8000-000000000005', '5a000000-0000-4000-8000-000000000001', 'service', '服務活動仍勾選出席',
+   timestamptz '2026-03-14 10:00+08', timestamptz '2026-03-14 12:00+08', timestamptz '2026-03-13 10:00+08',
+   true, 'completed', '3a000000-0000-4000-8000-000000000001', '3a000000-0000-4000-8000-000000000001', timestamptz '2026-03-01 10:00+08', null, null),
+  ('8a000000-0000-4000-8000-000000000006', '5a000000-0000-4000-8000-000000000001', 'board_meeting', '理事會仍勾選出席',
+   timestamptz '2026-03-15 10:00+08', timestamptz '2026-03-15 12:00+08', timestamptz '2026-03-14 10:00+08',
+   true, 'completed', '3a000000-0000-4000-8000-000000000001', '3a000000-0000-4000-8000-000000000001', timestamptz '2026-03-01 10:00+08', null, null);
 
 -- The projection functions must not be reachable without a session.
 do $grants$
@@ -101,8 +111,9 @@ begin
      or page -> 'clubs' -> 0 ->> 'club_id' <> '5a000000-0000-4000-8000-000000000001' then
     raise exception 'Member attendance club list was not scoped to their own club.';
   end if;
-  if (page -> 'summary') = 'null'::jsonb then
-    raise exception 'Member with an active membership received no attendance summary.';
+  if (page -> 'summary') = 'null'::jsonb
+     or (page -> 'summary' ->> 'denominator')::integer <> 1 then
+    raise exception 'Member summary included a non-regular event: %', page -> 'summary';
   end if;
 
   -- Asking for another club must not switch the answer to that club.
@@ -138,6 +149,7 @@ do $manager$
 declare
   page jsonb;
   events jsonb;
+  nonregular_event_id uuid;
 begin
   page := public.get_club_attendance_page(
     null, date '2026-03-01', date '2026-03-31', null
@@ -146,8 +158,9 @@ begin
      or page -> 'clubs' -> 0 ->> 'club_id' <> '5a000000-0000-4000-8000-000000000001' then
     raise exception 'Manager attendance page was not scoped to the managed club.';
   end if;
-  if (page -> 'summary') = 'null'::jsonb then
-    raise exception 'Manager received no club attendance summary.';
+  if (page -> 'summary') = 'null'::jsonb
+     or (page -> 'summary' ->> 'denominator')::integer <> 2 then
+    raise exception 'Manager summary included a non-regular event: %', page -> 'summary';
   end if;
 
   events := page -> 'events';
@@ -155,8 +168,11 @@ begin
      or events -> 0 ->> 'event_id' <> '8a000000-0000-4000-8000-000000000001' then
     raise exception 'Attendance event list did not contain exactly the eligible event.';
   end if;
-  if events::text like '%8a000000-0000-4000-8000-000000000003%' then
-    raise exception 'An event that does not count for attendance was listed.';
+  if events::text like '%8a000000-0000-4000-8000-000000000003%'
+     or events::text like '%8a000000-0000-4000-8000-000000000004%'
+     or events::text like '%8a000000-0000-4000-8000-000000000005%'
+     or events::text like '%8a000000-0000-4000-8000-000000000006%' then
+    raise exception 'A non-regular event was listed for Attendance.';
   end if;
 
   -- A listed event yields a roster.
@@ -168,6 +184,20 @@ begin
      or (page -> 'roster') = 'null'::jsonb then
     raise exception 'Roster was not returned for an event the same call listed.';
   end if;
+
+  foreach nonregular_event_id in array array[
+    '8a000000-0000-4000-8000-000000000004'::uuid,
+    '8a000000-0000-4000-8000-000000000005'::uuid,
+    '8a000000-0000-4000-8000-000000000006'::uuid
+  ] loop
+    page := public.get_club_attendance_page(
+      '5a000000-0000-4000-8000-000000000001', date '2026-03-01', date '2026-03-31',
+      nonregular_event_id
+    );
+    if page ->> 'selected_event_id' is not null or (page -> 'roster') <> 'null'::jsonb then
+      raise exception 'A non-regular event id produced a roster: %', nonregular_event_id;
+    end if;
+  end loop;
 
   -- An event id belonging to another club must produce no roster, and must not
   -- raise: the page has to render rather than fail on a stale or forged id.

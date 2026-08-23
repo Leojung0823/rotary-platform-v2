@@ -87,17 +87,28 @@ insert into public.club_events (
   ('87000000-0000-4000-8000-000000000009', '57000000-0000-4000-8000-000000000001', 'regular_meeting', '尚未確認例會', now() - interval '1 day', now() - interval '1 day' + interval '2 hours', now() - interval '2 days', true, 'published', '37000000-0000-0000-0000-000000000001', '37000000-0000-0000-0000-000000000001', now() - interval '20 days', null, null),
   ('87000000-0000-4000-8000-000000000010', '57000000-0000-4000-8000-000000000002', 'regular_meeting', '乙社例會', now() - interval '1 day', now() - interval '1 day' + interval '2 hours', now() - interval '2 days', true, 'completed', '37000000-0000-0000-0000-000000000001', '37000000-0000-0000-0000-000000000001', now() - interval '20 days', null, null),
   ('87000000-0000-4000-8000-000000000011', '57000000-0000-4000-8000-000000000003', 'regular_meeting', '停權社例會', now() - interval '1 day', now() - interval '1 day' + interval '2 hours', now() - interval '2 days', true, 'completed', '37000000-0000-0000-0000-000000000001', '37000000-0000-0000-0000-000000000001', now() - interval '20 days', null, null),
-  ('87000000-0000-4000-8000-000000000012', '57000000-0000-4000-8000-000000000001', 'regular_meeting', '未來資格例會', now() + interval '10 days', now() + interval '10 days' + interval '2 hours', now() + interval '9 days', true, 'published', '37000000-0000-0000-0000-000000000001', '37000000-0000-0000-0000-000000000001', now(), null, null);
+  ('87000000-0000-4000-8000-000000000012', '57000000-0000-4000-8000-000000000001', 'regular_meeting', '未來資格例會', now() + interval '10 days', now() + interval '10 days' + interval '2 hours', now() + interval '9 days', true, 'published', '37000000-0000-0000-0000-000000000001', '37000000-0000-0000-0000-000000000001', now(), null, null),
+  ('87000000-0000-4000-8000-000000000013', '57000000-0000-4000-8000-000000000001', 'other', '不納入其他活動', now() - interval '9 days', now() - interval '9 days' + interval '2 hours', now() - interval '10 days', true, 'completed', '37000000-0000-0000-0000-000000000001', '37000000-0000-0000-0000-000000000001', now() - interval '20 days', null, null),
+  ('87000000-0000-4000-8000-000000000014', '57000000-0000-4000-8000-000000000001', 'service', '不納入服務活動', now() - interval '7 days', now() - interval '7 days' + interval '2 hours', now() - interval '8 days', true, 'completed', '37000000-0000-0000-0000-000000000001', '37000000-0000-0000-0000-000000000001', now() - interval '20 days', null, null),
+  ('87000000-0000-4000-8000-000000000015', '57000000-0000-4000-8000-000000000001', 'board_meeting', '不納入理事會', now() - interval '5 days', now() - interval '5 days' + interval '2 hours', now() - interval '6 days', true, 'completed', '37000000-0000-0000-0000-000000000001', '37000000-0000-0000-0000-000000000001', now() - interval '20 days', null, null);
 
 insert into public.event_attendances (
   id, club_id, event_id, membership_id, checkin_method,
   checked_in_by_app_account_id, checkin_note, checked_in_at
-) values (
+) values
+(
   '97000000-0000-4000-8000-000000000001',
   '57000000-0000-4000-8000-000000000001',
   '87000000-0000-4000-8000-000000000001',
   '67000000-0000-4000-8000-000000000002',
   'manual', '37000000-0000-0000-0000-000000000001', '原始簽到不可覆蓋', now() - interval '14 days'
+),
+(
+  '97000000-0000-4000-8000-000000000002',
+  '57000000-0000-4000-8000-000000000001',
+  '87000000-0000-4000-8000-000000000013',
+  '67000000-0000-4000-8000-000000000002',
+  'manual', '37000000-0000-0000-0000-000000000001', '非例會原始簽到仍應保留', now() - interval '9 days'
 );
 
 -- The manager creates all four adjustment types, proves the partial unique index,
@@ -105,7 +116,10 @@ insert into public.event_attendances (
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '17000000-0000-0000-0000-000000000001', true);
 do $immutable$
-declare created jsonb; duplicate_rejected boolean := false;
+declare
+  created jsonb;
+  duplicate_rejected boolean := false;
+  nonregular_event_id uuid;
 begin
   perform public.set_attendance_adjustment('57000000-0000-4000-8000-000000000001', '87000000-0000-4000-8000-000000000001', '67000000-0000-4000-8000-000000000002', 'exempt', '@原始簽到優先');
   perform public.set_attendance_adjustment('57000000-0000-4000-8000-000000000001', '87000000-0000-4000-8000-000000000002', '67000000-0000-4000-8000-000000000002', 'makeup', '完成跨社補出席');
@@ -121,6 +135,22 @@ begin
 
   perform public.revoke_attendance_adjustment('57000000-0000-4000-8000-000000000001', (created->>'adjustment_id')::uuid, '重新確認社員資格');
   perform public.set_attendance_adjustment('57000000-0000-4000-8000-000000000001', '87000000-0000-4000-8000-000000000005', '67000000-0000-4000-8000-000000000002', 'exempt', '確認仍為免計');
+
+  foreach nonregular_event_id in array array[
+    '87000000-0000-4000-8000-000000000013'::uuid,
+    '87000000-0000-4000-8000-000000000014'::uuid,
+    '87000000-0000-4000-8000-000000000015'::uuid
+  ] loop
+    begin
+      perform public.set_attendance_adjustment(
+        '57000000-0000-4000-8000-000000000001', nonregular_event_id,
+        '67000000-0000-4000-8000-000000000002', 'leave', '非例會不得調整'
+      );
+      raise exception 'non-regular event accepted an attendance adjustment: %', nonregular_event_id;
+    exception when invalid_parameter_value then
+      null;
+    end;
+  end loop;
 end $immutable$;
 reset role;
 
@@ -139,7 +169,11 @@ begin
     where jsonb_typeof(record->'attendance_credit') <> 'boolean'
        or jsonb_typeof(record->'in_denominator') <> 'boolean'
   ) then raise exception 'attendance history returned a nullable boolean projection'; end if;
-  if history::text like '%取消例會%' or history::text like '%不計出席活動%' then
+  if history::text like '%取消例會%'
+     or history::text like '%不計出席活動%'
+     or history::text like '%不納入其他活動%'
+     or history::text like '%不納入服務活動%'
+     or history::text like '%不納入理事會%' then
     raise exception 'ineligible event entered attendance history';
   end if;
   if (summary->>'denominator')::integer <> 5
@@ -258,8 +292,21 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '17000000-0000-0000-0000-000000000001', true);
 do $$
-declare roster jsonb; export_rows jsonb; exported_text text;
+declare
+  roster jsonb;
+  export_rows jsonb;
+  exported_text text;
+  club_summary jsonb;
+  nonregular_event_id uuid;
 begin
+  club_summary := public.get_club_attendance_summary(
+    '57000000-0000-4000-8000-000000000001', current_date - 30, current_date
+  );
+  if (club_summary->>'denominator')::integer <> 40
+     or (club_summary->>'attended')::integer <> 2 then
+    raise exception 'non-regular event entered the club attendance summary: %', club_summary;
+  end if;
+
   roster := public.get_event_attendance_roster('57000000-0000-4000-8000-000000000001', '87000000-0000-4000-8000-000000000001');
   if jsonb_array_length(roster->'members') <> 6 then
     raise exception 'roster did not retain the expected membership-only projection';
@@ -291,6 +338,29 @@ begin
       and row->>'event_title' = '''+原始簽到例會'
       and row->>'adjustment_reason' = '''@原始簽到優先'
   ) then raise exception 'CSV formula prefixes were not neutralized by the server projection'; end if;
+
+  foreach nonregular_event_id in array array[
+    '87000000-0000-4000-8000-000000000013'::uuid,
+    '87000000-0000-4000-8000-000000000014'::uuid,
+    '87000000-0000-4000-8000-000000000015'::uuid
+  ] loop
+    begin
+      perform public.get_event_attendance_roster(
+        '57000000-0000-4000-8000-000000000001', nonregular_event_id
+      );
+      raise exception 'non-regular event produced an attendance roster: %', nonregular_event_id;
+    exception when no_data_found then
+      null;
+    end;
+    begin
+      perform public.export_event_attendance_csv(
+        '57000000-0000-4000-8000-000000000001', nonregular_event_id
+      );
+      raise exception 'non-regular event produced an attendance CSV: %', nonregular_event_id;
+    exception when no_data_found then
+      null;
+    end;
+  end loop;
 end $$;
 reset role;
 
@@ -337,6 +407,26 @@ begin
       and attendance_status = 'active'
       and checkin_note = '原始簽到不可覆蓋'
   ) then raise exception 'adjustment overwrote original attendance'; end if;
+
+  if not exists (
+    select 1
+    from public.attendance_result_for_member(
+      '87000000-0000-4000-8000-000000000013',
+      '67000000-0000-4000-8000-000000000002'
+    ) as outcome
+    where outcome.final_status = 'present'
+      and not outcome.in_denominator
+      and outcome.attendance_credit
+  ) then
+    raise exception 'non-regular raw check-in was lost or entered the denominator';
+  end if;
+
+  if not exists (
+    select 1 from public.event_attendances
+    where id = '97000000-0000-4000-8000-000000000002'
+      and attendance_status = 'active'
+      and checkin_note = '非例會原始簽到仍應保留'
+  ) then raise exception 'non-regular raw attendance record was not retained'; end if;
 
   select count(*) into revoked_count
   from public.attendance_adjustments
