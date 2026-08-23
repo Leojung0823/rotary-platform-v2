@@ -71,3 +71,24 @@ describe("Interact navigation gates", () => {
     expect(featureFlagKeys).toEqual(expect.arrayContaining([...rollbackKeys]));
   });
 });
+
+describe("legacy and product-map navigation gates", () => {
+  const legacyShell = source("src/components/app-shell.tsx");
+  const roleAwareShell = source("src/components/role-aware-app-shell.tsx");
+  const features = source("src/lib/product/features.ts");
+  const featuresPage = source("src/app/(authenticated)/features/page.tsx");
+
+  it("uses the board flag for both legacy-shell links", () => {
+    expect(roleAwareShell).toContain('key: "message_board_v1"');
+    expect(roleAwareShell).toContain("messageBoardEnabled={messageBoardEvaluation.enabled}");
+    expect(legacyShell.match(/messageBoardEnabled && <Link href="\/board">/gu)).toHaveLength(2);
+  });
+
+  it("marks every existing-domain feature card with its direct-page key", () => {
+    expect(features).toMatch(/slug: "message-board",[\s\S]+?featureFlagKey: "message_board_v1"/u);
+    expect(features).toMatch(/slug: "documents",[\s\S]+?featureFlagKey: "archive_handover_v1"/u);
+    expect(features).toMatch(/slug: "birthday-and-care",[\s\S]+?featureFlagKey: "birthday_wishes_v1"/u);
+    expect(featuresPage).toContain("evaluateCurrentFeatureFlag({");
+    expect(featuresPage).toContain("!disabledSlugs.has(feature.slug)");
+  });
+});

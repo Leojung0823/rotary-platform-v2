@@ -1,14 +1,29 @@
 import Link from "next/link";
 import { Badge, Card } from "@/components/ui";
+import { requireIdentity } from "@/lib/auth";
 import {
   productFeatureCategories,
   productFeaturePath,
   productFeatures,
 } from "@/lib/product/features";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 
-export default function ProductFeaturesPage() {
-  const availableCount = productFeatures.filter((feature) => feature.status === "available").length;
-  const developingCount = productFeatures.length - availableCount;
+export default async function ProductFeaturesPage() {
+  const identity = await requireIdentity();
+  const gatedFeatures = productFeatures.filter((feature) => feature.featureFlagKey);
+  const evaluations = await Promise.all(gatedFeatures.map(async (feature) => ({
+    slug: feature.slug,
+    evaluation: await evaluateCurrentFeatureFlag({
+      key: feature.featureFlagKey!,
+      subjectUuid: identity.id,
+    }),
+  })));
+  const disabledSlugs = new Set(
+    evaluations.filter(({ evaluation }) => !evaluation.enabled).map(({ slug }) => slug),
+  );
+  const visibleFeatures = productFeatures.filter((feature) => !disabledSlugs.has(feature.slug));
+  const availableCount = visibleFeatures.filter((feature) => feature.status === "available").length;
+  const developingCount = visibleFeatures.length - availableCount;
 
   return <div className="page-stack">
     <header className="page-header">
@@ -36,7 +51,7 @@ export default function ProductFeaturesPage() {
     </div>
 
     {productFeatureCategories.map((category) => {
-      const features = productFeatures.filter((feature) => feature.category === category);
+      const features = visibleFeatures.filter((feature) => feature.category === category);
       return <section key={category}>
         <div className="section-heading">
           <h2>{category}</h2>

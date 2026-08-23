@@ -1,3 +1,5 @@
+import type { FeatureFlagKey } from "./feature-flags";
+
 export type ProductFeatureStatus = "available" | "developing";
 
 export type ProductFeatureCategory =
@@ -15,6 +17,7 @@ export type ProductFeature = {
   status: ProductFeatureStatus;
   phase: string;
   href?: string;
+  featureFlagKey?: FeatureFlagKey;
 };
 
 export const productFeatureCategories: ProductFeatureCategory[] = [
@@ -106,6 +109,7 @@ export const productFeatures: ProductFeature[] = [
     status: "available",
     phase: "目前可測試",
     href: "/board",
+    featureFlagKey: "message_board_v1",
   },
   {
     slug: "announcements-and-notifications",
@@ -123,6 +127,7 @@ export const productFeatures: ProductFeature[] = [
     status: "available",
     phase: "V0.9 可測試",
     href: "/archives",
+    featureFlagKey: "archive_handover_v1",
   },
   {
     slug: "birthday-and-care",
@@ -132,6 +137,7 @@ export const productFeatures: ProductFeature[] = [
     status: "available",
     phase: "V1.0 可測試",
     href: "/birthdays",
+    featureFlagKey: "birthday_wishes_v1",
   },
   {
     slug: "blessing-iou",

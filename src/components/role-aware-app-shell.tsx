@@ -318,18 +318,25 @@ export async function RoleAwareAppShellBoundary({
     blessingIouEvaluation,
     attendanceEvaluation,
     messageCenterEvaluation,
+    messageBoardEvaluation,
     unreadMessageCount,
   ] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "attendance_ui_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "announcements_v09", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "message_board_v1", subjectUuid: identity.id }),
     readUnreadMessageCount(),
   ]);
   if (!evaluation.enabled) {
     void contextPromise;
     void recordRoleShellFlagFailure(evaluation);
-    return <LegacyAppShell identity={identity}>{children}</LegacyAppShell>;
+    return <LegacyAppShell
+      identity={identity}
+      messageBoardEnabled={messageBoardEvaluation.enabled}
+    >
+      {children}
+    </LegacyAppShell>;
   }
 
   const contextResolution = await contextPromise;
@@ -342,6 +349,7 @@ export async function RoleAwareAppShellBoundary({
     return <LegacyAppShell
       identity={identity}
       fallbackNotice="目前無法解析新版角色脈絡，已安全保留原有導覽；請稍後重新整理。"
+      messageBoardEnabled={messageBoardEvaluation.enabled}
     >
       {children}
     </LegacyAppShell>;

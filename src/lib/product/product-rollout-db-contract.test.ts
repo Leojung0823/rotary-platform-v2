@@ -13,9 +13,9 @@ function assertExactSet(actual: readonly string[], expected: readonly string[]) 
 }
 
 const featureFlagMigration = readFileSync(
-  // Each step of the blessing IOU stack redeclares the flag constraint, so
-  // this points at the newest migration that does.
-  resolve(process.cwd(), "supabase/migrations/20260820000400_blessing_iou_rotary_year_reporting.sql"),
+  // Keep this pointed at the newest forward-only migration that redeclares
+  // the feature-key constraint and mutation allow-list.
+  resolve(process.cwd(), "supabase/migrations/20260823000100_existing_domain_feature_flags.sql"),
   "utf8",
 );
 const telemetryMigration = readFileSync(

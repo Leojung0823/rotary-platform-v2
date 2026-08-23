@@ -16,10 +16,12 @@ export async function LegacyAppShell({
   identity,
   children,
   fallbackNotice,
+  messageBoardEnabled = false,
 }: {
   identity: Identity;
   children: React.ReactNode;
   fallbackNotice?: string;
+  messageBoardEnabled?: boolean;
 }) {
   const isPlatform = identity.platform_roles.includes("superadmin") || identity.platform_roles.includes("platform_admin");
 
@@ -42,7 +44,7 @@ export async function LegacyAppShell({
         <Link href="/features">功能總覽</Link>
         <Link href="/directory">社員名冊</Link>
         <Link href="/events">活動</Link>
-        <Link href="/board">留言板</Link>
+        {messageBoardEnabled && <Link href="/board">留言板</Link>}
         <Link href="/me">會員中心</Link>
         {manageableClubs.length === 1 && <Link href={`/clubs/${manageableClubs[0].club_id}/members`}>社團管理</Link>}
         {manageableClubs.length > 1 && manageableClubs.map((club) => (
@@ -61,7 +63,7 @@ export async function LegacyAppShell({
       <Link href="/features">功能</Link>
       <Link href="/directory">名冊</Link>
       <Link href="/events">活動</Link>
-      <Link href="/board">留言板</Link>
+      {messageBoardEnabled && <Link href="/board">留言板</Link>}
       <Link href="/me">我的</Link>
       {firstManageableClubId && <Link href={`/clubs/${firstManageableClubId}/members`}>社團</Link>}
       {isPlatform && <Link href="/platform/clubs">平台</Link>}
