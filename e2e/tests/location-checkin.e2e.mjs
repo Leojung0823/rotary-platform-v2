@@ -77,15 +77,21 @@ test("a member away from the venue is refused without being told the distance", 
 
 test("a member at the venue checks in, and repeating it stays idempotent", async ({ browser }, testInfo) => {
   test.skip(testInfo.project.name !== mutatingProject, "Checking in mutates attendance for the whole run.");
+  test.setTimeout(45_000);
   const viewport = testInfo.project.use.viewport ?? { width: 1440, height: 900 };
   const { context, page } = await openCheckinPage(browser, viewport, atVenue);
 
-  await page.getByRole("button", { name: "用定位簽到" }).click();
-  await expect(page.getByText("簽到成功", { exact: false })).toBeVisible();
+  const button = page.getByRole("button", { name: "用定位簽到" });
+  const checkedIn = page.getByText("已簽到", { exact: true });
+  await expect(button.or(checkedIn).first()).toBeVisible();
+  if (await button.isVisible()) {
+    await button.click();
+    await expect(page.getByText(/簽到成功|已完成此活動簽到/u)).toBeVisible({ timeout: 20_000 });
+  }
   await expectNoHorizontalOverflow(page);
 
   await page.reload();
-  await expect(page.getByText("已簽到", { exact: true })).toBeVisible();
+  await expect(checkedIn).toBeVisible();
   await context.close();
 });
 

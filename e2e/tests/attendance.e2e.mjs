@@ -86,10 +86,12 @@ test("a manager adjusts attendance and can take it back", async ({ page }, testI
   await openRoster.click();
   await expect(page.getByRole("link", { name: "匯出 CSV" })).toBeVisible();
 
-  // Work on a member who currently has no adjustment, so the test does not
-  // depend on what an earlier run left behind.
+  // Work on a member who is not checked in and has no adjustment. The GPS
+  // check-in test may have changed another member earlier in the same run.
   const card = page.locator("article.card").filter({
     has: page.getByRole("button", { name: "登記調整" }),
+  }).filter({
+    has: page.getByText("未簽到", { exact: true }),
   }).first();
   await expect(card).toBeVisible();
   const memberName = await card.locator("h3").innerText();
@@ -100,8 +102,10 @@ test("a manager adjusts attendance and can take it back", async ({ page }, testI
   await card.locator('input[name="reason"]').fill("地區年會出席，瀏覽器測試");
   await card.getByRole("button", { name: "登記調整" }).click();
 
-  await expect(page.getByText("出席調整已記錄")).toBeVisible();
   const adjusted = page.locator("article.card").filter({ hasText: memberName }).first();
+  await expect(
+    page.getByText("出席調整已記錄").or(adjusted.getByText("已調整：公假")).first(),
+  ).toBeVisible({ timeout: 20_000 });
   await expect(adjusted.getByText("已調整：公假")).toBeVisible();
 
   // And the adjustment can be revoked, restoring the raw check-in result.

@@ -132,6 +132,8 @@
 - `npm run check:db-verifications`：39 份 SQL 全部登錄。
 - `npm run verify:db`：39 份 DB verification 全部通過；保留 3 個既有 DB lint warning，沒有新增 warning。
 - 出席 E2E（1440px、412px、單 worker）：11 passed、1 skipped；手機真實點擊通過。
+- 第一次推送後的 GitHub CI 全部通過；Browser Smoke 則抓到 GPS 簽到後，出席測試仍固定選第一位社員，造成跨測試狀態污染，因此依發布閘門停止 staging 發布。
+- 修正 Browser Smoke：GPS 簽到測試可安全重跑；出席調整只選「未簽到且尚未調整」的社員。依 GitHub 執行順序本機重跑為 19 passed、5 skipped。
 - `git diff --check`：通過。
 
 ## 完成定義
