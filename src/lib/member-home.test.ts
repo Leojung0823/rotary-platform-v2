@@ -23,12 +23,20 @@ const recentEvent = {
   attended: true,
 };
 
+const notification = {
+  title: "本週社務提醒",
+  body_preview: "請記得回覆例會出席狀況。",
+  published_at: "2026-08-12T09:00:00.000Z",
+  is_unread: true,
+};
+
 function projection(overrides: Record<string, unknown> = {}) {
   return {
     club: { club_code: "MEMBER", club_name: "社員測試社" },
     primary_event: event,
     next_event: null,
     recent_events: [],
+    notifications: { unread_count: 0, items: [] },
     ...overrides,
   };
 }
@@ -48,6 +56,7 @@ describe("member-home projection contract", () => {
       },
       nextEvent: null,
       recentEvents: [],
+      notifications: { unreadCount: 0, items: [] },
     });
   });
 
@@ -65,6 +74,39 @@ describe("member-home projection contract", () => {
   it("rejects more recent events than the bounded maximum", () => {
     const tooMany = [recentEvent, recentEvent, recentEvent, recentEvent];
     expect(parseMemberHomeProjection(projection({ recent_events: tooMany }))).toBeNull();
+  });
+
+  it("accepts a bounded recipient-only notification summary", () => {
+    const parsed = parseMemberHomeProjection(projection({
+      notifications: { unread_count: 4, items: [notification] },
+    }));
+    expect(parsed?.notifications).toEqual({
+      unreadCount: 4,
+      items: [{
+        title: "本週社務提醒",
+        bodyPreview: "請記得回覆例會出席狀況。",
+        publishedAt: "2026-08-12T09:00:00.000Z",
+        unread: true,
+      }],
+    });
+  });
+
+  it("rejects unbounded or identifier-bearing notifications", () => {
+    expect(parseMemberHomeProjection(projection({
+      notifications: { unread_count: 1, items: [notification, notification, notification, notification] },
+    }))).toBeNull();
+    expect(parseMemberHomeProjection(projection({
+      notifications: { unread_count: 1, items: [{ ...notification, message_id: "internal" }] },
+    }))).toBeNull();
+  });
+
+  it("rejects malformed notification counts and previews", () => {
+    expect(parseMemberHomeProjection(projection({
+      notifications: { unread_count: -1, items: [] },
+    }))).toBeNull();
+    expect(parseMemberHomeProjection(projection({
+      notifications: { unread_count: 1, items: [{ ...notification, body_preview: "a".repeat(241) }] },
+    }))).toBeNull();
   });
 
   it("rejects an internal identifier added to the top-level projection", () => {

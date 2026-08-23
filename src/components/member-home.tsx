@@ -8,6 +8,7 @@ import {
   type MemberHomeCheckinState,
   type MemberHomeEvent,
   type MemberHomeRecentEvent,
+  type MemberHomeNotification,
   type MemberHomeRegistrationState,
 } from "@/lib/member-home";
 import { resolveMemberHomeProjection } from "@/lib/member-home.server";
@@ -76,6 +77,19 @@ function RecentEventRow({ event }: { event: MemberHomeRecentEvent }) {
   </div>;
 }
 
+function NotificationRow({ notification }: { notification: MemberHomeNotification }) {
+  return <article className={styles.notificationItem}>
+    <div>
+      <span className={styles.notificationTitle}>
+        <strong>{notification.title}</strong>
+        {notification.unread && <Badge tone="warning">未讀</Badge>}
+      </span>
+      <p>{notification.bodyPreview}</p>
+      <small>{formatDateTime(notification.publishedAt)}</small>
+    </div>
+  </article>;
+}
+
 function MemberHomeContentLoading() {
   return <section aria-busy="true" aria-live="polite">
     <span className="sr-only">正在載入今天的活動</span>
@@ -88,7 +102,13 @@ function MemberHomeContentLoading() {
   </section>;
 }
 
-async function MemberHomeContent({ activeClubId }: { activeClubId: string }) {
+async function MemberHomeContent({
+  activeClubId,
+  messageCenterEnabled,
+}: {
+  activeClubId: string;
+  messageCenterEnabled: boolean;
+}) {
   const resolution = await resolveMemberHomeProjection(activeClubId);
   if (!resolution.ok) {
     return <Notice tone="error">目前無法載入社員首頁資料，請稍後重新整理。</Notice>;
@@ -96,6 +116,23 @@ async function MemberHomeContent({ activeClubId }: { activeClubId: string }) {
 
   const { projection } = resolution;
   return <>
+    {messageCenterEnabled && projection.notifications.items.length > 0 && <section aria-labelledby="member-home-notifications">
+      <div className="section-heading">
+        <div className={styles.notificationHeading}>
+          <p className="eyebrow">社內通知</p>
+          <h2 id="member-home-notifications">最新通知</h2>
+          {projection.notifications.unreadCount > 0 && <Badge tone="warning">{projection.notifications.unreadCount} 則未讀</Badge>}
+        </div>
+        <Link className="card-link" href={`/messages?clubId=${encodeURIComponent(activeClubId)}`} prefetch={false}>查看全部通知 →</Link>
+      </div>
+      <div className={styles.notificationList}>
+        {projection.notifications.items.map((notification, index) => <NotificationRow
+          key={`${notification.publishedAt}-${index}`}
+          notification={notification}
+        />)}
+      </div>
+    </section>}
+
     {projection.primaryEvent ? <EventSummary event={projection.primaryEvent} primary /> : <Card className={styles.emptyCard}>
       <p className="eyebrow">今天</p>
       <h2>目前沒有需要處理的活動</h2>
@@ -127,10 +164,12 @@ export function MemberHome({
   identity,
   activeClub,
   blessingIouEnabled = false,
+  messageCenterEnabled = false,
 }: {
   identity: Identity;
   activeClub: Pick<ClubContext, "clubId" | "clubCode" | "clubName">;
   blessingIouEnabled?: boolean;
+  messageCenterEnabled?: boolean;
 }) {
   return <div className={`page-stack ${styles.memberHome}`}>
     <header className="page-header">
@@ -151,7 +190,7 @@ export function MemberHome({
       <b aria-hidden="true">→</b>
     </Link>}
     <Suspense fallback={<MemberHomeContentLoading />}>
-      <MemberHomeContent activeClubId={activeClub.clubId} />
+      <MemberHomeContent activeClubId={activeClub.clubId} messageCenterEnabled={messageCenterEnabled} />
     </Suspense>
   </div>;
 }

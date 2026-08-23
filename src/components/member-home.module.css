@@ -14,6 +14,14 @@
 .recentItem > div { min-width: 0; }
 .recentItem strong { display: block; overflow-wrap: anywhere; }
 .recentItem small { color: var(--muted); }
+.notificationHeading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.notificationHeading .eyebrow { width: 100%; }
+.notificationHeading h2 { margin: 0; }
+.notificationList { display: grid; gap: 10px; }
+.notificationItem { padding: 16px 18px; border: 1px solid #e1c87d; border-radius: 14px; background: #fffdf5; }
+.notificationTitle { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.notificationItem p { margin: 8px 0; color: var(--text); overflow-wrap: anywhere; }
+.notificationItem small { color: var(--muted); }
 .blessingShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 72px; padding: 14px 18px; border: 1px solid #d8c17f; border-radius: 16px; background: linear-gradient(145deg, #fffdf7 0%, #fff8df 100%); color: #49370d; text-decoration: none; }
 .blessingShortcut:hover { border-color: #a77d1c; transform: translateY(-1px); }
 .blessingShortcut > span:not(.blessingIcon) { display: grid; gap: 2px; min-width: 0; }

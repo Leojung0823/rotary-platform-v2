@@ -57,6 +57,25 @@ insert into public.event_checkin_sessions (
   '63000000-0000-4000-8000-000000000001'
 );
 
+insert into public.club_messages (
+  id, club_id, author_app_account_id, title, body, audience_kind, status,
+  published_at, deleted_at
+) values
+  ('68000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '最新未讀通知', '請記得回覆本週例會出席狀況。', 'everyone', 'active', now() - interval '5 minutes', null),
+  ('68000000-0000-4000-8000-000000000002', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '已讀通知', '這則已讀通知仍可出現在最新三則。', 'everyone', 'active', now() - interval '10 minutes', null),
+  ('68000000-0000-4000-8000-000000000003', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '第三則通知', '首頁最多只顯示三則通知。', 'everyone', 'active', now() - interval '15 minutes', null),
+  ('68000000-0000-4000-8000-000000000004', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '超出首頁上限', '這則仍計入未讀，但不應出現在首頁預覽。', 'everyone', 'active', now() - interval '20 minutes', null),
+  ('68000000-0000-4000-8000-000000000005', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '已撤回的通知', '已撤回內容不應顯示。', 'everyone', 'deleted', now() - interval '1 minute', now()),
+  ('68000000-0000-4000-8000-000000000006', '64000000-0000-4000-8000-000000000002', '63000000-0000-4000-8000-000000000002', '乙社機密通知', '甲社社員絕對不能看到。', 'everyone', 'active', now() - interval '2 minutes', null);
+
+insert into public.club_message_recipients (message_id, membership_id, club_id, read_at) values
+  ('68000000-0000-4000-8000-000000000001', '65000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', null),
+  ('68000000-0000-4000-8000-000000000002', '65000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', now() - interval '1 minute'),
+  ('68000000-0000-4000-8000-000000000003', '65000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', null),
+  ('68000000-0000-4000-8000-000000000004', '65000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', null),
+  ('68000000-0000-4000-8000-000000000005', '65000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', null),
+  ('68000000-0000-4000-8000-000000000006', '65000000-0000-4000-8000-000000000002', '64000000-0000-4000-8000-000000000002', null);
+
 -- Anonymous callers have no projection privilege.
 set local role anon;
 do $$
@@ -86,11 +105,25 @@ begin
     or home->'next_event'->>'registration_state' <> 'not_registered' then
     raise exception 'member-home priority or presentation state is invalid: %', home;
   end if;
-  if home::text like '%不應顯示%' or home::text like '%乙社%' then
+  if home->'notifications'->>'unread_count' <> '3'
+    or jsonb_array_length(home->'notifications'->'items') <> 3
+    or home->'notifications'->'items'->0->>'title' <> '最新未讀通知'
+    or home->'notifications'->'items'->0->>'is_unread' <> 'true'
+    or home->'notifications'->'items'->1->>'is_unread' <> 'false' then
+    raise exception 'member-home notification summary is invalid: %', home->'notifications';
+  end if;
+  if home::text like '%不應顯示%'
+    or home::text like '%乙社%'
+    or home::text like '%超出首頁上限%'
+    or home::text like '%已撤回的通知%'
+    or home::text like '%乙社機密通知%' then
     raise exception 'member-home projection included unpublished, cancelled, or cross-club data';
   end if;
   if home ?| array['id', 'club_id', 'event_id', 'membership_id', 'account_id', 'person_id', 'token', 'token_hash', 'session_id']
-    or home::text like '%token_hash%' or home::text like '%aaaaaaaa%' then
+    or home::text like '%message_id%'
+    or home::text like '%recipient_id%'
+    or home::text like '%token_hash%'
+    or home::text like '%aaaaaaaa%' then
     raise exception 'member-home projection leaked an internal identifier or check-in secret';
   end if;
 end;

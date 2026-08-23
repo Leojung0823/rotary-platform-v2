@@ -33,11 +33,24 @@ export type MemberHomeRecentEvent = Readonly<{
   attended: boolean;
 }>;
 
+export type MemberHomeNotification = Readonly<{
+  title: string;
+  bodyPreview: string;
+  publishedAt: string;
+  unread: boolean;
+}>;
+
+export type MemberHomeNotifications = Readonly<{
+  unreadCount: number;
+  items: readonly MemberHomeNotification[];
+}>;
+
 export type MemberHomeProjection = Readonly<{
   club: Readonly<{ clubCode: string; clubName: string }>;
   primaryEvent: MemberHomeEvent | null;
   nextEvent: MemberHomeEvent | null;
   recentEvents: readonly MemberHomeRecentEvent[];
+  notifications: MemberHomeNotifications;
 }>;
 
 const maximumEventTextLength = 300;
@@ -109,6 +122,7 @@ function parseRecentEvent(value: unknown): MemberHomeRecentEvent | null {
 }
 
 const maximumRecentEvents = 3;
+const maximumNotifications = 3;
 
 function parseRecentEvents(value: unknown): readonly MemberHomeRecentEvent[] | null {
   if (!Array.isArray(value) || value.length > maximumRecentEvents) return null;
@@ -116,8 +130,42 @@ function parseRecentEvents(value: unknown): readonly MemberHomeRecentEvent[] | n
   return parsed.some((event) => event === null) ? null : (parsed as MemberHomeRecentEvent[]);
 }
 
+function parseNotification(value: unknown): MemberHomeNotification | null {
+  if (!isRecord(value)
+    || !hasExactKeys(value, ["title", "body_preview", "published_at", "is_unread"])
+    || typeof value.title !== "string"
+    || value.title.length === 0
+    || value.title.length > 120
+    || typeof value.body_preview !== "string"
+    || value.body_preview.length === 0
+    || value.body_preview.length > 240
+    || !isIsoDateTime(value.published_at)
+    || typeof value.is_unread !== "boolean") return null;
+
+  return {
+    title: value.title,
+    bodyPreview: value.body_preview,
+    publishedAt: value.published_at,
+    unread: value.is_unread,
+  };
+}
+
+function parseNotifications(value: unknown): MemberHomeNotifications | null {
+  if (!isRecord(value)
+    || !hasExactKeys(value, ["unread_count", "items"])
+    || typeof value.unread_count !== "number"
+    || !Number.isSafeInteger(value.unread_count)
+    || value.unread_count < 0
+    || !Array.isArray(value.items)
+    || value.items.length > maximumNotifications) return null;
+
+  const items = value.items.map(parseNotification);
+  if (items.some((item) => item === null)) return null;
+  return { unreadCount: value.unread_count, items: items as MemberHomeNotification[] };
+}
+
 export function parseMemberHomeProjection(value: unknown): MemberHomeProjection | null {
-  if (!isRecord(value) || !hasExactKeys(value, ["club", "primary_event", "next_event", "recent_events"])
+  if (!isRecord(value) || !hasExactKeys(value, ["club", "primary_event", "next_event", "recent_events", "notifications"])
     || !isRecord(value.club)
     || !hasExactKeys(value.club, ["club_code", "club_name"])
     || typeof value.club.club_code !== "string"
@@ -134,12 +182,15 @@ export function parseMemberHomeProjection(value: unknown): MemberHomeProjection 
 
   const recentEvents = parseRecentEvents(value.recent_events);
   if (recentEvents === null) return null;
+  const notifications = parseNotifications(value.notifications);
+  if (notifications === null) return null;
 
   return {
     club: { clubCode: value.club.club_code, clubName: value.club.club_name },
     primaryEvent,
     nextEvent,
     recentEvents,
+    notifications,
   };
 }
 

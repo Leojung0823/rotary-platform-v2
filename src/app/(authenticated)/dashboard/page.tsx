@@ -191,11 +191,12 @@ export default async function DashboardPage({
 
   const identity = await requireIdentity();
   await flagRecordsPromise;
-  const [evaluation, roleShellsEvaluation, memberHomeEvaluation, blessingIouEvaluation] = await Promise.all([
+  const [evaluation, roleShellsEvaluation, memberHomeEvaluation, blessingIouEvaluation, messageCenterEvaluation] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_context_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "member_home_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "announcements_v09", subjectUuid: identity.id }),
   ]);
   if (!evaluation.enabled) {
     void contextPromise;
@@ -228,6 +229,7 @@ export default async function DashboardPage({
           identity={identity}
           activeClub={activeClub}
           blessingIouEnabled={blessingIouEvaluation.enabled}
+          messageCenterEnabled={messageCenterEvaluation.enabled}
         />;
       }
     }
