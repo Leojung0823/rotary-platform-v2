@@ -108,7 +108,11 @@
   /* Touch browsers can keep :hover on the last tapped link. The desktop
      hover treatment is white-on-dark, so allowing it on this white bar makes
      the tapped icon and label disappear. */
-  .navigation a:hover { color: var(--navy); background: none; }
+  .navigation a,
+  .navigation a:visited,
+  .navigation a:hover,
+  .navigation a:focus,
+  .navigation a:active { color: var(--navy); background: none; }
   /* The mobile bar is white, so the desktop rule's white label is only legible
      because of the accent pill behind it -- and if that pill does not paint,
      the current tab turns white-on-white and vanishes, which is what iOS users
@@ -116,8 +120,12 @@
      literal fallback so a custom property that fails to resolve cannot hide it
      either. */
   .navigation a[aria-current="page"],
-  .navigation a[aria-current="page"]:hover { color: var(--shell-accent-ink, #1677a8); background: none; }
+  .navigation a[aria-current="page"]:visited,
+  .navigation a[aria-current="page"]:hover,
+  .navigation a[aria-current="page"]:focus,
+  .navigation a[aria-current="page"]:active { color: var(--shell-accent-ink, #1677a8); background: none; }
   .navigationIcon { height: 20px; font-size: 18px; }
+  .navigationIcon svg { display: block; color: inherit; stroke: currentColor; }
   .navigation a { position: relative; }
   .navigationBadge { position: absolute; top: 3px; left: 50%; margin-left: 3px; min-width: 18px; line-height: 17px; }
   .desktopLabel { display: none; }

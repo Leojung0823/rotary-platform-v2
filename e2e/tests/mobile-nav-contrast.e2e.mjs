@@ -90,4 +90,23 @@ test("every mobile navigation tab stays readable, including the current one", as
     expect(hovered.color).not.toBe("rgb(255, 255, 255)");
     expect(hovered.iconStroke).not.toBe("rgb(255, 255, 255)");
   }
+
+  // A shared server layout does not receive a new pathname on a sibling
+  // client navigation. The current tab and the tapped icon must still follow
+  // the browser URL without waiting for a hard reload.
+  for (let index = 0; index < await links.count(); index += 1) {
+    const href = await links.nth(index).getAttribute("href");
+    await links.nth(index).click();
+    await expect(page).toHaveURL(new URL(href, baseURL).toString());
+    const clicked = page.getByRole("navigation", { name: "主要導覽" }).getByRole("link").nth(index);
+    await expect(clicked).toHaveAttribute("aria-current", "page");
+    const clickedStyle = await clicked.evaluate((anchor) => {
+      const icon = anchor.querySelector("svg");
+      const style = getComputedStyle(anchor);
+      const iconStyle = icon ? getComputedStyle(icon) : null;
+      return { color: style.color, iconStroke: iconStyle?.stroke ?? null };
+    });
+    expect(clickedStyle.color).not.toBe("rgb(255, 255, 255)");
+    expect(clickedStyle.iconStroke).not.toBe("rgb(255, 255, 255)");
+  }
 });

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { setActiveClubPreferenceAction } from "@/app/experience-context-actions";
 import { LegacyAppShell } from "@/components/app-shell";
 import {
@@ -10,7 +10,7 @@ import {
   type ExperienceContext,
   type ExperienceMode,
 } from "@/lib/experience-context";
-import { ShellIcon } from "@/components/shell-icons";
+import { RoleAwareShellNavigation } from "@/components/role-aware-shell-navigation";
 import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
 import { displayableEmail, type Identity } from "@/lib/auth";
@@ -19,11 +19,9 @@ import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.s
 import type { FeatureFlagEvaluation } from "@/lib/product/feature-flags";
 import { recordAuthenticatedProductTelemetry } from "@/lib/product/telemetry.server";
 import {
-  resolveCurrentNavigationItemId,
   roleShellModeLabels,
   roleShellNavigation,
   resolveRoleShell,
-  type ShellNavigationItem,
 } from "@/lib/role-shells";
 import styles from "./role-aware-app-shell.module.css";
 
@@ -168,48 +166,6 @@ function ClubSwitcher({ context, mode }: { context: ExperienceContext; mode: Exp
   </details>;
 }
 
-function NavigationBadge({ count }: { count?: number }) {
-  if (!count) return null;
-  // The number is announced, not just drawn: a dot that only sighted users can
-  // see is not a notification either.
-  return <span className={styles.navigationBadge}>
-    <span aria-hidden="true">{count > 99 ? "99+" : count}</span>
-    <span className="sr-only">{count} 則未讀訊息</span>
-  </span>;
-}
-
-function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationItem[]; pathname: string }) {
-  const currentItemId = resolveCurrentNavigationItemId(items, pathname);
-  return <nav className={styles.navigation} aria-label="主要導覽">
-    <ul style={{ "--nav-count": items.length } as CSSProperties}>
-      {items.map((item) => <li key={item.id}>
-        {item.forceReload
-          ? <a
-              href={item.href}
-              data-navigation-id={item.id}
-              aria-current={item.id === currentItemId ? "page" : undefined}
-            >
-              <span className={styles.navigationIcon}><ShellIcon name={item.icon} /></span>
-              <span className={styles.desktopLabel}>{item.label}</span>
-              <span className={styles.mobileLabel}>{item.mobileLabel}</span>
-              <NavigationBadge count={item.badgeCount} />
-            </a>
-          : <Link
-              href={item.href}
-              prefetch={false}
-              data-navigation-id={item.id}
-              aria-current={item.id === currentItemId ? "page" : undefined}
-            >
-              <span className={styles.navigationIcon}><ShellIcon name={item.icon} /></span>
-              <span className={styles.desktopLabel}>{item.label}</span>
-              <span className={styles.mobileLabel}>{item.mobileLabel}</span>
-              <NavigationBadge count={item.badgeCount} />
-            </Link>}
-      </li>)}
-    </ul>
-  </nav>;
-}
-
 function AccountMenu({
   identity,
   context,
@@ -306,7 +262,7 @@ export function RoleAwareAppShell({
         {(context.hasPlatformAccess || clubsForExperienceMode(context, mode).length > 1)
           && <ClubSwitcher context={context} mode={mode} />}
       </header>
-      <ShellNavigation items={navigation} pathname={pathname} />
+      <RoleAwareShellNavigation items={navigation} initialPathname={pathname} />
       <AccountMenu identity={identity} context={context} mode={mode} />
     </aside>
     <main id="main" tabIndex={-1} className={styles.content}>{children}</main>
