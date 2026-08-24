@@ -1,98 +1,75 @@
-# 交接筆記（2026-08-21）
+# 交接筆記（2026-08-24）
 
-> 這份文件取代 2026-08-13 版本。它的用途是讓另一個在別處工作的代理（Codex 或任何新開的 session）能在動手前對齊現況。
->
-> **先讀根目錄的 `AGENTS.md`。** 那份是工作約定，記錄的是這個 repo 實際出過事的地方；本文件只補上「現在做到哪裡」。兩者不重複。
+> 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
+> `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 先確認你在看哪一份程式碼
+## 本次同步結果
 
-權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件描述的狀態對應 `fd9201e`。
+本次工作以 `main` 的 `58db2a4` 為程式基準，已完成待辦清單中可在本機完成的程式修改，並更新
+[`TO-DO-LIST.md`](./TO-DO-LIST.md)。目前未 push、未開 PR、未 merge、未 deploy。
 
-本機若有 `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 這類獨立快照，那是 8/15 的複本、不在 git 裡，內容已落後。動手前請：
+已完成的主要切片：
 
-```bash
-git fetch && git checkout main && git pull
-```
+- 出席統計只計 `regular_meeting`。
+- 社員名錄 profile 補回 `occupation`。
+- 我的祝福 IOU 支援扶輪年度／總計篩選。
+- 首頁 bounded notification projection 與訊息入口。
+- `/me/security` 帳號安全分層與 recovery confirmation flow。
+- 生日祝福 V2 核心：預設公開、年齡同意、每日多則上限、作者匿名投影。
+- 社員固定四項導覽、首頁互動入口、幹部管理往返、巢狀路由 current state、名錄 responsive header。
 
-## 目前狀態
+## 最近 migration
 
-主線已完成「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部階段。
+目前最後一個 migration 是 `20260824000500_member_home_notifications.sql`；下一個新增檔名必須先
+確認 `ls supabase/migrations/ | tail`，使用 `20260824000600` 或當時實際可用的下一號，不能憑記憶。
 
-Phase 2 標記為完成，Phase 3 只剩公告通知未實作。細節見 `DEVELOPMENT_ROADMAP.md`，該文件已於 8/21 與實際程式碼對齊過。
+最近的 forward-only migration：
 
-### 8/15 之後合併的 migration
-
-| 功能 | 檔案 |
+| Migration | 內容 |
 |---|---|
-| 扶輪社名稱編輯 | `20260819000100_club_profile_rename_hardening.sql` |
-| GPS 定位簽到 | `20260819000200_gps_checkin_v2.sql` |
-| 邀請預覽身份比對修正 | `20260819000300_invitation_preview_viewer_match.sql` |
-| 單次往返頁面查詢 | `20260819000400_single_round_trip_list_pages.sql` |
-| 活動封面圖片 | `20260820000100_event_cover_images.sql` |
-| 祝福 IOU（core / collections / reporting） | `20260820000200` · `000300` · `000400` |
-| 生日祝福 | `20260820001000_birthday_wishes.sql` |
-| 文件中心與年度交接 | `20260820002000_archive_handover.sql` |
-| 出席 UI 投影層 | `20260821000100_attendance_page_projections.sql` |
-| 幹部的社員模式 | `20260821000200_event_member_view.sql` |
+| `20260824000100` | directory profile occupation projection |
+| `20260824000200` | canonical attendance 只計例會 |
+| `20260824000300` | 本人祝福 IOU 扶輪年度 projection |
+| `20260824000400` | birthday wishes V2 core 與 flag key |
+| `20260824000500` | member home bounded notifications |
 
-**下一個可用編號是 `20260821000300`。** 撞號在這個 repo 已發生四次，開檔前先 `ls supabase/migrations/ | tail`。
+新增資料表或 RPC 必須有 `supabase/verification/*.sql`，並寫入
+`scripts/database-verification-files.txt`；verification 要測誰不能做什麼。
 
-### 不在原路線圖但已完成的工程工作
+## 不可違反的資料與權限規則
 
-- 各頁查詢改為組合型 RPC，單頁循序往返由 2.7–4.1 次降到約 1.8 次。
-- Render 機房由 Virginia 遷至新加坡，`/api/health` p50 由 520ms 降至 269ms。
+1. 出席只使用 `20260811000100_attendance_domain_core.sql` 的 canonical authority；不要採用已關閉 PR #37 的
+   `20260731000100_v08_attendance_management.sql`。
+2. `list_club_events` 與 `list_my_event_page` 都需要第二個 boolean `p_as_member` 參數，舊單參數呼叫不存在。
+3. mode、active-club cookie、導覽 visibility 只能作 UX；protected route、RPC、RLS 仍要自己授權。
+4. GPS 不保存 raw coordinate 或 exact distance；accuracy 門檻尚未由產品決定，不可自行猜測。
+5. 不要把登入狀態、角色、權限、社員名單或整個登入後首頁做公開快取。
+6. `birthday_wishes_v2` 缺少明確 flag row 時必須維持關閉；生日 V1、留言板、文件中心有既有 rollback key，仍須通過同一個 server gate。
 
-## 三件最容易寫錯的事
+## 仍未完成／需外部條件
 
-### 1. 出席領域只有一套
+- GPS accuracy／定位 age 政策要由產品選定後才能 harden。
+- recovery 需要專用 staging 帳號的真實新信件流程。
+- iOS Safari／真實 Android 裝置驗收尚未做。
+- M1 五位目標使用者形成性測試尚未安排。
+- 生日祝福徵集的排程、每月一則自動派發、題庫與幹部管理介面尚未開發；V2 核心不等於徵集完成。
 
-canonical 是 `20260811000100_attendance_domain_core.sql`（PR #61），共 14 個函式。
+## 驗證結果
 
-PR #37 已關閉，它的 `20260731000100_v08_attendance_management.sql` 宣告了**同名的同樣 14 個函式**且時間戳較早。採用它會讓出席率的分母規則、公假與補出席折抵改由另一套定義生效，且不會有任何錯誤訊息。**不要使用該檔案。**
+最近一次本機結果：
 
-出席 UI 已於 8/21 完成，做法是在既有 RPC 之上加投影層：`get_my_attendance_page`、`get_club_attendance_page`、`list_club_attendance_events`。
-
-### 2. 兩個函式簽章已變更
-
-```
-list_club_events(uuid)     ->  list_club_events(uuid, boolean)
-list_my_event_page(uuid)   ->  list_my_event_page(uuid, boolean)
-```
-
-新增的 `p_as_member` 讓具管理權的人以一般社員身分提問，供社務幹部在社員模式下使用。舊的單參數呼叫已不存在。
-
-### 3. 改寫既有函式不要憑記憶重打
-
-用程式化方式從原始 migration 擷取，只改要改的那一行。這裡發生過重寫 `complete_member_invitation` 時漏掉「授予 member 角色」、重寫 `list_club_events` 時用錯欄位名。
-
-## 提交前的閘門
-
-```bash
-npm run typecheck && npm run lint && npm test   # 目前 507 tests
-npm run verify:db          # 完整 db reset + 33 個驗證 SQL
-npm run check:migrations
+```text
+npm test                         88 files / 587 tests passed
+npm run typecheck                passed
+npm run lint                     passed
+npm run build                    passed
+npm run verify:db                40 verification SQL passed
+npm run check:migrations         passed
+npm run check:db-verifications   40 files covered
+git diff --check                 passed
+role shell E2E                   18 passed
+production role/interaction/msg  29 passed, 1 skipped by design
 ```
 
-改到 UI 或流程要另跑 `e2e/`。**不要標 `[skip ci]`**——這個 repo 曾因此累積上萬行未經 CI 驗證的程式碼。
-
-新增資料表或 RPC 一律要有對應的 `supabase/verification/*.sql`，註冊進 `scripts/database-verification-files.txt`，且要測「誰**不能**做什麼」，涵蓋一般社員、外社社員、停權帳號。
-
-## Feature flag：「已完成」不等於「看得到」
-
-多數新功能的 flag 預設關閉，包含 `attendance_ui_v2`。
-
-允許的 key 定義在 `20260820000400` 的 check constraint。新增 key 必須同時修改三個地方：`platform_feature_flags` 的約束、`platform_feature_flag_audit` 的約束，以及 `set_platform_feature_flag` 內的白名單。
-
-導覽項目要與它開啟的頁面綁**同一個** flag，否則會出現點了顯示 404 的按鈕。
-
-## 待辦
-
-1. **PR #40 公告 / 站內通知**——唯一仍未實作的產品切片。該分支落後 113 個 commit 且與現行 dashboard／layout／多個 E2E 衝突，當設計參考即可，不要合併。
-2. 補上生日祝福、文件交接、留言板的 feature flag。這三項目前沒有 flag，違反本專案自己的 rollback 原則；因導覽未連結、僅能以網址進入，風險有限但落差存在。
-3. PR-07a 帳號安全與登入協助、PR-07b legacy cleanup，之後進入 M1 五位使用者形成性測試。
-
-## 已關閉的 PR
-
-- **#8** — 由根目錄的 `AGENTS.md` 取代。
-- **#10** — PR-03 的決策紀錄，該功能早已上線。
-- **#37** — 出席統計，功能已以投影層重新實作（見上）。
+`verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
+的 PL/pgSQL 變數；本輪沒有新增 warning。

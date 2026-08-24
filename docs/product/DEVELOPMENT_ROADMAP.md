@@ -1,6 +1,6 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-08-21
+更新日期：2026-08-24
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
@@ -13,7 +13,7 @@
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
 
-自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。以下功能也已合併並部署至 staging：扶輪社名稱編輯、祝福 IOU（含募集與年度報表）、生日祝福、文件中心與年度交接、社內留言板、活動封面圖片。
+自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。以下功能也已合併至目前本機 `main`：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
@@ -61,7 +61,9 @@ Phase 2 之後追加並完成的社務功能：
 - [x] **祝福 IOU**（core / collections / rotary-year reporting 三個 migration）
   - `/blessings`、`/clubs/[clubId]/blessing-iou`（含 collections、reports）。
   - 受 `blessing_iou_v1`、`blessing_iou_collections_v1`、`blessing_iou_reporting_v1` 控管。
-- [x] **生日祝福**（`20260820001000_birthday_wishes.sql`）— `/birthdays`
+- [x] **生日祝福 V1／V2 核心**（`20260820001000_birthday_wishes.sql`、`20260824000400_birthday_wishes_v2_core.sql`）— `/birthdays`
+  - V2 已完成新設定預設公開、年齡同意顯示、同一作者同一壽星每日最多 10 則、作者匿名投影。
+  - **生日祝福徵集**（排程、每月每人一則自動邀約、題庫與幹部發布）仍是獨立未開發領域，見 `docs/mvp/BIRTHDAY_WISHES_V2_PLAN.md`。
 - [x] **文件中心與年度交接**（`20260820002000_archive_handover.sql`）— `/archives`
 - [x] **社內留言板** — `/board`
 - [x] **活動封面圖片**（`20260820000100_event_cover_images.sql`）
@@ -79,15 +81,18 @@ Phase 2 之後追加並完成的社務功能：
    `/messages` 訊息中心：幹部依受眾發布、每位收件人各自的已讀狀態、導覽未讀徽章、
    幹部可見的已讀名單與收回。受 `announcements_v09` flag 控管，**預設關閉且必須明確開啟**
    （見 `docs/mvp/MESSAGE_CENTER_MVP_SCOPE.md`）。
-3. **PR-07a — 我的／帳號安全／登入協助**
-4. **PR-07b — Legacy UI Cleanup / Accessibility Hardening**
-5. **M1 — 五位目標使用者形成性測試**
+3. ~~**PR-07a — 我的／帳號安全／登入協助**~~ — 核心頁面與 recovery confirmation 已完成；真實 staging email flow 尚待驗收。
+4. ~~**PR-07b — Legacy UI Cleanup / Accessibility Hardening**~~ — 本輪完成 member IA、固定導覽 clearance、巢狀 current state 與名錄 48px／200% 版面；更大範圍 legacy 清理仍可另立切片。
+5. **M1 — 五位目標使用者形成性測試** — 尚未安排。
 
 ## 已知落差
 
 以下是實作與本文件原則之間目前存在的落差，記錄於此以免被誤認為已處理：
 
-- **生日祝福、文件中心與年度交接、社內留言板沒有 feature flag。** 本文件要求「Feature Flag 與 kill switch 必須保留完整 legacy rollback path」，這三項未遵守，出問題時只能靠回滾部署。目前導覽未連結這三個頁面，僅能以網址進入，風險因此有限但落差仍在。
+- `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
+- GPS 仍缺產品指定的 accuracy／定位 age 契約；本文件不替產品猜門檻。
+- 真實 staging recovery email、iOS／Android 實機驗收與 M1 使用者測試尚未完成。
+- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台尚未實作；生日 V2 核心不代表整個徵集領域完成。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
 - PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40（公告通知）已於 2026-08-22 實作，未沿用該分支的程式碼。
 
@@ -339,17 +344,18 @@ PR-01c 不做：
 [完成] P1 Event Form Hotfix ─> PR-02 Member Home ─┐
 [完成] PR #59 / #60 / #61 / #62 基礎 ─────────────┴─> PR-03 Dynamic QR ─> PR-04 GPS ─> PR-37B Attendance UI
 [完成] PR-01c Club Profile Editing
-[完成] 祝福 IOU · 生日祝福 · 文件交接 · 留言板 · 活動封面 · 幹部社員模式
-
-[完成] PR #40 Announcements/Notifications（訊息中心）
-[待辦] PR-07a 帳號安全 ─> PR-07b Legacy Cleanup ─> M1 使用者測試
+[完成] 祝福 IOU · 生日 V2 核心 · 文件交接 · 留言板 · 活動封面 · 幹部社員模式
+[完成] PR #40 Announcements/Notifications · 首頁通知 projection
+[完成] PR-07a 帳號安全核心 · PR-07b 行動版 IA／accessibility 核心
+[外部驗收] recovery email · GPS policy · 實機 Browser Smoke
+[待辦] 生日祝福徵集（排程／題庫／每月一則派發） ─> M1 使用者測試
 ```
 
 ## Current Next Actions
 
-1. 決定哪些已完成功能要對社員開啟：多數 flag 目前預設關閉，`attendance_ui_v2` 亦然。
-2. 補上生日祝福、文件交接、留言板的 feature flag，讓它們符合本文件的 rollback 原則。
-3. 決定何時對社員開啟訊息中心：`npm run flags:enable announcements_v09`（預設關閉）。
-4. 之後處理 PR-07a 帳號安全與登入協助、PR-07b legacy cleanup，再進入 M1 使用者測試。
+1. 決定 GPS accuracy／定位 age 政策，才能關閉 GPS hardening blocker。
+2. 以專用 staging 身份完成 recovery 真實 email flow，並做 iOS／Android 實機驗收。
+3. 決定何時對社員開啟訊息中心與其他旗標：`npm run flags:enable announcements_v09`（預設關閉）。
+4. 另立生日祝福徵集領域的 migration／排程／題庫／幹部介面，再進入 M1 使用者測試。
 
 目前採本地開發、完整驗證、清楚 commit 後直接同步 `main` 的節奏；不得自行 auto merge、修改 staging / production、執行 Hosted Supabase migration 或使用真實社員資料驗證。
