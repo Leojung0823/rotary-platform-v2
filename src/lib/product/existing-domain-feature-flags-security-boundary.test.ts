@@ -43,16 +43,28 @@ describe("existing-domain feature-flag database contract", () => {
 
 describe("existing-domain direct-route gates", () => {
   const routes = [
-    ["src/app/(authenticated)/birthdays/page.tsx", "birthday_wishes_v1"],
-    ["src/app/(authenticated)/board/page.tsx", "message_board_v1"],
-    ["src/app/(authenticated)/archives/page.tsx", "archive_handover_v1"],
+    [
+      "src/app/(authenticated)/birthdays/page.tsx",
+      "birthday_wishes_v1",
+      "if (!v1Evaluation.enabled && !v2Evaluation.enabled) notFound();",
+    ],
+    [
+      "src/app/(authenticated)/board/page.tsx",
+      "message_board_v1",
+      "if (!evaluation.enabled) notFound();",
+    ],
+    [
+      "src/app/(authenticated)/archives/page.tsx",
+      "archive_handover_v1",
+      "if (!evaluation.enabled) notFound();",
+    ],
   ] as const;
 
-  it.each(routes)("fails closed before data loading in %s", (path, key) => {
+  it.each(routes)("fails closed before data loading in %s", (path, key, guard) => {
     const page = source(path);
     expect(page).toContain(`key: "${key}"`);
-    expect(page).toContain("if (!evaluation.enabled) notFound();");
-    expect(page.indexOf("if (!evaluation.enabled) notFound();"))
+    expect(page).toContain(guard);
+    expect(page.indexOf(guard))
       .toBeLessThan(page.indexOf("await createClient()"));
   });
 });

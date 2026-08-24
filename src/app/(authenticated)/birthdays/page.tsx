@@ -26,6 +26,7 @@ const successMessages: Record<string, string> = {
 const errorMessages: Record<string, string> = {
   invalid_input: "輸入內容不完整，請再試一次。",
   already_wished: "今年已經祝福過這位社員，可以直接修改原本的祝福。",
+  daily_limit_reached: "今天對這位壽星的祝福已達上限，請明天再試。",
   birth_date_required: "請先到「我的」填寫生日，才能加入生日名單。",
   not_accepting: "這位社員目前沒有開放接收祝福。",
   forbidden: "您目前沒有執行這項操作的權限。",
@@ -54,16 +55,20 @@ export default async function BirthdayPage({
   searchParams: Promise<{ clubId?: string; success?: string; error?: string }>;
 }) {
   const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
-  const evaluation = await evaluateCurrentFeatureFlag({
-    key: "birthday_wishes_v1",
-    subjectUuid: identity.id,
-  });
-  if (!evaluation.enabled) notFound();
+  const [v1Evaluation, v2Evaluation] = await Promise.all([
+    evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2", subjectUuid: identity.id }),
+  ]);
+  if (!v1Evaluation.enabled && !v2Evaluation.enabled) notFound();
+  const birthdayV2Enabled = v2Evaluation.enabled;
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_my_birthday_page", {
+  const { data, error } = await supabase.rpc(
+    birthdayV2Enabled ? "get_my_birthday_page_v2" : "get_my_birthday_page",
+    {
     p_club_id: query.clubId ?? null,
-  });
+    },
+  );
 
   if (error || !data) {
     return <div className="page-stack">
@@ -85,8 +90,8 @@ export default async function BirthdayPage({
   const selectedClub = page.clubs.find((club) => club.clubId === page.selectedClubId) ?? null;
   const today = currentTaipeiMonthDay();
   const birthdays = [...page.birthdays].sort((left, right) => (
-    upcomingDistance(left.birthMonth, left.birthDay, today)
-    - upcomingDistance(right.birthMonth, right.birthDay, today)
+    (left.daysUntil ?? upcomingDistance(left.birthMonth, left.birthDay, today))
+    - (right.daysUntil ?? upcomingDistance(right.birthMonth, right.birthDay, today))
   ));
   const authoredRecipientIds = new Set(
     page.wishes.filter((wish) => wish.canEdit).map((wish) => wish.recipientMembershipId),
@@ -112,7 +117,9 @@ export default async function BirthdayPage({
         <div>
           <p className="eyebrow">隱私由您決定</p>
           <h2>我的生日公開設定</h2>
-          <p>預設不公開。開啟後只顯示月、日，不會顯示出生年份或完整生日。</p>
+          <p>{birthdayV2Enabled
+            ? "新設定預設公開月、日；尚未設定的舊資料仍維持不公開。您可以隨時關閉。"
+            : "開啟後只顯示月、日，不會顯示出生年份或完整生日。"}</p>
         </div>
         {page.myPreference ? <form action={setBirthdayPreferenceAction} className={styles.preferenceForm}>
           <input type="hidden" name="clubId" value={selectedClub.clubId} />
@@ -135,7 +142,7 @@ export default async function BirthdayPage({
               defaultChecked={page.myPreference.allowWishes}
               disabled={!page.myPreference.hasBirthDate}
             />
-            <span><strong>允許同社社員寫生日祝福</strong><small>每位社員每年可送一則，送出後可以修改或刪除。</small></span>
+            <span><strong>允許同社社員寫生日祝福</strong><small>{birthdayV2Enabled ? "同一位壽星可收到多則祝福；同一作者每天最多送 10 則。" : "每位社員每年可送一則，送出後可以修改或刪除。"}</small></span>
           </label>
           <Button type="submit" disabled={!page.myPreference.hasBirthDate}>儲存生日設定</Button>
         </form> : <Notice>您是這個扶輪社的管理者，但沒有有效社員社籍，因此可以協助管理內容，不能替自己公開生日或送出祝福。</Notice>}
@@ -153,9 +160,10 @@ export default async function BirthdayPage({
               <div>
                 <h3>{birthday.displayName}{birthday.isSelf ? "（我）" : ""}</h3>
                 <strong className={styles.date}>{birthday.birthMonth} 月 {birthday.birthDay} 日</strong>
+                {birthday.age !== null && <small>目前 {birthday.age} 歲</small>}
               </div>
             </div>
-            {birthday.isSelf ? <Badge tone="neutral">這是您的生日</Badge> : authoredRecipientIds.has(birthday.membershipId) ? <Badge tone="success">今年已祝福，可在下方修改</Badge> : birthday.allowWishes && page.myPreference ? <form action={createBirthdayWishAction} className="form-stack">
+            {birthday.isSelf ? <Badge tone="neutral">這是您的生日</Badge> : !birthdayV2Enabled && authoredRecipientIds.has(birthday.membershipId) ? <Badge tone="success">今年已祝福，可在下方修改</Badge> : birthday.allowWishes && page.myPreference ? <form action={createBirthdayWishAction} className="form-stack">
               <input type="hidden" name="clubId" value={selectedClub.clubId} />
               <input type="hidden" name="recipientMembershipId" value={birthday.membershipId} />
               <Field label={`寫給 ${birthday.displayName} 的祝福`} hint="1–500 字；同社社員都看得到。">
@@ -175,7 +183,7 @@ export default async function BirthdayPage({
         {page.wishes.length === 0 ? <EmptyState title="今年還沒有祝福" body="從上方選一位開放祝福的社員，送出第一句生日快樂。" /> : <div className={styles.wishList}>
           {page.wishes.map((wish) => <Card key={wish.id} className={styles.wishCard}>
             <div className={styles.wishMeta}>
-              <div><strong>{wish.authorName}</strong><span>祝福 {wish.recipientName}</span></div>
+              <div><strong>{wish.authorIsHidden ? "匿名祝福者" : wish.authorName ?? "匿名祝福者"}</strong><span>祝福 {wish.recipientName}</span></div>
               <time dateTime={wish.createdAt}>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(wish.createdAt))}</time>
             </div>
             <p className={styles.wishContent}>{wish.content}</p>

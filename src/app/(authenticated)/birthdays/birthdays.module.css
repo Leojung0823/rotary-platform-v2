@@ -45,6 +45,12 @@
   margin-bottom: 2px;
 }
 
+.memberHeading small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
 .date {
   color: #8a6710;
   font-size: 18px;
