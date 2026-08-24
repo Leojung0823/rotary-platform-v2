@@ -69,4 +69,25 @@ test("every mobile navigation tab stays readable, including the current one", as
       `"${item.label}"${item.current ? " (current tab)" : ""} is ${item.contrast.toFixed(2)}:1 against the bar`,
     ).toBeGreaterThanOrEqual(minimumContrast);
   }
+
+  // Mobile Safari and Chromium can keep the last tapped link in :hover. It
+  // must not apply the desktop white-on-dark hover treatment to the white bar.
+  const bar = page.getByRole("navigation", { name: "主要導覽" });
+  const links = bar.getByRole("link");
+  for (let index = 0; index < await links.count(); index += 1) {
+    await links.nth(index).hover();
+    const hovered = await links.nth(index).evaluate((anchor) => {
+      const icon = anchor.querySelector("svg");
+      const style = getComputedStyle(anchor);
+      const iconStyle = icon ? getComputedStyle(icon) : null;
+      return {
+        color: style.color,
+        background: style.backgroundColor,
+        iconColor: iconStyle?.color ?? null,
+        iconStroke: iconStyle?.stroke ?? null,
+      };
+    });
+    expect(hovered.color).not.toBe("rgb(255, 255, 255)");
+    expect(hovered.iconStroke).not.toBe("rgb(255, 255, 255)");
+  }
 });

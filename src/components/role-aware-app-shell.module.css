@@ -56,7 +56,9 @@
 .navigation { margin-top: 2px; }
 .navigation ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .navigation a { min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: #c3d7e2; font-weight: 760; }
-.navigation a:hover { color: white; background: rgba(255,255,255,.08); }
+@media (hover: hover) and (pointer: fine) {
+  .navigation a:hover { color: white; background: rgba(255,255,255,.08); }
+}
 .navigation a[aria-current="page"] { color: white; background: var(--shell-accent); }
 .navigationIcon { width: 22px; display: inline-grid; place-items: center; font-size: 19px; font-weight: 900; }
 /* Pushed to the far end of the rail on desktop; pinned over the icon on the
@@ -103,13 +105,18 @@
   .navigation ul { grid-template-columns: repeat(var(--nav-count, 5), minmax(0, 1fr)); display: grid; gap: 2px; }
   .navigation li { min-width: 0; }
   .navigation a { min-height: 54px; flex-direction: column; justify-content: center; gap: 2px; padding: 5px 2px; color: var(--navy); font-size: 11px; text-align: center; }
+  /* Touch browsers can keep :hover on the last tapped link. The desktop
+     hover treatment is white-on-dark, so allowing it on this white bar makes
+     the tapped icon and label disappear. */
+  .navigation a:hover { color: var(--navy); background: none; }
   /* The mobile bar is white, so the desktop rule's white label is only legible
      because of the accent pill behind it -- and if that pill does not paint,
      the current tab turns white-on-white and vanishes, which is what iOS users
      hit. Tint the label instead: legible on the white bar on its own, with a
      literal fallback so a custom property that fails to resolve cannot hide it
      either. */
-  .navigation a[aria-current="page"] { color: var(--shell-accent-ink, #1677a8); background: none; }
+  .navigation a[aria-current="page"],
+  .navigation a[aria-current="page"]:hover { color: var(--shell-accent-ink, #1677a8); background: none; }
   .navigationIcon { height: 20px; font-size: 18px; }
   .navigation a { position: relative; }
   .navigationBadge { position: absolute; top: 3px; left: 50%; margin-left: 3px; min-width: 18px; line-height: 17px; }
