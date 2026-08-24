@@ -36,14 +36,16 @@ type NavigationDefinition = Readonly<{
 }>;
 
 const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefinition[]>> = {
-  // 簽到 is deliberately absent: it is reached from the events page, where the
-  // member already knows which event they are checking in to. 我的 is not here
-  // either -- it is appended last so it stays at the end of the bar, after the
-  // conditional entries.
+  // Member navigation is deliberately fixed at four first-level destinations.
+  // Check-in stays inside 活動; messages and social features stay inside 首頁;
+  // management mode changes live in the account menu. None of these links is
+  // an authorization boundary -- every destination still checks its own route,
+  // RPC and RLS authority.
   member: [
     { id: "home", label: "首頁", mobileLabel: "首頁", icon: "home", href: () => "/dashboard" },
     { id: "events", label: "活動", mobileLabel: "活動", icon: "calendar", href: () => "/events" },
-    { id: "directory", label: "社員名錄", mobileLabel: "名錄", icon: "users", href: () => "/directory" },
+    { id: "directory", label: "社員名錄", mobileLabel: "社員", icon: "users", href: () => "/directory" },
+    { id: "account", label: "我的", mobileLabel: "我的", icon: "user", href: () => "/me" },
   ],
   management: [
     { id: "overview", label: "社務總覽", mobileLabel: "總覽", icon: "home", href: () => "/dashboard" },
@@ -88,6 +90,37 @@ function withModePreference(href: string, mode: ExperienceMode) {
   return `${href}${separator}mode=${encodeURIComponent(mode)}`;
 }
 
+function navigationDestination(item: ShellNavigationItem) {
+  return item.href.split("?", 1)[0].replace(/\/$/u, "") || "/";
+}
+
+function normalizedPathname(pathname: string) {
+  const withoutQuery = pathname.split(/[?#]/u, 1)[0];
+  return withoutQuery.replace(/\/$/u, "") || "/";
+}
+
+export function resolveCurrentNavigationItemId(
+  items: readonly ShellNavigationItem[],
+  pathname: string,
+): string | null {
+  const currentPath = normalizedPathname(pathname);
+  let bestMatch: Readonly<{ id: string; length: number }> | null = null;
+
+  for (const item of items) {
+    const destination = navigationDestination(item);
+    // Dashboard is a landing page, not a parent route. Other destinations own
+    // their path segment and descendants; the longest match wins.
+    const matches = destination === "/dashboard"
+      ? currentPath === destination
+      : currentPath === destination || currentPath.startsWith(`${destination}/`);
+    if (matches && (!bestMatch || destination.length > bestMatch.length)) {
+      bestMatch = { id: item.id, length: destination.length };
+    }
+  }
+
+  return bestMatch?.id ?? null;
+}
+
 export function resolveRoleShell({
   roleShellsEnabled,
   context,
@@ -125,6 +158,12 @@ export function roleShellNavigation(
       mobileLabel: definition.mobileLabel,
       icon: definition.icon,
       href: withModePreference(href, mode),
+      ...(mode === "member"
+        && definition.id === "home"
+        && messageCenterEnabled
+        && unreadMessageCount > 0
+        ? { badgeCount: unreadMessageCount }
+        : {}),
     }] : [];
   });
 
@@ -165,13 +204,9 @@ export function roleShellNavigation(
     }
   }
 
-  // The message centre gets a tab of its own rather than sitting inside 社內
-  // 互動: an unread count that nobody can see is not a notification. It is in
-  // both member and management navigation because an officer writes messages
-  // from the same page a member reads them on, and should not have to leave
-  // management mode to send one. Gated on the same flag as the page it opens,
-  // so the nav can never offer a link that renders notFound().
-  if (mode !== "platform" && messageCenterEnabled) {
+  // Management keeps the message centre as a work destination. Member mode
+  // exposes it from the homepage instead, with unread work announced there.
+  if (mode === "management" && messageCenterEnabled) {
     items.push({
       id: "messages",
       label: "訊息中心",
@@ -179,68 +214,6 @@ export function roleShellNavigation(
       icon: "bell",
       href: withModePreference("/messages", mode),
       ...(unreadMessageCount > 0 ? { badgeCount: unreadMessageCount } : {}),
-    });
-  }
-
-  // One entry for the social features. They are three separate pages that had
-  // no way in at all; giving each its own tab would have pushed the member bar
-  // to eight items, which does not fit 320px.
-  if (mode === "member") {
-    items.push({
-      id: "interact",
-      label: "社內互動",
-      mobileLabel: "互動",
-      icon: "chat",
-      href: withModePreference("/interact", "member"),
-    });
-  }
-
-  // The way back. Club-level managers do not get the mode switcher, so
-  // without this the inline link below is a one-way door: a president could
-  // enter management and had no control to return to the member experience.
-  // Only offered to officers who are themselves members -- a club operator
-  // with no membership has no member mode to return to.
-  if (mode === "management" && !context.hasPlatformAccess
-    && context.availableModes.includes("member")) {
-    items.push({
-      id: "member-mode",
-      label: "回社員模式",
-      // Not "社員": the management nav already has a 社員管理 tab whose mobile
-      // label is 社員, and two identically named tabs is no way back.
-      mobileLabel: "返回",
-      icon: "arrowLeft",
-      href: withModePreference("/dashboard", "member"),
-      forceReload: true,
-    });
-  }
-
-  // Club-level managers (president/secretary/operator) get a direct link
-  // into their own club's management pages inline in the member nav,
-  // instead of the mode-switcher UI reserved for platform admins who
-  // actually manage many clubs.
-  if (mode === "member" && context.canManage && !context.hasPlatformAccess) {
-    const managedClub = activeClubForMode(context, "management");
-    if (managedClub) {
-      items.push({
-        id: "manage-club",
-        label: "社團管理",
-        mobileLabel: "管理",
-        icon: "gear",
-        href: withModePreference(`/clubs/${encodeURIComponent(managedClub.clubId)}/members`, "management"),
-        forceReload: true,
-      });
-    }
-  }
-
-  // Last, so the account entry stays at the end of the bar whether or not the
-  // officer link before it is present.
-  if (mode === "member") {
-    items.push({
-      id: "account",
-      label: "我的",
-      mobileLabel: "我的",
-      icon: "user",
-      href: withModePreference("/me", "member"),
     });
   }
 

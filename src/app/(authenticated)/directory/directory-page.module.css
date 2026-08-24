@@ -1,0 +1,50 @@
+.header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px 24px;
+  align-items: start;
+}
+
+.heading {
+  min-width: 0;
+}
+
+.heading > * {
+  overflow-wrap: anywhere;
+}
+
+.privacyAction {
+  min-height: 48px;
+  max-inline-size: min(12rem, 46vw);
+  align-self: start;
+  justify-self: end;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  text-align: center;
+}
+
+@media (max-width: 340px) {
+  .header {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 46%);
+    gap: 12px;
+  }
+
+  .privacyAction {
+    width: 100%;
+    max-inline-size: none;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+}
+
+@media (max-width: 260px) {
+  .header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .privacyAction {
+    width: auto;
+    max-inline-size: 100%;
+  }
+}

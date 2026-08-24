@@ -1,5 +1,14 @@
 .memberHome { max-width: 880px; }
 .todayHeading { margin: 0; color: var(--muted); font-size: 17px; font-weight: 700; }
+.secondarySection { display: grid; gap: 10px; }
+.secondarySection :global(.section-heading) { margin-bottom: 0; }
+.secondaryActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.secondaryAction { min-height: 72px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; color: var(--navy); background: white; box-shadow: var(--shadow); }
+.secondaryAction:hover { border-color: #8fb8cb; transform: translateY(-1px); }
+.secondaryAction > span { min-width: 0; display: grid; gap: 3px; }
+.secondaryAction strong, .secondaryAction small { overflow-wrap: anywhere; }
+.secondaryAction small { color: var(--muted); line-height: 1.45; }
+.secondaryAction b { color: var(--blue); font-size: 20px; }
 .primaryCard, .nextCard, .emptyCard { display: grid; gap: 18px; }
 .primaryCard { border-color: #9ec5b0; background: linear-gradient(145deg, #f8fffb 0%, #f2f8f4 100%); }
 .eventHeading { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
@@ -29,6 +38,8 @@
 .blessingIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #f4e2a9; font-size: 24px; }
 
 @media (max-width: 640px) {
+  .secondaryActions { grid-template-columns: 1fr; }
+  .secondaryAction { min-height: 64px; }
   .eventHeading { display: grid; gap: 10px; }
   .eventDetails { grid-template-columns: 1fr; gap: 10px; }
   .primaryCard .button, .emptyCard .button { width: 100%; }

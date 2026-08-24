@@ -36,7 +36,7 @@ describe("performance-first navigation boundaries", () => {
   it("streams member-home activity after the verified account and club heading", () => {
     const memberHome = source("src/components/member-home.tsx");
     expect(memberHome).toContain("<Suspense fallback={<MemberHomeContentLoading />}>");
-    expect(memberHome).toContain("<MemberHomeContent activeClubId={activeClub.clubId} />");
+    expect(memberHome).toContain("<MemberHomeContent activeClubId={activeClub.clubId} messageCenterEnabled={messageCenterEnabled} />");
   });
 
   it("does not eagerly prefetch authenticated homepage destinations", () => {

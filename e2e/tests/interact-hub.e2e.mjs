@@ -17,11 +17,12 @@ async function login(page) {
   await expect(page).toHaveURL(/\/dashboard$/u);
 }
 
-test("the interaction tab opens a hub that reaches all three social features", async ({ page }) => {
+test("the member homepage opens an interaction hub that reaches all three social features", async ({ page }) => {
   await login(page);
 
   const bar = page.getByRole("navigation", { name: "主要導覽" });
-  await bar.getByRole("link", { name: "互動" }).click();
+  await expect(bar.locator('[data-navigation-id="interact"]')).toHaveCount(0);
+  await page.getByRole("link", { name: /社內互動/u }).first().click();
   await expect(page).toHaveURL(/\/interact/u);
   await expect(page.getByRole("heading", { name: "社內互動" })).toBeVisible();
 

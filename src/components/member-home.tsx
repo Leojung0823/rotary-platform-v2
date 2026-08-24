@@ -116,7 +116,7 @@ async function MemberHomeContent({
 
   const { projection } = resolution;
   return <>
-    {messageCenterEnabled && projection.notifications.items.length > 0 && <section aria-labelledby="member-home-notifications">
+    {messageCenterEnabled && (projection.notifications.unreadCount > 0 || projection.notifications.items.length > 0) && <section aria-labelledby="member-home-notifications">
       <div className="section-heading">
         <div className={styles.notificationHeading}>
           <p className="eyebrow">社內通知</p>
@@ -126,10 +126,12 @@ async function MemberHomeContent({
         <Link className="card-link" href={`/messages?clubId=${encodeURIComponent(activeClubId)}`} prefetch={false}>查看全部通知 →</Link>
       </div>
       <div className={styles.notificationList}>
-        {projection.notifications.items.map((notification, index) => <NotificationRow
-          key={`${notification.publishedAt}-${index}`}
-          notification={notification}
-        />)}
+        {projection.notifications.items.length > 0
+          ? projection.notifications.items.map((notification, index) => <NotificationRow
+            key={`${notification.publishedAt}-${index}`}
+            notification={notification}
+          />)
+          : <p>目前沒有可顯示的通知內容。</p>}
       </div>
     </section>}
 
@@ -180,6 +182,25 @@ export function MemberHome({
       </div>
       <Badge tone="success">{activeClub.clubName}</Badge>
     </header>
+    <section className={styles.secondarySection} aria-labelledby="member-home-secondary-actions">
+      <div className="section-heading">
+        <div><p className="eyebrow">常用入口</p><h2 id="member-home-secondary-actions">社內連結</h2></div>
+      </div>
+      <div className={styles.secondaryActions}>
+        {messageCenterEnabled && <Link
+          className={styles.secondaryAction}
+          href="/messages?mode=member"
+          prefetch={false}
+        >
+          <span><strong>訊息中心</strong><small>查看幹部發送給您的社內訊息</small></span>
+          <b aria-hidden="true">→</b>
+        </Link>}
+        <Link className={styles.secondaryAction} href="/interact?mode=member" prefetch={false}>
+          <span><strong>社內互動</strong><small>前往留言板、生日祝福與祝福 IOU</small></span>
+          <b aria-hidden="true">→</b>
+        </Link>
+      </div>
+    </section>
     {blessingIouEnabled && <Link
       className={styles.blessingShortcut}
       href={`/blessings?clubId=${encodeURIComponent(activeClub.clubId)}&mode=member`}

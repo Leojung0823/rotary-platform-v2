@@ -19,6 +19,7 @@ import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.s
 import type { FeatureFlagEvaluation } from "@/lib/product/feature-flags";
 import { recordAuthenticatedProductTelemetry } from "@/lib/product/telemetry.server";
 import {
+  resolveCurrentNavigationItemId,
   roleShellModeLabels,
   roleShellNavigation,
   resolveRoleShell,
@@ -77,11 +78,6 @@ async function readUnreadMessageCount() {
   } catch {
     return 0;
   }
-}
-
-function isCurrentNavigationItem(item: ShellNavigationItem, pathname: string) {
-  const destination = item.href.split("?", 1)[0];
-  return destination === pathname;
 }
 
 function ModeSwitcher({ context, mode }: { context: ExperienceContext; mode: ExperienceMode }) {
@@ -183,11 +179,16 @@ function NavigationBadge({ count }: { count?: number }) {
 }
 
 function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationItem[]; pathname: string }) {
+  const currentItemId = resolveCurrentNavigationItemId(items, pathname);
   return <nav className={styles.navigation} aria-label="主要導覽">
     <ul style={{ "--nav-count": items.length } as CSSProperties}>
       {items.map((item) => <li key={item.id}>
         {item.forceReload
-          ? <a href={item.href} aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}>
+          ? <a
+              href={item.href}
+              data-navigation-id={item.id}
+              aria-current={item.id === currentItemId ? "page" : undefined}
+            >
               <span className={styles.navigationIcon}><ShellIcon name={item.icon} /></span>
               <span className={styles.desktopLabel}>{item.label}</span>
               <span className={styles.mobileLabel}>{item.mobileLabel}</span>
@@ -196,7 +197,8 @@ function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationI
           : <Link
               href={item.href}
               prefetch={false}
-              aria-current={isCurrentNavigationItem(item, pathname) ? "page" : undefined}
+              data-navigation-id={item.id}
+              aria-current={item.id === currentItemId ? "page" : undefined}
             >
               <span className={styles.navigationIcon}><ShellIcon name={item.icon} /></span>
               <span className={styles.desktopLabel}>{item.label}</span>
@@ -208,7 +210,24 @@ function ShellNavigation({ items, pathname }: { items: readonly ShellNavigationI
   </nav>;
 }
 
-function AccountMenu({ identity, mode }: { identity: Identity; mode: ExperienceMode }) {
+function AccountMenu({
+  identity,
+  context,
+  mode,
+}: {
+  identity: Identity;
+  context: ExperienceContext;
+  mode: ExperienceMode;
+}) {
+  const managedClub = mode === "member"
+    && !context.hasPlatformAccess
+    && context.availableModes.includes("management")
+    ? activeClubForMode(context, "management")
+    : null;
+  const canReturnToMember = mode === "management"
+    && !context.hasPlatformAccess
+    && context.availableModes.includes("member");
+
   return <details className={styles.accountMenu}>
     <summary aria-label="帳號選單">
       <span className={styles.avatar} aria-hidden="true">{identity.display_name.slice(0, 1)}</span>
@@ -220,6 +239,8 @@ function AccountMenu({ identity, mode }: { identity: Identity; mode: ExperienceM
     <div className={styles.accountPanel}>
       {displayableEmail(identity) && <p>{displayableEmail(identity)}</p>}
       <Link href={`/me?mode=${encodeURIComponent(mode)}`} prefetch={false}>我的帳號</Link>
+      {managedClub && <a href={`/clubs/${encodeURIComponent(managedClub.clubId)}/members?mode=management`}>進入社務管理</a>}
+      {canReturnToMember && <a href={modeHref("member")}>回社員模式</a>}
       <form action="/api/auth/line/logout?redirect=1" method="post">
         <button type="submit">登出</button>
       </form>
@@ -286,7 +307,7 @@ export function RoleAwareAppShell({
           && <ClubSwitcher context={context} mode={mode} />}
       </header>
       <ShellNavigation items={navigation} pathname={pathname} />
-      <AccountMenu identity={identity} mode={mode} />
+      <AccountMenu identity={identity} context={context} mode={mode} />
     </aside>
     <main id="main" tabIndex={-1} className={styles.content}>{children}</main>
   </div>;

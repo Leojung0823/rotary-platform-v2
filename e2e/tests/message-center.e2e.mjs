@@ -22,10 +22,9 @@ async function login(page, email) {
 
 test("a plain member has an inbox but no way to write to the club", async ({ page }) => {
   await login(page, memberEmail);
-  // The nav label differs by breakpoint: the desktop rail says 訊息中心 and
-  // the mobile bar says 訊息, and text hidden at this width is not part of the
-  // accessible name.
-  await page.getByRole("link", { name: /^(訊息中心|訊息)$/u }).first().click();
+  const navigation = page.getByRole("navigation", { name: "主要導覽" });
+  await expect(navigation.locator('[data-navigation-id="messages"]')).toHaveCount(0);
+  await page.getByRole("link", { name: /訊息中心/u }).first().click();
   await expect(page).toHaveURL(/\/messages/u);
 
   await expect(page.getByRole("heading", { name: "我的訊息" })).toBeVisible();

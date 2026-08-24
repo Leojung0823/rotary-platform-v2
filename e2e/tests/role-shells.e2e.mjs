@@ -52,6 +52,35 @@ async function expectBottomNavigationClearance(page) {
   expect(layout.mainPaddingBottom).toBeGreaterThanOrEqual(layout.navigationHeight);
 }
 
+async function expectDirectoryHeaderAtTwoHundredPercent(page) {
+  await page.goto(new URL("/directory?mode=member", baseURL).toString());
+  await expect(page.getByRole("heading", { level: 1, name: "社員名冊" })).toBeVisible();
+  const action = page.getByRole("link", { name: "我的資料與隱私" });
+  await expect(action).toBeVisible();
+  await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+
+  const layout = await action.evaluate((element) => {
+    const header = element.closest("header");
+    const heading = header?.querySelector("h1")?.parentElement;
+    if (!header || !heading) return null;
+    const actionBox = element.getBoundingClientRect();
+    const headerBox = header.getBoundingClientRect();
+    const headingBox = heading.getBoundingClientRect();
+    return {
+      action: { left: actionBox.left, right: actionBox.right, top: actionBox.top, height: actionBox.height },
+      header: { right: headerBox.right, top: headerBox.top },
+      heading: { right: headingBox.right },
+    };
+  });
+
+  expect(layout).not.toBeNull();
+  expect(layout.action.height).toBeGreaterThanOrEqual(48);
+  expect(layout.action.left).toBeGreaterThanOrEqual(layout.heading.right - 1);
+  expect(Math.abs(layout.action.right - layout.header.right)).toBeLessThanOrEqual(1);
+  expect(Math.abs(layout.action.top - layout.header.top)).toBeLessThanOrEqual(1);
+  await expectNoHorizontalOverflow(page);
+}
+
 async function expectShell(page, mode) {
   await expect(page.locator("aside > header > p").first()).toHaveText(mode);
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toBeVisible();
@@ -72,15 +101,25 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     await login(rolePage, accounts.memberManager.email);
     await expectShell(rolePage, "社員模式");
     // One person, one club: no mode switcher or club picker for a
-    // non-platform manager of their own single club. They reach management
-    // through the inline "社團管理" link in the main nav instead.
+    // non-platform manager of their own single club. Mode changes live in the
+    // account menu so member navigation remains exactly four destinations.
     await expect(rolePage.getByRole("navigation", { name: "切換工作模式" })).toHaveCount(0);
     await expect(rolePage.getByLabel("切換作用扶輪社")).toHaveCount(0);
-    const manageLink = rolePage.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "社團管理" });
+    const memberNavigation = rolePage.getByRole("navigation", { name: "主要導覽" });
+    await expect(memberNavigation.getByRole("link")).toHaveCount(4);
+    await expect(memberNavigation.getByRole("link", { name: "社團管理" })).toHaveCount(0);
+    await rolePage.getByLabel("帳號選單").click();
+    const manageLink = rolePage.getByRole("link", { name: "進入社務管理" });
     await manageLink.focus();
     await rolePage.keyboard.press("Enter");
     await expect(rolePage).toHaveURL(/mode=management/u);
     await expectShell(rolePage, "社務管理模式");
+    await rolePage.getByLabel("帳號選單").click();
+    const memberModeLink = rolePage.getByRole("link", { name: "回社員模式" });
+    await memberModeLink.focus();
+    await rolePage.keyboard.press("Enter");
+    await expect(rolePage).toHaveURL(/\/dashboard\?mode=member$/u);
+    await expectShell(rolePage, "社員模式");
     await context.close();
 
     const managementContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -137,13 +176,21 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
   }
   if (["role-shells-412", "role-shells-375", "role-shells-320"].includes(testInfo.project.name)) {
     const bar = page.getByRole("navigation", { name: "主要導覽" });
-    await expect(bar.getByRole("link", { name: "名錄" })).toBeVisible();
-    await expect(bar.getByRole("link", { name: "互動" })).toBeVisible();
-    // Check-in no longer spends a tab; it is reached from the events page.
-    await expect(bar.getByRole("link", { name: "簽到" })).toHaveCount(0);
-    // 我的 is the last tab in the bar.
-    const labels = await bar.getByRole("link").allInnerTexts();
-    expect(labels.at(-1)).toContain("我的");
+    await expect(bar.getByRole("link")).toHaveCount(4);
+    const ids = await bar.locator("a").evaluateAll((links) => links.map((link) => link.dataset.navigationId));
+    expect(ids).toEqual(["home", "events", "directory", "account"]);
+    await expect(bar.locator('[data-navigation-id="directory"]')).toContainText("社員");
+    await expect(bar.locator('[data-navigation-id="messages"]')).toHaveCount(0);
+    await expect(bar.locator('[data-navigation-id="interact"]')).toHaveCount(0);
+    await expect(bar.locator('[data-navigation-id="manage-club"]')).toHaveCount(0);
+  }
+
+  if (testInfo.project.name === "role-shells-320") {
+    await page.goto(new URL("/events/checkin?mode=member", baseURL).toString());
+    const bar = page.getByRole("navigation", { name: "主要導覽" });
+    await expect(bar.locator('[data-navigation-id="events"]')).toHaveAttribute("aria-current", "page");
+    await expect(bar.locator('[data-navigation-id="home"]')).not.toHaveAttribute("aria-current", "page");
+    await expectDirectoryHeaderAtTwoHundredPercent(page);
   }
 });
 

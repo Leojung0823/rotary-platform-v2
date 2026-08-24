@@ -8,6 +8,7 @@ import {
   parseDirectoryMembers,
 } from "@/lib/members/directory";
 import { createClient } from "@/lib/supabase/server";
+import styles from "./directory-page.module.css";
 
 export default async function MemberDirectoryPage({
   searchParams,
@@ -34,7 +35,7 @@ export default async function MemberDirectoryPage({
   const clubs = parseDirectoryClubs(projection.clubs);
   if (clubs.length === 0) {
     return <div className="page-stack">
-      <header className="page-header"><div><p className="eyebrow">社員與身份</p><h1>社員名冊</h1></div></header>
+      <header className={styles.header}><div className={styles.heading}><p className="eyebrow">社員與身份</p><h1>社員名冊</h1></div></header>
       <EmptyState title="目前沒有可查看的名冊" body="只有有效社籍的社員能查看同社的有效社員名冊。" />
     </div>;
   }
@@ -43,13 +44,13 @@ export default async function MemberDirectoryPage({
   const members = parseDirectoryMembers(projection.members);
 
   return <div className="page-stack">
-    <header className="page-header">
-      <div>
+    <header className={styles.header}>
+      <div className={styles.heading}>
         <p className="eyebrow">社員與身份</p>
         <h1>社員名冊</h1>
         <p>只顯示同社有效社員；Email、手機與出生年份依每位社員的隱私設定公開。</p>
       </div>
-      <Link className="button button-secondary" href="/me">我的資料與隱私</Link>
+      <Link className={`button button-secondary ${styles.privacyAction}`} href="/me">我的資料與隱私</Link>
     </header>
 
     <form className="inline-form" action="/directory">

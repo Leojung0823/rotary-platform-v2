@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { applyActiveClubPreference, parseExperienceContextProjection } from "./experience-context";
-import { roleShellNavigation, resolveRoleShell } from "./role-shells";
+import {
+  resolveCurrentNavigationItemId,
+  roleShellNavigation,
+  resolveRoleShell,
+} from "./role-shells";
 
 const memberClub = {
   club_id: "71000000-0000-4000-8000-000000000001",
@@ -72,7 +76,6 @@ describe("role-aware navigation", () => {
       "/dashboard?mode=member",
       "/events?mode=member",
       "/directory?mode=member",
-      "/interact?mode=member",
       "/me?mode=member",
     ]);
     expect(roleShellNavigation(projected, "management").map((item) => item.href)).toEqual([
@@ -89,14 +92,12 @@ describe("role-aware navigation", () => {
     ]);
   });
 
-  it("gives a club-level manager a direct management link inline, not the platform mode switcher", () => {
+  it("keeps a club-level manager at the same four member destinations", () => {
     const managerContext = context({ member: true, management: true, platform: false });
     expect(roleShellNavigation(managerContext, "member").map((item) => item.id)).toEqual([
-      // 我的 stays last, after the officer's inline management link.
-      "home", "events", "directory", "interact", "manage-club", "account",
+      "home", "events", "directory", "account",
     ]);
-    const manageItem = roleShellNavigation(managerContext, "member").find((item) => item.id === "manage-club");
-    expect(manageItem?.href).toBe(`/clubs/${memberClub.club_id}/members?mode=management`);
+    expect(roleShellNavigation(managerContext, "member").some((item) => item.id === "manage-club")).toBe(false);
   });
 
   it("keeps 我的 last and no longer spends a tab on check-in", () => {
@@ -111,16 +112,6 @@ describe("role-aware navigation", () => {
     }
   });
 
-  it("does not add the inline manage-club link for a plain member without manage permission", () => {
-    const plainMemberContext = context({ member: true, management: false, platform: false });
-    expect(roleShellNavigation(plainMemberContext, "member").some((item) => item.id === "manage-club")).toBe(false);
-  });
-
-  it("does not duplicate the manage-club link for platform admins, who keep the mode switcher instead", () => {
-    const platformContext = context({ member: true, management: true, platform: true });
-    expect(roleShellNavigation(platformContext, "member").some((item) => item.id === "manage-club")).toBe(false);
-  });
-
   it("adds the complete blessing IOU domain only to management navigation when enabled", () => {
     const projected = context();
     expect(roleShellNavigation(projected, "management", { blessingIouEnabled: true }).map((item) => item.id))
@@ -130,33 +121,6 @@ describe("role-aware navigation", () => {
       .toBe(`/clubs/${memberClub.club_id}/blessing-iou?mode=management`);
     expect(roleShellNavigation(projected, "member", { blessingIouEnabled: true })
       .some((item) => item.id === "blessing-iou")).toBe(false);
-  });
-
-  it("gives a club officer a way back out of management mode", () => {
-    // A president is a member who also manages. Without the mode switcher --
-    // which only platform admins get -- the inline management link would be a
-    // one-way door.
-    const officer = context({ member: true, management: true, platform: false });
-    const memberNav = roleShellNavigation(officer, "member");
-    const managementNav = roleShellNavigation(officer, "management");
-
-    expect(memberNav.find((item) => item.id === "manage-club")).toBeTruthy();
-    const back = managementNav.find((item) => item.id === "member-mode");
-    expect(back?.href).toBe("/dashboard?mode=member");
-    // Crossing a mode boundary needs a full navigation, not a soft one.
-    expect(back?.forceReload).toBe(true);
-  });
-
-  it("does not offer a member mode to an operator who has no membership", () => {
-    const operator = context({ member: false, management: true, platform: false });
-    expect(roleShellNavigation(operator, "management").some((item) => item.id === "member-mode"))
-      .toBe(false);
-  });
-
-  it("leaves the platform admin's mode switcher as the only way to change mode", () => {
-    const admin = context({ member: true, management: true, platform: true });
-    expect(roleShellNavigation(admin, "management").some((item) => item.id === "member-mode"))
-      .toBe(false);
   });
 
   it("hides attendance entirely while the flag is off, so the nav never links to a notFound page", () => {
@@ -179,7 +143,7 @@ describe("role-aware navigation", () => {
     expect(member.some((item) => item.href.startsWith("/attendance"))).toBe(false);
 
     expect(member.map((item) => item.id))
-      .toEqual(["home", "events", "directory", "interact", "account"]);
+      .toEqual(["home", "events", "directory", "account"]);
     expect(management.map((item) => item.id))
       .toEqual(["overview", "events", "attendance", "members", "invitations", "club-settings"]);
   });
@@ -188,26 +152,30 @@ describe("role-aware navigation", () => {
 describe("message centre navigation", () => {
   const projected = context();
 
-  it("is absent until the feature is enabled, then reachable from member and management", () => {
+  it("never adds a member tab but remains reachable from management when enabled", () => {
     expect(roleShellNavigation(projected, "member").some((item) => item.id === "messages")).toBe(false);
     expect(roleShellNavigation(projected, "member", { messageCenterEnabled: true })
-      .find((item) => item.id === "messages")?.href).toBe("/messages?mode=member");
+      .some((item) => item.id === "messages")).toBe(false);
     expect(roleShellNavigation(projected, "management", { messageCenterEnabled: true })
       .find((item) => item.id === "messages")?.href).toBe("/messages?mode=management");
     expect(roleShellNavigation(projected, "platform", { messageCenterEnabled: true })
       .some((item) => item.id === "messages")).toBe(false);
   });
 
-  it("carries a badge only while something is unread", () => {
+  it("moves the unread badge to 首頁 and keeps the bar at four items", () => {
     const withoutUnread = roleShellNavigation(projected, "member", { messageCenterEnabled: true })
-      .find((item) => item.id === "messages");
+      .find((item) => item.id === "home");
     expect(withoutUnread?.badgeCount).toBeUndefined();
 
     const withUnread = roleShellNavigation(projected, "member", {
       messageCenterEnabled: true,
       unreadMessageCount: 3,
-    }).find((item) => item.id === "messages");
+    }).find((item) => item.id === "home");
     expect(withUnread?.badgeCount).toBe(3);
+    expect(roleShellNavigation(projected, "member", {
+      messageCenterEnabled: true,
+      unreadMessageCount: 3,
+    })).toHaveLength(4);
   });
 
   it("keeps 我的 last in member navigation", () => {
@@ -216,5 +184,43 @@ describe("message centre navigation", () => {
       unreadMessageCount: 2,
     });
     expect(items.at(-1)?.id).toBe("account");
+  });
+});
+
+describe("current navigation resolver", () => {
+  const projected = context();
+
+  it("keeps dashboard exact and marks member child routes by segment", () => {
+    const items = roleShellNavigation(projected, "member");
+    expect(resolveCurrentNavigationItemId(items, "/dashboard")).toBe("home");
+    expect(resolveCurrentNavigationItemId(items, "/dashboard/detail")).toBeNull();
+    expect(resolveCurrentNavigationItemId(items, "/events/fixture-event")).toBe("events");
+    expect(resolveCurrentNavigationItemId(items, "/directory/fixture-member")).toBe("directory");
+    expect(resolveCurrentNavigationItemId(items, "/me/security")).toBe("account");
+    expect(resolveCurrentNavigationItemId(items, "/eventual")).toBeNull();
+  });
+
+  it("marks management descendants and chooses the most specific platform item", () => {
+    const management = roleShellNavigation(projected, "management", {
+      attendanceEnabled: true,
+      blessingIouEnabled: true,
+      messageCenterEnabled: true,
+    });
+    expect(resolveCurrentNavigationItemId(
+      management,
+      `/clubs/${memberClub.club_id}/members/fixture-member`,
+    )).toBe("members");
+    expect(resolveCurrentNavigationItemId(
+      management,
+      `/clubs/${memberClub.club_id}/invitations/new`,
+    )).toBe("invitations");
+    expect(resolveCurrentNavigationItemId(management, "/attendance/manage/fixture-event"))
+      .toBe("attendance");
+    expect(resolveCurrentNavigationItemId(management, "/messages/fixture-message"))
+      .toBe("messages");
+
+    const platform = roleShellNavigation(projected, "platform");
+    expect(resolveCurrentNavigationItemId(platform, "/platform/clubs/fixture-club")).toBe("clubs");
+    expect(resolveCurrentNavigationItemId(platform, "/platform/clubs/new")).toBe("new-club");
   });
 });
