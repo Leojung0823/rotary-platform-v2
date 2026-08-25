@@ -11,6 +11,8 @@ describe("message centre rendering boundary", () => {
 
   it("renders officer-written content as escaped React text with safe line breaks", () => {
     expect(component).toContain("{message.body}");
+    expect(component).toContain("href={message.action_path}");
+    expect(component).toContain("actionStatusLabel(message.action_status)");
     expect(component).not.toContain("dangerouslySetInnerHTML");
     expect(component).not.toMatch(/href=\{message\.(body|title)\}|src=\{message\.(body|title)\}/);
     expect(css).toContain("white-space: pre-wrap");

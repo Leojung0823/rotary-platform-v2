@@ -11,6 +11,16 @@ on:
         description: "Enter TEST-STAGING"
         required: true
         type: string
+      expect_birthday_v2:
+        description: "Also verify the birthday V2 page (only after its staging flag is enabled)"
+        required: false
+        default: false
+        type: boolean
+      expect_birthday_collection:
+        description: "Also verify the birthday collection page (only after its staging flag is enabled)"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -30,6 +40,8 @@ jobs:
     env:
       STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}
       STAGING_ACCEPTANCE_CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_EXPECT_BIRTHDAY_V2: ${{ inputs.expect_birthday_v2 }}
+      STAGING_EXPECT_BIRTHDAY_COLLECTION: ${{ inputs.expect_birthday_collection }}
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
       STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
       STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}

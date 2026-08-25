@@ -20,6 +20,8 @@ const mobileNavTestMatch = /mobile-nav-contrast\.e2e\.mjs/;
 const attendanceTestMatch = /attendance\.e2e\.mjs/;
 const officerModeTestMatch = /officer-mode\.e2e\.mjs/;
 const interactHubTestMatch = /interact-hub\.e2e\.mjs/;
+const birthdayV2TestMatch = /birthday-v2\.e2e\.mjs/;
+const birthdayCollectionTestMatch = /birthday-collection\.e2e\.mjs/;
 const blessingPrivacyTestMatch = /blessing-amount-privacy\.e2e\.mjs/;
 const memberTagsTestMatch = /member-tags\.e2e\.mjs/;
 const eventAudienceTestMatch = /event-audience\.e2e\.mjs/;
@@ -55,7 +57,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       use: { viewport: { width: 1440, height: 900 } },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs/,
     },
     {
       name: "android-chromium",
@@ -65,7 +67,7 @@ export default defineConfig({
         hasTouch: true,
         deviceScaleFactor: 2.625,
       },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs/,
     },
     {
       name: "role-shells-1440",
@@ -187,6 +189,26 @@ export default defineConfig({
         ? { viewport: { width, height: 812 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
         : { viewport: { width, height: 900 } },
     })),
+    {
+      name: "birthday-collection-1440",
+      testMatch: birthdayCollectionTestMatch,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "birthday-collection-412",
+      testMatch: birthdayCollectionTestMatch,
+      use: { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+    },
+    {
+      name: "birthday-v2-1440",
+      testMatch: birthdayV2TestMatch,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "birthday-v2-412",
+      testMatch: birthdayV2TestMatch,
+      use: { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+    },
     ...[1440, 375].map((width) => ({
       name: `officer-mode-${width}`,
       testMatch: officerModeTestMatch,

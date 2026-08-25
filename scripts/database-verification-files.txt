@@ -31,6 +31,7 @@ supabase/verification/blessing_iou_collections_security.sql
 supabase/verification/blessing_iou_reporting_security.sql
 supabase/verification/birthday_wishes_security.sql
 supabase/verification/birthday_wishes_v2_security.sql
+supabase/verification/birthday_feature_flag_execution_security.sql
 supabase/verification/archive_handover_security.sql
 supabase/verification/attendance_page_projections_security.sql
 supabase/verification/blessing_iou_my_ledger_security.sql
@@ -39,3 +40,6 @@ supabase/verification/privacy_defaults_security.sql
 supabase/verification/board_post_audience_security.sql
 supabase/verification/club_message_center_security.sql
 supabase/verification/birthday_wish_collection_security.sql
+supabase/verification/birthday_wish_assignment_runner_security.sql
+supabase/verification/birthday_wish_collection_scheduler_security.sql
+supabase/verification/birthday_wish_collection_review_security.sql

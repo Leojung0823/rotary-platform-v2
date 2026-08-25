@@ -414,6 +414,57 @@ async function allowPublicBlessingAmounts({ clubId, email }) {
   await officer.auth.signOut();
 }
 
+async function addBirthdayCollectionBrowserFixtures({ clubId, memberAccounts, memberEmails }) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const birthdayYear = Number(parts.find((part) => part.type === "year")?.value);
+  const birthdayMonth = Number(parts.find((part) => part.type === "month")?.value);
+  const birthDate = `1985-${String(birthdayMonth).padStart(2, "0")}-28`;
+  const personIds = memberAccounts.map((account) => account.person_id);
+
+  const people = await admin.from("people").update({ birth_date: birthDate }).in("id", personIds);
+  if (people.error) fail("could not set local birthday fixture birth dates");
+
+  const memberships = await admin.from("club_memberships")
+    .select("id, person_id")
+    .eq("club_id", clubId)
+    .in("person_id", personIds);
+  if (memberships.error || memberships.data.length !== personIds.length) {
+    fail("could not find local birthday fixture memberships");
+  }
+
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
+  for (const email of memberEmails) {
+    const member = createClient(url, publishableKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const signIn = await member.auth.signInWithPassword({ email, password });
+    if (signIn.error) fail("birthday fixture member sign-in did not succeed");
+    const preference = await member.rpc("set_my_birthday_preference_v2", {
+      p_club_id: clubId,
+      p_is_listed: true,
+      p_allow_wishes: true,
+    });
+    const settings = await member.rpc("update_my_settings", {
+      p_notifications: {},
+      p_privacy: {
+        show_email_to_club: true,
+        show_phone_to_club: true,
+        show_birthday_year: true,
+      },
+    });
+    await member.auth.signOut();
+    if (preference.error) fail("could not set local birthday visibility preferences");
+    if (settings.error) fail("could not set local birthday year visibility");
+  }
+
+  console.log(`Local birthday collection fixtures use ${birthdayYear}-${String(birthdayMonth).padStart(2, "0")}; no credentials printed.`);
+}
+
 async function addLocationCheckinBrowserFixtures({ clubId, managerAccount }) {
   const now = Date.now();
   const eventTitle = "本機定位簽到例會";
@@ -463,10 +514,11 @@ const bootstrapAccount = await admin.from("app_accounts").select("id").eq("login
 if (bootstrapAccount.error || !bootstrapAccount.data) fail("local superadmin account is missing");
 const createdBy = bootstrapAccount.data.id;
 
-const [memberClub, secondMemberClub, managedClub] = await Promise.all([
+const [memberClub, secondMemberClub, managedClub, birthdayV2Club] = await Promise.all([
   clubFor("a1000000-0000-4000-8000-000000000001", "E2E-SHELL-MEMBER", "本機 Shell 社員社", createdBy),
   clubFor("a1000000-0000-4000-8000-000000000002", "E2E-SHELL-SECOND", "本機 Shell 第二社", createdBy),
   clubFor("a1000000-0000-4000-8000-000000000003", "E2E-SHELL-MANAGED", "本機 Shell 管理社", createdBy),
+  clubFor("a1000000-0000-4000-8000-000000000004", "E2E-SHELL-BIRTHDAY-V2", "本機生日 V2 測試社", createdBy),
 ]);
 
 const fixtures = Object.fromEntries(await Promise.all([
@@ -480,6 +532,12 @@ const fixtures = Object.fromEntries(await Promise.all([
   ["revoked", "e2e-shell-revoked@example.test", "已撤銷管理者"],
   ["suspended", "e2e-shell-suspended@example.test", "停權社員"],
 ].map(async ([key, email, displayName]) => [key, await accountFor(email, displayName)])));
+const birthdayV2FixtureStamp = Date.now();
+const birthdayV2RecipientEmail = `e2e-birthday-v2-recipient-${birthdayV2FixtureStamp}@example.test`;
+const birthdayV2Recipient = await accountFor(
+  birthdayV2RecipientEmail,
+  `生日 V2 測試壽星 ${birthdayV2FixtureStamp}`,
+);
 
 await addMembership({ clubId: memberClub.id, account: fixtures.ordinary, createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.multi, createdBy });
@@ -487,6 +545,8 @@ await addMembership({ clubId: secondMemberClub.id, account: fixtures.multi, crea
 await addMembership({ clubId: memberClub.id, account: fixtures.memberManager, createdBy });
 await addClubManagementRole({ clubId: memberClub.id, account: fixtures.memberManager, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.management, createdBy });
+await addMembership({ clubId: managedClub.id, account: fixtures.ordinary, createdBy });
+await addMembership({ clubId: managedClub.id, account: fixtures.multi, createdBy });
 // Genuinely manages two clubs (never a member of either) -- exercises the
 // club switcher's "其他可管理扶輪社" grouping for a real multi-club operator.
 await addOperator({ clubId: secondMemberClub.id, account: fixtures.management, createdBy });
@@ -498,6 +558,8 @@ await addClubManagementRole({ clubId: memberClub.id, account: fixtures.allModes,
 await addPlatformRole({ account: fixtures.allModes, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.revoked, status: "revoked", createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.suspended, status: "suspended", createdBy });
+await addMembership({ clubId: birthdayV2Club.id, account: fixtures.multi, createdBy });
+await addMembership({ clubId: birthdayV2Club.id, account: birthdayV2Recipient, createdBy });
 await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary });
 await addDynamicCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 await addLocationCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
@@ -516,6 +578,16 @@ await configureLineOaFixture({
 await addBlessingIouLedgerFixture({
   clubId: memberClub.id,
   email: "e2e-shell-ordinary@example.test",
+});
+await addBirthdayCollectionBrowserFixtures({
+  clubId: managedClub.id,
+  memberAccounts: [fixtures.ordinary, fixtures.multi],
+  memberEmails: ["e2e-shell-ordinary@example.test", "e2e-shell-multi@example.test"],
+});
+await addBirthdayCollectionBrowserFixtures({
+  clubId: birthdayV2Club.id,
+  memberAccounts: [fixtures.multi, birthdayV2Recipient],
+  memberEmails: ["e2e-shell-multi@example.test", birthdayV2RecipientEmail],
 });
 
 console.log("Local role-shell and member-home browser fixtures are ready. No credentials were printed.");

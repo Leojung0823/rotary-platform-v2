@@ -14,6 +14,7 @@ export const featureFlagKeys = [
   "blessing_iou_reporting_v1",
   "birthday_wishes_v1",
   "birthday_wishes_v2",
+  "birthday_wishes_collection_v1",
   "message_board_v1",
   "archive_handover_v1",
 ] as const;
@@ -60,6 +61,7 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 export const flagsRequiringExplicitEnable: readonly FeatureFlagKey[] = [
   "announcements_v09",
   "birthday_wishes_v2",
+  "birthday_wishes_collection_v1",
 ];
 
 export const emergencyKillSwitches: Readonly<Partial<Record<FeatureFlagKey, string>>> = {
@@ -70,6 +72,7 @@ export const emergencyKillSwitches: Readonly<Partial<Record<FeatureFlagKey, stri
   blessing_iou_collections_v1: "DISABLE_BLESSING_IOU_COLLECTIONS",
   blessing_iou_reporting_v1: "DISABLE_BLESSING_IOU_REPORTING",
   birthday_wishes_v2: "DISABLE_BIRTHDAY_WISHES_V2",
+  birthday_wishes_collection_v1: "DISABLE_BIRTHDAY_WISHES_COLLECTION_V1",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

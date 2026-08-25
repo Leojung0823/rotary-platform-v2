@@ -259,6 +259,16 @@ describe("feature flag evaluation truth table", () => {
       env: { DISABLE_BIRTHDAY_WISHES_V2: "true" },
     })).toMatchObject({ enabled: false, reason: "kill_switch" });
   });
+
+  it("can hide birthday collection without hiding the existing birthday page", () => {
+    expect(evaluateFeatureFlag({
+      key: "birthday_wishes_collection_v1",
+      record: enabledRecord,
+      environment: "staging",
+      pepper,
+      env: { DISABLE_BIRTHDAY_WISHES_COLLECTION_V1: "true" },
+    })).toMatchObject({ enabled: false, reason: "kill_switch" });
+  });
 });
 
 describe("server environment resolution", () => {
