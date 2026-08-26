@@ -122,6 +122,10 @@ test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入
     }, { timeout: 20_000, intervals: [250, 500, 1_000] }).toBe(true);
     if (!recoveryHref) throw new Error("Mailpit recovery link was not found.");
     expect(recoveryHref).not.toContain("access_token=");
+    const recoveryUrl = new URL(recoveryHref);
+    expect(recoveryUrl.pathname).toBe("/auth/callback");
+    expect(recoveryUrl.searchParams.get("type")).toBe("recovery");
+    expect(recoveryUrl.searchParams.get("token_hash")).toBeTruthy();
 
     // A mail-security scanner follows the GET in an isolated browser, but
     // never presses the app-owned confirmation button. That prefetch must not
