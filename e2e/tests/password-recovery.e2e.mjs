@@ -60,13 +60,19 @@ async function restorePassword(email, password) {
   if (!restored.ok) throw new Error("Could not restore the local administrator password.");
 }
 
-async function findRecoveryLink(recipient) {
+async function listRecoveryMessages(recipient) {
   const listingResponse = await fetch(`${mailpitUrl}/api/v1/messages`);
-  if (!listingResponse.ok) return null;
+  if (!listingResponse.ok) return [];
   const listing = await listingResponse.json();
-  const messages = listing.messages?.filter((message) =>
+  return listing.messages?.filter((message) =>
     message.To?.some((address) => address.Address?.toLowerCase() === recipient.toLowerCase()),
   ) ?? [];
+}
+
+async function findRecoveryLink(recipient, excludedMessageIds = new Set()) {
+  const messages = (await listRecoveryMessages(recipient))
+    .filter((message) => !excludedMessageIds.has(message.ID))
+    .sort((left, right) => Date.parse(String(right.Created ?? "")) - Date.parse(String(left.Created ?? "")));
 
   for (const summary of messages) {
     const messageResponse = await fetch(`${mailpitUrl}/api/v1/message/${summary.ID}`);
@@ -100,6 +106,9 @@ test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入
   let passwordChanged = false;
 
   try {
+    const previousRecoveryMessages = await listRecoveryMessages(adminEmail);
+    const previousRecoveryMessageIds = new Set(previousRecoveryMessages.map((message) => message.ID));
+
     await page.goto("/forgot-password");
     await page.getByLabel("電子郵件").fill(adminEmail);
     await page.getByRole("button", { name: "寄送重設連結" }).click();
@@ -108,11 +117,15 @@ test("已啟用帳號可透過 Mailpit recovery link 重設密碼並重新登入
 
     let recoveryHref = null;
     await expect.poll(async () => {
-      recoveryHref = await findRecoveryLink(adminEmail);
+      recoveryHref = await findRecoveryLink(adminEmail, previousRecoveryMessageIds);
       return Boolean(recoveryHref);
     }, { timeout: 20_000, intervals: [250, 500, 1_000] }).toBe(true);
     if (!recoveryHref) throw new Error("Mailpit recovery link was not found.");
     expect(recoveryHref).not.toContain("access_token=");
+    const recoveryUrl = new URL(recoveryHref);
+    expect(recoveryUrl.pathname).toBe("/auth/callback");
+    expect(recoveryUrl.searchParams.get("type")).toBe("recovery");
+    expect(recoveryUrl.searchParams.get("token_hash")).toBeTruthy();
 
     // A mail-security scanner follows the GET in an isolated browser, but
     // never presses the app-owned confirmation button. That prefetch must not

@@ -23,9 +23,10 @@ async function login(page, email) {
 async function openMembers(page) {
   await login(page, officerEmail);
   await page.goto(new URL("/dashboard?mode=member", baseURL).toString());
-  // The officer's inline management link already points at their own club's
-  // roster, so the club id does not have to be known here.
-  await page.getByRole("link", { name: /^(社團管理|管理)$/u }).first().click();
+  // The account menu's management link already points at the officer's own
+  // club roster, so the club id does not have to be known here.
+  await page.getByLabel("帳號選單").click();
+  await page.getByRole("link", { name: "進入社務管理" }).click();
   await expect(page).toHaveURL(/\/members/u);
   await expect(page.getByRole("heading", { name: "社員標籤" })).toBeVisible();
 }
@@ -37,6 +38,7 @@ test("an officer creates a tag, applies it to a member, and archives it", async 
   await page.getByLabel("標籤名稱").fill(tagName);
   await page.getByLabel("說明（選填）").fill("由瀏覽器測試建立");
   await page.getByRole("button", { name: "建立標籤" }).click();
+  await expect(page).toHaveURL(/\/members\?success=tag_created$/u);
   await expect(page.getByText("標籤已建立。")).toBeVisible();
 
   const row = page.locator("tr").filter({ hasText: tagName });
@@ -47,6 +49,7 @@ test("an officer creates a tag, applies it to a member, and archives it", async 
   // The same name again is refused rather than creating a second tag.
   await page.getByLabel("標籤名稱").fill(tagName);
   await page.getByRole("button", { name: "建立標籤" }).click();
+  await expect(page).toHaveURL(/\/members\?error=tag_exists$/u);
   await expect(page.getByText("同名標籤已存在。")).toBeVisible();
 
   // Apply it to a member.
