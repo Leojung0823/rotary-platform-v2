@@ -38,6 +38,7 @@ test("an officer creates a tag, applies it to a member, and archives it", async 
   await page.getByLabel("標籤名稱").fill(tagName);
   await page.getByLabel("說明（選填）").fill("由瀏覽器測試建立");
   await page.getByRole("button", { name: "建立標籤" }).click();
+  await expect(page).toHaveURL(/\/members\?success=tag_created$/u);
   await expect(page.getByText("標籤已建立。")).toBeVisible();
 
   const row = page.locator("tr").filter({ hasText: tagName });
@@ -48,6 +49,7 @@ test("an officer creates a tag, applies it to a member, and archives it", async 
   // The same name again is refused rather than creating a second tag.
   await page.getByLabel("標籤名稱").fill(tagName);
   await page.getByRole("button", { name: "建立標籤" }).click();
+  await expect(page).toHaveURL(/\/members\?error=tag_exists$/u);
   await expect(page.getByText("同名標籤已存在。")).toBeVisible();
 
   // Apply it to a member.
