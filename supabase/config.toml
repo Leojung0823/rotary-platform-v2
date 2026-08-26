@@ -41,3 +41,7 @@ enable_confirmations = true
 [auth.email.template.invite]
 subject = "扶輪平台執行秘書邀請"
 content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.recovery]
+subject = "扶輪平台密碼重設"
+content_path = "./supabase/templates/recovery.html"

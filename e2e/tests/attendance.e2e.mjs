@@ -101,6 +101,7 @@ test("a manager adjusts attendance and can take it back", async ({ page }, testI
   await card.locator('select[name="adjustmentType"]').selectOption("official_leave");
   await card.locator('input[name="reason"]').fill("地區年會出席，瀏覽器測試");
   await card.getByRole("button", { name: "登記調整" }).click();
+  await expect(page).toHaveURL(/\/attendance\/manage\?.*success=adjustment_saved.*eventId=/u);
 
   const adjusted = page.locator("article.card").filter({ hasText: memberName }).first();
   await expect(
@@ -111,6 +112,7 @@ test("a manager adjusts attendance and can take it back", async ({ page }, testI
   // And the adjustment can be revoked, restoring the raw check-in result.
   await adjusted.locator('input[name="revocationReason"]').fill("瀏覽器測試結束，還原");
   await adjusted.getByRole("button", { name: "撤銷調整" }).click();
+  await expect(page).toHaveURL(/\/attendance\/manage\?.*success=adjustment_revoked.*eventId=/u);
   await expect(page.getByText("出席調整已撤銷")).toBeVisible();
   await expect(
     page.locator("article.card").filter({ hasText: memberName }).first().getByText("已調整：公假"),

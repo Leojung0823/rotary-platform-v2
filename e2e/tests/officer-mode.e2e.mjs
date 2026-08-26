@@ -7,9 +7,6 @@ const officerEmail = "e2e-shell-member-manager@example.test";
 // Manages a club without belonging to it: an executive secretary.
 const operatorEmail = "e2e-shell-management@example.test";
 
-// A nav link's accessible name is whichever of its two labels the breakpoint
-// leaves visible: the full label on desktop, the compact one on mobile.
-const intoManagementName = /^(社團管理|管理)$/u;
 const backToMemberName = /^(回社員模式|返回)$/u;
 
 function requireCredentials() {
@@ -23,6 +20,13 @@ async function login(page, email) {
   await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/dashboard$/u);
+}
+
+async function openManagementFromAccountMenu(page) {
+  await page.getByLabel("帳號選單").click();
+  const intoManagement = page.getByRole("link", { name: "進入社務管理" });
+  await expect(intoManagement).toBeVisible();
+  await intoManagement.click();
 }
 
 test("an officer in member mode sees the events page a plain member sees", async ({ page }) => {
@@ -57,19 +61,18 @@ test("an officer can leave management mode again", async ({ page }) => {
   await login(page, officerEmail);
   await page.goto(new URL("/dashboard?mode=member", baseURL).toString());
 
-  // Into management...
-  const intoManagement = page.getByRole("link", { name: intoManagementName });
-  await expect(intoManagement).toBeVisible();
-  await intoManagement.click();
+  // Into management from the account menu...
+  await openManagementFromAccountMenu(page);
   await expect(page).toHaveURL(/mode=management/u);
 
   // ...and back out, which is what used to be a one-way door.
+  await page.getByLabel("帳號選單").click();
   const backToMember = page.getByRole("link", { name: backToMemberName });
   await expect(backToMember).toBeVisible();
   await backToMember.click();
   await expect(page).toHaveURL(/mode=member/u);
   // Back in member mode the way in is offered again, which is the round trip.
-  await expect(page.getByRole("link", { name: intoManagementName })).toBeVisible();
+  await openManagementFromAccountMenu(page);
 });
 
 test("an operator with no membership is not offered a member mode to return to", async ({ page }) => {
