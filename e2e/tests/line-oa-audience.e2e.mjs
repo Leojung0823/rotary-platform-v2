@@ -17,7 +17,8 @@ async function openLineOa(page) {
   await expect(page).toHaveURL(/\/dashboard$/u);
 
   await page.goto(new URL("/dashboard?mode=member", baseURL).toString());
-  await page.getByRole("link", { name: /^(社團管理|管理)$/u }).first().click();
+  await page.getByLabel("帳號選單").click();
+  await page.getByRole("link", { name: "進入社務管理" }).click();
   await expect(page).toHaveURL(/\/members/u);
   await page.getByRole("link", { name: "LINE OA" }).click();
   await expect(page.getByRole("heading", { name: "LINE Official Account" })).toBeVisible();

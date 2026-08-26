@@ -23,9 +23,10 @@ async function login(page, email) {
 async function openMembers(page) {
   await login(page, officerEmail);
   await page.goto(new URL("/dashboard?mode=member", baseURL).toString());
-  // The officer's inline management link already points at their own club's
-  // roster, so the club id does not have to be known here.
-  await page.getByRole("link", { name: /^(社團管理|管理)$/u }).first().click();
+  // The account menu's management link already points at the officer's own
+  // club roster, so the club id does not have to be known here.
+  await page.getByLabel("帳號選單").click();
+  await page.getByRole("link", { name: "進入社務管理" }).click();
   await expect(page).toHaveURL(/\/members/u);
   await expect(page.getByRole("heading", { name: "社員標籤" })).toBeVisible();
 }

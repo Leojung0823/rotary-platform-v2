@@ -14,8 +14,6 @@ jobs:
     timeout-minutes: 35
     env:
       E2E_ADMIN_EMAIL: admin@example.test
-      E2E_ADMIN_PASSWORD: Rotary-CI-Admin-2026!
-      E2E_ROLE_PASSWORD: Rotary-CI-Role-2026!
       E2E_BASE_URL: http://localhost:3000
 
     steps:
@@ -65,6 +63,23 @@ jobs:
           version: 2.84.2
           github-token: ${{ github.token }}
 
+      - name: Generate ephemeral local E2E credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          admin_password="$(openssl rand -hex 24)"
+          role_password="$(openssl rand -hex 24)"
+          operator_password="$(openssl rand -hex 24)"
+          echo "::add-mask::$admin_password"
+          echo "::add-mask::$role_password"
+          echo "::add-mask::$operator_password"
+          {
+            echo "E2E_ADMIN_PASSWORD=$admin_password"
+            echo "E2E_ROLE_PASSWORD=$role_password"
+            echo "VERIFY_OPERATOR_PASSWORD=$operator_password"
+          } >> "$GITHUB_ENV"
+          echo "Ephemeral local E2E credentials generated and masked."
+
       - name: Start local Supabase
         shell: bash
         run: |
@@ -108,7 +123,7 @@ jobs:
           BOOTSTRAP_SUPERADMIN_EMAIL=$E2E_ADMIN_EMAIL
           BOOTSTRAP_SUPERADMIN_PASSWORD=$E2E_ADMIN_PASSWORD
           BOOTSTRAP_SUPERADMIN_NAME=平台管理員
-          VERIFY_OPERATOR_PASSWORD=Rotary-CI-Operator-2026!
+          VERIFY_OPERATOR_PASSWORD=$VERIFY_OPERATOR_PASSWORD
           NEXT_PUBLIC_SITE_URL=$E2E_BASE_URL
           APP_ENV=local
           TRUSTED_ADMIN_ENVIRONMENT=
