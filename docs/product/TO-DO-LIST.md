@@ -13,7 +13,8 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併；
-目前 main SHA `c8c5284ec9210970766bb4f36e1f580584137a2c` 已完成 staging Go-Live `33121275958`。
+目前應用程式 release SHA `c8c5284ec9210970766bb4f36e1f580584137a2c` 已完成 staging Go-Live
+`33121275958`。
 生日徵集仍待開啟 `birthday_wishes_v2`、`birthday_wishes_collection_v1`、同步 Render scheduler secret，
 並重跑排程專項 workflow、社員／幹部 hosted smoke 與真人驗收。
 
@@ -130,7 +131,7 @@ current-main 專項 hosted acceptance `33121570908` 已證實 V2 旗標尚未開
 - `npm run typecheck`：passed。
 - `npm run lint`：passed。
 - `npm run build`：passed。
-- `npm run verify:db`：46 份 verification SQL passed；schema lint 只有既有 3 個 warning。
+- `npm run verify:db`：本機未完成，因 Docker／Supabase 沒有回應而停止；PR #86 的 CI database job 已通過 46 份 verification SQL，schema lint 只有既有 3 個 warning。
 - `npm run check:migrations`：passed。
 - `npm run check:db-verifications`：manifest covers all 46 SQL files。
 - role shell：18/18 passed。

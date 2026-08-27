@@ -13,7 +13,7 @@
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
 
-自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威 `main` 最新為 `c8c5284ec9210970766bb4f36e1f580584137a2c`，並包含 PR #86 的出席頁社團時區日期修正。以下功能也已合併：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
+自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。目前 staging 應用程式 release SHA 為 `c8c5284ec9210970766bb4f36e1f580584137a2c`，並包含 PR #86 的出席頁社團時區日期修正。以下功能也已合併：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
 
 本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`，current-main 已以 `33121275958` 完成 staging Go-Live；但生日專項 hosted acceptance `33121570908` 證實 `birthday_wishes_v2` 尚未開啟，排程重試 `33121704322` 仍回傳 `401 unauthorized`。接下來只需完成兩個生日旗標與 Render scheduler secret 的外部設定，再重跑專項驗收；不需重複發布目前的程式版本。
 

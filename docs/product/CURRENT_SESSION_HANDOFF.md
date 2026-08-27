@@ -5,7 +5,7 @@
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77 與 PR #86，最新 SHA 是
+目前權威 `main` 已合併 PR #77、PR #86 與文件 PR #87；目前應用程式 release SHA 是
 `c8c5284ec9210970766bb4f36e1f580584137a2c`。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
 production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
 目前 staging 已部署同一個 `c8c5284…` revision，current-main 的 Staging Release plan `33121197083` 與
@@ -71,13 +71,14 @@ npm test                         100 files / 631 tests passed
 npm run typecheck                passed
 npm run lint                     passed
 npm run build                    passed
-npm run verify:db                46 verification SQL passed
+npm run verify:db                not completed locally (Docker/Supabase unresponsive)
 npm run check:migrations         passed
 npm run check:db-verifications   46 files covered
 git diff --check                 passed
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
+PR #86 CI database                passed (run 33120346988; 46 verification SQL)
 main CI                           passed (run 33121186952)
-main Browser Smoke                in progress at last update (run 33121186949)
+main Browser Smoke                passed (run 33121186949, 11m50s)
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       failed: V2 flag not enabled (run 33121570908)
