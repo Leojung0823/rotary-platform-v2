@@ -5,19 +5,15 @@
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77；與本次 release 相關的後續 follow-up 僅同步文件。
-生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件已進入 main；
-生日徵集的應用程式 release SHA 是 `7b3db9794e8c272774c1a3a0edfa8edf34d8c079`，
-staging 目前仍部署這個 revision；#80–#84 都只有文件變更，沒有重新發布需求。production 沒有修改。
-Hosted staging browser acceptance 只接受從 `main` dispatch，且 `expected_sha` 必須等於該次 workflow 的
-`GITHUB_SHA`；目前 `main` 是 `949097355053f5bb61e70a8de72b69957bd5a732`，staging app 仍是上述 `7b3…`
-release，因此 scheduler secret 修正後仍需走一次受保護的 current-main staging release，才能執行生日徵集 hosted acceptance。
+目前權威 `main` 已合併 PR #77 與 PR #86，最新 SHA 是
+`c8c5284ec9210970766bb4f36e1f580584137a2c`。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
+production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
+目前 staging 已部署同一個 `c8c5284…` revision，current-main 的 Staging Release plan `33121197083` 與
+Staging Go-Live `33121275958` 均成功，包含 migration apply、exact revision wait、HTTPS smoke 與 hosted member acceptance。
 
-PR #77 的最新 head `ecdd095a56c41be9d972003461a0913cbd925dcc` 已通過 application、validate、database
-與 Browser Smoke，並以一般 merge 合併；與本次 release 相關的文件 follow-up 都只更新文件並已合併。應用程式 release SHA
-`7b3db9794e8c272774c1a3a0edfa8edf34d8c079` 的 Staging Release plan `33028492949` 與
-Staging Go-Live `33028548354` 均成功。Go-Live 已完成 migration apply、exact revision wait、HTTPS
-smoke 與 hosted member acceptance；生日徵集 flag 在這次 Go-Live 保持關閉。
+PR #86 的 application、validate、database 與 Browser Smoke 均通過後以一般 merge 合併。生日專項 hosted acceptance
+`33121570908` 登入與生日頁標題通過，但因 `birthday_wishes_v2` 尚未開啟，找不到 V2 預設公開說明而失敗；徵集頁因此尚未驗收。
+current-main 的排程重試 `33121704322` 仍回傳 `401 unauthorized`，表示 GitHub 與 Render 端的 scheduler secret 仍未同步。
 
 ## 已完成的主要切片
 
@@ -34,8 +30,8 @@ smoke 與 hosted member acceptance；生日徵集 flag 在這次 Go-Live 保持�
 
 ## 最近 migration
 
-生日徵集的 forward-only migration 為 `20260824000700` 至 `20260824001700`；最後一個檔案是
-`20260824001700_birthday_collection_question_prompt_uniqueness.sql`。下次新增 migration 前仍須先
+生日徵集的 forward-only migration 為 `20260824000700` 至 `20260824001700`；出席日期修正新增
+`20260828000100_attendance_local_date_defaults.sql`。下次新增 migration 前仍須先
 執行 `ls supabase/migrations/ | tail` 確認可用編號，不能憑記憶或修改已部署 migration。
 
 新增資料表或 RPC 必須有 `supabase/verification/*.sql`，並登錄
@@ -54,10 +50,13 @@ smoke 與 hosted member acceptance；生日徵集 flag 在這次 Go-Live 保持�
 
 ## 仍未完成／需外部條件
 
-- GitHub `staging` environment 已有 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`，但排程 workflow run
-  `33117785366` 呼叫已部署的 staging route 時回傳 `401 unauthorized`。這表示 Render 應用程式端的同名
-  環境變數目前未設定或與 GitHub secret 不一致；需先在 Render staging 同步 secret，再由 staging 管理員
-  透過受保護的 flag 腳本確認 `birthday_wishes_collection_v1`，再發布目前 `main` 到 staging，才能做有效的徵集入口與排程驗收。
+- GitHub `staging` environment 已有 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`，但 current-main 排程 run
+  `33121704322` 呼叫已部署的 staging route 時仍回傳 `401 unauthorized`。這表示 Render 應用程式端的同名
+  環境變數目前未設定或與 GitHub secret 不一致；需在 Render staging 同步 secret。
+- current-main 的生日專項 hosted acceptance `33121570908` 證實 `birthday_wishes_v2` 尚未開啟，且因在 V2
+  檢查處停止，`birthday_wishes_collection_v1` 尚未取得有效驗收結果。需由 staging 平台管理員透過受保護流程
+  開啟兩個旗標，再重跑專項 hosted acceptance；secret 同步後再重跑排程。
+- staging 已完成 current-main Go-Live `33121275958`，不需要再次發布程式；production 仍未修改。
 - GPS accuracy／定位 age 政策要由產品選定後才能 harden。
 - recovery 需要專用 staging 帳號的真實新信件流程。
 - iOS Safari／真實 Android 裝置驗收尚未做。
@@ -72,16 +71,17 @@ npm test                         100 files / 631 tests passed
 npm run typecheck                passed
 npm run lint                     passed
 npm run build                    passed
-npm run verify:db                45 verification SQL passed
+npm run verify:db                46 verification SQL passed
 npm run check:migrations         passed
-npm run check:db-verifications   45 files covered
+npm run check:db-verifications   46 files covered
 git diff --check                 passed
-PR Browser Smoke                 passed (10m31s)
-main CI                         passed (run 33027886541)
-main Browser Smoke              passed (run 33027886551)
-staging plan                    passed (run 33028492949)
-staging Go-Live                 passed (run 33028548354)
-staging birthday scheduler      failed: 401 unauthorized (run 33117785366; GitHub/Render secret mismatch)
+PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
+main CI                           passed (run 33121186952)
+main Browser Smoke                in progress at last update (run 33121186949)
+staging plan                      passed (run 33121197083)
+staging Go-Live                   passed (run 33121275958)
+staging birthday acceptance       failed: V2 flag not enabled (run 33121570908)
+staging birthday scheduler        failed: 401 unauthorized (run 33121704322; GitHub/Render secret mismatch)
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用

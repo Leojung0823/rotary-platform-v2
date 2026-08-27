@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-08-27（Asia/Taipei）
+更新日期：2026-08-28（Asia/Taipei）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
@@ -12,9 +12,10 @@
 
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
-只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，且 main
-SHA `7b3db9794e8c272774c1a3a0edfa8edf34d8c079` 已完成 staging Go-Live；徵集仍待
-確認 staging flag 狀態、同步 Render scheduler secret、以 current main 重新發布 staging、重跑排程專項 workflow 與社員／幹部真人驗收。
+只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併；
+目前 main SHA `c8c5284ec9210970766bb4f36e1f580584137a2c` 已完成 staging Go-Live `33121275958`。
+生日徵集仍待開啟 `birthday_wishes_v2`、`birthday_wishes_collection_v1`、同步 Render scheduler secret，
+並重跑排程專項 workflow、社員／幹部 hosted smoke 與真人驗收。
 
 ## 逐項狀態
 
@@ -109,10 +110,11 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 - 徵集任務、參與者、發布／隱藏／重新送出狀態、匿名公開牆與幹部管理介面；
 - service-role-only scheduler、訊息通知冪等、feature flag EXECUTE 邊界與 verification。
 
-仍待：由 staging 管理員透過受保護流程確認／開啟 `birthday_wishes_collection_v1`，並先修正
-Render 應用程式端與 GitHub 的 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 不一致問題，再以 current main 重新發布 staging。手動執行的
-排程 run `33117785366` 回傳 `401 unauthorized`，因此尚不能證明旗標或徵集商業流程已有效執行；
-修正後還要重跑排程、徵集入口 hosted smoke，以及社員與幹部真人驗收。
+仍待：由 staging 平台管理員透過受保護流程開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`；
+current-main 專項 hosted acceptance `33121570908` 已證實 V2 旗標尚未開啟，徵集頁因此尚未驗收。
+另需在 Render 同步 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`；current-main 排程 run `33121704322` 回傳
+`401 unauthorized`。程式已完成且 current-main 已部署，不需重複發布；兩個外部條件完成後再重跑排程、
+徵集入口 hosted smoke，以及社員與幹部真人驗收。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
 
@@ -128,15 +130,16 @@ Render 應用程式端與 GitHub 的 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 不�
 - `npm run typecheck`：passed。
 - `npm run lint`：passed。
 - `npm run build`：passed。
-- `npm run verify:db`：45 份 verification SQL passed；schema lint 只有既有 3 個 warning。
+- `npm run verify:db`：46 份 verification SQL passed；schema lint 只有既有 3 個 warning。
 - `npm run check:migrations`：passed。
-- `npm run check:db-verifications`：manifest covers all 45 SQL files。
+- `npm run check:db-verifications`：manifest covers all 46 SQL files。
 - role shell：18/18 passed。
 - production build 關鍵 role／互動／訊息 E2E：29 passed、1 skipped。
 - `git diff --check`：本輪程式與文件修改通過。
 
-以上程式與資料庫結果為本機證據；Staging Go-Live run `33028548354` 已以 exact main SHA
+以上程式與資料庫結果為本機證據；current-main 的 Staging Go-Live run `33121275958` 已以 exact main SHA
 完成 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance，但
-生日徵集專項 run `33117785366` 在 route 驗證階段回傳 `401 unauthorized`（GitHub secret 與
-Render 應用程式端 secret 不一致或缺失），尚未完成有效的徵集 workflow；不能把這次失敗當成
-旗標或業務流程通過。瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。
+生日徵集專項 hosted run `33121570908` 在 V2 說明檢查時失敗，原因是 `birthday_wishes_v2` 尚未開啟；
+排程 run `33121704322` 在 route 驗證階段回傳 `401 unauthorized`（GitHub secret 與 Render 應用程式端
+secret 不一致或缺失），尚未完成有效的徵集 workflow；不能把這些失敗當成旗標或業務流程通過。
+瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。
