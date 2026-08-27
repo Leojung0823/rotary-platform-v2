@@ -5,13 +5,16 @@
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77，HEAD 為 `90210420a4adbc3c64e7e434f63aeaaa71da0105`。
+目前權威 `main` 已合併 PR #77 與文件 follow-up PR #80，HEAD 為
+`7b3db9794e8c272774c1a3a0edfa8edf34d8c079`。
 生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件已進入 main；
-本輪尚未把這個 SHA 發布到 staging，也沒有修改 production。
+這個 SHA 已完成 staging Go-Live。production 沒有修改。
 
 PR #77 的最新 head `ecdd095a56c41be9d972003461a0913cbd925dcc` 已通過 application、validate、database
-與 Browser Smoke，並以一般 merge 合併。合併後的 staging 發布仍必須重新以 `main` 的 exact SHA
-執行受保護的 Staging Release plan 與 Staging Go-Live。
+與 Browser Smoke，並以一般 merge 合併；PR #80 只更新本交接文件並已合併。`main` SHA
+`7b3db9794e8c272774c1a3a0edfa8edf34d8c079` 的 Staging Release plan `33028492949` 與
+Staging Go-Live `33028548354` 均成功。Go-Live 已完成 migration apply、exact revision wait、HTTPS
+smoke 與 hosted member acceptance；生日徵集 flag 在這次 Go-Live 保持關閉。
 
 ## 已完成的主要切片
 
@@ -48,10 +51,8 @@ PR #77 的最新 head `ecdd095a56c41be9d972003461a0913cbd925dcc` 已通過 appli
 
 ## 仍未完成／需外部條件
 
-- 以合併後的 exact `main` SHA 執行 staging plan、Go-Live、migration apply、部署 revision wait、HTTPS smoke
-  與 hosted member acceptance。
-- staging 需確認 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已設定；徵集 flag 要由 staging 管理者透過受保護
-  的 flag 腳本明確開啟後，才能做徵集入口與排程驗收。
+- `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已設定於 staging environment；仍需由 staging 管理員透過受保護
+  的 flag 腳本明確開啟 `birthday_wishes_collection_v1`，才能做徵集入口與排程驗收。
 - GPS accuracy／定位 age 政策要由產品選定後才能 harden。
 - recovery 需要專用 staging 帳號的真實新信件流程。
 - iOS Safari／真實 Android 裝置驗收尚未做。
@@ -71,8 +72,12 @@ npm run check:migrations         passed
 npm run check:db-verifications   45 files covered
 git diff --check                 passed
 PR Browser Smoke                 passed (10m31s)
+main CI                         passed (run 33027886541)
+main Browser Smoke              passed (run 33027886551)
+staging plan                    passed (run 33028492949)
+staging Go-Live                 passed (run 33028548354)
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
-的 PL/pgSQL 變數；本輪沒有新增 warning。瀏覽器本機若沒有 Supabase 不得宣稱已完成；本輪 PR 的隔離
-Browser Smoke 已通過。production 不在本輪範圍。
+的 PL/pgSQL 變數；本輪沒有新增 warning。瀏覽器本機若沒有 Supabase 不得宣稱已完成；本輪 PR 與 main
+的隔離 Browser Smoke 均已通過。production 不在本輪範圍。

@@ -12,8 +12,9 @@
 
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
-只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成；徵集仍要完成 main 整合、staging
-發布與真人驗收，不能把本機通過誤寫成 hosted 已發布。
+只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，且 main
+SHA `7b3db9794e8c272774c1a3a0edfa8edf34d8c079` 已完成 staging Go-Live；徵集仍待
+開啟 staging flag、執行徵集專項 workflow 與社員／幹部真人驗收。
 
 ## 逐項狀態
 
@@ -108,7 +109,9 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 - 徵集任務、參與者、發布／隱藏／重新送出狀態、匿名公開牆與幹部管理介面；
 - service-role-only scheduler、訊息通知冪等、feature flag EXECUTE 邊界與 verification。
 
-仍待：main 整合、受保護 staging 發布／hosted smoke，以及社員與幹部真人驗收。
+仍待：在 staging 管理員透過受保護流程開啟 `birthday_wishes_collection_v1`，執行排程與
+徵集入口的 hosted smoke，以及社員與幹部真人驗收。一般 staging Go-Live 已完成，但不能
+把未開旗標的 hosted acceptance 誤寫成徵集功能已驗收。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
 
@@ -129,7 +132,9 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 - `npm run check:db-verifications`：manifest covers all 45 SQL files。
 - role shell：18/18 passed。
 - production build 關鍵 role／互動／訊息 E2E：29 passed、1 skipped。
-- `git diff --check`：本輪程式修改通過；加入最後 migration 後會在 commit 前再跑一次。
+- `git diff --check`：本輪程式與文件修改通過。
 
-以上程式與資料庫結果為本機證據；本輪尚未完成 hosted staging 發布。瀏覽器驗收因本機
-Supabase 目前未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。
+以上程式與資料庫結果為本機證據；Staging Go-Live run `33028548354` 已以 exact main SHA
+完成 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance，但
+`birthday_wishes_collection_v1` 當時保持關閉，因此生日徵集專項 hosted workflow 尚未完成。
+瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。
