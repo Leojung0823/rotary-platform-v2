@@ -13,7 +13,8 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併；
-目前 main SHA `c8c5284ec9210970766bb4f36e1f580584137a2c` 已完成 staging Go-Live `33121275958`。
+目前應用程式 release SHA `c8c5284ec9210970766bb4f36e1f580584137a2c` 已完成 staging Go-Live
+`33121275958`；main 最新文件合併 HEAD 是 `096bae6434d4eee4b20e08e264f17654ab0d28ac`。
 生日徵集仍待開啟 `birthday_wishes_v2`、`birthday_wishes_collection_v1`、同步 Render scheduler secret，
 並重跑排程專項 workflow、社員／幹部 hosted smoke 與真人驗收。
 
