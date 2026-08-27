@@ -34,6 +34,7 @@ supabase/verification/birthday_wishes_v2_security.sql
 supabase/verification/birthday_feature_flag_execution_security.sql
 supabase/verification/archive_handover_security.sql
 supabase/verification/attendance_page_projections_security.sql
+supabase/verification/attendance_page_local_date_security.sql
 supabase/verification/blessing_iou_my_ledger_security.sql
 supabase/verification/member_tags_audiences_security.sql
 supabase/verification/privacy_defaults_security.sql
