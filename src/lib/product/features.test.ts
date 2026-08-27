@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { productFeaturePath, productFeatures } from "./features";
+import { productFeatureFlagKeys, productFeaturePath, productFeatures } from "./features";
 
 describe("product feature map", () => {
   it("keeps feature slugs unique", () => {
@@ -23,4 +23,14 @@ describe("product feature map", () => {
     expect(unfinished.length).toBeGreaterThan(0);
     expect(unfinished.every((feature) => feature.status === "developing")).toBe(true);
   });
+
+  it("keeps birthday V2 discoverable while preserving the V1 fallback", () => {
+    const birthday = productFeatures.find((feature) => feature.slug === "birthday-and-care");
+    expect(birthday).toBeDefined();
+    expect(productFeatureFlagKeys(birthday!)).toEqual([
+      "birthday_wishes_v1",
+      "birthday_wishes_v2",
+    ]);
+  });
+
 });

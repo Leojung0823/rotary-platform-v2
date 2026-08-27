@@ -120,11 +120,14 @@ export async function deleteBirthdayWishAction(formData: FormData) {
   } catch {
     redirect("/birthdays?error=invalid_input");
   }
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("delete_own_birthday_wish", {
-    p_club_id: clubId,
-    p_wish_id: wishId,
-  });
+  const [supabase, useV2] = await Promise.all([createClient(), birthdayV2Enabled()]);
+  const { error } = await supabase.rpc(
+    useV2 ? "delete_own_birthday_wish_v2" : "delete_own_birthday_wish",
+    {
+      p_club_id: clubId,
+      p_wish_id: wishId,
+    },
+  );
   if (error) redirect(birthdayPath(clubId, "error", errorCode(error.message)));
   redirect(birthdayPath(clubId, "success", "wish_deleted"));
 }

@@ -50,6 +50,20 @@ insert into public.club_operator_permissions (
   'executive_secretary', 'club_manager', 'active', now() - interval '1 day'
 );
 
+-- Enable the browser-facing V2 RPCs through the fixture flag. Migration
+-- 016 revokes these grants when the flag is absent or disabled.
+select set_config('request.jwt.claim.sub', '12000000-0000-4000-8000-000000000004', true);
+insert into public.platform_feature_flags (
+  feature_key, enabled, enabled_environments, rollout_percentage, updated_by
+) values (
+  'birthday_wishes_v2', true, array['local']::text[], 100,
+  '32000000-0000-4000-8000-000000000004'
+)
+on conflict (feature_key) do update
+set enabled = excluded.enabled,
+    enabled_environments = excluded.enabled_environments,
+    rollout_percentage = excluded.rollout_percentage;
+
 do $$
 begin
   if not (select relrowsecurity from pg_catalog.pg_class where oid = 'public.birthday_wishes'::regclass)
@@ -146,7 +160,7 @@ begin
     (select wish_id from birthday_v2_test_wishes where ordinal = 1),
     '修改後的生日祝福'
   );
-  perform public.delete_own_birthday_wish(
+  perform public.delete_own_birthday_wish_v2(
     '42000000-0000-4000-8000-000000000001',
     (select wish_id from birthday_v2_test_wishes where ordinal = 2)
   );
@@ -159,6 +173,40 @@ begin
      ) then
     raise exception 'V2 multiple, update, or delete behavior is invalid: %', page->'wishes';
   end if;
+end $$;
+reset role;
+
+-- A rollback must not project or mutate V2 rows through the legacy RPCs.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '12000000-0000-4000-8000-000000000001', true);
+do $$
+declare
+  page jsonb := public.get_my_birthday_page('42000000-0000-4000-8000-000000000001');
+begin
+  if jsonb_array_length(page->'wishes') <> 0 then
+    raise exception 'V1 fallback projected V2 wishes: %', page->'wishes';
+  end if;
+
+  begin
+    perform public.update_own_birthday_wish(
+      '42000000-0000-4000-8000-000000000001',
+      (select wish_id from birthday_v2_test_wishes where ordinal = 3),
+      'V1 must not update V2'
+    );
+    raise exception 'V1 update mutated a V2 wish';
+  exception
+    when sqlstate 'P0002' then null;
+  end;
+
+  begin
+    perform public.delete_own_birthday_wish(
+      '42000000-0000-4000-8000-000000000001',
+      (select wish_id from birthday_v2_test_wishes where ordinal = 3)
+    );
+    raise exception 'V1 delete mutated a V2 wish';
+  exception
+    when sqlstate 'P0002' then null;
+  end;
 end $$;
 reset role;
 
@@ -175,6 +223,43 @@ begin
   end if;
 end $$;
 reset role;
+
+-- The author is still allowed to edit/delete their own active wish, but the
+-- member-facing projection must not expose an author label to that author.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '12000000-0000-4000-8000-000000000001', true);
+do $$
+declare page jsonb := public.get_my_birthday_page_v2('42000000-0000-4000-8000-000000000001');
+begin
+  if exists (
+       select 1
+       from jsonb_array_elements(page->'wishes') as item
+       where item->>'author_name' is not null
+          or item->>'author_is_hidden' <> 'true'
+          or item->>'can_edit' <> 'true'
+     ) then
+    raise exception 'author projection anonymity or own-edit capability failed: %', page->'wishes';
+  end if;
+end $$;
+reset role;
+
+-- Turning off incoming wishes also hides existing wishes from the member wall.
+update public.birthday_visibility_preferences
+set allow_wishes = false
+where membership_id = '52000000-0000-4000-8000-000000000002';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '12000000-0000-4000-8000-000000000002', true);
+do $$
+declare page jsonb := public.get_my_birthday_page_v2('42000000-0000-4000-8000-000000000001');
+begin
+  if jsonb_array_length(page->'wishes') <> 0 then
+    raise exception 'disabled birthday wishes remained visible: %', page->'wishes';
+  end if;
+end $$;
+reset role;
+update public.birthday_visibility_preferences
+set allow_wishes = true
+where membership_id = '52000000-0000-4000-8000-000000000002';
 
 -- Showing the birth year is the explicit consent required to return age.
 update public.privacy_settings

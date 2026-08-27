@@ -3,6 +3,8 @@ export type ClubMessage = {
   title: string;
   body: string;
   audience_kind: "everyone" | "tags" | "members";
+  action_path: string | null;
+  action_status: "pending" | "completed" | "declined" | "needs_resubmission" | "disabled" | null;
   published_at: string;
   author_display_name: string;
   read_at: string | null;
@@ -20,6 +22,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isAudienceKind(value: unknown): value is ClubMessage["audience_kind"] {
   return value === "everyone" || value === "tags" || value === "members";
+}
+
+const safeActionPathPattern = /^\/[A-Za-z0-9][-A-Za-z0-9/?=&._%]{0,498}$/u;
+const actionStatuses = ["pending", "completed", "declined", "needs_resubmission", "disabled"] as const;
+
+function parseActionPath(value: unknown) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" || !safeActionPathPattern.test(value) || value.startsWith("//")) {
+    throw new Error("invalid_message_projection");
+  }
+  return value;
+}
+
+function parseActionStatus(value: unknown) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" || !actionStatuses.includes(value as typeof actionStatuses[number])) {
+    throw new Error("invalid_message_projection");
+  }
+  return value as typeof actionStatuses[number];
 }
 
 export function parseClubMessage(value: unknown): ClubMessage {
@@ -42,6 +63,8 @@ export function parseClubMessage(value: unknown): ClubMessage {
     title: value.title,
     body: value.body,
     audience_kind: value.audience_kind,
+    action_path: parseActionPath(value.action_path),
+    action_status: parseActionStatus(value.action_status),
     published_at: value.published_at,
     author_display_name: value.author_display_name,
     read_at: typeof readAt === "string" ? readAt : null,

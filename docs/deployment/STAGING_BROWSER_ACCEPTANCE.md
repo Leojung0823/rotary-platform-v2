@@ -47,7 +47,9 @@ Environment secrets：
 5. Branch 選擇 `main`。
 6. `expected_sha` 輸入完整 40 字元 commit SHA。
 7. `confirmation` 輸入 `TEST-STAGING`。
-8. 核准 `staging` environment 後執行。
+8. 若已明確開啟 `birthday_wishes_v2` staging flag，才將 `expect_birthday_v2` 設為 `true`；否則保持預設 `false`。
+9. 若已明確開啟獨立的 `birthday_wishes_collection_v1` staging flag，且核心生日頁也已可用，才將 `expect_birthday_collection` 設為 `true`；否則保持預設 `false`。
+10. 核准 `staging` environment 後執行。
 
 ## 自動驗收內容
 
@@ -59,6 +61,8 @@ Environment secrets：
 - 開啟會員中心，確認基本資料可讀取、姓名與至少一項聯絡資料存在。
 - 驗證頁面無明顯水平溢出。
 - 完成登出並回到登入頁。
+- `expect_birthday_v2=true` 時，另外開啟 `/birthdays`，確認生日 V2 內容與權限資料可以讀取。
+- `expect_birthday_collection=true` 時，從生日頁點入「生日祝福任務」，確認 `/birthday-collection` 入口、權限資料與版面可以讀取；此選項不會自動執行排程或建立任務。
 
 ## 不在此自動驗收範圍
 

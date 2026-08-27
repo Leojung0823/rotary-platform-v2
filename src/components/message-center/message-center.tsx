@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   markClubMessageReadAction,
@@ -51,6 +52,17 @@ function audienceLabel(message: { audience_kind: ClubMessage["audience_kind"] },
   if (message.audience_kind === "everyone") return "全社";
   if (message.audience_kind === "members") return "指定社員";
   return tagNames.length > 0 ? tagNames.join("、") : "指定標籤";
+}
+
+function actionStatusLabel(status: ClubMessage["action_status"]) {
+  if (status === null) return "";
+  return ({
+    pending: "待完成",
+    completed: "已完成",
+    declined: "已婉拒",
+    needs_resubmission: "需要重新送出",
+    disabled: "已停用",
+  } as Record<Exclude<ClubMessage["action_status"], null>, string>)[status];
 }
 
 function endpoint(clubId: string, path = "") {
@@ -300,9 +312,15 @@ export function MessageCenter({
                   </span>
                   <span className={styles.meta}>
                     {message.author_display_name} · {formatTime(message.published_at)} · 發給 {audienceLabel(message)}
+                    {message.action_status && <> · 生日任務：{actionStatusLabel(message.action_status)}</>}
                   </span>
                 </button>
-                {open && <p className={styles.body}>{message.body}</p>}
+                {open && <>
+                  <p className={styles.body}>{message.body}</p>
+                  {message.action_path && <Link className="link-button" href={message.action_path}>
+                    開啟相關功能
+                  </Link>}
+                </>}
               </li>;
             })}
           </ul>}

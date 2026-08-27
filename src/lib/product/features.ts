@@ -18,6 +18,12 @@ export type ProductFeature = {
   phase: string;
   href?: string;
   featureFlagKey?: FeatureFlagKey;
+  /**
+   * Some product entries span more than one rollout generation. The entry is
+   * visible when any of these flags is enabled; keep featureFlagKey for the
+   * older single-flag entries and for source-level compatibility.
+   */
+  featureFlagKeys?: readonly FeatureFlagKey[];
 };
 
 export const productFeatureCategories: ProductFeatureCategory[] = [
@@ -132,12 +138,13 @@ export const productFeatures: ProductFeature[] = [
   {
     slug: "birthday-and-care",
     title: "生日祝福",
-    summary: "社員自願公開生日月日，同社社員可送出、修改與刪除年度祝福，幹部可隱藏不當內容。",
+    summary: "社員自願公開生日月日，同社社員可送出生日祝福；V2 支援同一位壽星每日多則，幹部可隱藏不當內容。",
     category: "溝通與內容",
     status: "available",
-    phase: "V1.0 可測試",
+    phase: "V1／V2 可測試",
     href: "/birthdays",
     featureFlagKey: "birthday_wishes_v1",
+    featureFlagKeys: ["birthday_wishes_v1", "birthday_wishes_v2"],
   },
   {
     slug: "blessing-iou",
@@ -200,6 +207,11 @@ export const productFeatures: ProductFeature[] = [
 
 export function productFeaturePath(feature: ProductFeature) {
   return feature.href ?? `/features/${feature.slug}`;
+}
+
+export function productFeatureFlagKeys(feature: ProductFeature): readonly FeatureFlagKey[] {
+  if (feature.featureFlagKeys !== undefined) return feature.featureFlagKeys;
+  return feature.featureFlagKey ? [feature.featureFlagKey] : [];
 }
 
 export function findProductFeature(slug: string) {

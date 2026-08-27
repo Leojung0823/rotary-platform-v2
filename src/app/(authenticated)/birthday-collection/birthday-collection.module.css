@@ -1,0 +1,179 @@
+.assignmentList,
+.campaignList,
+.participantList,
+.publishedList {
+  display: grid;
+  gap: 16px;
+}
+
+.assignmentCard,
+.campaignCard,
+.participantCard,
+.publishedCard,
+.managerCard {
+  display: grid;
+  gap: 16px;
+}
+
+.cardHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cardHeading h3,
+.cardHeading p,
+.cardHeading small {
+  display: block;
+  margin: 0;
+}
+
+.cardHeading small {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.question {
+  margin: 0;
+  padding: 16px;
+  border-left: 4px solid var(--gold);
+  background: #fff9e8;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.6;
+}
+
+.content {
+  margin: 0;
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gold);
+}
+
+.questionBank {
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.questionBank summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.questionBank ol {
+  display: grid;
+  gap: 8px;
+  padding-left: 24px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.history {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.history summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--blue);
+  font-weight: 750;
+}
+
+.history ol {
+  display: grid;
+  gap: 14px;
+  margin: 12px 0 0;
+  padding-left: 24px;
+}
+
+.history li {
+  padding-left: 4px;
+}
+
+.history li small,
+.history li p {
+  display: block;
+  margin: 4px 0 0;
+}
+
+.history li small {
+  color: var(--muted);
+}
+
+.questionSection {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.questionSection h3 {
+  margin: 0;
+}
+
+.questionList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.questionEditor {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft, #fafafa);
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .cardHeading {
+    display: grid;
+  }
+}

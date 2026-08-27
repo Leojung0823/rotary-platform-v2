@@ -13,4 +13,11 @@ describe("browser smoke workflow security", () => {
     expect(workflow).toContain('echo "::add-mask::$role_password"');
     expect(workflow).toContain('echo "::add-mask::$operator_password"');
   });
+
+  it("enables birthday flags before creating their authenticated fixtures", () => {
+    const enableIndex = workflow.indexOf("Enable birthday fixture flags through the protected RPC");
+    const fixtureIndex = workflow.indexOf("Create local role-shell browser fixtures");
+    expect(enableIndex).toBeGreaterThan(-1);
+    expect(fixtureIndex).toBeGreaterThan(enableIndex);
+  });
 });

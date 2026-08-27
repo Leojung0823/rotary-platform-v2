@@ -18,7 +18,7 @@ const rollbackKeys = [
 ] as const;
 
 describe("existing-domain feature-flag database contract", () => {
-  const migration = source("supabase/migrations/20260824000400_birthday_wishes_v2_core.sql");
+  const migration = source("supabase/migrations/20260824000600_birthday_wish_collection_core.sql");
 
   it("keeps both table constraints and the mutation allow-list in sync", () => {
     const constraints = [...migration.matchAll(
@@ -75,8 +75,9 @@ describe("Interact navigation gates", () => {
   it("uses the direct-page keys for the existing message-board and birthday cards", () => {
     expect(interact).toContain('evaluateCurrentFeatureFlag({ key: "message_board_v1"');
     expect(interact).toContain('evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1"');
+    expect(interact).toContain('evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2"');
     expect(interact).toMatch(/if \(messageBoard\.enabled\) \{[\s\S]+?href: "\/board"/u);
-    expect(interact).toMatch(/if \(birthdayWishes\.enabled\) \{[\s\S]+?href: "\/birthdays"/u);
+    expect(interact).toMatch(/if \(birthdayWishesEnabled\) \{[\s\S]+?href: "\/birthdays"/u);
   });
 
   it("keeps all three rollback keys in the server evaluator union", () => {

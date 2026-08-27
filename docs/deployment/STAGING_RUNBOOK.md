@@ -65,6 +65,7 @@ Environment secrets：
 - `STAGING_DEPLOY_HOOK`：只觸發 staging service 的 HTTPS POST deployment hook。
 - `STAGING_TEST_MEMBER_EMAIL`：staging 專用測試社員帳號。
 - `STAGING_TEST_MEMBER_PASSWORD`：staging 專用測試社員密碼。
+- `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`：至少 32 字元的隨機 secret，僅供 staging environment 的生日徵集排程 workflow 呼叫受保護 route；不得放進前端或一般 log。
 - `SUPABASE_SERVICE_ROLE_KEY`：只供明確啟用的第一次 staging test-data provisioning steps 使用；後續一般 Go-Live 不會取得此 secret。
 
 必須設定 production inventory：
@@ -207,7 +208,7 @@ npm run bootstrap:superadmin
 
 部署完成不等於社員看得到。多數 flag 預設關閉，而列在 `flagsRequiringExplicitEnable`
 （`src/lib/product/feature-flags.ts`）的 key **沒有紀錄時一律視為關閉**，必須明確開啟才會出現。
-目前這類 key 是 `announcements_v09`（訊息中心）。
+目前這類 key 是 `announcements_v09`（訊息中心）、`birthday_wishes_v2` 與 `birthday_wishes_collection_v1`（生日 V2／徵集）。
 
 把 `.env.staging.example` 複製成 `.env.staging`（已被 git 忽略），填入三個**非機密**值：
 
@@ -224,12 +225,19 @@ URL 與 publishable key 是瀏覽器本來就會收到的值，可以從 Supabas
 
 ```bash
 npm run flags:enable:staging announcements_v09
+# 生日 V2 核心（只開生日頁與一般祝福）
+npm run flags:enable:staging birthday_wishes_v2
+# 生日徵集是獨立功能，需另外明確開啟；排程 workflow 仍只會打 staging：
+npm run flags:enable:staging birthday_wishes_collection_v1
 # 關閉：
 npm run flags:disable:staging announcements_v09
+npm run flags:disable:staging birthday_wishes_v2
+npm run flags:disable:staging birthday_wishes_collection_v1
 ```
 
-腳本走的是與其他 rollout 變更同一支受保護 RPC，因此會留下稽核紀錄；它也拒絕把 flag 指向
-production 目標。
+腳本走的是與其他 rollout 變更同一支受保護 RPC，會驗證 RPC 回傳的旗標狀態與目標環境，並留下
+稽核紀錄；它也拒絕把 flag 指向 production 目標。生日 V2 核心與生日徵集是兩個獨立旗標，
+不要因為開啟其中一個就假設另一個也已開啟。
 
 ## 7. 自動 smoke test
 

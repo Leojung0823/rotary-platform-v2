@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-08-24（Asia/Taipei）
+更新日期：2026-08-27（Asia/Taipei）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
@@ -12,8 +12,8 @@
 
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
-只剩實機驗收。生日 V2「核心」已完成，但生日祝福徵集、派發排程、題庫與每月一則
-邀約尚未開發，不能把它們和 V1/V2 核心混寫成已完成。
+只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成；徵集仍要完成 main 整合、staging
+發布與真人驗收，不能把本機通過誤寫成 hosted 已發布。
 
 ## 逐項狀態
 
@@ -97,15 +97,18 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 
 ## 另外掃描到、但不在舊清單內的待辦
 
-### 生日祝福徵集 `[ ]`
+### 生日祝福徵集 `[>]`
 
 生日 V2 核心已完成（新設定預設公開、年齡依出生年份同意顯示、同一作者同一壽星每日最多 10 則、
-作者匿名投影與幹部可見）。尚未建立：
+作者匿名投影與幹部可見）。徵集程式已完成：
 
 - 每月批次與生日前 7 天排程；
 - 每位社員每月最多一則自動邀約的公平分配與冪等鍵；
-- 題庫、題目快照、同批次題目不重複與題庫不足時整批停止；
-- 徵集任務、參與者、發布／隱藏狀態與幹部管理介面。
+- 100 題平台題庫、社團題庫 CRUD、題目快照、同批次題目文字不重複與題庫不足時整批停止；
+- 徵集任務、參與者、發布／隱藏／重新送出狀態、匿名公開牆與幹部管理介面；
+- service-role-only scheduler、訊息通知冪等、feature flag EXECUTE 邊界與 verification。
+
+仍待：main 整合、受保護 staging 發布／hosted smoke，以及社員與幹部真人驗收。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
 
@@ -117,15 +120,16 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 
 已在本機執行：
 
-- `npm test`：88 files、587 tests passed。
+- `npm test`：100 files、631 tests passed。
 - `npm run typecheck`：passed。
 - `npm run lint`：passed。
 - `npm run build`：passed。
-- `npm run verify:db`：40 份 verification SQL passed；schema lint 只有既有 3 個 warning。
+- `npm run verify:db`：45 份 verification SQL passed；schema lint 只有既有 3 個 warning。
 - `npm run check:migrations`：passed。
-- `npm run check:db-verifications`：manifest covers all 40 SQL files。
+- `npm run check:db-verifications`：manifest covers all 45 SQL files。
 - role shell：18/18 passed。
 - production build 關鍵 role／互動／訊息 E2E：29 passed、1 skipped。
-- `git diff --check`：passed。
+- `git diff --check`：本輪程式修改通過；加入最後 migration 後會在 commit 前再跑一次。
 
-以上均為本機證據；尚未 push、開 PR、merge、deploy 或修改 hosted Supabase。
+以上程式與資料庫結果為本機證據；本輪尚未完成 hosted staging 發布。瀏覽器驗收因本機
+Supabase 目前未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。

@@ -25,6 +25,24 @@ describe("staging browser acceptance workflow safety", () => {
     expect(workflow).toContain("TEST-STAGING");
   });
 
+  it("keeps birthday V2 acceptance opt-in until its staging flag is enabled", () => {
+    expect(workflow).toContain("expect_birthday_v2:");
+    expect(workflow).toContain("default: false");
+    expect(workflow).toContain("STAGING_EXPECT_BIRTHDAY_V2: ${{ inputs.expect_birthday_v2 }}");
+    expect(stagingTest).toContain('process.env.STAGING_EXPECT_BIRTHDAY_V2 === "true"');
+    expect(stagingTest).toContain('page.goto("/birthdays")');
+    expect(stagingTest).toContain("新設定預設公開月、日");
+  });
+
+  it("keeps birthday collection acceptance separately opt-in", () => {
+    expect(workflow).toContain("expect_birthday_collection:");
+    expect(workflow).toContain("STAGING_EXPECT_BIRTHDAY_COLLECTION: ${{ inputs.expect_birthday_collection }}");
+    expect(stagingTest).toContain('process.env.STAGING_EXPECT_BIRTHDAY_COLLECTION === "true"');
+    expect(stagingTest).toContain('page.getByRole("link", { name: "生日祝福任務", exact: true })');
+    expect(stagingTest).toContain('page.goto("/birthdays")');
+    expect(stagingTest).toContain('page.getByRole("heading", { level: 1, name: "生日祝福徵集" })');
+  });
+
   it("uses environment-scoped staging test credentials without release credentials", () => {
     expect(workflow).toContain("STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}");
     expect(workflow).toContain("STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}");
