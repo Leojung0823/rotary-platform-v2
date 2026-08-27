@@ -1,6 +1,6 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-08-27
+更新日期：2026-08-28
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
@@ -13,9 +13,9 @@
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
 
-自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。以下功能也已合併至目前本機 `main`：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
+自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威 `main` 最新為 `c8c5284ec9210970766bb4f36e1f580584137a2c`，並包含 PR #86 的出席頁社團時區日期修正。以下功能也已合併：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
 
-本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`，並以 `7b3db9794e8c272774c1a3a0edfa8edf34d8c079` 完成 staging Go-Live；仍待確認 staging flag、同步 Render scheduler secret、以 current main 重新發布 staging、重跑專項 hosted smoke 與真人驗收。最近的 scheduler run `33117785366` 在 route 驗證時回傳 `401 unauthorized`，尚不能當作徵集流程通過。
+本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`，current-main 已以 `33121275958` 完成 staging Go-Live；但生日專項 hosted acceptance `33121570908` 證實 `birthday_wishes_v2` 尚未開啟，排程重試 `33121704322` 仍回傳 `401 unauthorized`。接下來只需完成兩個生日旗標與 Render scheduler secret 的外部設定，再重跑專項驗收；不需重複發布目前的程式版本。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
@@ -94,7 +94,7 @@ Phase 2 之後追加並完成的社務功能：
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
 - GPS 仍缺產品指定的 accuracy／定位 age 契約；本文件不替產品猜門檻。
 - 真實 staging recovery email、iOS／Android 實機驗收與 M1 使用者測試尚未完成。
-- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，PR #77 已合併且 main 已部署到 staging；仍須由 staging 管理員開啟獨立 flag，再執行 hosted workflow 與社員／幹部真人驗收。
+- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，PR #77 已合併且 current-main 已部署到 staging；仍須由 staging 平台管理員開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`，並在 Render 同步 scheduler secret，再執行 hosted workflow 與社員／幹部真人驗收。專項 acceptance `33121570908` 與 scheduler `33121704322` 均已留下失敗證據，不能標記完成。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
 - PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40（公告通知）已於 2026-08-22 實作，未沿用該分支的程式碼。
 
@@ -350,7 +350,7 @@ PR-01c 不做：
 [完成] PR #40 Announcements/Notifications · 首頁通知 projection
 [完成] PR-07a 帳號安全核心 · PR-07b 行動版 IA／accessibility 核心
 [外部驗收] recovery email · GPS policy · 實機 Browser Smoke
-[完成程式／待 staging] 生日祝福徵集（排程／題庫／每月一則派發／幹部工作台） ─> M1 使用者測試
+[完成程式／待 staging 設定與驗收] 生日祝福徵集（排程／題庫／每月一則派發／幹部工作台） ─> M1 使用者測試
 ```
 
 ## Current Next Actions
@@ -358,6 +358,6 @@ PR-01c 不做：
 1. 決定 GPS accuracy／定位 age 政策，才能關閉 GPS hardening blocker。
 2. 以專用 staging 身份完成 recovery 真實 email flow，並做 iOS／Android 實機驗收。
 3. 決定何時對社員開啟訊息中心與其他旗標：`npm run flags:enable announcements_v09`（預設關閉）。
-4. 完成生日祝福徵集 release 分支的 main 整合，走受保護 staging plan／Go-Live，確認 flag 與 hosted smoke；再進入 M1 使用者測試。
+4. 在 staging 開啟 `birthday_wishes_v2`、`birthday_wishes_collection_v1`，同步 Render scheduler secret，重跑排程與 hosted smoke；通過後再進入 M1 使用者測試。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。
