@@ -6,6 +6,8 @@ const memberPassword = process.env.STAGING_TEST_MEMBER_PASSWORD;
 const expectedClubName = process.env.STAGING_EXPECTED_CLUB_NAME;
 const expectedSha = process.env.E2E_EXPECTED_SHA;
 const baseURL = process.env.E2E_BASE_URL;
+const expectBirthdayV2 = process.env.STAGING_EXPECT_BIRTHDAY_V2 === "true";
+const expectBirthdayCollection = process.env.STAGING_EXPECT_BIRTHDAY_COLLECTION === "true";
 
 function requireStagingConfiguration() {
   if (!memberEmail || !memberPassword || !expectedClubName || !expectedSha || !baseURL) {
@@ -104,6 +106,25 @@ test.describe("受保護的 Hosted staging 社員驗收", () => {
     expect(displayNameLength).toBeGreaterThan(0);
     expect(contactLength).toBeGreaterThan(0);
     await expectNoHorizontalOverflow(page);
+
+    if (expectBirthdayV2) {
+      await page.goto("/birthdays");
+      await expect(page.getByRole("heading", { level: 1, name: "生日祝福" })).toBeVisible();
+      await expect(page.getByText(/新設定預設公開月、日；尚未設定的舊資料仍維持不公開/u)).toBeVisible();
+      await expect(page.getByText("目前無法確認生日祝福權限，請稍後重新整理。", { exact: true })).toHaveCount(0);
+      await expectNoHorizontalOverflow(page);
+    }
+
+    if (expectBirthdayCollection) {
+      await page.goto("/birthdays");
+      const collectionLink = page.getByRole("link", { name: "生日祝福任務", exact: true });
+      await expect(collectionLink).toHaveCount(1);
+      await collectionLink.click();
+      await expect(page).toHaveURL(/\/birthday-collection\?clubId=[0-9a-f-]{36}$/u);
+      await expect(page.getByRole("heading", { level: 1, name: "生日祝福徵集" })).toBeVisible();
+      await expect(page.getByText("目前無法確認生日祝福徵集權限，請稍後重新整理。", { exact: true })).toHaveCount(0);
+      await expectNoHorizontalOverflow(page);
+    }
 
     // role_shells_v2 tucks the logout button inside a collapsed "帳號選單"
     // disclosure (see member-smoke.e2e.mjs / role-shells.e2e.mjs);

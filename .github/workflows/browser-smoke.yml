@@ -139,6 +139,9 @@ jobs:
       - name: Bootstrap local superadmin
         run: node --env-file=.env.local scripts/bootstrap-superadmin.mjs
 
+      - name: Enable birthday fixture flags through the protected RPC
+        run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
+
       - name: Create local role-shell browser fixtures
         run: node --env-file=.env.local scripts/bootstrap-role-shell-browser-fixtures.mjs
 

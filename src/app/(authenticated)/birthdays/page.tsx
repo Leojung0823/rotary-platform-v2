@@ -55,9 +55,10 @@ export default async function BirthdayPage({
   searchParams: Promise<{ clubId?: string; success?: string; error?: string }>;
 }) {
   const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
-  const [v1Evaluation, v2Evaluation] = await Promise.all([
+  const [v1Evaluation, v2Evaluation, collectionEvaluation] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "birthday_wishes_collection_v1", subjectUuid: identity.id }),
   ]);
   if (!v1Evaluation.enabled && !v2Evaluation.enabled) notFound();
   const birthdayV2Enabled = v2Evaluation.enabled;
@@ -98,7 +99,10 @@ export default async function BirthdayPage({
   );
 
   return <div className="page-stack">
-    <BirthdayHeader />
+    <BirthdayHeader
+      collectionEnabled={collectionEvaluation.enabled}
+      clubId={selectedClub?.clubId ?? null}
+    />
 
     {query.success && successMessages[query.success] && <Notice tone="success">{successMessages[query.success]}</Notice>}
     {query.error && <Notice tone="error">{errorMessages[query.error] ?? errorMessages.unexpected}</Notice>}
@@ -221,13 +225,22 @@ export default async function BirthdayPage({
   </div>;
 }
 
-function BirthdayHeader() {
+function BirthdayHeader({
+  collectionEnabled = false,
+  clubId = null,
+}: {
+  collectionEnabled?: boolean;
+  clubId?: string | null;
+} = {}) {
   return <header className="page-header">
     <div>
       <p className="eyebrow">社員交流</p>
       <h1>生日祝福</h1>
       <p>社員自己決定是否公開月、日；祝福只在同一扶輪社內顯示。</p>
     </div>
-    <Link className="button button-secondary" href="/features">返回功能總覽</Link>
+    <div className="form-actions">
+      {collectionEnabled && clubId && <Link className="button button-secondary" href={`/birthday-collection?clubId=${clubId}`}>生日祝福任務</Link>}
+      <Link className="button button-secondary" href="/features">返回功能總覽</Link>
+    </div>
   </header>;
 }

@@ -51,6 +51,20 @@ insert into public.club_operator_permissions (
   'executive_secretary', 'club_manager', 'active', now() - interval '1 day'
 );
 
+-- Enable the browser-facing collection RPCs through the fixture flag. Migration
+-- 016 revokes these grants when the flag is absent or disabled.
+select set_config('request.jwt.claim.sub', '13000000-0000-4000-8000-000000000004', true);
+insert into public.platform_feature_flags (
+  feature_key, enabled, enabled_environments, rollout_percentage, updated_by
+) values (
+  'birthday_wishes_collection_v1', true, array['local']::text[], 100,
+  '33000000-0000-4000-8000-000000000004'
+)
+on conflict (feature_key) do update
+set enabled = excluded.enabled,
+    enabled_environments = excluded.enabled_environments,
+    rollout_percentage = excluded.rollout_percentage;
+
 do $$
 begin
   if (select count(*) from public.birthday_wish_question_bank_items where club_id is null) <> 100 then
@@ -72,12 +86,16 @@ begin
   end if;
 
   if has_function_privilege('anon', 'public.list_birthday_wish_question_bank(uuid)', 'EXECUTE')
-     or has_function_privilege('anon', 'public.save_birthday_wish_submission(uuid,uuid,text)', 'EXECUTE') then
+     or has_function_privilege('anon', 'public.save_birthday_wish_submission(uuid,uuid,text)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.publish_birthday_wish_submission(uuid,uuid)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.list_published_birthday_wish_submissions(uuid)', 'EXECUTE') then
     raise exception 'anonymous role gained birthday collection RPC access';
   end if;
 
   if not has_function_privilege('authenticated', 'public.get_my_birthday_wish_collection_page(uuid)', 'EXECUTE')
-     or not has_function_privilege('authenticated', 'public.save_birthday_wish_submission(uuid,uuid,text)', 'EXECUTE') then
+     or not has_function_privilege('authenticated', 'public.save_birthday_wish_submission(uuid,uuid,text)', 'EXECUTE')
+     or not has_function_privilege('authenticated', 'public.publish_birthday_wish_submission(uuid,uuid)', 'EXECUTE')
+     or not has_function_privilege('authenticated', 'public.list_published_birthday_wish_submissions(uuid)', 'EXECUTE') then
     raise exception 'authenticated birthday collection RPC grant missing';
   end if;
 end $$;
@@ -246,7 +264,8 @@ end $$;
 reset role;
 
 -- The assignee can submit, edit and delete before publication. The officer
--- projection includes the author; the member projection never includes it.
+-- projection includes the author; every member projection keeps it hidden,
+-- including the author themselves.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '13000000-0000-4000-8000-000000000001', true);
 do $$
@@ -270,6 +289,23 @@ begin
      or page->'participants' <> '[]'::jsonb then
     raise exception 'member birthday collection projection failed: %', page;
   end if;
+end $$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '13000000-0000-4000-8000-000000000001', true);
+do $$
+declare
+  ids record;
+begin
+  select * into ids from birthday_collection_test_ids limit 1;
+  begin
+    perform public.publish_birthday_wish_submission(
+      '43000000-0000-4000-8000-000000000001', ids.participant_id
+    );
+    raise exception 'ordinary member published a birthday submission';
+  exception when insufficient_privilege then null;
+  end;
 end $$;
 reset role;
 
@@ -299,6 +335,80 @@ begin
   perform public.delete_own_birthday_wish_submission(
     '43000000-0000-4000-8000-000000000001', ids.participant_id
   );
+end $$;
+reset role;
+
+-- A deleted draft can be submitted again. Publication is a separate officer
+-- decision, and the public projection hides the author from ordinary members.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '13000000-0000-4000-8000-000000000001', true);
+do $$
+declare
+  ids record;
+begin
+  select * into ids from birthday_collection_test_ids limit 1;
+  perform public.save_birthday_wish_submission(
+    '43000000-0000-4000-8000-000000000001', ids.participant_id,
+    '重新送出的生日祝福，準備交給幹部發布。'
+  );
+end $$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '13000000-0000-4000-8000-000000000004', true);
+do $$
+declare
+  ids record;
+begin
+  select * into ids from birthday_collection_test_ids limit 1;
+  perform public.publish_birthday_wish_submission(
+    '43000000-0000-4000-8000-000000000001', ids.participant_id
+  );
+  -- Publication is idempotent for a manager retry.
+  perform public.publish_birthday_wish_submission(
+    '43000000-0000-4000-8000-000000000001', ids.participant_id
+  );
+end $$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '13000000-0000-4000-8000-000000000002', true);
+do $$
+declare
+  page jsonb := public.list_published_birthday_wish_submissions('43000000-0000-4000-8000-000000000001');
+begin
+  if jsonb_array_length(page) <> 1
+     or page->0->>'content' <> '重新送出的生日祝福，準備交給幹部發布。'
+     or page->0->>'author_name' is not null
+     or page->0->>'author_is_hidden' <> 'true' then
+    raise exception 'recipient projection exposed the author or missed published content: %', page;
+  end if;
+end $$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '13000000-0000-4000-8000-000000000001', true);
+do $$
+declare
+  page jsonb := public.list_published_birthday_wish_submissions('43000000-0000-4000-8000-000000000001');
+begin
+  if page->0->>'author_name' is not null
+     or page->0->>'author_is_hidden' <> 'true' then
+    raise exception 'author projection exposed the author to the author: %', page;
+  end if;
+end $$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '13000000-0000-4000-8000-000000000004', true);
+do $$
+declare
+  page jsonb := public.list_published_birthday_wish_submissions('43000000-0000-4000-8000-000000000001');
+begin
+  if page->0->>'author_name' <> '徵集作者'
+     or page->0->>'author_is_hidden' <> 'false' then
+    raise exception 'manager projection did not expose the author: %', page;
+  end if;
 end $$;
 reset role;
 

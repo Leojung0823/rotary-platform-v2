@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Badge, Card } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
 import {
+  productFeatureFlagKeys,
   productFeatureCategories,
   productFeaturePath,
   productFeatures,
@@ -10,16 +11,18 @@ import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.s
 
 export default async function ProductFeaturesPage() {
   const identity = await requireIdentity();
-  const gatedFeatures = productFeatures.filter((feature) => feature.featureFlagKey);
-  const evaluations = await Promise.all(gatedFeatures.map(async (feature) => ({
-    slug: feature.slug,
-    evaluation: await evaluateCurrentFeatureFlag({
-      key: feature.featureFlagKey!,
-      subjectUuid: identity.id,
-    }),
-  })));
+  const gatedFeatures = productFeatures.filter((feature) => productFeatureFlagKeys(feature).length > 0);
+  const evaluations = await Promise.all(gatedFeatures.map(async (feature) => {
+    const featureEvaluations = await Promise.all(productFeatureFlagKeys(feature).map((key) => (
+      evaluateCurrentFeatureFlag({ key, subjectUuid: identity.id })
+    )));
+    return {
+      slug: feature.slug,
+      enabled: featureEvaluations.some((evaluation) => evaluation.enabled),
+    };
+  }));
   const disabledSlugs = new Set(
-    evaluations.filter(({ evaluation }) => !evaluation.enabled).map(({ slug }) => slug),
+    evaluations.filter(({ enabled }) => !enabled).map(({ slug }) => slug),
   );
   const visibleFeatures = productFeatures.filter((feature) => !disabledSlugs.has(feature.slug));
   const availableCount = visibleFeatures.filter((feature) => feature.status === "available").length;

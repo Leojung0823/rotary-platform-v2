@@ -15,11 +15,13 @@ export default async function InteractPage() {
   const identity = await requireIdentity();
   // Each destination renders notFound() when its flag is off, so only offer a
   // card when the same server-side evaluation says the page will open.
-  const [messageBoard, birthdayWishes, blessingIou] = await Promise.all([
+  const [messageBoard, birthdayWishesV1, birthdayWishesV2, blessingIou] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "message_board_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
   ]);
+  const birthdayWishesEnabled = birthdayWishesV1.enabled || birthdayWishesV2.enabled;
 
   const entries: InteractionEntry[] = [];
   if (messageBoard.enabled) {
@@ -30,7 +32,7 @@ export default async function InteractPage() {
       icon: "chat",
     });
   }
-  if (birthdayWishes.enabled) {
+  if (birthdayWishesEnabled) {
     entries.push({
       href: "/birthdays",
       title: "生日祝福",

@@ -1,4 +1,3 @@
-import { createInterface } from "node:readline";
 import { createClient } from "@supabase/supabase-js";
 import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 
@@ -24,6 +23,7 @@ const IMPLEMENTED = [
   "blessing_iou_collections_v1",
   "blessing_iou_reporting_v1",
   "birthday_wishes_v2",
+  "birthday_wishes_collection_v1",
 ];
 const UNIMPLEMENTED = [];
 
@@ -57,21 +57,43 @@ for (const key of keys) {
  * through the environment.
  */
 async function promptForPassword() {
-  const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-  process.stdout.write("Platform admin password (input hidden): ");
-  const muted = (chunk, encoding, callback) => {
-    if (!rl.line) process.stdout.write(chunk, encoding);
-    callback();
-  };
-  const original = rl.output._write.bind(rl.output);
-  rl.output._write = muted;
-  try {
-    return await new Promise((resolve) => rl.question("", resolve));
-  } finally {
-    rl.output._write = original;
-    rl.close();
-    process.stdout.write("\n");
-  }
+  const stdin = process.stdin;
+  const stdout = process.stdout;
+  const wasRaw = Boolean(stdin.isRaw);
+  stdout.write("Platform admin password (input hidden): ");
+  stdin.setRawMode(true);
+  stdin.setEncoding("utf8");
+  stdin.resume();
+
+  return await new Promise((resolve, reject) => {
+    let value = "";
+    const finish = (error, result) => {
+      stdin.off("data", onData);
+      stdin.setRawMode(wasRaw);
+      stdin.pause();
+      stdout.write("\n");
+      if (error) reject(error);
+      else resolve(result);
+    };
+    const onData = (chunk) => {
+      for (const character of chunk) {
+        if (character === "\u0003") {
+          finish(new Error("password prompt cancelled"));
+          return;
+        }
+        if (character === "\r" || character === "\n") {
+          finish(null, value);
+          return;
+        }
+        if (character === "\u007f" || character === "\b") {
+          value = value.slice(0, -1);
+        } else {
+          value += character;
+        }
+      }
+    };
+    stdin.on("data", onData);
+  });
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -101,16 +123,33 @@ if (signIn.error) fail("platform admin sign-in did not succeed");
 
 const enabled = action === "enable";
 const results = [];
+const expectedRolloutPercentage = enabled ? 100 : 0;
 for (const featureKey of keys) {
-  const { error } = await client.rpc("set_platform_feature_flag", {
+  const { data, error } = await client.rpc("set_platform_feature_flag", {
     p_feature_key: featureKey,
     p_enabled: enabled,
     p_enabled_environments: [target.target],
-    p_rollout_percentage: enabled ? 100 : 0,
+    p_rollout_percentage: expectedRolloutPercentage,
   });
   // A failure here is almost always missing platform-admin authority, which the
   // RPC refuses without explaining -- deliberately.
   if (error) fail(`the protected RPC rejected ${featureKey}`);
+
+  // Do not report success based only on the absence of an RPC error. The
+  // protected mutation must return the exact state the caller requested, so a
+  // stale or incompatible database cannot be mistaken for a completed rollout.
+  const returnedFlag = Array.isArray(data) ? data[0] : data;
+  if (
+    !returnedFlag
+    || returnedFlag.feature_key !== featureKey
+    || returnedFlag.enabled !== enabled
+    || returnedFlag.rollout_percentage !== expectedRolloutPercentage
+    || !Array.isArray(returnedFlag.enabled_environments)
+    || returnedFlag.enabled_environments.length !== 1
+    || returnedFlag.enabled_environments[0] !== target.target
+  ) {
+    fail(`the protected RPC returned an unexpected state for ${featureKey}`);
+  }
   results.push(featureKey);
 }
 

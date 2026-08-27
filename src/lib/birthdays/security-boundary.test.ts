@@ -7,6 +7,9 @@ function source(path: string) {
 
 describe("birthday wishes security boundary", () => {
   const migration = source("supabase/migrations/20260820001000_birthday_wishes.sql");
+  const v2AuthorAnonymity = source("supabase/migrations/20260824001200_birthday_wish_author_anonymity_core.sql");
+  const v2AllowWishesProjection = source("supabase/migrations/20260824001300_birthday_wishes_v2_allow_wishes_projection.sql");
+  const v1RollbackIsolation = source("supabase/migrations/20260824001400_birthday_wishes_v1_rollback_isolation.sql");
   const page = source("src/app/(authenticated)/birthdays/page.tsx");
   const actions = source("src/app/birthday-actions.ts");
 
@@ -37,5 +40,25 @@ describe("birthday wishes security boundary", () => {
     expect(migration).toContain("not public.current_can_manage_club(p_club_id)");
     expect(migration).toContain("invalid_birthday_moderation_reason");
     expect(migration).toContain("birthday_hard_delete_forbidden");
+  });
+
+  it("keeps the V2 author anonymous while preserving own edit capability", () => {
+    expect(v2AuthorAnonymity).toContain("when can_manage then author.account_display_name");
+    expect(v2AuthorAnonymity).toContain("'author_is_hidden', not can_manage");
+    expect(v2AuthorAnonymity).toContain("'can_edit', wish.author_app_account_id = actor_id");
+    expect(v2AuthorAnonymity).toContain("'can_delete', wish.author_app_account_id = actor_id");
+    expect(v2AuthorAnonymity).not.toContain("wish.author_app_account_id = actor_id or can_manage then author.account_display_name");
+  });
+
+  it("hides existing V2 wishes when the recipient disables incoming wishes", () => {
+    expect(v2AllowWishesProjection).toContain("and preference.allow_wishes = true");
+    expect(v2AllowWishesProjection).toContain("Turning off \"allow birthday wishes\"");
+  });
+
+  it("keeps V1 rollback reads and writes isolated from V2 wishes", () => {
+    expect(v1RollbackIsolation).toContain("and wish.experience_version = 1");
+    expect(v1RollbackIsolation).toContain("and experience_version = 1");
+    expect(v1RollbackIsolation).toContain("delete_own_birthday_wish_v2");
+    expect(actions).toContain('useV2 ? "delete_own_birthday_wish_v2" : "delete_own_birthday_wish"');
   });
 });
