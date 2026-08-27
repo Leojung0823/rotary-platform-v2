@@ -5,13 +5,13 @@
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77，以及文件 follow-up PR #80、#81、#82、#83。
+目前權威 `main` 已合併 PR #77；與本次 release 相關的後續 follow-up 僅同步文件。
 生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件已進入 main；
 生日徵集的應用程式 release SHA 是 `7b3db9794e8c272774c1a3a0edfa8edf34d8c079`，
 staging 目前仍部署這個 revision；#80–#83 都只有文件變更，沒有重新發布需求。production 沒有修改。
 
 PR #77 的最新 head `ecdd095a56c41be9d972003461a0913cbd925dcc` 已通過 application、validate、database
-與 Browser Smoke，並以一般 merge 合併；PR #80–#83 都只更新文件並已合併。應用程式 release SHA
+與 Browser Smoke，並以一般 merge 合併；與本次 release 相關的文件 follow-up 都只更新文件並已合併。應用程式 release SHA
 `7b3db9794e8c272774c1a3a0edfa8edf34d8c079` 的 Staging Release plan `33028492949` 與
 Staging Go-Live `33028548354` 均成功。Go-Live 已完成 migration apply、exact revision wait、HTTPS
 smoke 與 hosted member acceptance；生日徵集 flag 在這次 Go-Live 保持關閉。
