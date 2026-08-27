@@ -14,7 +14,7 @@
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，且 main
 SHA `7b3db9794e8c272774c1a3a0edfa8edf34d8c079` 已完成 staging Go-Live；徵集仍待
-開啟 staging flag、執行徵集專項 workflow 與社員／幹部真人驗收。
+確認 staging flag 狀態、同步 Render scheduler secret、以 current main 重新發布 staging、重跑排程專項 workflow 與社員／幹部真人驗收。
 
 ## 逐項狀態
 
@@ -109,9 +109,10 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 - 徵集任務、參與者、發布／隱藏／重新送出狀態、匿名公開牆與幹部管理介面；
 - service-role-only scheduler、訊息通知冪等、feature flag EXECUTE 邊界與 verification。
 
-仍待：在 staging 管理員透過受保護流程開啟 `birthday_wishes_collection_v1`，執行排程與
-徵集入口的 hosted smoke，以及社員與幹部真人驗收。一般 staging Go-Live 已完成，但不能
-把未開旗標的 hosted acceptance 誤寫成徵集功能已驗收。
+仍待：由 staging 管理員透過受保護流程確認／開啟 `birthday_wishes_collection_v1`，並先修正
+Render 應用程式端與 GitHub 的 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 不一致問題，再以 current main 重新發布 staging。手動執行的
+排程 run `33117785366` 回傳 `401 unauthorized`，因此尚不能證明旗標或徵集商業流程已有效執行；
+修正後還要重跑排程、徵集入口 hosted smoke，以及社員與幹部真人驗收。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
 
@@ -136,5 +137,6 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 
 以上程式與資料庫結果為本機證據；Staging Go-Live run `33028548354` 已以 exact main SHA
 完成 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance，但
-`birthday_wishes_collection_v1` 當時保持關閉，因此生日徵集專項 hosted workflow 尚未完成。
-瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。
+生日徵集專項 run `33117785366` 在 route 驗證階段回傳 `401 unauthorized`（GitHub secret 與
+Render 應用程式端 secret 不一致或缺失），尚未完成有效的徵集 workflow；不能把這次失敗當成
+旗標或業務流程通過。瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。
