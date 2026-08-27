@@ -2,7 +2,7 @@
 
 > 更新日期：2026-08-27
 > 狀態：**生日 V2 核心與祝福徵集第一至三階段已完成程式實作；PR #77 已合併，main 已完成一般 staging Go-Live，徵集 flag／專項 hosted 驗收與真人驗收待完成**
-> 程式現況基準：權威 `main` @ `7b3db9794e8c272774c1a3a0edfa8edf34d8c079`；已包含 `20260824000700`–`20260824001700`、UI、排程 route、workflow 與 verification
+> 程式現況基準：生日徵集程式 release SHA `7b3db9794e8c272774c1a3a0edfa8edf34d8c079`（已部署 staging）；目前權威 `main` HEAD 為 `661b0db5268a4269f6783cb88238b16366005e8c`，已包含 `20260824000700`–`20260824001700`、UI、排程 route、workflow 與 verification
 > 前一版：[`BIRTHDAY_WISHES_V1_SCOPE.md`](./BIRTHDAY_WISHES_V1_SCOPE.md)（已實作並部署）
 
 這份文件記錄目前產品討論的結論。它取代先前那份「生日祝福與壽星關懷 V2」草稿中
@@ -280,21 +280,22 @@ V1 的「沒有 `birthday_visibility_preferences` 列」目前實際效果是**�
 ### 6.2 祝福徵集第一階段已實作的部分
 
 - `20260824000600_birthday_wish_collection_core.sql` 已在 `main`：徵集、派發批次、參與者、提交、平台 100 題題庫與核心 RPC。
-- `20260824000700_birthday_wish_assignment_runner.sql` 是本機未提交的幹部手動月批 runner：每位社員每月最多一則、壽星排除、冪等、同批次題目不重複，題庫不足時整批停止。
-- `20260824000800_birthday_wish_collection_publication.sql` 是本機未提交的發布與公開投影：只有幹部能發布；壽星與一般社員看不到作者，只有幹部可以辨識作者。
-- `20260824000900_birthday_wish_collection_scheduler.sql` 是本機未提交的排程／通知切片：每日批次、service-role-only scheduler、通知冪等、訊息深連結與訊息中心關閉時的重試標記。
-- `20260824001000_birthday_wish_collection_review.sql` 是本機未提交的審核切片：社團題庫 CRUD、婉拒、發布後隱藏、revision 重新送出、append-only 處理紀錄，以及訊息中心逐位收件狀態。
-- `20260824001100_birthday_wish_author_anonymity.sql` 是本機未提交的安全修正：作者本人也視為一般社員，公開牆只有幹部可以辨識作者。
-- `20260824001200_birthday_wish_author_anonymity_core.sql` 是本機未提交的核心頁安全修正：作者本人保留編輯／刪除權，但生日 V2 一般社員投影不回傳作者姓名。
-- `20260824001300_birthday_wishes_v2_allow_wishes_projection.sql` 是本機未提交的投影修正：社員關閉接收祝福後，既有祝福也不再出現在 V2 核心牆。
-- `20260824001400_birthday_wishes_v1_rollback_isolation.sql` 是本機未提交的回滾隔離修正：V1 fallback 不再讀／改／刪 V2 row，V2 own-delete 使用專用 RPC。
-- `20260824001500_birthday_assignment_failed_retry.sql` 是本機未提交的派發恢復修正：題庫不足的 failed batch 補題後可重試同一批次；completed 與其他 failed 終態維持不可變。
+- `20260824000700_birthday_wish_assignment_runner.sql` 已隨 PR #77 進入 main 並部署至 staging：每位社員每月最多一則、壽星排除、冪等、同批次題目不重複，題庫不足時整批停止。
+- `20260824000800_birthday_wish_collection_publication.sql` 已隨 PR #77 進入 main 並部署至 staging：只有幹部能發布；壽星與一般社員看不到作者，只有幹部可以辨識作者。
+- `20260824000900_birthday_wish_collection_scheduler.sql` 已隨 PR #77 進入 main 並部署至 staging：每日批次、service-role-only scheduler、通知冪等、訊息深連結與訊息中心關閉時的重試標記。
+- `20260824001000_birthday_wish_collection_review.sql` 已隨 PR #77 進入 main 並部署至 staging：社團題庫 CRUD、婉拒、發布後隱藏、revision 重新送出、append-only 處理紀錄，以及訊息中心逐位收件狀態。
+- `20260824001100_birthday_wish_author_anonymity.sql` 已隨 PR #77 進入 main 並部署至 staging：作者本人也視為一般社員，公開牆只有幹部可以辨識作者。
+- `20260824001200_birthday_wish_author_anonymity_core.sql` 已隨 PR #77 進入 main 並部署至 staging：作者本人保留編輯／刪除權，但生日 V2 一般社員投影不回傳作者姓名。
+- `20260824001300_birthday_wishes_v2_allow_wishes_projection.sql` 已隨 PR #77 進入 main 並部署至 staging：社員關閉接收祝福後，既有祝福也不再出現在 V2 核心牆。
+- `20260824001400_birthday_wishes_v1_rollback_isolation.sql` 已隨 PR #77 進入 main 並部署至 staging：V1 fallback 不再讀／改／刪 V2 row，V2 own-delete 使用專用 RPC。
+- `20260824001500_birthday_assignment_failed_retry.sql` 已隨 PR #77 進入 main 並部署至 staging：題庫不足的 failed batch 補題後可重試同一批次；completed 與其他 failed 終態維持不可變。
 - 生日月份建立後的通知結果由應用層嚴格解析：`sent`／`no_recipients` 顯示完成、`skipped` 顯示訊息中心未開啟、`failed` 或未知格式維持錯誤。
 - 生日徵集 action 對資料庫的關閉／未開放／批次未完成狀態使用 bounded 的「尚未可操作」提示，不把資料庫細節直接顯示給社員。
 - 生日月份產生的 action 只接受 `completed`／`failed` 的終結批次狀態；`planned`、`assigning` 或未知回傳會 fail closed，避免在任務尚未完成時發通知。
-- `20260824001600_birthday_feature_flag_execution_privileges.sql` 是本機未提交的旗標權限修正：生日 V2／徵集 browser-facing RPC 的 `authenticated` EXECUTE 隨 `enabled` 狀態同步，缺列或關閉時 fail closed；environment／rollout 仍由 server evaluator 控制。
+- `20260824001600_birthday_feature_flag_execution_privileges.sql` 已隨 PR #77 進入 main 並部署至 staging，是旗標權限修正：生日 V2／徵集 browser-facing RPC 的 `authenticated` EXECUTE 隨 `enabled` 狀態同步，缺列或關閉時 fail closed；environment／rollout 仍由 server evaluator 控制。
+- `20260824001700_birthday_collection_question_prompt_uniqueness.sql` 已隨 PR #77 進入 main 並部署至 staging，透過 normalized prompt unique index 保證同一派發批次不會把相同題目分配給兩位社員。
 - verification 也會確認生日核心與徵集兩個旗標的 grant 彼此隔離；只關閉其中一個時，另一個功能仍可保留自己的 browser-facing EXECUTE。
-- `/birthday-collection` 是本機未提交的社員／幹部頁面；`birthday_wishes_collection_v1` 是明確啟用、預設關閉的功能旗標，幹部頁已接上題庫管理、隱藏、重送和歷史紀錄。
+- `/birthday-collection` 已隨 PR #77 進入 main 並部署至 staging，是社員／幹部頁面；`birthday_wishes_collection_v1` 是明確啟用、預設關閉的功能旗標，幹部頁已接上題庫管理、隱藏、重送和歷史紀錄。
 - `e2e/tests/birthday-v2.e2e.mjs` 已補 local targeted browser acceptance：同一作者同一天送出兩則、生日年齡顯示、作者匿名與 412px 無水平溢位；結果為 2 passed、2 個刻意 skip。測試 fixture 明確設定 `show_birthday_year=true`，這只代表測試同意，不代表替社員預設公開年齡。V2 使用獨立測試社與每次 bootstrap 的新壽星，避免 append-only 歷史污染重跑，也不繞過每日 10 則上限。
 - `.github/workflows/birthday-collection-scheduler.yml` 與 `/api/internal/birthday-collection/scheduler` 已推送並只接 staging；Go-Live 已成功，但因徵集 flag 尚未開啟，尚未執行有效的 staging 徵集 workflow。
 - `get_my_birthday_wish_collection_page` 與 `list_published_birthday_wish_submissions` 在頁面端並行查詢；資料庫仍是權限與匿名規則的最後守門。
