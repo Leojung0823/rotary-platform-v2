@@ -1,7 +1,7 @@
 # 生日祝福 V2 與祝福徵集：企劃書
 
-> 更新日期：2026-08-27
-> 狀態：**生日 V2 核心與祝福徵集第一至三階段已完成程式實作；PR #77 已合併，main 已完成一般 staging Go-Live，徵集 flag／專項 hosted 驗收與真人驗收待完成**
+> 更新日期：2026-08-28
+> 狀態：**生日 V2 核心與祝福徵集第一至三階段已完成程式實作；PR #77 已合併，main 已完成一般 staging Go-Live，徵集 flag 狀態、scheduler secret、專項 hosted 驗收與真人驗收待完成**
 > 程式現況基準：生日徵集程式 release SHA `7b3db9794e8c272774c1a3a0edfa8edf34d8c079`（已部署 staging）；本次 release 的後續文件 follow-up 僅同步文件，未改動這些程式、migration、UI、排程 route、workflow 或 verification
 > 前一版：[`BIRTHDAY_WISHES_V1_SCOPE.md`](./BIRTHDAY_WISHES_V1_SCOPE.md)（已實作並部署）
 
@@ -25,7 +25,7 @@
 本文件第 2–7 節是徵集領域的完整目標規格；目前已完成資料底座、手動月批派發、
 幹部發布、匿名公開牆、排程、訊息邀約、題庫 CRUD、隱藏後重送、逐筆完成狀態和處理紀錄的本機實作。
 
-徵集依賴 V2 核心、已存在但預設關閉的**站內訊息中心**，以及 staging-only 的 GitHub Actions 排程入口；程式與本機資料庫驗證已完成，一般 staging Go-Live 已完成，仍待開啟徵集 flag、執行專項 workflow 與真人驗收。
+徵集依賴 V2 核心、已存在但預設關閉的**站內訊息中心**，以及 staging-only 的 GitHub Actions 排程入口；程式與本機資料庫驗證已完成，一般 staging Go-Live 已完成。GitHub staging secret 已存在，但最近的 scheduler run `33117785366` 呼叫 Render staging route 時回傳 `401 unauthorized`，因此仍待同步兩端 secret、確認徵集 flag、重跑專項 workflow 與真人驗收。
 
 ---
 
@@ -196,7 +196,7 @@ V1 的「沒有 `birthday_visibility_preferences` 列」目前實際效果是**�
 - 社員生日、社籍或公開設定在排程執行前改變時，依最新權限重新判斷。
 - 排程只負責建立徵集和訊息，不直接替社員寫入祝福內容。
 
-本機資料庫驗證：同一批次重跑只保留一筆通知；訊息中心旗標關閉時保留 `skipped` retry marker，重新開啟後補送原批次，不建立第二個任務或第二則訊息；每位收件社員的訊息會顯示 `pending`、`completed`、`declined` 或 `needs_resubmission`。一般 staging Go-Live 已完成，但尚未在 staging 開啟徵集 flag 並執行 workflow。
+本機資料庫驗證：同一批次重跑只保留一筆通知；訊息中心旗標關閉時保留 `skipped` retry marker，重新開啟後補送原批次，不建立第二個任務或第二則訊息；每位收件社員的訊息會顯示 `pending`、`completed`、`declined` 或 `needs_resubmission`。一般 staging Go-Live 已完成；手動 scheduler run `33117785366` 在 route 驗證階段回傳 `401 unauthorized`，所以尚不能證明 staging flag 或徵集業務流程已成功執行。
 
 ### 5.2 站內訊息中心現況
 
@@ -297,11 +297,11 @@ V1 的「沒有 `birthday_visibility_preferences` 列」目前實際效果是**�
 - verification 也會確認生日核心與徵集兩個旗標的 grant 彼此隔離；只關閉其中一個時，另一個功能仍可保留自己的 browser-facing EXECUTE。
 - `/birthday-collection` 已隨 PR #77 進入 main 並部署至 staging，是社員／幹部頁面；`birthday_wishes_collection_v1` 是明確啟用、預設關閉的功能旗標，幹部頁已接上題庫管理、隱藏、重送和歷史紀錄。
 - `e2e/tests/birthday-v2.e2e.mjs` 已補 local targeted browser acceptance：同一作者同一天送出兩則、生日年齡顯示、作者匿名與 412px 無水平溢位；結果為 2 passed、2 個刻意 skip。測試 fixture 明確設定 `show_birthday_year=true`，這只代表測試同意，不代表替社員預設公開年齡。V2 使用獨立測試社與每次 bootstrap 的新壽星，避免 append-only 歷史污染重跑，也不繞過每日 10 則上限。
-- `.github/workflows/birthday-collection-scheduler.yml` 與 `/api/internal/birthday-collection/scheduler` 已推送並只接 staging；Go-Live 已成功，但因徵集 flag 尚未開啟，尚未執行有效的 staging 徵集 workflow。
+- `.github/workflows/birthday-collection-scheduler.yml` 與 `/api/internal/birthday-collection/scheduler` 已推送並只接 staging；Go-Live 已成功，但 run `33117785366` 因 GitHub 與 Render 端 scheduler secret 不一致或缺失而回傳 `401 unauthorized`，修正前不能視為有效的 staging 徵集 workflow。
 - `get_my_birthday_wish_collection_page` 與 `list_published_birthday_wish_submissions` 在頁面端並行查詢；資料庫仍是權限與匿名規則的最後守門。
 - `e2e/tests/birthday-collection.e2e.mjs` 已在 local Chromium 覆蓋桌面題庫新增／修改／停用、社員婉拒與幹部婉拒紀錄、建立／送出／發布／匿名公開牆、幹部隱藏／社員重送／再次發布／處理紀錄，以及 412px 任務入口與水平溢位；不代表 staging 或真人驗收。
 
-第一至三階段的程式開發與本機安全驗證已完成；PR #77 已完成 main 整合與一般 staging 發布，尚未完成的是開啟 staging flag、徵集專項 hosted workflow、真人社員／幹部驗收與 M1 使用者測試。
+第一至三階段的程式開發與本機安全驗證已完成；PR #77 已完成 main 整合與一般 staging 發布，尚未完成的是確認／開啟 staging flag、同步 scheduler secret、通過徵集專項 hosted workflow、真人社員／幹部驗收與 M1 使用者測試。
 
 ### 6.3 會影響 V2 實作的具體事實
 
@@ -368,7 +368,7 @@ V2 要明確指定生日年度採公曆年、以社團時區判斷日期，不�
 - 驗證要測「誰不能做什麼」：外社社員、停權帳號、停權社籍、
   以及**壽星本人不能收到自己的徵集**、**壽星不能看到作者**、**幹部可以看到作者**。
 - 要測既有偏好列、既有缺列、新偏好預設公開，以及生日年度多則祝福和每日上限。
-- 已測月批重跑冪等、題庫不足時整批暫停且補題後同批次重試、同批次題目 ID／文字不重複、跨社團隔離、發布權限、feature flag server gate 與 DB `authenticated` EXECUTE gate、排程重跑、訊息重複派發冪等、題庫管理權限、婉拒、隱藏重送、append-only 處理紀錄、逐位訊息狀態，以及 `allow_wishes=false` 的核心投影；一般 staging Go-Live 已通過，但徵集 flag 尚未開啟，因此專項 hosted workflow 與真人社員驗收仍未完成。
+- 已測月批重跑冪等、題庫不足時整批暫停且補題後同批次重試、同批次題目 ID／文字不重複、跨社團隔離、發布權限、feature flag server gate 與 DB `authenticated` EXECUTE gate、排程重跑、訊息重複派發冪等、題庫管理權限、婉拒、隱藏重送、append-only 處理紀錄、逐位訊息狀態，以及 `allow_wishes=false` 的核心投影；一般 staging Go-Live 已通過，但 scheduler run `33117785366` 回傳 `401 unauthorized`，因此 scheduler secret、徵集 flag 的有效狀態、專項 hosted workflow 與真人社員驗收仍未完成。
 - 要測壽星與一般社員（包含作者本人）看不到手動祝福作者，只有幹部可以看到作者。
 - 幹部的隱藏、刪除權限與作者可見性都要在資料庫重新驗證，不能只靠 UI。
 - 其餘工程約定見專案根目錄的 `AGENTS.md`。

@@ -1,4 +1,4 @@
-# 交接筆記（2026-08-27）
+# 交接筆記（2026-08-28）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
@@ -8,7 +8,7 @@
 目前權威 `main` 已合併 PR #77；與本次 release 相關的後續 follow-up 僅同步文件。
 生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件已進入 main；
 生日徵集的應用程式 release SHA 是 `7b3db9794e8c272774c1a3a0edfa8edf34d8c079`，
-staging 目前仍部署這個 revision；#80–#83 都只有文件變更，沒有重新發布需求。production 沒有修改。
+staging 目前仍部署這個 revision；#80–#84 都只有文件變更，沒有重新發布需求。production 沒有修改。
 
 PR #77 的最新 head `ecdd095a56c41be9d972003461a0913cbd925dcc` 已通過 application、validate、database
 與 Browser Smoke，並以一般 merge 合併；與本次 release 相關的文件 follow-up 都只更新文件並已合併。應用程式 release SHA
@@ -51,8 +51,10 @@ smoke 與 hosted member acceptance；生日徵集 flag 在這次 Go-Live 保持�
 
 ## 仍未完成／需外部條件
 
-- `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已設定於 staging environment；仍需由 staging 管理員透過受保護
-  的 flag 腳本明確開啟 `birthday_wishes_collection_v1`，才能做徵集入口與排程驗收。
+- GitHub `staging` environment 已有 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`，但排程 workflow run
+  `33117785366` 呼叫已部署的 staging route 時回傳 `401 unauthorized`。這表示 Render 應用程式端的同名
+  環境變數目前未設定或與 GitHub secret 不一致；需先在 Render staging 同步 secret，再由 staging 管理員
+  透過受保護的 flag 腳本確認 `birthday_wishes_collection_v1`，才能做有效的徵集入口與排程驗收。
 - GPS accuracy／定位 age 政策要由產品選定後才能 harden。
 - recovery 需要專用 staging 帳號的真實新信件流程。
 - iOS Safari／真實 Android 裝置驗收尚未做。
@@ -76,6 +78,7 @@ main CI                         passed (run 33027886541)
 main Browser Smoke              passed (run 33027886551)
 staging plan                    passed (run 33028492949)
 staging Go-Live                 passed (run 33028548354)
+staging birthday scheduler      failed: 401 unauthorized (run 33117785366; GitHub/Render secret mismatch)
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
