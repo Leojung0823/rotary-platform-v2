@@ -7,6 +7,40 @@ begin;
 -- Resolve both implicit bounds from the selected club's timezone. Explicit
 -- bounds remain untouched.
 
+create or replace function public.current_attendance_club_local_date(p_club_id uuid)
+returns date
+language plpgsql
+stable
+security definer
+set search_path = pg_catalog, public, auth
+as $$
+declare
+  timezone_name text;
+begin
+  -- The projection wrappers run as the caller, so they cannot read clubs
+  -- directly under the normal RLS boundary. Keep the narrow table lookup in a
+  -- security-definer helper with the same membership/management guard.
+  if p_club_id is null
+     or (
+       public.current_club_membership_id(p_club_id) is null
+       and not public.current_has_club_permission(p_club_id, 'attendance.manage')
+     ) then
+    raise exception using errcode = '42501', message = 'attendance_club_access_required';
+  end if;
+
+  select coalesce(nullif(club.timezone_name, ''), 'UTC')
+  into timezone_name
+  from public.clubs as club
+  where club.id = p_club_id
+    and club.club_status = 'active';
+  if not found then
+    raise exception using errcode = '42501', message = 'attendance_club_access_required';
+  end if;
+
+  return (now() at time zone timezone_name)::date;
+end;
+$$;
+
 create or replace function public.get_my_attendance_page(
   p_club_id uuid default null,
   p_date_from date default null,
@@ -50,10 +84,7 @@ begin
   end if;
 
   if selected is not null then
-    select (now() at time zone coalesce(nullif(club.timezone_name, ''), 'UTC'))::date
-    into local_today
-    from public.clubs as club
-    where club.id = selected;
+    local_today := public.current_attendance_club_local_date(selected);
   else
     local_today := current_date;
   end if;
@@ -116,10 +147,7 @@ begin
   end if;
 
   if selected is not null then
-    select (now() at time zone coalesce(nullif(club.timezone_name, ''), 'UTC'))::date
-    into local_today
-    from public.clubs as club
-    where club.id = selected;
+    local_today := public.current_attendance_club_local_date(selected);
   else
     local_today := current_date;
   end if;
@@ -160,6 +188,8 @@ $$;
 -- CREATE OR REPLACE preserves the existing grants, but state the boundary
 -- explicitly here so a future signature or privilege change cannot silently
 -- make this page callable by an anonymous client.
+revoke all on function public.current_attendance_club_local_date(uuid) from public, anon, authenticated;
+grant execute on function public.current_attendance_club_local_date(uuid) to authenticated;
 revoke all on function public.get_my_attendance_page(uuid, date, date) from public, anon;
 grant execute on function public.get_my_attendance_page(uuid, date, date) to authenticated;
 revoke all on function public.get_club_attendance_page(uuid, date, date, uuid) from public, anon;

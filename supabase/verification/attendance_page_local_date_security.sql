@@ -11,10 +11,16 @@ insert into auth.users (
   '1b000000-0000-4000-8000-000000000001',
   'authenticated', 'authenticated', 'att-local-date@example.test', '', now(),
   '{}', '{}', now(), now()
+), (
+  '00000000-0000-0000-0000-000000000000',
+  '1b000000-0000-4000-8000-000000000002',
+  'authenticated', 'authenticated', 'att-local-date-outsider@example.test', '', now(),
+  '{}', '{}', now(), now()
 );
 
-insert into public.people (id, canonical_name, primary_email)
-values ('2b000000-0000-4000-8000-000000000001', '時區測試社員', 'att-local-date@example.test');
+insert into public.people (id, canonical_name, primary_email) values
+  ('2b000000-0000-4000-8000-000000000001', '時區測試社員', 'att-local-date@example.test'),
+  ('2b000000-0000-4000-8000-000000000002', '時區測試外部帳號', 'att-local-date-outsider@example.test');
 
 insert into public.app_accounts (
   id, auth_user_id, person_id, login_email, account_display_name, account_status
@@ -23,6 +29,11 @@ insert into public.app_accounts (
   '1b000000-0000-4000-8000-000000000001',
   '2b000000-0000-4000-8000-000000000001',
   'att-local-date@example.test', '時區測試社員', 'active'
+), (
+  '3b000000-0000-4000-8000-000000000002',
+  '1b000000-0000-4000-8000-000000000002',
+  '2b000000-0000-4000-8000-000000000002',
+  'att-local-date-outsider@example.test', '時區測試外部帳號', 'active'
 );
 
 insert into public.clubs (
@@ -52,7 +63,9 @@ insert into public.club_role_assignments (
 
 do $grants$
 begin
-  if has_function_privilege('anon', 'public.get_my_attendance_page(uuid, date, date)', 'execute')
+  if has_function_privilege('anon', 'public.current_attendance_club_local_date(uuid)', 'execute')
+     or not has_function_privilege('authenticated', 'public.current_attendance_club_local_date(uuid)', 'execute')
+     or has_function_privilege('anon', 'public.get_my_attendance_page(uuid, date, date)', 'execute')
      or has_function_privilege('anon', 'public.get_club_attendance_page(uuid, date, date, uuid)', 'execute') then
     raise exception 'Attendance page projections are executable by anon.';
   end if;
@@ -83,7 +96,25 @@ begin
      or club_page ->> 'selected_club_id' <> '5b000000-0000-4000-8000-000000000001' then
     raise exception 'Attendance page selected the wrong club.';
   end if;
+
+  if public.current_attendance_club_local_date('5b000000-0000-4000-8000-000000000001') <> expected_today then
+    raise exception 'Local-date helper returned the wrong date.';
+  end if;
 end $local_date$;
 
 reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '1b000000-0000-4000-8000-000000000002', true);
+do $outsider$
+begin
+  begin
+    perform public.current_attendance_club_local_date('5b000000-0000-4000-8000-000000000001');
+    raise exception 'An unrelated account read the club local date.';
+  exception when insufficient_privilege then
+    null;
+  end;
+end $outsider$;
+reset role;
+
 rollback;
