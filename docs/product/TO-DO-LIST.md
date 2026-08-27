@@ -131,7 +131,7 @@ current-main 專項 hosted acceptance `33121570908` 已證實 V2 旗標尚未開
 - `npm run typecheck`：passed。
 - `npm run lint`：passed。
 - `npm run build`：passed。
-- `npm run verify:db`：46 份 verification SQL passed；schema lint 只有既有 3 個 warning。
+- `npm run verify:db`：本機未完成，因 Docker／Supabase 沒有回應而停止；PR #86 的 CI database job 已通過 46 份 verification SQL，schema lint 只有既有 3 個 warning。
 - `npm run check:migrations`：passed。
 - `npm run check:db-verifications`：manifest covers all 46 SQL files。
 - role shell：18/18 passed。

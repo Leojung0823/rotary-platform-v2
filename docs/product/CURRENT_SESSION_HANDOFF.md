@@ -72,11 +72,12 @@ npm test                         100 files / 631 tests passed
 npm run typecheck                passed
 npm run lint                     passed
 npm run build                    passed
-npm run verify:db                46 verification SQL passed
+npm run verify:db                not completed locally (Docker/Supabase unresponsive)
 npm run check:migrations         passed
 npm run check:db-verifications   46 files covered
 git diff --check                 passed
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
+PR #86 CI database                passed (run 33120346988; 46 verification SQL)
 main CI                           passed (run 33121186952)
 main Browser Smoke                passed (run 33121186949, 11m50s)
 staging plan                      passed (run 33121197083)
