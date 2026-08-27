@@ -14,7 +14,7 @@
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，且 main
 SHA `7b3db9794e8c272774c1a3a0edfa8edf34d8c079` 已完成 staging Go-Live；徵集仍待
-確認 staging flag 狀態、同步 Render scheduler secret、重跑排程專項 workflow 與社員／幹部真人驗收。
+確認 staging flag 狀態、同步 Render scheduler secret、以 current main 重新發布 staging、重跑排程專項 workflow 與社員／幹部真人驗收。
 
 ## 逐項狀態
 
@@ -110,7 +110,7 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 - service-role-only scheduler、訊息通知冪等、feature flag EXECUTE 邊界與 verification。
 
 仍待：由 staging 管理員透過受保護流程確認／開啟 `birthday_wishes_collection_v1`，並先修正
-Render 應用程式端與 GitHub 的 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 不一致問題。手動執行的
+Render 應用程式端與 GitHub 的 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 不一致問題，再以 current main 重新發布 staging。手動執行的
 排程 run `33117785366` 回傳 `401 unauthorized`，因此尚不能證明旗標或徵集商業流程已有效執行；
 修正後還要重跑排程、徵集入口 hosted smoke，以及社員與幹部真人驗收。
 

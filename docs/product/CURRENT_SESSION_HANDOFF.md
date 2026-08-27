@@ -9,6 +9,9 @@
 生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件已進入 main；
 生日徵集的應用程式 release SHA 是 `7b3db9794e8c272774c1a3a0edfa8edf34d8c079`，
 staging 目前仍部署這個 revision；#80–#84 都只有文件變更，沒有重新發布需求。production 沒有修改。
+Hosted staging browser acceptance 只接受從 `main` dispatch，且 `expected_sha` 必須等於該次 workflow 的
+`GITHUB_SHA`；目前 `main` 是 `949097355053f5bb61e70a8de72b69957bd5a732`，staging app 仍是上述 `7b3…`
+release，因此 scheduler secret 修正後仍需走一次受保護的 current-main staging release，才能執行生日徵集 hosted acceptance。
 
 PR #77 的最新 head `ecdd095a56c41be9d972003461a0913cbd925dcc` 已通過 application、validate、database
 與 Browser Smoke，並以一般 merge 合併；與本次 release 相關的文件 follow-up 都只更新文件並已合併。應用程式 release SHA
@@ -54,7 +57,7 @@ smoke 與 hosted member acceptance；生日徵集 flag 在這次 Go-Live 保持�
 - GitHub `staging` environment 已有 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`，但排程 workflow run
   `33117785366` 呼叫已部署的 staging route 時回傳 `401 unauthorized`。這表示 Render 應用程式端的同名
   環境變數目前未設定或與 GitHub secret 不一致；需先在 Render staging 同步 secret，再由 staging 管理員
-  透過受保護的 flag 腳本確認 `birthday_wishes_collection_v1`，才能做有效的徵集入口與排程驗收。
+  透過受保護的 flag 腳本確認 `birthday_wishes_collection_v1`，再發布目前 `main` 到 staging，才能做有效的徵集入口與排程驗收。
 - GPS accuracy／定位 age 政策要由產品選定後才能 harden。
 - recovery 需要專用 staging 帳號的真實新信件流程。
 - iOS Safari／真實 Android 裝置驗收尚未做。
