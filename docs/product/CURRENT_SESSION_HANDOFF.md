@@ -22,9 +22,15 @@
 嚴格驗證。範本那半邊若遇到「免費方案」這個特定 400，會記錄 `BLOCKED_BY_PLAN` 並讓 run 通過；**其他任何
 400 仍然是紅燈**，這條邊界有單元測試釘住，不要為了讓 workflow 變綠而放寬它。
 
-**未解決，需要外部條件**：staging 專案要接上 custom SMTP（Resend 免費額度 3,000 封/月即足夠）。
-設定後範本同步會自動恢復嚴格驗證，**不需要改任何程式**。在那之前 recovery 信件仍使用預設範本，
-`2ba8cda` 的 prefetch 防護尚未生效，**不要拿 recovery 信件當驗收證據**。
+**已由產品決定暫時擱置**：接 custom SMTP 與 recovery email 範本同步都先不處理。理由是登入頁把
+「使用 LINE 登入」放第一順位、平台密碼是次要路徑，預期會用到「忘記密碼」的社員極少，且登入頁已有
+「聯絡社務管理員」的人工 fallback。
+
+擱置期間請注意：redirect 正常，密碼重設流程可用；但信件仍是預設範本，`2ba8cda` 的 prefetch 防護
+**尚未生效**，也**不要拿 recovery 信件當驗收證據**。`BLOCKED_BY_PLAN` 是預期輸出，**不要當成 bug 去修**。
+
+重啟時機:production 上線前必須處理(預設寄信服務只寄給團隊成員)，或密碼登入比例上升。屆時替 staging
+專案設定 custom SMTP 即可，範本同步會自動恢復嚴格驗證，**不需要改任何程式**。
 
 **這一輪的 4 個 commit 都標了 `[skip ci]`**（`7e1a22b`、`8823f85`、`ead52e9`、`b49f0d7`），是使用者當下
 的明確指示。本機已跑過 lint、typecheck 與 647 個測試全通過，但**這些 commit 沒有經過 CI 或 Browser
@@ -35,11 +41,12 @@ Smoke**。下次有任何高風險變更進 `main` 時，請讓完整 CI 跑一�
 1. `Staging Release`（plan）→ `Staging Go-Live`，讓 staging runtime 追上 `main`。目前 runtime 仍是
    `26520424b415`，落後多輪，本輪 Auth 修復也還沒部署出去。Go-Live 的 `expected_sha` 一定要用
    `$(git rev-parse HEAD)`。
-2. 接 custom SMTP，然後重跑 Auth 同步 workflow，確認 `BLOCKED_BY_PLAN` 消失、範本驗證轉嚴格。
-3. 完成一封真實的 staging recovery 信件流程作為驗收。
-4. GPS accuracy／定位 age 政策仍等產品決定，在那之前不要改 GPS 契約。
-5. draft PR #40 的 base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main` 實作，
+2. GPS accuracy／定位 age 政策仍等產品決定，在那之前不要改 GPS 契約。
+3. draft PR #40 的 base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main` 實作，
    不能直接合併；請確認要關閉還是重開。
+
+**不在待辦內**：custom SMTP 與 recovery email 範本同步已由產品決定擱置（見上）。`BLOCKED_BY_PLAN`
+是預期輸出，**不要主動去修**，也不要為了消除它而放寬斷言。
 
 ## 本次同步結果
 

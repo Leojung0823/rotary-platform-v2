@@ -64,9 +64,31 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 仍缺：用專用 staging 測試帳號收到一封新的 recovery email，完成「點信 → 確認 → 更新密碼 →
 重新登入」的真實驗收。不能以單元測試或本機 Mailpit 代替這項外部驗收。
 
-最新受保護的 staging Auth 設定同步 workflow `33348350584` 在第一次 Management API 請求失敗；
-目前要先重新確認 GitHub `staging` environment 的 `SUPABASE_ACCESS_TOKEN` 是否仍有效，不能使用舊信件
-或猜測 token。此 workflow 未完成前，不重新寄 recovery 信件。
+staging Auth 設定同步已修復（run `33400262734`），redirect 已同步並通過嚴格驗證。
+
+**recovery email 範本同步已由產品決定暫時擱置**，不是待修的缺陷。理由：登入頁把「使用 LINE 登入」
+放在第一順位，平台密碼是分隔線下方的次要路徑，預期實際使用「忘記密碼」的社員極少；登入頁本身也已
+提供「聯絡所屬扶輪社的社務管理員」的人工 fallback。
+
+擱置期間的已知狀態與殘留風險：
+
+- redirect 正常，密碼重設流程本身可用。
+- 信件仍使用 Supabase 預設範本，因此 `2ba8cda` 的 prefetch 防護**尚未生效**；少數使用密碼登入
+  又觸發忘記密碼的社員，連結有被郵件或防毒軟體提前消耗的可能。
+- Supabase 預設寄信服務只寄得到專案團隊成員，所以無法對一般測試帳號完成真實信件驗收。
+
+因此本節的「真實 recovery email 驗收」一併順延，不列為 release blocker。
+
+**Auth 同步 workflow 出現 `BLOCKED_BY_PLAN` 是預期行為，不要當成 bug 去修**，也不要為了消除它而
+放寬既有斷言——那條分支只接受「免費方案拒絕 email 範本」這一種 400，其餘 400 仍是紅燈。
+
+需要重新啟動這件事的時機：
+
+1. **production 上線前必須處理**——預設寄信服務只寄給團隊成員，production 無法運作。
+2. 密碼登入比例上升，或有社員回報密碼重設失敗。
+
+處理方式是替 staging 專案設定 custom SMTP（Resend 免費額度 3,000 封/月即足夠），設定後範本同步會
+自動恢復嚴格驗證，不需要改任何程式。
 
 ### 5. Browser Smoke 與行動版 `[>]`
 
