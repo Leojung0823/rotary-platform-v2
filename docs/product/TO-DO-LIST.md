@@ -171,10 +171,13 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 1. 安排 iOS Safari、Android Chrome 與五位目標使用者的 staging 驗收。
 2. 確認 draft PR #40 的處置：base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main`
    實作，不能直接合併。
-3. 另行決定是否明確開啟 `announcements_v09`；功能完成不代表目前對社員公開。
-
 已結案、不在下一步內：staging Management API token 已修復且 Auth 設定同步通過（run `33400262734`）；
-recovery email 範本與 custom SMTP 已由產品決定擱置；GPS accuracy 政策已決定不設門檻。
+recovery email 範本與 custom SMTP 已由產品決定擱置；GPS accuracy 政策已決定不設門檻；
+`announcements_v09` 已於 2026-08-31 對 staging 開啟。
+
+`announcements_v09`（訊息中心）已由平台管理員透過受保護 CLI 對 **staging** 開啟：enabled、rollout 100%、
+`enabled_environments` 僅 `staging`。腳本會逐項比對 RPC 回傳狀態，不是「送出即成功」。**production 未開啟**，
+要對 production 開啟需另行決定並另行執行。因此 staging 的實機驗收現在應一併涵蓋訊息中心。
 
 ## 本輪驗證證據
 

@@ -359,7 +359,9 @@ PR-01c 不做：
 
 1. 決定 GPS accuracy／定位 age 政策，才能關閉 GPS hardening blocker。
 2. 以專用 staging 身份完成 recovery 真實 email flow，並做 iOS／Android 實機驗收。
-3. 決定何時對社員開啟訊息中心與其他旗標：`npm run flags:enable announcements_v09`（預設關閉）。
+3. 訊息中心 `announcements_v09` 已於 2026-08-31 對 **staging** 開啟（enabled、rollout 100%、僅 `staging`）。
+   **production 尚未開啟**，要對 production 開啟需另行決定。其他旗標仍依需要以
+   `npm run flags:enable:staging <key>` 個別開啟；預設關閉的行為不變。
 4. 生日徵集 staging 設定、hosted smoke 與排程已完成；下一步進入 M1 使用者測試。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。

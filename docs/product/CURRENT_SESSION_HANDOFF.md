@@ -41,8 +41,11 @@ Smoke**。下次有任何高風險變更進 `main` 時，請讓完整 CI 跑一�
 1. ~~`Staging Release` → `Staging Go-Live`~~ **已完成**：plan `33403385635`、Go-Live `33403560211`
    均成功，staging runtime 已是 `9a0b0fcb959c`。下次部署時 `expected_sha` 一定要用
    `$(git rev-parse HEAD)`，不要手打。
-2. draft PR #40 的 base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main` 實作，
-   不能直接合併；請確認要關閉還是重開。
+2. ~~draft PR #40~~ **已於 2026-08-31 關閉**（base 過時、功能已在 `main`）；分支
+   `feat/v0.9-announcements-notifications` 保留未刪。
+3. `announcements_v09` 已對 **staging** 開啟（enabled、rollout 100%、僅 `staging`）；production 未開啟。
+4. 仍未完成：iOS Safari／真實 Android 實機驗收，以及 M1 五位目標使用者形成性測試。實機驗收現在
+   應一併涵蓋訊息中心。
 
 **不在待辦內**：custom SMTP 與 recovery email 範本同步已由產品決定擱置（見上）。`BLOCKED_BY_PLAN`
 是預期輸出，**不要主動去修**，也不要為了消除它而放寬斷言。
