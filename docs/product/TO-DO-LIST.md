@@ -15,8 +15,9 @@ GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Bro
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併。
 
 目前權威來源是 GitHub `main`；staging `/api/health`
-於 2026-08-31 掃描通過，但執行版本仍是 `26520424b415b8f3e446d0ff53312330f30e76af`。
-因此 staging 目前落後 `main`，不能把最新主線的 Auth 設定同步程式、功能目錄或 CI 範圍規則說成已部署。
+於 2026-08-31 掃描通過，執行版本已透過 plan `33403385635`／Go-Live `33403560211` 更新為
+`9a0b0fcb959c2c9398c70e133ef5b04880998f16`，與當時的 `main` 一致。本輪的 Auth 設定同步修復、功能目錄與
+CI 範圍規則都已隨這次部署上線。此後若再有 commit 進 `main`，runtime 會再度落後，屆時不能把主線內容說成已部署。
 健康檢查的 `issues` 為空，`DEPLOYMENT_WARNING` 是 staging 的預期警告；production 沒有修改。
 生日徵集的兩個旗標已由 staging 平台管理員透過受保護流程開啟，Render scheduler secret 已同步，
 針對 `26520424b415` 的 hosted acceptance `33345182984` 與最新排程 workflow `33361427466` 均成功。

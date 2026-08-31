@@ -38,9 +38,9 @@ Smoke**。下次有任何高風險變更進 `main` 時，請讓完整 CI 跑一�
 
 **接手建議順序**：
 
-1. `Staging Release`（plan）→ `Staging Go-Live`，讓 staging runtime 追上 `main`。目前 runtime 仍是
-   `26520424b415`，落後多輪，本輪 Auth 修復也還沒部署出去。Go-Live 的 `expected_sha` 一定要用
-   `$(git rev-parse HEAD)`。
+1. ~~`Staging Release` → `Staging Go-Live`~~ **已完成**：plan `33403385635`、Go-Live `33403560211`
+   均成功，staging runtime 已是 `9a0b0fcb959c`。下次部署時 `expected_sha` 一定要用
+   `$(git rev-parse HEAD)`，不要手打。
 2. GPS accuracy／定位 age 政策仍等產品決定，在那之前不要改 GPS 契約。
 3. draft PR #40 的 base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main` 實作，
    不能直接合併；請確認要關閉還是重開。
@@ -54,8 +54,10 @@ Smoke**。下次有任何高風險變更進 `main` 時，請讓完整 CI 跑一�
 `main` 的最新 commit 為準。PR #91 加入 staging Auth 設定同步流程，PR #92
 同步功能目錄，PR #93 加入 CI／Browser Smoke 的變更範圍 gate。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
 production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
-staging `/api/health` 健康檢查通過，但 runtime 仍是 revision `26520424b415`，沒有追上目前 `main`；後續文件合併
-也不代表 runtime 已部署。並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。
+staging runtime 已於 2026-08-31 透過 plan `33403385635`／Go-Live `33403560211` 部署到 `9a0b0fcb959c`，
+`/api/health` 的 `issues` 為空，`DEPLOYMENT_WARNING` 是 staging 用 `LINE_OA_MODE=mock` 的預期警告。
+該次 Go-Live 的 migration dry-run 回報 `Remote database is up to date.`，沒有待套用的 schema 變更。
+注意此後若有新的文件 commit 進 `main`，runtime 會再次落後一個 commit；後續文件合併不代表 runtime 已部署。並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。
 
 PR #86 的 application、validate、database 與 Browser Smoke 均通過後以一般 merge 合併。生日專項 hosted acceptance
 `33345182984` 已以程式 SHA `26520424b415` 通過，包含生日 V2 說明與祝福徵集入口。staging 平台管理員已透過受保護 CLI
@@ -143,6 +145,9 @@ staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
 staging Auth fix commits           lint / typecheck / 647 tests passed locally;
                                   CI skipped by instruction ([skip ci])
+staging plan (this round)          passed (run 33403385635; remote database up to date)
+staging Go-Live (this round)       passed (run 33403560211; revision 9a0b0fcb959c,
+                                  smoke + hosted member acceptance passed, issues empty)
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
