@@ -93,9 +93,9 @@ Phase 2 之後追加並完成的社務功能：
 以下是實作與本文件原則之間目前存在的落差，記錄於此以免被誤認為已處理：
 
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
-- GPS 仍缺產品指定的 accuracy／定位 age 契約；本文件不替產品猜門檻。
-- `main` 與 staging runtime 尚未對齊；staging 健康檢查通過，但目前仍執行 `26520424b415`；閱讀本文件時應以 GitHub `main` 的最新 commit 為權威。
-- 真實 staging recovery email、iOS／Android 實機驗收與 M1 使用者測試尚未完成；Auth 同步 workflow `33348350584` 目前失敗，不能以舊信件代替。
+- GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見 `TO-DO-LIST.md` 第 1 節。
+- staging runtime 已於 2026-08-31 透過 plan `33403385635`／Go-Live `33403560211` 部署到 `9a0b0fcb959c`，`/api/health` 的 `issues` 為空。此後每有新 commit 進 `main`，runtime 會再度落後；閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
+- Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
 - 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，PR #77 已合併且程式 SHA `26520424b415` 已部署到 staging；旗標、Render／GitHub scheduler secret、hosted acceptance 與 scheduler workflow 均已完成。後續文件 PR 不改 runtime，不能把文件 merge SHA 誤當成 staging runtime。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據，不取代最新成功結果。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
 - PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40 目前仍是過時 base 上的 draft，公告通知已在 `main` 實作，不能直接合併該 PR。
