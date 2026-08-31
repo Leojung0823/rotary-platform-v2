@@ -3,6 +3,44 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 交接給下一位代理（2026-08-31 staging Auth 修復輪）
+
+這一輪只處理 staging Auth 同步失敗，沒有碰任何產品功能。接手前請先讀完這一節。
+
+**已解決**：`Sync Staging Auth Redirect And Recovery Email` 從 8/4 之後就失敗，現已通過
+（run `33400262734`）。原本卡住的是三個疊在一起的問題，前兩個一直遮住第三個：
+
+1. 舊 Management API token 在 8/27 之後失效（8/27 的 Staging Release 還能用同一個 secret 跑
+   `supabase link`，所以失效點在那之後）。
+2. 重設時貼進 GitHub secret 的值夾帶非 ASCII 空白 `U+00A0`。`fetch` 會正規化 ASCII 空白，卻把
+   `U+00A0` 原封送進 `Authorization` 標頭，hosted API 回 401。舊的防呆只擋 CR／LF，擋不到它。
+3. 免費方案且使用預設郵件供應商時，Supabase 拒絕修改 email 範本，`PATCH /config/auth` 回 400。
+   8/4 那次還是成功的，代表這個限制是之後才開始強制。
+
+**行為改變**：`site_url`／`uri_allow_list` 與 email 範本現在分兩次 PATCH。先前兩者同包送出，範本欄位
+造成的 400 會讓整包被丟棄——所以 staging 的 redirect **其實從未真正套用過**，這一輪才第一次生效並通過
+嚴格驗證。範本那半邊若遇到「免費方案」這個特定 400，會記錄 `BLOCKED_BY_PLAN` 並讓 run 通過；**其他任何
+400 仍然是紅燈**，這條邊界有單元測試釘住，不要為了讓 workflow 變綠而放寬它。
+
+**未解決，需要外部條件**：staging 專案要接上 custom SMTP（Resend 免費額度 3,000 封/月即足夠）。
+設定後範本同步會自動恢復嚴格驗證，**不需要改任何程式**。在那之前 recovery 信件仍使用預設範本，
+`2ba8cda` 的 prefetch 防護尚未生效，**不要拿 recovery 信件當驗收證據**。
+
+**這一輪的 4 個 commit 都標了 `[skip ci]`**（`7e1a22b`、`8823f85`、`ead52e9`、`b49f0d7`），是使用者當下
+的明確指示。本機已跑過 lint、typecheck 與 647 個測試全通過，但**這些 commit 沒有經過 CI 或 Browser
+Smoke**。下次有任何高風險變更進 `main` 時，請讓完整 CI 跑一次把這段補回來。
+
+**接手建議順序**：
+
+1. `Staging Release`（plan）→ `Staging Go-Live`，讓 staging runtime 追上 `main`。目前 runtime 仍是
+   `26520424b415`，落後多輪，本輪 Auth 修復也還沒部署出去。Go-Live 的 `expected_sha` 一定要用
+   `$(git rev-parse HEAD)`。
+2. 接 custom SMTP，然後重跑 Auth 同步 workflow，確認 `BLOCKED_BY_PLAN` 消失、範本驗證轉嚴格。
+3. 完成一封真實的 staging recovery 信件流程作為驗收。
+4. GPS accuracy／定位 age 政策仍等產品決定，在那之前不要改 GPS 契約。
+5. draft PR #40 的 base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main` 實作，
+   不能直接合併；請確認要關閉還是重開。
+
 ## 本次同步結果
 
 目前權威 `main` 已合併 PR #77、PR #86、文件 PR #87／#88／#89、PR #91、PR #92 與 PR #93；閱讀時以 GitHub
@@ -94,8 +132,10 @@ staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
 staging birthday scheduler        passed (run 33361427466; protected staging route)
-staging Auth config sync           passed (run 33399486309; redirects verified,
+staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
+staging Auth fix commits           lint / typecheck / 647 tests passed locally;
+                                  CI skipped by instruction ([skip ci])
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
