@@ -14,7 +14,7 @@
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併。
 
-目前權威 `main` 是 `d4e9e298b40ed379df7424317005e34167dfaf53`；staging `/api/health`
+目前權威來源是 GitHub `main`；staging `/api/health`
 於 2026-08-31 掃描通過，但執行版本仍是 `26520424b415b8f3e446d0ff53312330f30e76af`。
 因此 staging 目前落後 `main`，不能把最新主線的 Auth 設定同步程式、功能目錄或 CI 範圍規則說成已部署。
 健康檢查的 `issues` 為空，`DEPLOYMENT_WARNING` 是 staging 的預期警告；production 沒有修改。
@@ -157,7 +157,7 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 
 以上程式與資料庫結果為既有驗證證據；current-main 的 Staging Go-Live run `33121275958` 已完成
 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。現在 `/api/health` 仍回報
-staging runtime `26520424b415`，而 `main` 已是 `d4e9e298`；生日 V2／徵集 hosted acceptance `33345182984`
+staging runtime `26520424b415`，而主線可能已在文件合併後前進；生日 V2／徵集 hosted acceptance `33345182984`
 與 protected scheduler `33361427466` 是針對前一個已部署程式版本的成功證據。不能把文件或主線 merge SHA
 誤當成 staging runtime revision，也不能用歷史失敗 run 取代最新成功結果。
 瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。

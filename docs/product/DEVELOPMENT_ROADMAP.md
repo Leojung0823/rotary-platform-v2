@@ -13,7 +13,7 @@
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
 
-自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。目前權威 `main` 是 `d4e9e298b40ed379df7424317005e34167dfaf53`；staging `/api/health` 健康檢查通過，但 runtime 仍是 `26520424b415b8f3e446d0ff53312330f30e76af`，尚未追上目前 `main`。以下功能也已合併：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
+自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威來源是 GitHub `main`；staging `/api/health` 健康檢查通過，但 runtime 仍是 `26520424b415b8f3e446d0ff53312330f30e76af`，尚未追上目前 `main`。以下功能也已合併：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
 
 本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；staging 旗標與 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與最新排程 `33361427466` 均成功。
 
@@ -66,7 +66,7 @@ Phase 2 之後追加並完成的社務功能：
   - 受 `blessing_iou_v1`、`blessing_iou_collections_v1`、`blessing_iou_reporting_v1` 控管。
 - [x] **生日祝福 V1／V2 核心**（`20260820001000_birthday_wishes.sql`、`20260824000400_birthday_wishes_v2_core.sql`）— `/birthdays`
   - V2 已完成新設定預設公開、年齡同意顯示、同一作者同一壽星每日最多 10 則、作者匿名投影。
-- [x] **生日祝福徵集**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每日 staging 排程、每月每人一則自動邀約、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render／GitHub staging scheduler secret 已同步，`26520424b415` 已部署；hosted acceptance `33345182984` 與最新 scheduler `33361427466` 均成功。這些成功證據對應 staging 當時的 runtime，不代表目前 `main` `d4e9e298` 已部署。M1 真人使用者測試仍另列。
+- [x] **生日祝福徵集**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每日 staging 排程、每月每人一則自動邀約、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render／GitHub staging scheduler secret 已同步，`26520424b415` 已部署；hosted acceptance `33345182984` 與最新 scheduler `33361427466` 均成功。這些成功證據對應 staging 當時的 runtime，不代表目前 `main` 的其他變更已部署。M1 真人使用者測試仍另列。
 - [x] **文件中心與年度交接**（`20260820002000_archive_handover.sql`）— `/archives`
 - [x] **社內留言板** — `/board`
 - [x] **活動封面圖片**（`20260820000100_event_cover_images.sql`）
@@ -94,7 +94,7 @@ Phase 2 之後追加並完成的社務功能：
 
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
 - GPS 仍缺產品指定的 accuracy／定位 age 契約；本文件不替產品猜門檻。
-- `main` 與 staging runtime 尚未對齊；staging 健康檢查通過，但目前仍執行 `26520424b415`，權威 `main` 已是 `d4e9e298`。
+- `main` 與 staging runtime 尚未對齊；staging 健康檢查通過，但目前仍執行 `26520424b415`；閱讀本文件時應以 GitHub `main` 的最新 commit 為權威。
 - 真實 staging recovery email、iOS／Android 實機驗收與 M1 使用者測試尚未完成；Auth 同步 workflow `33348350584` 目前失敗，不能以舊信件代替。
 - 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，PR #77 已合併且程式 SHA `26520424b415` 已部署到 staging；旗標、Render／GitHub scheduler secret、hosted acceptance 與 scheduler workflow 均已完成。後續文件 PR 不改 runtime，不能把文件 merge SHA 誤當成 staging runtime。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據，不取代最新成功結果。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
