@@ -12,12 +12,14 @@
 
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
-只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併；
-目前 staging runtime 是程式 SHA `26520424b415b8f3e446d0ff53312330f30e76af`，健康檢查通過；最近可驗證的
-程式基線也是這個 SHA。後續文件 PR 不改 runtime，因此不能把文件 merge SHA 當成部署版本。
-並保留原本 Go-Live `33121275958` 的 migration／HTTPS／社員驗收證據。
+只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併。
+
+目前權威 `main` 是 `d4e9e298b40ed379df7424317005e34167dfaf53`；staging `/api/health`
+於 2026-08-31 掃描通過，但執行版本仍是 `26520424b415b8f3e446d0ff53312330f30e76af`。
+因此 staging 目前落後 `main`，不能把最新主線的 Auth 設定同步程式、功能目錄或 CI 範圍規則說成已部署。
+健康檢查的 `issues` 為空，`DEPLOYMENT_WARNING` 是 staging 的預期警告；production 沒有修改。
 生日徵集的兩個旗標已由 staging 平台管理員透過受保護流程開啟，Render scheduler secret 已同步，
-hosted acceptance `33345182984` 與排程 workflow `33345260361` 均成功。
+針對 `26520424b415` 的 hosted acceptance `33345182984` 與排程 workflow `33345260361` 均成功。
 
 ## 逐項狀態
 
@@ -26,6 +28,8 @@ hosted acceptance `33345182984` 與排程 workflow `33345260361` 均成功。
 - 已以權威 `main`、實際 migration、RPC、verification、TypeScript、測試和瀏覽器流程交叉確認。
 - 已保留 PR #61 的 canonical Attendance；沒有採用已關閉 PR #37 的重複 authority。
 - 所有新增資料庫 RPC／投影都有對應 verification SQL，並已登錄 manifest。
+- 目前只有一個 open PR：舊的 draft PR #40，base 是過時的出席分支；公告功能已在 `main` 實作，不能直接合併。
+- PR #93 已加入 CI／Browser Smoke 的變更範圍 gate：低風險文件只跑輕量 gate，高風險程式／資料庫／建置／流程修改才跑完整檢查；分類失敗時 fail-open。
 
 ### 1. GPS Check-in `[!]`
 
@@ -60,6 +64,10 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 仍缺：用專用 staging 測試帳號收到一封新的 recovery email，完成「點信 → 確認 → 更新密碼 →
 重新登入」的真實驗收。不能以單元測試或本機 Mailpit 代替這項外部驗收。
 
+最新受保護的 staging Auth 設定同步 workflow `33348350584` 在第一次 Management API 請求失敗；
+目前要先重新確認 GitHub `staging` environment 的 `SUPABASE_ACCESS_TOKEN` 是否仍有效，不能使用舊信件
+或猜測 token。此 workflow 未完成前，不重新寄 recovery 信件。
+
 ### 5. Browser Smoke 與行動版 `[>]`
 
 - 固定底部導覽的 clearance、巢狀路由 current state、四項導覽、互動入口已用本機 Chromium 驗收。
@@ -67,6 +75,7 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
   訊息測試，屬測試設計。
 
 仍缺：iOS Safari／真實 Android 裝置驗收；自動化 Chromium 不能取代實機結論。
+本次掃描也未把仍在執行中的 GitHub Browser Smoke run 當成已通過。
 
 ### 6. 出席率只計例會 `[x]`
 
@@ -124,25 +133,31 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 
 需要安排實際社員／幹部測試，不以自動化測試代替產品訪談與觀察。
 
+## 下一步順序
+
+1. 重新確認 staging Management API token，成功同步 Auth 設定後，再做新的 recovery 信件全流程。
+2. 由產品決定 GPS 的 `accuracy`／定位 age 政策，再補 server-side 規則與驗證；決定前不猜門檻。
+3. 安排 iOS Safari、Android Chrome 與五位目標使用者的 staging 驗收。
+4. 另行決定是否明確開啟 `announcements_v09`；功能完成不代表目前對社員公開。
+
 ## 本輪驗證證據
 
 已在本機執行：
 
-- `npm test`：100 files、631 tests passed。
-- `npm run typecheck`：passed。
-- `npm run lint`：passed。
-- `npm run build`：passed。
+- 上一輪程式基線的 `npm test`：100 files、631 tests passed；本次只做進度與部署狀態掃描，未重跑本機完整測試。
+- 上一輪程式基線的 `npm run typecheck`、`npm run lint`、`npm run build`：passed；本次未重跑。
 - `npm run verify:db`：本機未完成，因 Docker／Supabase 沒有回應而停止；PR #86 的 CI database job 已通過 46 份 verification SQL，schema lint 只有既有 3 個 warning。
 - `npm run check:migrations`：passed。
 - `npm run check:db-verifications`：manifest covers all 46 SQL files。
 - role shell：18/18 passed。
 - production build 關鍵 role／互動／訊息 E2E：29 passed、1 skipped。
 - `git diff --check`：本輪程式與文件修改通過。
-- PR #89 後 main CI：passed（run `33345461485`）。
-- PR #89 後 main Browser Smoke：passed（run `33345461448`）。
+- PR #93 的 CI、Quality 與 Browser Smoke：passed（PR checks run `33347745255`、`33347745250`、`33347745221`）。
+- current `main` push CI：passed（run `33348357979`）；同一 SHA 的 Browser Smoke `33348357995` 掃描時仍在執行。
 
-以上程式與資料庫結果為本機證據；current-main 的 Staging Go-Live run `33121275958` 已完成
-migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。之後 staging 已更新至
-程式 SHA `26520424b415`，生日 V2／徵集 hosted acceptance `33345182984` 與 protected scheduler
-`33345260361` 均成功；PR #89 只更新文件，不能把文件合併 SHA 誤當成 staging runtime revision，也不能用歷史失敗 run 取代最新成功證據。
+以上程式與資料庫結果為既有驗證證據；current-main 的 Staging Go-Live run `33121275958` 已完成
+migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。現在 `/api/health` 仍回報
+staging runtime `26520424b415`，而 `main` 已是 `d4e9e298`；生日 V2／徵集 hosted acceptance `33345182984`
+與 protected scheduler `33345260361` 是針對前一個已部署程式版本的成功證據。不能把文件或主線 merge SHA
+誤當成 staging runtime revision，也不能用歷史失敗 run 取代最新成功結果。
 瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。

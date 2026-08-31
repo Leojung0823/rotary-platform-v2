@@ -5,17 +5,20 @@
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77、PR #86 與文件 PR #87／#88／#89；最近可驗證的程式基線是
-`26520424b415b8f3e446d0ff53312330f30e76af`。PR #89 只有文件變更；後續文件合併不代表有新的 runtime code。
-PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
+目前權威 `main` 已合併 PR #77、PR #86、文件 PR #87／#88／#89、PR #91、PR #92 與 PR #93；目前 `main`
+SHA 是 `d4e9e298b40ed379df7424317005e34167dfaf53`。PR #91 加入 staging Auth 設定同步流程，PR #92
+同步功能目錄，PR #93 加入 CI／Browser Smoke 的變更範圍 gate。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
 production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
-staging runtime 仍是 revision `26520424b415`、environment `staging`；它與目前 main 的差異只有 PR #89 的三份文件，
-不是未部署程式碼。並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。
+staging `/api/health` 健康檢查通過，但 runtime 仍是 revision `26520424b415`，沒有追上目前 `main`；後續文件合併
+也不代表 runtime 已部署。並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。
 
 PR #86 的 application、validate、database 與 Browser Smoke 均通過後以一般 merge 合併。生日專項 hosted acceptance
 `33345182984` 已以程式 SHA `26520424b415` 通過，包含生日 V2 說明與祝福徵集入口。staging 平台管理員已透過受保護 CLI
 開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`；Render staging 與 GitHub staging secret 已同步。
 排程 workflow `33345260361` 已成功通過，表示 protected scheduler route 的認證與執行均正常。
+
+最新 Auth 設定同步 workflow `33348350584` 在 Supabase Management API 第一次請求失敗；在重新確認 GitHub
+`staging` environment 的 `SUPABASE_ACCESS_TOKEN` 前，不寄新的 recovery 信件，也不把舊信件當成驗收證據。
 
 ## 已完成的主要切片
 
@@ -29,6 +32,7 @@ PR #86 的 application、validate、database 與 Browser Smoke 均通過後以�
   社團題庫 CRUD、題目快照、同批次題目不重複、題庫不足整批停止與可重試、發布／隱藏／重送、
   幹部管理、通知冪等、匿名公開牆與權限驗證。
 - 社員固定四項導覽、首頁互動入口、幹部管理往返、巢狀路由 current state、名錄 responsive header。
+- 非大版本文件修改的 CI／Browser Smoke 規則已進入 `main`：文件類變更只跑輕量 scope gate，程式／資料庫／部署等高風險變更仍完整檢查，分類失敗時 fail-open。
 
 ## 最近 migration
 
@@ -55,7 +59,7 @@ PR #86 的 application、validate、database 與 Browser Smoke 均通過後以�
 - 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署、hosted acceptance 與排程均已完成；不再有本輪
   birthday release blocker。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
 - GPS accuracy／定位 age 政策要由產品選定後才能 harden。
-- recovery 需要專用 staging 帳號的真實新信件流程。
+- recovery 需要先修復 staging Management API token，再用專用 staging 帳號完成一封新的信件流程。
 - iOS Safari／真實 Android 裝置驗收尚未做。
 - M1 五位目標使用者形成性測試尚未安排。
 
@@ -74,14 +78,14 @@ npm run check:db-verifications   46 files covered
 git diff --check                 passed
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
 PR #86 CI database                passed (run 33120346988; 46 verification SQL)
-main CI                           passed (run 33121186952)
-main Browser Smoke                passed (run 33121186949, 11m50s)
-post-PR #89 CI                    passed (run 33345461485)
-post-PR #89 Browser Smoke         passed (run 33345461448)
+PR #93 CI／Quality／Browser Smoke passed (runs 33347745255／33347745250／33347745221)
+current main push CI              passed (run 33348357979)
+current main Browser Smoke        in progress at scan (run 33348357995)
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
 staging birthday scheduler        passed (run 33345260361; protected staging route)
+staging Auth config sync           failed (run 33348350584; first Management API request)
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
