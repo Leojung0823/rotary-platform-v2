@@ -190,6 +190,21 @@ BOOTSTRAP_SUPERADMIN_NAME=<display name>
 BOOTSTRAP_CONFIRM_SUPABASE_HOST=<exact staging Supabase hostname>
 ```
 
+### 6c. Hosted Supabase recovery email 設定
+
+`supabase/config.toml` 只會影響本機 Supabase；Hosted staging 的 Auth Email Template
+必須透過受保護的 `Sync Staging Auth Redirect And Recovery Email` workflow 同步。這個 workflow
+只接受核准的 staging origin，會先核對 Supabase project 名稱與狀態，再更新：
+
+- `site_url` 與 recovery callback allow-list；
+- recovery 信件主旨；
+- `mailer_templates_recovery_content`，使信件連到應用程式的
+  `/auth/callback?token_hash=...&type=recovery&next=/reset-password`。
+
+它不會修改 production，也不會輸出 Management API token 或信件中的一次性憑證。workflow 成功後，
+必須用專用 staging 帳號重新申請一封 recovery email，完成「點信 → 確認 → 更新密碼 → 重新登入」；
+不能用舊信件、預設 Supabase 信件或本機 Mailpit 代替 Hosted 驗收。
+
 執行：
 
 ```bash
