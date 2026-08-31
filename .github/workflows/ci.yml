@@ -9,7 +9,22 @@ permissions:
   contents: read
 
 jobs:
+  change-scope:
+    name: Decide whether full gates are needed
+    runs-on: ubuntu-latest
+    outputs:
+      run_full: ${{ steps.scope.outputs.run_full }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Classify changed files
+        id: scope
+        run: node .github/scripts/classify-change-scope.mjs >> "$GITHUB_OUTPUT"
+
   validate:
+    needs: change-scope
+    if: needs.change-scope.outputs.run_full == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +41,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local-ci-placeholder
 
   database:
+    needs: change-scope
+    if: needs.change-scope.outputs.run_full == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
