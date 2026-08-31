@@ -65,6 +65,11 @@ npm run check:migrations   # migration 前向性
 
 **不要標 `[skip ci]`。** 這個 repo 曾經有五個 PR 全部標了 skip，結果累積上萬行從未經過 CI 的程式碼。
 
+### CI 與 Browser Smoke 變更範圍規則
+
+CI 與 Browser Smoke 會先執行輕量的 change-scope gate。只有文件／README／CHANGELOG／LICENSE／Dependabot
+設定等低風險變更會跳過完整工作；`src/`、`supabase/`、`scripts/`、`e2e/`、`public/`、`tests/`、套件鎖檔、建置／部署設定、GitHub workflow、`AGENTS.md` 與無法辨識的新路徑，都視為高風險並執行完整檢查。分類失敗時 fail-open，執行完整檢查。詳細規則見 `docs/development/CI_EXECUTION_POLICY.md`。
+
 ## 5. 安全邊界
 
 這個專案的權限模型是核心資產，改動時要特別小心。
