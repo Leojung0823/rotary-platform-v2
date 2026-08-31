@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { productFeatureFlagKeys, productFeaturePath, productFeatures } from "./features";
+import {
+  findProductFeature,
+  productFeatureFlagKeys,
+  productFeaturePath,
+  productFeatures,
+} from "./features";
 
 describe("product feature map", () => {
   it("keeps feature slugs unique", () => {
@@ -31,6 +36,24 @@ describe("product feature map", () => {
       "birthday_wishes_v1",
       "birthday_wishes_v2",
     ]);
+  });
+
+  it("keeps completed flagged domains aligned with their guarded routes", () => {
+    expect(findProductFeature("attendance-and-leave")).toMatchObject({
+      status: "available",
+      href: "/attendance",
+      featureFlagKey: "attendance_ui_v2",
+    });
+    expect(findProductFeature("announcements-and-notifications")).toMatchObject({
+      status: "available",
+      href: "/messages",
+      featureFlagKey: "announcements_v09",
+    });
+    expect(findProductFeature("blessing-iou")).toMatchObject({
+      status: "available",
+      href: "/blessings",
+      featureFlagKey: "blessing_iou_v1",
+    });
   });
 
 });
