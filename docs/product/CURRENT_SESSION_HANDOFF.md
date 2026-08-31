@@ -5,9 +5,9 @@
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77、PR #86 與文件 PR #87／#88／#89；目前 main SHA 是
-`0caa0d25e42f0bea2607f1b983bfcbe643402107`。PR #89 只有文件變更；上一個包含程式的 main SHA 是
-`26520424b415b8f3e446d0ff53312330f30e76af`。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
+目前權威 `main` 已合併 PR #77、PR #86 與文件 PR #87／#88／#89；最近可驗證的程式基線是
+`26520424b415b8f3e446d0ff53312330f30e76af`。PR #89 只有文件變更；後續文件合併不代表有新的 runtime code。
+PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
 production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
 staging runtime 仍是 revision `26520424b415`、environment `staging`；它與目前 main 的差異只有 PR #89 的三份文件，
 不是未部署程式碼。並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。

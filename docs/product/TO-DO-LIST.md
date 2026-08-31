@@ -13,8 +13,8 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併；
-目前 staging runtime 是程式 SHA `26520424b415b8f3e446d0ff53312330f30e76af`，健康檢查通過；目前 `main`
-是文件 PR #89 合併後的 `0caa0d25e42f0bea2607f1b983bfcbe643402107`，兩者差異只有三份文件，沒有未部署的程式碼。
+目前 staging runtime 是程式 SHA `26520424b415b8f3e446d0ff53312330f30e76af`，健康檢查通過；最近可驗證的
+程式基線也是這個 SHA。後續文件 PR 不改 runtime，因此不能把文件 merge SHA 當成部署版本。
 並保留原本 Go-Live `33121275958` 的 migration／HTTPS／社員驗收證據。
 生日徵集的兩個旗標已由 staging 平台管理員透過受保護流程開啟，Render scheduler secret 已同步，
 hosted acceptance `33345182984` 與排程 workflow `33345260361` 均成功。
