@@ -63,15 +63,12 @@ export function inspectStagingAuthConfigInput(input = process.env) {
 }
 
 /**
- * Build the minimal hosted Auth patch. Existing redirect entries are kept so
- * this repair cannot silently remove an already-approved staging callback.
- * @param {{ current?: Record<string, unknown>, recoveryTemplate: string }} input
+ * Build the redirect half of the hosted Auth patch. These fields are accepted
+ * on every Supabase plan. Existing redirect entries are kept so this repair
+ * cannot silently remove an already-approved staging callback.
+ * @param {{ current?: Record<string, unknown> }} input
  */
-export function buildStagingAuthConfigPatch({ current = {}, recoveryTemplate }) {
-  if (!hasRecoveryCallbackTemplate(recoveryTemplate)) {
-    throw new Error("RECOVERY_TEMPLATE_CALLBACK_INVALID");
-  }
-
+export function buildStagingRedirectPatch({ current = {} } = {}) {
   const redirects = [...new Set([
     ...splitRedirects(current.uri_allow_list),
     ...REQUIRED_RECOVERY_REDIRECTS,
@@ -79,16 +76,43 @@ export function buildStagingAuthConfigPatch({ current = {}, recoveryTemplate }) 
   return {
     site_url: STAGING_AUTH_ORIGIN,
     uri_allow_list: redirects.join(","),
+  };
+}
+
+/**
+ * Build the recovery-email half of the hosted Auth patch. Supabase rejects
+ * these two fields on a free tier project that still uses the default email
+ * provider, so they are sent separately from the redirect fields.
+ * @param {{ recoveryTemplate: string }} input
+ */
+export function buildStagingRecoveryEmailPatch({ recoveryTemplate }) {
+  if (!hasRecoveryCallbackTemplate(recoveryTemplate)) {
+    throw new Error("RECOVERY_TEMPLATE_CALLBACK_INVALID");
+  }
+  return {
     mailer_subjects_recovery: RECOVERY_EMAIL_SUBJECT,
     mailer_templates_recovery_content: recoveryTemplate,
   };
 }
 
 /**
- * Verify the fields changed by the repair after the Management API PATCH.
- * @param {{ config?: Record<string, unknown>, recoveryTemplate: string }} input
+ * Build the full hosted Auth patch. Kept as the combined contract for the case
+ * where both halves can be applied in one request.
+ * @param {{ current?: Record<string, unknown>, recoveryTemplate: string }} input
  */
-export function inspectStagingAuthConfig({ config = {}, recoveryTemplate }) {
+export function buildStagingAuthConfigPatch({ current = {}, recoveryTemplate }) {
+  return {
+    ...buildStagingRedirectPatch({ current }),
+    ...buildStagingRecoveryEmailPatch({ recoveryTemplate }),
+  };
+}
+
+/**
+ * Verify the redirect fields. These are always enforced: a staging deployment
+ * whose callback list is wrong is the failure this repair exists to prevent.
+ * @param {{ config?: Record<string, unknown> }} input
+ */
+export function inspectStagingRedirectConfig({ config = {} } = {}) {
   const errors = [];
   if (text(config.site_url).replace(/\/$/u, "") !== STAGING_AUTH_ORIGIN) {
     errors.push("STAGING_SITE_URL_MISMATCH");
@@ -97,6 +121,16 @@ export function inspectStagingAuthConfig({ config = {}, recoveryTemplate }) {
   for (const redirect of REQUIRED_RECOVERY_REDIRECTS) {
     if (!redirects.has(redirect)) errors.push("STAGING_RECOVERY_REDIRECT_MISSING");
   }
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * Verify the recovery-email fields. Only meaningful once the hosted project
+ * actually accepted the email patch.
+ * @param {{ config?: Record<string, unknown>, recoveryTemplate: string }} input
+ */
+export function inspectStagingRecoveryEmailConfig({ config = {}, recoveryTemplate }) {
+  const errors = [];
   if (text(config.mailer_subjects_recovery) !== RECOVERY_EMAIL_SUBJECT) {
     errors.push("STAGING_RECOVERY_SUBJECT_MISMATCH");
   }
@@ -105,4 +139,33 @@ export function inspectStagingAuthConfig({ config = {}, recoveryTemplate }) {
   }
   if (!hasRecoveryCallbackTemplate(recoveryTemplate)) errors.push("RECOVERY_TEMPLATE_CALLBACK_INVALID");
   return { ok: errors.length === 0, errors };
+}
+
+/**
+ * Verify every field changed by the repair after the Management API PATCH.
+ * @param {{ config?: Record<string, unknown>, recoveryTemplate: string }} input
+ */
+export function inspectStagingAuthConfig({ config = {}, recoveryTemplate }) {
+  const redirect = inspectStagingRedirectConfig({ config });
+  const email = inspectStagingRecoveryEmailConfig({ config, recoveryTemplate });
+  const errors = [...redirect.errors, ...email.errors];
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * Recognise the hosted refusal to modify email templates on a free tier
+ * project that still uses the default email provider. This is a plan
+ * limitation rather than a defect in this repository, so the caller reports it
+ * instead of retrying. Matching is deliberately narrow: any other 400 stays a
+ * hard failure.
+ * @param {number} status
+ * @param {string} responseText
+ */
+export function isEmailTemplatePlanRestriction(status, responseText) {
+  if (status !== 400) return false;
+  const body = String(responseText ?? "").toLowerCase();
+  if (!body.includes("email template")) return false;
+  return body.includes("free tier")
+    || body.includes("upgrade your plan")
+    || body.includes("custom smtp");
 }
