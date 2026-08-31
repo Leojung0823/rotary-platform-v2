@@ -2,7 +2,7 @@
 
 > 更新日期：2026-08-31
 > 狀態：**生日 V2 核心與祝福徵集第一至三階段已完成程式實作；PR #77 已合併，生日功能已完成 staging flag、scheduler secret、專項 hosted 驗收；M1 真人使用者測試待完成**
-> 程式現況基準：生日徵集程式 release SHA `26520424b415b8f3e446d0ff53312330f30e76af`（已部署 staging）；目前權威 `main` 是 `007f33da756df2f8f630f4eba39211a7c6768749`，後續主線文件與其他工程修正不代表 staging runtime 已更新
+> 程式現況基準：生日徵集程式 release SHA `26520424b415b8f3e446d0ff53312330f30e76af`（已部署 staging）；權威來源是 GitHub `main`，後續主線文件與其他工程修正不代表 staging runtime 已更新
 > 前一版：[`BIRTHDAY_WISHES_V1_SCOPE.md`](./BIRTHDAY_WISHES_V1_SCOPE.md)（已實作並部署）
 
 這份文件記錄目前產品討論的結論。它取代先前那份「生日祝福與壽星關懷 V2」草稿中

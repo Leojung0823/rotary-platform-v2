@@ -5,8 +5,8 @@
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77、PR #86、文件 PR #87／#88／#89、PR #91、PR #92 與 PR #93；目前 `main`
-SHA 是 `d4e9e298b40ed379df7424317005e34167dfaf53`。PR #91 加入 staging Auth 設定同步流程，PR #92
+目前權威 `main` 已合併 PR #77、PR #86、文件 PR #87／#88／#89、PR #91、PR #92 與 PR #93；閱讀時以 GitHub
+`main` 的最新 commit 為準。PR #91 加入 staging Auth 設定同步流程，PR #92
 同步功能目錄，PR #93 加入 CI／Browser Smoke 的變更範圍 gate。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
 production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
 staging `/api/health` 健康檢查通過，但 runtime 仍是 revision `26520424b415`，沒有追上目前 `main`；後續文件合併
