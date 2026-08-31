@@ -13,7 +13,8 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併；
-目前 staging 已重新部署目前 main SHA `26520424b415b8f3e446d0ff53312330f30e76af`，健康檢查通過，
+目前 staging runtime 是程式 SHA `26520424b415b8f3e446d0ff53312330f30e76af`，健康檢查通過；目前 `main`
+是文件 PR #89 合併後的 `0caa0d25e42f0bea2607f1b983bfcbe643402107`，兩者差異只有三份文件，沒有未部署的程式碼。
 並保留原本 Go-Live `33121275958` 的 migration／HTTPS／社員驗收證據。
 生日徵集的兩個旗標已由 staging 平台管理員透過受保護流程開啟，Render scheduler secret 已同步，
 hosted acceptance `33345182984` 與排程 workflow `33345260361` 均成功。
@@ -137,9 +138,11 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 - role shell：18/18 passed。
 - production build 關鍵 role／互動／訊息 E2E：29 passed、1 skipped。
 - `git diff --check`：本輪程式與文件修改通過。
+- PR #89 後 main CI：passed（run `33345461485`）。
+- PR #89 後 main Browser Smoke：passed（run `33345461448`）。
 
 以上程式與資料庫結果為本機證據；current-main 的 Staging Go-Live run `33121275958` 已完成
 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。之後 staging 已更新至
-main SHA `26520424b415`，生日 V2／徵集 hosted acceptance `33345182984` 與 protected scheduler
-`33345260361` 均成功；不能用歷史失敗 run 取代最新成功證據。
+程式 SHA `26520424b415`，生日 V2／徵集 hosted acceptance `33345182984` 與 protected scheduler
+`33345260361` 均成功；PR #89 只更新文件，不能把文件合併 SHA 誤當成 staging runtime revision，也不能用歷史失敗 run 取代最新成功證據。
 瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。

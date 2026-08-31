@@ -5,14 +5,15 @@
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77、PR #86 與文件 PR #87／#88；目前 main SHA 是
+目前權威 `main` 已合併 PR #77、PR #86 與文件 PR #87／#88／#89；目前 main SHA 是
+`0caa0d25e42f0bea2607f1b983bfcbe643402107`。PR #89 只有文件變更；上一個包含程式的 main SHA 是
 `26520424b415b8f3e446d0ff53312330f30e76af`。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
 production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
-staging 已重新部署目前 main，健康檢查回報 revision `26520424b415`、environment `staging`，
-並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。
+staging runtime 仍是 revision `26520424b415`、environment `staging`；它與目前 main 的差異只有 PR #89 的三份文件，
+不是未部署程式碼。並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。
 
 PR #86 的 application、validate、database 與 Browser Smoke 均通過後以一般 merge 合併。生日專項 hosted acceptance
-`33345182984` 已以目前 main SHA 通過，包含生日 V2 說明與祝福徵集入口。staging 平台管理員已透過受保護 CLI
+`33345182984` 已以程式 SHA `26520424b415` 通過，包含生日 V2 說明與祝福徵集入口。staging 平台管理員已透過受保護 CLI
 開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`；Render staging 與 GitHub staging secret 已同步。
 排程 workflow `33345260361` 已成功通過，表示 protected scheduler route 的認證與執行均正常。
 
@@ -75,6 +76,8 @@ PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
 PR #86 CI database                passed (run 33120346988; 46 verification SQL)
 main CI                           passed (run 33121186952)
 main Browser Smoke                passed (run 33121186949, 11m50s)
+post-PR #89 CI                    passed (run 33345461485)
+post-PR #89 Browser Smoke         passed (run 33345461448)
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
