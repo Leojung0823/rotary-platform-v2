@@ -19,7 +19,7 @@ GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Bro
 因此 staging 目前落後 `main`，不能把最新主線的 Auth 設定同步程式、功能目錄或 CI 範圍規則說成已部署。
 健康檢查的 `issues` 為空，`DEPLOYMENT_WARNING` 是 staging 的預期警告；production 沒有修改。
 生日徵集的兩個旗標已由 staging 平台管理員透過受保護流程開啟，Render scheduler secret 已同步，
-針對 `26520424b415` 的 hosted acceptance `33345182984` 與排程 workflow `33345260361` 均成功。
+針對 `26520424b415` 的 hosted acceptance `33345182984` 與最新排程 workflow `33361427466` 均成功。
 
 ## 逐項狀態
 
@@ -124,7 +124,7 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 已完成 staging 外部啟用與驗收：平台管理員透過受保護 CLI 開啟
 `birthday_wishes_v2`、`birthday_wishes_collection_v1`；Render 與 GitHub staging 的
 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已同步。current-main hosted acceptance `33345182984`
-已驗證生日 V2 與徵集入口，排程 workflow `33345260361` 已成功呼叫 protected staging route。
+已驗證生日 V2 與徵集入口，最新排程 workflow `33361427466` 已成功呼叫 protected staging route。
 歷史失敗 run `33121570908`／`33121704322` 保留作為啟用前的追蹤證據；M1 真人使用者測試仍是另一個待辦。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
@@ -158,6 +158,6 @@ HttpOnly recovery marker；公開失敗 redirect 也已固定在 allow-listed or
 以上程式與資料庫結果為既有驗證證據；current-main 的 Staging Go-Live run `33121275958` 已完成
 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。現在 `/api/health` 仍回報
 staging runtime `26520424b415`，而 `main` 已是 `d4e9e298`；生日 V2／徵集 hosted acceptance `33345182984`
-與 protected scheduler `33345260361` 是針對前一個已部署程式版本的成功證據。不能把文件或主線 merge SHA
+與 protected scheduler `33361427466` 是針對前一個已部署程式版本的成功證據。不能把文件或主線 merge SHA
 誤當成 staging runtime revision，也不能用歷史失敗 run 取代最新成功結果。
 瀏覽器本機驗收因本機 Supabase 未啟動而未重跑，不能以單元／資料庫驗證代替。production 不在本輪範圍。

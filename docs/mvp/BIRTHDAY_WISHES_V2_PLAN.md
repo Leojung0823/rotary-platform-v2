@@ -25,7 +25,7 @@
 本文件第 2–7 節是徵集領域的完整目標規格；目前已完成資料底座、手動月批派發、
 幹部發布、匿名公開牆、排程、訊息邀約、題庫 CRUD、隱藏後重送、逐筆完成狀態和處理紀錄的本機實作。
 
-徵集依賴 V2 核心、已存在但預設關閉的**站內訊息中心**，以及 staging-only 的 GitHub Actions 排程入口；程式與本機資料庫驗證已完成，一般 staging Go-Live 已完成。staging 的兩個生日旗標已由受保護 CLI 開啟，Render 與 GitHub 的 scheduler secret 已同步；hosted acceptance `33345182984` 與 scheduler workflow `33345260361` 均成功。M1 真人社員／幹部測試仍未完成。
+徵集依賴 V2 核心、已存在但預設關閉的**站內訊息中心**，以及 staging-only 的 GitHub Actions 排程入口；程式與本機資料庫驗證已完成，一般 staging Go-Live 已完成。staging 的兩個生日旗標已由受保護 CLI 開啟，Render 與 GitHub 的 scheduler secret 已同步；hosted acceptance `33345182984` 與最新 scheduler workflow `33361427466` 均成功。M1 真人社員／幹部測試仍未完成。
 
 ---
 
@@ -196,7 +196,7 @@ V1 的「沒有 `birthday_visibility_preferences` 列」目前實際效果是**�
 - 社員生日、社籍或公開設定在排程執行前改變時，依最新權限重新判斷。
 - 排程只負責建立徵集和訊息，不直接替社員寫入祝福內容。
 
-本機資料庫驗證：同一批次重跑只保留一筆通知；訊息中心旗標關閉時保留 `skipped` retry marker，重新開啟後補送原批次，不建立第二個任務或第二則訊息；每位收件社員的訊息會顯示 `pending`、`completed`、`declined` 或 `needs_resubmission`。staging hosted acceptance `33345182984` 已驗證生日 V2 與徵集入口；scheduler workflow `33345260361` 已成功呼叫受保護的 staging route。舊的 `33117785366` 是 secret 尚未同步時的歷史失敗，不取代最新成功證據。
+本機資料庫驗證：同一批次重跑只保留一筆通知；訊息中心旗標關閉時保留 `skipped` retry marker，重新開啟後補送原批次，不建立第二個任務或第二則訊息；每位收件社員的訊息會顯示 `pending`、`completed`、`declined` 或 `needs_resubmission`。staging hosted acceptance `33345182984` 已驗證生日 V2 與徵集入口；最新 scheduler workflow `33361427466` 已成功呼叫受保護的 staging route。舊的 `33117785366` 是 secret 尚未同步時的歷史失敗，不取代最新成功證據。
 
 ### 5.2 站內訊息中心現況
 
@@ -298,7 +298,7 @@ V1 的「沒有 `birthday_visibility_preferences` 列」目前實際效果是**�
 - verification 也會確認生日核心與徵集兩個旗標的 grant 彼此隔離；只關閉其中一個時，另一個功能仍可保留自己的 browser-facing EXECUTE。
 - `/birthday-collection` 已隨 PR #77 進入 main 並部署至 staging，是社員／幹部頁面；`birthday_wishes_collection_v1` 是明確啟用、預設關閉的功能旗標，幹部頁已接上題庫管理、隱藏、重送和歷史紀錄。
 - `e2e/tests/birthday-v2.e2e.mjs` 已補 local targeted browser acceptance：同一作者同一天送出兩則、生日年齡顯示、作者匿名與 412px 無水平溢位；結果為 2 passed、2 個刻意 skip。測試 fixture 明確設定 `show_birthday_year=true`，這只代表測試同意，不代表替社員預設公開年齡。V2 使用獨立測試社與每次 bootstrap 的新壽星，避免 append-only 歷史污染重跑，也不繞過每日 10 則上限。
-- `.github/workflows/birthday-collection-scheduler.yml` 與 `/api/internal/birthday-collection/scheduler` 已推送並只接 staging；最新 scheduler workflow `33345260361` 已成功，舊 run `33117785366` 因 GitHub 與 Render 端 scheduler secret 尚未同步而回傳 `401 unauthorized`，僅保留作為歷史追蹤。
+- `.github/workflows/birthday-collection-scheduler.yml` 與 `/api/internal/birthday-collection/scheduler` 已推送並只接 staging；最新 scheduler workflow `33361427466` 已成功，舊 run `33117785366` 因 GitHub 與 Render 端 scheduler secret 尚未同步而回傳 `401 unauthorized`，僅保留作為歷史追蹤。
 - `get_my_birthday_wish_collection_page` 與 `list_published_birthday_wish_submissions` 在頁面端並行查詢；資料庫仍是權限與匿名規則的最後守門。
 - `e2e/tests/birthday-collection.e2e.mjs` 已在 local Chromium 覆蓋桌面題庫新增／修改／停用、社員婉拒與幹部婉拒紀錄、建立／送出／發布／匿名公開牆、幹部隱藏／社員重送／再次發布／處理紀錄，以及 412px 任務入口與水平溢位；不代表 staging 或真人驗收。
 
@@ -363,13 +363,13 @@ V2 要明確指定生日年度採公曆年、以社團時區判斷日期，不�
 
 - `20260820001000_birthday_wishes.sql` **已部署，不可修改**。所有 V2 變更走新的 forward-only migration。
 - 新 migration 必須先確認 `supabase/migrations/` 最後編號，避免撞號；年度唯一索引要以新的 migration 移除或替換。
-- `20260824000600` 至 `20260824001700` 已在目前 `main`；PR #77 已完成 main 整合，且 `Staging Go-Live` run `33121275958` 已完成 staging migration apply。生日 hosted acceptance `33345182984` 與 scheduler `33345260361` 也已成功。production 不在本輪範圍。
+- `20260824000600` 至 `20260824001700` 已在目前 `main`；PR #77 已完成 main 整合，且 `Staging Go-Live` run `33121275958` 已完成 staging migration apply。生日 hosted acceptance `33345182984` 與最新 scheduler `33361427466` 也已成功。production 不在本輪範圍。
 - 新的資料表與 RPC 都要有對應的 `supabase/verification/*.sql`，
   並註冊進 `scripts/database-verification-files.txt`。
 - 驗證要測「誰不能做什麼」：外社社員、停權帳號、停權社籍、
   以及**壽星本人不能收到自己的徵集**、**壽星不能看到作者**、**幹部可以看到作者**。
 - 要測既有偏好列、既有缺列、新偏好預設公開，以及生日年度多則祝福和每日上限。
-- 已測月批重跑冪等、題庫不足時整批暫停且補題後同批次重試、同批次題目 ID／文字不重複、跨社團隔離、發布權限、feature flag server gate 與 DB `authenticated` EXECUTE gate、排程重跑、訊息重複派發冪等、題庫管理權限、婉拒、隱藏重送、append-only 處理紀錄、逐位訊息狀態，以及 `allow_wishes=false` 的核心投影；一般 staging Go-Live、生日 hosted acceptance `33345182984` 與 scheduler `33345260361` 已通過。仍未完成的是 M1 真人社員／幹部驗收。
+- 已測月批重跑冪等、題庫不足時整批暫停且補題後同批次重試、同批次題目 ID／文字不重複、跨社團隔離、發布權限、feature flag server gate 與 DB `authenticated` EXECUTE gate、排程重跑、訊息重複派發冪等、題庫管理權限、婉拒、隱藏重送、append-only 處理紀錄、逐位訊息狀態，以及 `allow_wishes=false` 的核心投影；一般 staging Go-Live、生日 hosted acceptance `33345182984` 與最新 scheduler `33361427466` 已通過。仍未完成的是 M1 真人社員／幹部驗收。
 - 要測壽星與一般社員（包含作者本人）看不到手動祝福作者，只有幹部可以看到作者。
 - 幹部的隱藏、刪除權限與作者可見性都要在資料庫重新驗證，不能只靠 UI。
 - 其餘工程約定見專案根目錄的 `AGENTS.md`。

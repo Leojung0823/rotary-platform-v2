@@ -15,7 +15,7 @@ staging `/api/health` 健康檢查通過，但 runtime 仍是 revision `26520424
 PR #86 的 application、validate、database 與 Browser Smoke 均通過後以一般 merge 合併。生日專項 hosted acceptance
 `33345182984` 已以程式 SHA `26520424b415` 通過，包含生日 V2 說明與祝福徵集入口。staging 平台管理員已透過受保護 CLI
 開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`；Render staging 與 GitHub staging secret 已同步。
-排程 workflow `33345260361` 已成功通過，表示 protected scheduler route 的認證與執行均正常。
+排程 workflow `33361427466` 已成功通過，表示 protected scheduler route 的認證與執行均正常。
 
 最新 Auth 設定同步 workflow `33348350584` 在 Supabase Management API 第一次請求失敗；在重新確認 GitHub
 `staging` environment 的 `SUPABASE_ACCESS_TOKEN` 前，不寄新的 recovery 信件，也不把舊信件當成驗收證據。
@@ -84,7 +84,7 @@ current main Browser Smoke        in progress at scan (run 33348357995)
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
-staging birthday scheduler        passed (run 33345260361; protected staging route)
+staging birthday scheduler        passed (run 33361427466; protected staging route)
 staging Auth config sync           failed (run 33348350584; first Management API request)
 ```
 

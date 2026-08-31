@@ -15,7 +15,7 @@
 
 自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。目前權威 `main` 是 `d4e9e298b40ed379df7424317005e34167dfaf53`；staging `/api/health` 健康檢查通過，但 runtime 仍是 `26520424b415b8f3e446d0ff53312330f30e76af`，尚未追上目前 `main`。以下功能也已合併：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
 
-本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；staging 旗標與 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與排程 `33345260361` 均成功。
+本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；staging 旗標與 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與最新排程 `33361427466` 均成功。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
@@ -66,7 +66,7 @@ Phase 2 之後追加並完成的社務功能：
   - 受 `blessing_iou_v1`、`blessing_iou_collections_v1`、`blessing_iou_reporting_v1` 控管。
 - [x] **生日祝福 V1／V2 核心**（`20260820001000_birthday_wishes.sql`、`20260824000400_birthday_wishes_v2_core.sql`）— `/birthdays`
   - V2 已完成新設定預設公開、年齡同意顯示、同一作者同一壽星每日最多 10 則、作者匿名投影。
-- [x] **生日祝福徵集**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每日 staging 排程、每月每人一則自動邀約、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render／GitHub staging scheduler secret 已同步，`26520424b415` 已部署；hosted acceptance `33345182984` 與 scheduler `33345260361` 均成功。這些成功證據對應 staging 當時的 runtime，不代表目前 `main` `d4e9e298` 已部署。M1 真人使用者測試仍另列。
+- [x] **生日祝福徵集**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每日 staging 排程、每月每人一則自動邀約、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render／GitHub staging scheduler secret 已同步，`26520424b415` 已部署；hosted acceptance `33345182984` 與最新 scheduler `33361427466` 均成功。這些成功證據對應 staging 當時的 runtime，不代表目前 `main` `d4e9e298` 已部署。M1 真人使用者測試仍另列。
 - [x] **文件中心與年度交接**（`20260820002000_archive_handover.sql`）— `/archives`
 - [x] **社內留言板** — `/board`
 - [x] **活動封面圖片**（`20260820000100_event_cover_images.sql`）
