@@ -1,4 +1,4 @@
-name: Repair Staging Auth Redirect
+name: Sync Staging Auth Redirect And Recovery Email
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - .github/workflows/repair-staging-auth-redirect.yml
+      - scripts/sync-staging-auth-config.mjs
+      - src/lib/staging-auth-config.mjs
+      - supabase/templates/recovery.html
   workflow_dispatch:
 
 permissions:
@@ -17,101 +20,20 @@ concurrency:
 
 jobs:
   repair:
-    name: Repair staging Auth URLs
+    name: Sync staging Auth URLs and recovery email
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 10
     env:
+      APP_ENV: staging
+      TRUSTED_ADMIN_ENVIRONMENT: staging
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
-      EXPECTED_STAGING_BASE_URL: https://rotary-platform-v2.onrender.com
 
     steps:
-      - name: Validate staging identity and update Auth redirects
-        shell: bash
-        run: |
-          set -euo pipefail
+      - name: Check out the exact workflow revision
+        uses: actions/checkout@v4
 
-          node --input-type=module <<'NODE'
-          const token = process.env.SUPABASE_ACCESS_TOKEN?.trim();
-          const projectRef = process.env.SUPABASE_PROJECT_REF?.trim();
-          const configuredBaseUrl = process.env.STAGING_BASE_URL?.trim();
-          const expectedBaseUrl = process.env.EXPECTED_STAGING_BASE_URL?.trim();
-
-          if (!token || !projectRef || !configuredBaseUrl || !expectedBaseUrl) {
-            throw new Error("Required staging configuration is missing.");
-          }
-
-          const configured = new URL(configuredBaseUrl);
-          if (configured.origin !== expectedBaseUrl
-            || configured.protocol !== "https:"
-            || configured.pathname !== "/"
-            || configured.search
-            || configured.hash
-            || configured.username
-            || configured.password) {
-            throw new Error("Staging base URL does not match the approved HTTPS origin.");
-          }
-
-          const apiBase = "https://api.supabase.com/v1";
-          const headers = {
-            authorization: `Bearer ${token}`,
-            "content-type": "application/json",
-          };
-
-          async function request(path, init = {}) {
-            const response = await fetch(`${apiBase}${path}`, {
-              ...init,
-              headers: { ...headers, ...(init.headers ?? {}) },
-            });
-            const text = await response.text();
-            if (!response.ok) {
-              throw new Error(`Supabase Management API request failed with status ${response.status}.`);
-            }
-            if (!text) return null;
-            try {
-              return JSON.parse(text);
-            } catch {
-              throw new Error("Supabase Management API returned an invalid response.");
-            }
-          }
-
-          const project = await request(`/projects/${encodeURIComponent(projectRef)}`);
-          if (project?.ref !== projectRef || !/staging/i.test(String(project?.name ?? ""))) {
-            throw new Error("Supabase project identity is not an approved staging project.");
-          }
-
-          const authPath = `/projects/${encodeURIComponent(projectRef)}/config/auth`;
-          const current = await request(authPath);
-          const existingRedirects = String(current?.uri_allow_list ?? "")
-            .split(",")
-            .map((value) => value.trim())
-            .filter(Boolean);
-          const requiredRedirects = [
-            `${expectedBaseUrl}/auth/callback`,
-            `${expectedBaseUrl}/auth/callback?next=/reset-password`,
-          ];
-          const mergedRedirects = [...new Set([...existingRedirects, ...requiredRedirects])];
-
-          await request(authPath, {
-            method: "PATCH",
-            body: JSON.stringify({
-              site_url: expectedBaseUrl,
-              uri_allow_list: mergedRedirects.join(","),
-            }),
-          });
-
-          const verified = await request(authPath);
-          const verifiedRedirects = String(verified?.uri_allow_list ?? "")
-            .split(",")
-            .map((value) => value.trim())
-            .filter(Boolean);
-
-          if (verified?.site_url !== expectedBaseUrl
-            || requiredRedirects.some((value) => !verifiedRedirects.includes(value))) {
-            throw new Error("Staging Auth redirect verification failed.");
-          }
-
-          console.log("Staging Supabase Auth redirect configuration is correct.");
-          NODE
+      - name: Sync and verify protected staging Auth configuration
+        run: node scripts/sync-staging-auth-config.mjs
