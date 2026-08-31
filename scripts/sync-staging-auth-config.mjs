@@ -17,6 +17,23 @@ function fail(message) {
  * and a static call label. The access token, the request body and the response
  * body are never placed into an error message or into stdout.
  */
+/**
+ * Surface just enough of a validation failure to locate the offending field.
+ * Only 400/422 bodies are described, because those echo back the patch this
+ * repository itself sent. Auth failures (401/403) are never described, and any
+ * credential-shaped run is stripped before the text is truncated.
+ */
+function describeValidationFailure(status, responseText) {
+  if (![400, 422].includes(status)) return "";
+  const redacted = String(responseText)
+    .replace(/sbp_[A-Za-z0-9_-]+/gu, "[redacted]")
+    .replace(/ey[A-Za-z0-9_-]{20,}/gu, "[redacted]")
+    .replace(/\s+/gu, " ")
+    .trim();
+  if (!redacted) return "";
+  return `:detail=${redacted.slice(0, 300)}`;
+}
+
 async function request(path, { token, method = "GET", body, label = "unknown" } = {}) {
   let response;
   try {
@@ -37,7 +54,8 @@ async function request(path, { token, method = "GET", body, label = "unknown" } 
 
   const responseText = await response.text();
   if (!response.ok) {
-    fail(`SUPABASE_MANAGEMENT_API_REQUEST_FAILED:${method}:${label}:HTTP_${response.status}`);
+    const detail = describeValidationFailure(response.status, responseText);
+    fail(`SUPABASE_MANAGEMENT_API_REQUEST_FAILED:${method}:${label}:HTTP_${response.status}${detail}`);
   }
   if (!responseText) return {};
   try {
