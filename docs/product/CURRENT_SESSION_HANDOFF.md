@@ -1,19 +1,20 @@
-# 交接筆記（2026-08-28）
+# 交接筆記（2026-08-31）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
 ## 本次同步結果
 
-目前權威 `main` 已合併 PR #77、PR #86 與文件 PR #87；目前應用程式 release SHA 是
-`c8c5284ec9210970766bb4f36e1f580584137a2c`。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
+目前權威 `main` 已合併 PR #77、PR #86 與文件 PR #87／#88；目前 main SHA 是
+`26520424b415b8f3e446d0ff53312330f30e76af`。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
 production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
-目前 staging 已部署同一個 `c8c5284…` revision，current-main 的 Staging Release plan `33121197083` 與
-Staging Go-Live `33121275958` 均成功，包含 migration apply、exact revision wait、HTTPS smoke 與 hosted member acceptance。
+staging 已重新部署目前 main，健康檢查回報 revision `26520424b415`、environment `staging`，
+並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。
 
 PR #86 的 application、validate、database 與 Browser Smoke 均通過後以一般 merge 合併。生日專項 hosted acceptance
-`33121570908` 登入與生日頁標題通過，但因 `birthday_wishes_v2` 尚未開啟，找不到 V2 預設公開說明而失敗；徵集頁因此尚未驗收。
-current-main 的排程重試 `33121704322` 仍回傳 `401 unauthorized`，表示 GitHub 與 Render 端的 scheduler secret 仍未同步。
+`33345182984` 已以目前 main SHA 通過，包含生日 V2 說明與祝福徵集入口。staging 平台管理員已透過受保護 CLI
+開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`；Render staging 與 GitHub staging secret 已同步。
+排程 workflow `33345260361` 已成功通過，表示 protected scheduler route 的認證與執行均正常。
 
 ## 已完成的主要切片
 
@@ -50,13 +51,8 @@ current-main 的排程重試 `33121704322` 仍回傳 `401 unauthorized`，表示
 
 ## 仍未完成／需外部條件
 
-- GitHub `staging` environment 已有 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`，但 current-main 排程 run
-  `33121704322` 呼叫已部署的 staging route 時仍回傳 `401 unauthorized`。這表示 Render 應用程式端的同名
-  環境變數目前未設定或與 GitHub secret 不一致；需在 Render staging 同步 secret。
-- current-main 的生日專項 hosted acceptance `33121570908` 證實 `birthday_wishes_v2` 尚未開啟，且因在 V2
-  檢查處停止，`birthday_wishes_collection_v1` 尚未取得有效驗收結果。需由 staging 平台管理員透過受保護流程
-  開啟兩個旗標，再重跑專項 hosted acceptance；secret 同步後再重跑排程。
-- staging 已完成 current-main Go-Live `33121275958`，不需要再次發布程式；production 仍未修改。
+- 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署、hosted acceptance 與排程均已完成；不再有本輪
+  birthday release blocker。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
 - GPS accuracy／定位 age 政策要由產品選定後才能 harden。
 - recovery 需要專用 staging 帳號的真實新信件流程。
 - iOS Safari／真實 Android 裝置驗收尚未做。
@@ -81,8 +77,8 @@ main CI                           passed (run 33121186952)
 main Browser Smoke                passed (run 33121186949, 11m50s)
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
-staging birthday acceptance       failed: V2 flag not enabled (run 33121570908)
-staging birthday scheduler        failed: 401 unauthorized (run 33121704322; GitHub/Render secret mismatch)
+staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
+staging birthday scheduler        passed (run 33345260361; protected staging route)
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
