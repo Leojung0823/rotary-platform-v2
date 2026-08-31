@@ -41,8 +41,7 @@ Smoke**。下次有任何高風險變更進 `main` 時，請讓完整 CI 跑一�
 1. ~~`Staging Release` → `Staging Go-Live`~~ **已完成**：plan `33403385635`、Go-Live `33403560211`
    均成功，staging runtime 已是 `9a0b0fcb959c`。下次部署時 `expected_sha` 一定要用
    `$(git rev-parse HEAD)`，不要手打。
-2. GPS accuracy／定位 age 政策仍等產品決定，在那之前不要改 GPS 契約。
-3. draft PR #40 的 base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main` 實作，
+2. draft PR #40 的 base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main` 實作，
    不能直接合併；請確認要關閉還是重開。
 
 **不在待辦內**：custom SMTP 與 recovery email 範本同步已由產品決定擱置（見上）。`BLOCKED_BY_PLAN`
@@ -103,7 +102,10 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
    `20260731000100_v08_attendance_management.sql`。
 2. `list_club_events` 與 `list_my_event_page` 都需要第二個 boolean `p_as_member` 參數，舊單參數呼叫不存在。
 3. mode、active-club cookie、導覽 visibility 只能作 UX；protected route、RPC、RLS 仍要自己授權。
-4. GPS 不保存 raw coordinate 或 exact distance；accuracy 門檻尚未由產品決定，不可自行猜測。
+4. GPS 不保存 raw coordinate 或 exact distance。產品已於 2026-08-31 決定**不設 accuracy 門檻**，
+   只以 200 公尺距離判定；`accuracy` 不傳到伺服器，`maximumAge: 0` 已涵蓋定位新鮮度。理由見
+   `docs/product/TO-DO-LIST.md` 第 1 節。**不要自行補上 accuracy 門檻**——那會誤傷室內 GPS 不準的
+   社員，卻擋不到造假者（accuracy 同樣由手機端自報）。要濫用防護請強化動態 QR token。
 5. 不要把登入狀態、角色、權限、社員名單或整個登入後首頁做公開快取。
 6. `birthday_wishes_v2` 與 `birthday_wishes_collection_v1` 缺少明確 flag row 時必須維持關閉；
    scheduler 只接受 staging 的受保護呼叫，不能用 service role key 暴露給前端或一般 job。
@@ -112,7 +114,7 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
 
 - 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署、hosted acceptance 與排程均已完成；不再有本輪
   birthday release blocker。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
-- GPS accuracy／定位 age 政策要由產品選定後才能 harden。
+- GPS accuracy 政策已於 2026-08-31 決定：不設門檻，維持 200 公尺距離判定。這一項已結案，不是待辦。
 - recovery 的 Management API token 已修復、redirect 已同步；剩下的外部條件是替 staging 專案設定 custom
   SMTP（Resend 免費額度 3,000 封/月即足夠）。設定後 email 範本同步會自動恢復嚴格驗證，不需要再改程式。
   在那之前不要用 recovery 信件當驗收證據。

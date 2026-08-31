@@ -11,7 +11,7 @@
 ## 本輪結論
 
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
-GPS 只剩精度政策，密碼 recovery 只剩真實 staging 信件流程，Browser Smoke
+GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併。
 
 目前權威來源是 GitHub `main`；staging `/api/health`
@@ -32,17 +32,27 @@ CI 範圍規則都已隨這次部署上線。此後若再有 commit 進 `main`�
 - 目前只有一個 open PR：舊的 draft PR #40，base 是過時的出席分支；公告功能已在 `main` 實作，不能直接合併。
 - PR #93 已加入 CI／Browser Smoke 的變更範圍 gate：低風險文件只跑輕量 gate，高風險程式／資料庫／建置／流程修改才跑完整檢查；分類失敗時 fail-open。
 
-### 1. GPS Check-in `[!]`
+### 1. GPS Check-in `[x]`
 
 已完成 200 公尺 server-side 距離判定、fresh browser location、QR／人工 fallback，且不保存
-原始座標或精確距離。尚未自行猜測 `accuracy` 門檻。
+原始座標或精確距離。
 
-待產品決定：
+**產品已於 2026-08-31 決定：不設 `accuracy` 門檻，只以 200 公尺距離判定。** 前端沿用
+`{ enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }`，`maximumAge: 0` 已強制每次重新定位，
+因此「定位 age」不需要另設規則。`accuracy` 不傳到伺服器，契約維持現狀。
 
-1. 接受瀏覽器回傳的任何 accuracy，只以 200 公尺距離判定；或
-2. 指定最大 accuracy 與定位 age，再補 server-side 拒絕規則與測試。
+決定理由：
 
-在決定前不改 GPS 契約；這是刻意的安全停點。
+- **門檻擋不到作弊。** 座標由手機端送出，`accuracy` 由同一個手機端送出。要造假的人可以同時聲稱
+  「座標＝會場、accuracy＝5 公尺」，門檻對他零成本。
+- **卻會誤傷誠實的人。** 例會多在飯店、餐廳等室內場地，室內 GPS 誤差常達 50–500 公尺，設門檻會拒絕
+  真的在現場的社員，形成「誠實的人被擋、作弊的人通過」的最壞組合。
+- **已有備援。** GPS 不準的社員仍可走 QR 掃碼或人工補登；`gps-security-boundary.test.ts` 已要求任一
+  簽到方式單獨都要能用。
+- **真正的防線是動態 QR token**，那部分已完成。
+
+**不要因為「看起來少了驗證」就自行補上 accuracy 門檻**——那會推翻這個決定。若日後真的觀察到濫用，
+應該強化動態 QR token 與簽到 session，而不是加 accuracy 規則。要改變這個決定需要新的產品決策。
 
 ### 2. 社員優先行動版體驗 `[x]`
 
@@ -158,10 +168,13 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
 ## 下一步順序
 
-1. 重新確認 staging Management API token，成功同步 Auth 設定後，再做新的 recovery 信件全流程。
-2. 由產品決定 GPS 的 `accuracy`／定位 age 政策，再補 server-side 規則與驗證；決定前不猜門檻。
-3. 安排 iOS Safari、Android Chrome 與五位目標使用者的 staging 驗收。
-4. 另行決定是否明確開啟 `announcements_v09`；功能完成不代表目前對社員公開。
+1. 安排 iOS Safari、Android Chrome 與五位目標使用者的 staging 驗收。
+2. 確認 draft PR #40 的處置：base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main`
+   實作，不能直接合併。
+3. 另行決定是否明確開啟 `announcements_v09`；功能完成不代表目前對社員公開。
+
+已結案、不在下一步內：staging Management API token 已修復且 Auth 設定同步通過（run `33400262734`）；
+recovery email 範本與 custom SMTP 已由產品決定擱置；GPS accuracy 政策已決定不設門檻。
 
 ## 本輪驗證證據
 
