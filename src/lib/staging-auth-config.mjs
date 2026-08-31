@@ -52,9 +52,16 @@ export function inspectStagingAuthConfigInput(input = process.env) {
     errors.push("STAGING_TRUSTED_BOUNDARY_REQUIRED");
   }
   if (!isValidProjectRef(input.SUPABASE_PROJECT_REF)) errors.push("SUPABASE_PROJECT_REF_INVALID");
-  const accessToken = String(input.SUPABASE_ACCESS_TOKEN ?? "");
-  if (accessToken.length < 20 || /[\r\n]/u.test(accessToken)) {
-    errors.push("SUPABASE_ACCESS_TOKEN_INVALID");
+  // Trim before measuring: a token pasted into a GitHub secret from a web page
+  // can carry non-ASCII whitespace such as U+00A0, which fetch forwards into
+  // the Authorization header unchanged and the hosted API then rejects as a
+  // bad credential. Trimming fixes that, and the surviving-character check
+  // names any remaining stray character instead of letting it reach the API as
+  // an opaque 401.
+  const accessToken = String(input.SUPABASE_ACCESS_TOKEN ?? "").trim();
+  if (accessToken.length < 20) errors.push("SUPABASE_ACCESS_TOKEN_INVALID");
+  else if (!/^[\x21-\x7e]+$/u.test(accessToken)) {
+    errors.push("SUPABASE_ACCESS_TOKEN_HAS_UNEXPECTED_CHARACTERS");
   }
   if (!isApprovedStagingOrigin(input.STAGING_BASE_URL)) {
     errors.push("STAGING_BASE_URL_NOT_APPROVED");

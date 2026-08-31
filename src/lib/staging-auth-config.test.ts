@@ -65,6 +65,25 @@ describe("protected staging Auth configuration", () => {
     expect(JSON.stringify(result)).not.toContain("management-token");
   });
 
+  it("names a token carrying characters that fetch would forward verbatim", () => {
+    // U+00A0 is the failure this guard exists for: it survives into the
+    // Authorization header and the hosted API answers an opaque 401.
+    expect(inspectStagingAuthConfigInput({
+      ...validInput(),
+      SUPABASE_ACCESS_TOKEN: `\u00a0${validInput().SUPABASE_ACCESS_TOKEN}`,
+    })).toEqual({ ok: true, errors: [] });
+    expect(inspectStagingAuthConfigInput({
+      ...validInput(),
+      SUPABASE_ACCESS_TOKEN: `  ${validInput().SUPABASE_ACCESS_TOKEN}\n`,
+    })).toEqual({ ok: true, errors: [] });
+    expect(inspectStagingAuthConfigInput({
+      ...validInput(),
+      SUPABASE_ACCESS_TOKEN: validInput().SUPABASE_ACCESS_TOKEN.replace("x", "\u00a0"),
+    }).errors).toContain("SUPABASE_ACCESS_TOKEN_HAS_UNEXPECTED_CHARACTERS");
+    expect(inspectStagingAuthConfigInput({ ...validInput(), SUPABASE_ACCESS_TOKEN: "short" }).errors)
+      .toContain("SUPABASE_ACCESS_TOKEN_INVALID");
+  });
+
   it("keeps the workflow protected and staging-only", () => {
     expect(workflow).toContain("environment: staging");
     expect(workflow).toContain("SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}");

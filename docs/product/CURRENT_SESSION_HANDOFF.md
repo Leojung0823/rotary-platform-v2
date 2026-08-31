@@ -17,8 +17,15 @@ PR #86 的 application、validate、database 與 Browser Smoke 均通過後以�
 開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`；Render staging 與 GitHub staging secret 已同步。
 排程 workflow `33361427466` 已成功通過，表示 protected scheduler route 的認證與執行均正常。
 
-最新 Auth 設定同步 workflow `33348350584` 在 Supabase Management API 第一次請求失敗；在重新確認 GitHub
-`staging` environment 的 `SUPABASE_ACCESS_TOKEN` 前，不寄新的 recovery 信件，也不把舊信件當成驗收證據。
+Auth 設定同步已修復，workflow `33399486309` 通過。原本 `33348350584` 的失敗是三個疊在一起的問題：舊
+token 在 8/27 之後失效、重設時貼進 secret 的值夾帶非 ASCII 空白（U+00A0，`fetch` 會原封送進
+Authorization 標頭，API 回 401），以及免費方案不允許修改 email 範本。腳本原本把所有失敗都收斂成同一個
+`SUPABASE_MANAGEMENT_API_REQUEST_FAILED`，看不出 HTTP status，所以前兩個問題一直遮住第三個。
+
+staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證——先前 email 範本欄位造成的 400
+會讓整包 PATCH 被丟棄，所以 redirect 其實從未真正套用。recovery email 範本仍被方案擋住，run log 會記錄
+`BLOCKED_BY_PLAN`。在 staging 專案接上 custom SMTP 之前，信件仍使用預設範本，`2ba8cda` 的 prefetch 防護
+尚未生效，因此**還不要把 recovery 信件當成驗收證據**。
 
 ## 已完成的主要切片
 
@@ -59,7 +66,9 @@ PR #86 的 application、validate、database 與 Browser Smoke 均通過後以�
 - 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署、hosted acceptance 與排程均已完成；不再有本輪
   birthday release blocker。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
 - GPS accuracy／定位 age 政策要由產品選定後才能 harden。
-- recovery 需要先修復 staging Management API token，再用專用 staging 帳號完成一封新的信件流程。
+- recovery 的 Management API token 已修復、redirect 已同步；剩下的外部條件是替 staging 專案設定 custom
+  SMTP（Resend 免費額度 3,000 封/月即足夠）。設定後 email 範本同步會自動恢復嚴格驗證，不需要再改程式。
+  在那之前不要用 recovery 信件當驗收證據。
 - iOS Safari／真實 Android 裝置驗收尚未做。
 - M1 五位目標使用者形成性測試尚未安排。
 
@@ -85,7 +94,8 @@ staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
 staging birthday scheduler        passed (run 33361427466; protected staging route)
-staging Auth config sync           failed (run 33348350584; first Management API request)
+staging Auth config sync           passed (run 33399486309; redirects verified,
+                                  recovery template BLOCKED_BY_PLAN pending custom SMTP)
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
