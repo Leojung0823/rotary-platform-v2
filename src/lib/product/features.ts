@@ -104,8 +104,9 @@ export const productFeatures: ProductFeature[] = [
     summary: "定義出席分母、公假、請假、補出席與社員趨勢報表。",
     category: "社務與活動",
     status: "available",
-    phase: "目前可測試",
+    phase: "V0.8 可測試",
     href: "/attendance",
+    featureFlagKey: "attendance_ui_v2",
   },
   {
     slug: "message-board",
@@ -122,8 +123,10 @@ export const productFeatures: ProductFeature[] = [
     title: "公告與排程通知",
     summary: "公告草稿、發布、LINE／Email 通知、排程與送達紀錄。",
     category: "溝通與內容",
-    status: "developing",
-    phase: "V0.9",
+    status: "available",
+    phase: "V0.9 可測試",
+    href: "/messages",
+    featureFlagKey: "announcements_v09",
   },
   {
     slug: "documents",
@@ -154,6 +157,7 @@ export const productFeatures: ProductFeature[] = [
     status: "available",
     phase: "核心、收款與報表可測試",
     href: "/blessings",
+    featureFlagKey: "blessing_iou_v1",
   },
   {
     slug: "dues-and-iou",
