@@ -28,6 +28,8 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
 - `supabase/verification/archive_handover_security.sql` 已補齊封存管理流程的隔離驗證：十支管理 RPC 各有
   管理者成功、同社一般社員 `42501` 與跨社帳號 `42501` 的可回滾 fixture；另驗證失敗版本不可被完成、
   版本號仍連續，以及已封存項目不再出現在管理投影。
+- 封存上傳 API 已在 Storage 回錯時移除唯一物件路徑、在檔案讀取／metadata finalize 失敗時標記版本失敗，
+  並新增 7 項 route 測試覆蓋成功、失敗清理、跨社 `42501`、trusted Storage 不可用與跨站請求。
 
 效能記錄：管理總覽依每個作用社別最多讀一次 permission projection，並以 request-scoped cache 重用；生日／
 封存管理頁各以一次主要 projection 讀取，活動管理頁在權限通過後才並行讀取標籤、社員與封面 URL。查詢總數
@@ -36,7 +38,7 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
 本輪驗證（隔離分支）：
 
 ```text
-npm test                         106 files / 672 tests passed
+npm test                         107 files / 679 tests passed
 npm run lint                     passed
 npm run typecheck                passed
 npm run build                    passed; 3 new management routes collected

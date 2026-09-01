@@ -79,13 +79,31 @@ export async function POST(request: NextRequest) {
     return archiveFailure(503);
   }
 
-  const bytes = Buffer.from(await file.arrayBuffer());
+  let bytes: Buffer;
+  try {
+    bytes = Buffer.from(await file.arrayBuffer());
+  } catch {
+    await supabase.rpc("fail_archive_version", {
+      p_club_id: clubId,
+      p_version_id: projection.versionId,
+      p_reason: "file_read_failed",
+    });
+    return archiveFailure(500);
+  }
   const uploaded = await admin.storage.from("rotary-archives").upload(projection.objectPath, bytes, {
     contentType: file.type,
     cacheControl: "3600",
     upsert: false,
   });
   if (uploaded.error) {
+    // The version path is unique, so removing it is safe even when Storage
+    // returned an error after partially writing the object.
+    try {
+      await admin.storage.from("rotary-archives").remove([projection.objectPath]);
+    } catch {
+      // Keep the lifecycle failure response generic; the failed version still
+      // prevents the pending row from being treated as a ready document.
+    }
     await supabase.rpc("fail_archive_version", {
       p_club_id: clubId,
       p_version_id: projection.versionId,
@@ -99,7 +117,11 @@ export async function POST(request: NextRequest) {
     p_version_id: projection.versionId,
   });
   if (completed.error) {
-    await admin.storage.from("rotary-archives").remove([projection.objectPath]);
+    try {
+      await admin.storage.from("rotary-archives").remove([projection.objectPath]);
+    } catch {
+      // Still mark the database version failed if Storage cleanup is transient.
+    }
     await supabase.rpc("fail_archive_version", {
       p_club_id: clubId,
       p_version_id: projection.versionId,
