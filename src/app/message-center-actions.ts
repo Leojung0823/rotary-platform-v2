@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { parseClubMessage, parseReadReceipt } from "@/lib/message-center/contracts";
 import {
   normalizeMessageBody,
@@ -24,6 +23,15 @@ export type MessageActionResult =
 export type ReadActionResult =
   | { ok: true; readAt: string; unreadCount: number }
   | { ok: false; reason: "forbidden" | "failed" };
+
+// The message centre is a client component that calls these actions
+// imperatively and keeps its own inbox, sent and delivery state. Revalidating
+// this route here would re-render the Server Component that produced the page
+// and throw away the state the client had just updated, so a sent or withdrawn
+// message would visibly flicker back. Nothing is lost by omitting it: the
+// action returns the durable row, and the next navigation reads Supabase
+// directly. Other action modules still revalidate, because they are submitted
+// through <form action={...}> and do want the server round trip.
 
 function uuidList(values: readonly unknown[]) {
   return Array.from(new Set(values.map((value) => String(value).trim().toLowerCase())))
@@ -70,7 +78,6 @@ export async function sendClubMessageAction(formData: FormData): Promise<Message
 
   try {
     const message = parseClubMessage({ ...(data as object), read_at: null });
-    revalidatePath("/messages");
     return { ok: true, message };
   } catch {
     return { ok: false, reason: "failed" };
@@ -111,6 +118,5 @@ export async function withdrawClubMessageAction(
     p_club_id: clubId.toLowerCase(),
     p_message_id: messageId.toLowerCase(),
   });
-  if (!error) revalidatePath("/messages");
   return { ok: !error };
 }
