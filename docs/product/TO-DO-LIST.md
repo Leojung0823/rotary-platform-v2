@@ -168,16 +168,18 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
 ## 下一步順序
 
-1. 安排 iOS Safari、Android Chrome 與五位目標使用者的 staging 驗收。
-2. 確認 draft PR #40 的處置：base 是過時的 `feat/v0.8-attendance-management`，公告功能已在 `main`
-   實作，不能直接合併。
+1. 補齊生日派發的 staging 測試資料（該社有效社長／秘書，加上一位下個月生日且已開放祝福的社員），
+   再手動觸發 `Birthday Collection Scheduler` 完成驗收。程式面已修復並部署；目前的
+   `skipped_reasons.no_active_birthday_manager` 是資料缺口，不是缺陷。
+2. **上線前必辦**：生日徵集排程目前只有 `run-staging-scheduler` 一個 job，只打 `STAGING_BASE_URL`。
+   production 沒有對應排程，正式上線後生日徵集不會自動派發，需要另做 production job、secret 與核准閘門。
+3. 安排 iOS Safari、Android Chrome 實機驗收，以及 M1 五位目標使用者形成性測試。實機驗收應一併涵蓋訊息中心。
+4. 另行決定是否對 production 開啟 `announcements_v09`；staging 已開啟不代表 production 已公開。
+
 已結案、不在下一步內：staging Management API token 已修復且 Auth 設定同步通過（run `33400262734`）；
 recovery email 範本與 custom SMTP 已由產品決定擱置；GPS accuracy 政策已決定不設門檻；
-`announcements_v09` 已於 2026-08-31 對 staging 開啟。
-
-`announcements_v09`（訊息中心）已由平台管理員透過受保護 CLI 對 **staging** 開啟：enabled、rollout 100%、
-`enabled_environments` 僅 `staging`。腳本會逐項比對 RPC 回傳狀態，不是「送出即成功」。**production 未開啟**，
-要對 production 開啟需另行決定並另行執行。因此 staging 的實機驗收現在應一併涵蓋訊息中心。
+`announcements_v09` 已於 2026-08-31 對 staging 開啟（enabled、rollout 100%、僅 `staging`，production 未開啟）；
+draft PR #40 已關閉，分支保留；生日派發的權限與提前一個月派發已修復並部署。
 
 ## 本輪驗證證據
 

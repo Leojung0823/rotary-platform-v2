@@ -3,6 +3,53 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 生日祝福派發修復（2026-09-01）
+
+**症狀**：社員看得到本月壽星，卻收不到祝福任務；排程回報 `skipped_count: 1`、其餘為 0。
+
+**根因**：`current_can_manage_club()` 只認平台管理員與 `club_operator_permissions`（執行秘書）。社長與秘書
+存在 `club_role_assignments`，該函式從不讀它，所以社長／秘書在**每一支生日管理 RPC** 都被擋下，排程
+也找不到管理者而整社略過。這不只是排程問題，題庫、發布、審核、重跑全都受影響。
+
+**修法**（`20260901000100`）：不動共用的 `current_can_manage_club()`——它與 provisioning 等領域共用，
+在那裡放寬會授出遠超生日範圍的權限。改為新增 `current_can_manage_birthday_collection()`，它是
+`current_has_club_permission(club, 'member.manage')` 的薄包裝；該權限鍵剛好等於社長＋秘書＋執行秘書，
+且財務與一般社員從不持有。16 支生日函式由既有定義程式化擷取後只換權限呼叫，沒有重打。
+
+排程改為在同社團內依序尋找執行秘書 → 社長 → 秘書，要求帳號有效、有 `auth_user_id`、角色路徑上社籍
+有效、執行秘書路徑上權限未到期。**平台管理員在排程被刻意排除**：自動派發必須以該社真實幹部的身分執行。
+找不到合格幹部仍然略過，但會回報 `skipped_reasons.no_active_birthday_manager`；原因以計數回報而非逐社
+列出，因為這個結果會印進 CI log。
+
+**派發時機**（`20260901000200`）：原本派發當月，1 號生日的壽星在生日當天才收到邀約，來不及寫。改為
+**這個月派發下個月的批次**，1 號生日至少有整整一個月，月底生日接近兩個月。曾考慮滾動 30 天但否決：
+它會讓同一個日曆月出現兩個生日月份的邀約，破壞「每位社員每個生日月份最多一則」這條產品規則。改用整月
+平移可保留一批次對一個生日月份，配額因此完全不變。這也讓「明年」那組生日日期重新變成必要——十二月要
+派發的是隔年一月。
+
+**現況**：兩支 migration 都已通過 CI 的 database job（真實 Postgres + 47 個驗證 SQL），並已部署到
+staging（runtime `2b0f68242f7c`，`/api/health` 的 `issues` 為空）。
+
+**排程實測** run `33457645384`：
+
+```json
+{"status":"completed","generated_count":0,"notified_count":0,"skipped_count":1,
+ "skipped_reasons":{"no_active_birthday_manager":1}}
+```
+
+**這是正確的略過，不是缺陷。** staging 的社團目前沒有任何有效的社長／秘書／執行秘書，所以自動派發沒有
+可用的執行身分。要完成驗收還缺兩項 staging 測試資料：
+
+1. 該社至少一位有效的社長或秘書（平台管理員可在 `/clubs/{clubId}/members/{membershipId}` 的「角色」表單指派）。
+2. 至少一位**下個月**生日、且 `birthday_visibility_preferences` 為 `is_listed = true` 且
+   `allow_wishes = true` 的社員。規格明訂既有沒有偏好列的社員維持不公開，所以舊資料不會自動符合。
+
+補齊後手動觸發 `Birthday Collection Scheduler` 即可，預期 `generated_count > 0`、`skipped_count = 0`。
+
+**上線前的缺口**：`.github/workflows/birthday-collection-scheduler.yml` 只有 `run-staging-scheduler`
+一個 job，只打 `STAGING_BASE_URL`。**production 沒有對應排程**，正式上線後生日徵集不會自動跑，需要另做
+production job、secret 與核准閘門。
+
 ## 交接給下一位代理（2026-08-31 staging Auth 修復輪）
 
 這一輪只處理 staging Auth 同步失敗，沒有碰任何產品功能。接手前請先讀完這一節。
