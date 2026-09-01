@@ -157,6 +157,20 @@ describe("role-aware navigation", () => {
       .toEqual(["overview", "events", "attendance", "members"]);
   });
 
+  it("keeps every enabled first-level management destination within five tabs", () => {
+    const projected = context();
+    const items = roleShellNavigation(projected, "management", {
+      attendanceEnabled: true,
+      messageCenterEnabled: true,
+      managementPermissions: allManagementPermissions,
+    });
+
+    expect(items.map((item) => item.id)).toEqual([
+      "overview", "events", "attendance", "members", "messages",
+    ]);
+    expect(items).toHaveLength(5);
+  });
+
   it("fails closed when the permission projection is unavailable", () => {
     const projected = context();
     expect(roleShellNavigation(projected, "management", {

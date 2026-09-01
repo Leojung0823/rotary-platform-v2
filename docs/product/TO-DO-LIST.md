@@ -196,7 +196,7 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
    權限投影快取與管理總覽卡片均已加入；沒有新增 migration，也沒有改 RPC／RLS。社員頁已移除管理表單，
    只保留社員操作／唯讀內容與管理模式連結。
 
-   本輪本機驗證：106 個測試檔、671 tests passed；lint、typecheck、build、migration／verification manifest
+   本輪本機驗證：107 個測試檔、680 tests passed；lint、typecheck、build、migration／verification manifest
    檢查與 E2E 語法／清單檢查通過。`npm run verify:db` 因 Docker／Supabase 無回應未完成；Browser Smoke、
    staging 執行秘書驗收與效能 TTFB 尚未量測／執行。程式目前在隔離分支
    `codex/management-mode-separation`，待外部驗收後才可標記 `[x]`。
@@ -213,7 +213,7 @@ draft PR #40 已關閉，分支保留；生日派發的權限與提前一個月�
 
 管理模式分離隔離分支已在本機執行：
 
-- `npm test`：106 files、671 tests passed。
+- `npm test`：107 files、680 tests passed。
 - `npm run typecheck`、`npm run lint`、`npm run build`：passed。
 - `npm run check:migrations`：passed。
 - `npm run check:db-verifications`：manifest covers all 47 SQL files。

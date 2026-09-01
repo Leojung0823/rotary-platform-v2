@@ -258,7 +258,6 @@ export default async function DashboardPage({
         blessingIouEnabled: blessingIouEvaluation.enabled,
         birthdayCollectionEnabled: birthdayCollectionEvaluation.enabled,
         archiveHandoverEnabled: archiveHandoverEvaluation.enabled,
-        messageCenterEnabled: messageCenterEvaluation.enabled,
       }}
     />;
   }

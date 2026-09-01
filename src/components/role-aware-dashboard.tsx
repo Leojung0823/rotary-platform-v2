@@ -25,7 +25,6 @@ type ManagementFeatures = Readonly<{
   blessingIouEnabled: boolean;
   birthdayCollectionEnabled: boolean;
   archiveHandoverEnabled: boolean;
-  messageCenterEnabled: boolean;
 }>;
 
 function managementToolHref(clubId: string, path: string) {
@@ -66,7 +65,6 @@ export function RoleAwareDashboardLanding({
     blessingIouEnabled: false,
     birthdayCollectionEnabled: false,
     archiveHandoverEnabled: false,
-    messageCenterEnabled: false,
   },
 }: {
   identity: Identity;
@@ -121,12 +119,6 @@ export function RoleAwareDashboardLanding({
       title: "執行秘書管理",
       description: "管理社務操作人員與管理範圍。",
       href: managementToolHref(activeClub.clubId, "operators"),
-    } : null,
-    managementFeatures.messageCenterEnabled && hasPermission("member.manage") ? {
-      id: "messages",
-      title: "訊息中心",
-      description: "處理社內公告與待回覆訊息。",
-      href: "/messages?mode=management",
     } : null,
   ].filter((tool): tool is NonNullable<typeof tool> => tool !== null) : [];
 
