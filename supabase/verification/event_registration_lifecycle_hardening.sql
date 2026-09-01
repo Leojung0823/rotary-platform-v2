@@ -84,7 +84,7 @@ begin
   if club_count <> 0 then raise exception 'suspended membership received an event club'; end if;
 
   begin
-    perform public.list_club_events('56000000-0000-4000-8000-000000000001');
+    perform public.list_club_events('56000000-0000-4000-8000-000000000001', false);
     raise exception 'suspended membership listed events';
   exception when insufficient_privilege then null;
   end;
@@ -111,7 +111,7 @@ begin
   if club_count <> 0 then raise exception 'suspended club appeared in event selector'; end if;
 
   begin
-    perform public.list_club_events('56000000-0000-4000-8000-000000000002');
+    perform public.list_club_events('56000000-0000-4000-8000-000000000002', false);
     raise exception 'suspended club manager listed events';
   exception when insufficient_privilege then null;
   end;

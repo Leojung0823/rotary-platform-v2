@@ -78,6 +78,10 @@ begin
     '42000000-0000-4000-8000-000000000001', 2026, '服務傳承', '卸任社長', '新任秘書'
   );
   insert into archive_test_values values ('year', year_id);
+  perform public.update_rotary_year(
+    '42000000-0000-4000-8000-000000000001', year_id,
+    '更新後服務傳承', '新任社長（更新）', '新任秘書（更新）'
+  );
 
   foreach category in array array[
     'meeting_minutes', 'grant_documents', 'reports',
@@ -88,6 +92,12 @@ begin
       category || ' 文件', null, '年度必要資料', array[category], 'club_internal'
     );
     insert into archive_test_values values (category, item_id);
+    if category = 'meeting_minutes' then
+      perform public.update_archive_item(
+        '42000000-0000-4000-8000-000000000001', item_id, category,
+        'meeting_minutes 更新後文件', '更新後說明', '年度/更新後', array['updated'], 'club_internal'
+      );
+    end if;
     version := public.begin_archive_version(
       '42000000-0000-4000-8000-000000000001', item_id,
       category || '.pdf', 1024, 'application/pdf', '第一版'
@@ -114,13 +124,74 @@ begin
     '42000000-0000-4000-8000-000000000001', (version->>'version_id')::uuid
   );
 
+  -- A failed upload remains as an immutable version history and can be archived.
+  item_id := public.create_archive_item(
+    '42000000-0000-4000-8000-000000000001', year_id, 'other',
+    '失敗上傳後封存項目', '驗證 failed 與 archive 狀態', '年度/失敗測試', array['failure'], 'officers_only'
+  );
+  insert into archive_test_values values ('failed-item', item_id);
+  version := public.begin_archive_version(
+    '42000000-0000-4000-8000-000000000001', item_id,
+    'failed.pdf', 512, 'application/pdf', '第一個失敗版本'
+  );
+  insert into archive_test_values values ('failed-version', (version->>'version_id')::uuid);
+  perform public.fail_archive_version(
+    '42000000-0000-4000-8000-000000000001', (version->>'version_id')::uuid, '測試上傳失敗'
+  );
+  begin
+    perform public.complete_archive_version(
+      '42000000-0000-4000-8000-000000000001', (version->>'version_id')::uuid
+    );
+    raise exception 'failed archive version became ready';
+  exception when others then
+    if sqlstate <> 'P0002' then raise; end if;
+  end;
+  version := public.begin_archive_version(
+    '42000000-0000-4000-8000-000000000001', item_id,
+    'failed-again.pdf', 512, 'application/pdf', '第二個失敗版本'
+  );
+  if version->>'version_number' <> '2' then
+    raise exception 'failed archive version did not remain in version history';
+  end if;
+  perform public.fail_archive_version(
+    '42000000-0000-4000-8000-000000000001', (version->>'version_id')::uuid, '再次測試上傳失敗'
+  );
+  perform public.archive_archive_item(
+    '42000000-0000-4000-8000-000000000001', item_id
+  );
+  begin
+    perform public.archive_archive_item(
+      '42000000-0000-4000-8000-000000000001', item_id
+    );
+    raise exception 'archived item was archived twice';
+  exception when others then
+    if sqlstate <> 'P0002' then raise; end if;
+  end;
+
   page := public.get_my_archive_page('42000000-0000-4000-8000-000000000001', year_id, null, null);
   if not (page->>'can_manage')::boolean
      or jsonb_array_length(page->'items') <> 7
      or jsonb_array_length(page->'missing_required_categories') <> 0 then
     raise exception 'manager archive projection is incomplete';
   end if;
+  if page->'years'->0->>'theme' <> '更新後服務傳承'
+     or page->'years'->0->>'president_name' <> '新任社長（更新）'
+     or page->'years'->0->>'secretary_name' <> '新任秘書（更新）' then
+    raise exception 'rotary year update was not projected';
+  end if;
+  if not exists (
+    select 1 from jsonb_array_elements(page->'items') as item
+    where item->>'title' = 'meeting_minutes 更新後文件'
+  ) or exists (
+    select 1 from jsonb_array_elements(page->'items') as item
+    where item->>'id' = (select value::text from archive_test_values where key = 'failed-item')
+  ) then
+    raise exception 'archive item update or archive projection failed';
+  end if;
   for checklist in select value from jsonb_array_elements(page->'checklist') loop
+    insert into archive_test_values values (
+      'checklist-' || (checklist->>'category'), (checklist->>'id')::uuid
+    );
     perform public.update_handover_checklist(
       '42000000-0000-4000-8000-000000000001',
       (checklist->>'id')::uuid,
@@ -181,6 +252,93 @@ begin
 end $$;
 reset role;
 
+-- A same-club regular member may read public archive material but cannot invoke any mutation.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '12000000-0000-4000-8000-000000000003', true);
+do $$
+declare
+  year_id uuid := (select value from archive_test_values where key = 'year');
+  item_id uuid := (select value from archive_test_values where key = 'private-item');
+  version_id uuid := (select value from archive_test_values where key = 'private-version');
+  checklist_id uuid := (select value from archive_test_values where key = 'checklist-meeting_minutes');
+begin
+  begin
+    perform public.create_rotary_year(
+      '42000000-0000-4000-8000-000000000001', 2027, '不應建立', '不應建立', '不應建立'
+    );
+    raise exception 'same-club member created a Rotary year';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.update_rotary_year(
+      '42000000-0000-4000-8000-000000000001', year_id, '不應更新', '不應更新', '不應更新'
+    );
+    raise exception 'same-club member updated a Rotary year';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.create_archive_item(
+      '42000000-0000-4000-8000-000000000001', year_id,
+      'other', '不應建立', null, '其他', '{}'::text[], 'club_internal'
+    );
+    raise exception 'same-club member created an archive item';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.update_archive_item(
+      '42000000-0000-4000-8000-000000000001', item_id,
+      'other', '不應更新', null, '其他', '{}'::text[], 'officers_only'
+    );
+    raise exception 'same-club member updated an archive item';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.archive_archive_item(
+      '42000000-0000-4000-8000-000000000001', item_id
+    );
+    raise exception 'same-club member archived an archive item';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.begin_archive_version(
+      '42000000-0000-4000-8000-000000000001', item_id,
+      'member.pdf', 512, 'application/pdf', null
+    );
+    raise exception 'same-club member began an archive version';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.complete_archive_version(
+      '42000000-0000-4000-8000-000000000001', version_id
+    );
+    raise exception 'same-club member completed an archive version';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.fail_archive_version(
+      '42000000-0000-4000-8000-000000000001', version_id, '不應失敗版本'
+    );
+    raise exception 'same-club member failed an archive version';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.update_handover_checklist(
+      '42000000-0000-4000-8000-000000000001', checklist_id,
+      'needs_update', null, '不應更新'
+    );
+    raise exception 'same-club member updated a handover checklist';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.confirm_archive_handover(
+      '42000000-0000-4000-8000-000000000001', year_id, 'incoming'
+    );
+    raise exception 'same-club member confirmed archive handover';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+
 -- Cross-club users fail closed.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '12000000-0000-4000-8000-000000000004', true);
@@ -201,6 +359,74 @@ begin
       'other', '跨社寫入', null, '其他', '{}', 'club_internal'
     );
     raise exception 'cross-club archive write accepted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.update_rotary_year(
+      '42000000-0000-4000-8000-000000000001',
+      (select value from archive_test_values where key = 'year'),
+      '跨社不應更新', '跨社不應更新', '跨社不應更新'
+    );
+    raise exception 'cross-club Rotary year update accepted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.update_archive_item(
+      '42000000-0000-4000-8000-000000000001',
+      (select value from archive_test_values where key = 'private-item'),
+      'other', '跨社不應更新', null, '其他', '{}'::text[], 'officers_only'
+    );
+    raise exception 'cross-club archive item update accepted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.archive_archive_item(
+      '42000000-0000-4000-8000-000000000001',
+      (select value from archive_test_values where key = 'private-item')
+    );
+    raise exception 'cross-club archive item archive accepted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.begin_archive_version(
+      '42000000-0000-4000-8000-000000000001',
+      (select value from archive_test_values where key = 'private-item'),
+      'cross-club.pdf', 512, 'application/pdf', null
+    );
+    raise exception 'cross-club archive version begin accepted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.complete_archive_version(
+      '42000000-0000-4000-8000-000000000001',
+      (select value from archive_test_values where key = 'private-version')
+    );
+    raise exception 'cross-club archive version complete accepted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.fail_archive_version(
+      '42000000-0000-4000-8000-000000000001',
+      (select value from archive_test_values where key = 'private-version'), '跨社不應失敗版本'
+    );
+    raise exception 'cross-club archive version fail accepted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.update_handover_checklist(
+      '42000000-0000-4000-8000-000000000001',
+      (select value from archive_test_values where key = 'checklist-meeting_minutes'),
+      'needs_update', null, '跨社不應更新'
+    );
+    raise exception 'cross-club handover checklist update accepted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.confirm_archive_handover(
+      '42000000-0000-4000-8000-000000000001',
+      (select value from archive_test_values where key = 'year'), 'incoming'
+    );
+    raise exception 'cross-club handover confirmation accepted';
   exception when insufficient_privilege then null;
   end;
 end $$;

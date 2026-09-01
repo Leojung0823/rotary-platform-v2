@@ -25,6 +25,9 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
   RPC／RLS／Storage 授權規則。
 - 本機 E2E fixture 的 enabled 情境補上 `archive_handover_v1`，並新增執行秘書從總覽進入生日徵集、封存
   建立／編輯／上傳，以及一般社員直開管理頁、跨社團 `clubId` 的拒絕測試路徑。
+- `supabase/verification/archive_handover_security.sql` 已補齊封存管理流程的隔離驗證：十支管理 RPC 各有
+  管理者成功、同社一般社員 `42501` 與跨社帳號 `42501` 的可回滾 fixture；另驗證失敗版本不可被完成、
+  版本號仍連續，以及已封存項目不再出現在管理投影。
 
 效能記錄：管理總覽依每個作用社別最多讀一次 permission projection，並以 request-scoped cache 重用；生日／
 封存管理頁各以一次主要 projection 讀取，活動管理頁在權限通過後才並行讀取標籤、社員與封面 URL。查詢總數
@@ -33,7 +36,7 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
 本輪驗證（隔離分支）：
 
 ```text
-npm test                         106 files / 671 tests passed
+npm test                         106 files / 672 tests passed
 npm run lint                     passed
 npm run typecheck                passed
 npm run build                    passed; 3 new management routes collected
@@ -43,6 +46,9 @@ git diff --check                 passed
 E2E node --check / Playwright --list passed; 207 tests discovered
 ```
 
+上述新增的封存 SQL fixture 尚未在本機資料庫執行；它是驗證內容的補強，不是資料庫通過證據。
+活動 verification 的有效呼叫也已全部明確傳入 `p_as_member`；歷史 migration 中的舊定義仍保留作為 migration
+歷史，不代表目前 runtime overload。
 尚未完成、不能誤報為通過：`npm run verify:db` 曾因本機 Docker／Supabase 無回應而中止；本輪沒有執行
 Browser Smoke、staging acceptance 或 production deploy。效能 TTFB 也尚未量測。下一步是先確認本機資料庫可用
 後跑完整 verify，或依使用者授權把分支推上 GitHub，再由 staging 流程做執行秘書的真實驗收。

@@ -112,7 +112,7 @@ begin
   exception when insufficient_privilege then null;
   end;
 
-  listed := public.list_club_events('54000000-0000-4000-8000-000000000001');
+  listed := public.list_club_events('54000000-0000-4000-8000-000000000001', false);
   if jsonb_array_length(listed->'events') <> 1 then raise exception 'member did not receive published event'; end if;
 
   saved := public.set_my_event_registration(
@@ -166,7 +166,7 @@ declare event_id uuid;
 begin
   select state.event_id into event_id from event_test_state as state;
   begin
-    perform public.list_club_events('54000000-0000-4000-8000-000000000001');
+    perform public.list_club_events('54000000-0000-4000-8000-000000000001', false);
     raise exception 'cross-club member listed events';
   exception when insufficient_privilege then null;
   end;

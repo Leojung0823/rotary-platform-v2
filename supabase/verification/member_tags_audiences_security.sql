@@ -207,7 +207,7 @@ do $named$
 declare
   events jsonb;
 begin
-  events := public.list_club_events('5c000000-0000-4000-8000-000000000001') -> 'events';
+  events := public.list_club_events('5c000000-0000-4000-8000-000000000001', false) -> 'events';
   if events::text not like '%8c000000-0000-4000-8000-000000000003%' then
     raise exception 'A named participant could not see the outing they were invited to.';
   end if;
@@ -220,7 +220,7 @@ do $not_named$
 declare
   events jsonb;
 begin
-  events := public.list_club_events('5c000000-0000-4000-8000-000000000001') -> 'events';
+  events := public.list_club_events('5c000000-0000-4000-8000-000000000001', false) -> 'events';
   if events::text like '%8c000000-0000-4000-8000-000000000003%' then
     raise exception 'A member who was not named saw the outing.';
   end if;
@@ -234,7 +234,7 @@ do $excluded$
 declare
   events jsonb;
 begin
-  events := public.list_club_events('5c000000-0000-4000-8000-000000000001') -> 'events';
+  events := public.list_club_events('5c000000-0000-4000-8000-000000000001', false) -> 'events';
   if events::text like '%8c000000-0000-4000-8000-000000000001%' then
     raise exception 'An untagged member was shown a targeted event.';
   end if;
@@ -247,7 +247,7 @@ do $included$
 declare
   events jsonb;
 begin
-  events := public.list_club_events('5c000000-0000-4000-8000-000000000001') -> 'events';
+  events := public.list_club_events('5c000000-0000-4000-8000-000000000001', false) -> 'events';
   if events::text not like '%8c000000-0000-4000-8000-000000000001%' then
     raise exception 'A tagged member could not see the event addressed to them.';
   end if;
@@ -261,7 +261,7 @@ declare
   events jsonb;
 begin
   -- A manager keeps sight of what they sent, so they can find and edit it.
-  events := public.list_club_events('5c000000-0000-4000-8000-000000000001') -> 'events';
+  events := public.list_club_events('5c000000-0000-4000-8000-000000000001', false) -> 'events';
   if events::text not like '%8c000000-0000-4000-8000-000000000001%' then
     raise exception 'A manager lost sight of a targeted event.';
   end if;

@@ -12,6 +12,7 @@ describe("archive and handover security boundary", () => {
   const memberPage = source("src/app/(authenticated)/archives/page.tsx");
   const managementRoute = source("src/app/(authenticated)/clubs/[clubId]/archives/page.tsx");
   const actions = source("src/app/archive-actions.ts");
+  const verification = source("supabase/verification/archive_handover_security.sql");
 
   it("keeps the bucket private and serves downloads through short signed URLs", () => {
     expect(migration).toContain("'rotary-archives'");
@@ -41,6 +42,25 @@ describe("archive and handover security boundary", () => {
     expect(migration).toContain("incoming.confirmed_by_app_account_id <> outgoing.confirmed_by_app_account_id");
     expect(migration).toContain("handover_checklist_incomplete");
     expect(migration).toContain("archive.handover_confirmed");
+  });
+
+  it("keeps the database fixture aligned with every archive management RPC", () => {
+    for (const rpc of [
+      "create_rotary_year",
+      "update_rotary_year",
+      "create_archive_item",
+      "update_archive_item",
+      "archive_archive_item",
+      "begin_archive_version",
+      "complete_archive_version",
+      "fail_archive_version",
+      "update_handover_checklist",
+      "confirm_archive_handover",
+    ]) {
+      expect(verification).toContain(`public.${rpc}(`);
+    }
+    expect(verification).toContain("same-club regular member");
+    expect(verification).toContain("Cross-club users fail closed");
   });
 
   it("keeps member browsing separate from manager mutations", () => {

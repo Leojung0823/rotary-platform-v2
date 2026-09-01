@@ -189,6 +189,11 @@ club ID 與 `can_manage`，不能僅依函式名稱推測。
 | `POST /api/v1/archive/uploads` | same-origin + auth → begin/complete/fail RPC | 執秘可管理 | `[ ]` 階段 0：成功、失敗清理與跨社 fixture |
 | 封存檔案寫入 | API route 使用 trusted admin Storage client | 不走終端使用者 Storage policy | `[ ]` 階段 0：確認 route 不繞過 begin/complete/fail 授權 |
 
+`supabase/verification/archive_handover_security.sql` 已補成可回滾的隔離 fixture，涵蓋七支封存 server action
+背後的十支管理 RPC（年度建立／編輯、項目建立／編輯／封存、版本開始／完成／失敗、清單更新、交接確認）：
+管理者成功、同社一般社員得到 `42501`、跨社帳號得到 `42501` 都各有斷言。這只代表驗證腳本已具備，
+尚未代表本機 `npm run verify:db` 已執行成功；資料庫仍維持階段 0 的待驗證狀態。
+
 活動封面的 Storage policy 已存在 migration SQL；封存上傳則是 API route 的 trusted admin 流程。
 兩者不得用同一種「檢查 Storage policy」方法驗收。
 

@@ -71,12 +71,17 @@ describe("event database boundary", () => {
   const integrity = source("../supabase/migrations/20260729000110_event_registration_tenant_integrity.sql");
   const access = source("../supabase/migrations/20260729000120_event_access_projection.sql");
   const lifecycle = source("../supabase/migrations/20260729000130_event_active_club_hardening.sql");
+  const memberView = source("../supabase/migrations/20260821000200_event_member_view.sql");
 
   it("denies direct browser table access and grants only controlled RPCs", () => {
     expect(migration).toContain(
       "revoke all on table public.club_events, public.event_registrations from public, anon, authenticated",
     );
-    expect(migration).toContain("grant execute on function public.list_club_events(uuid) to authenticated");
+    expect(memberView).toContain("drop function if exists public.list_club_events(uuid)");
+    expect(memberView).toContain("create function public.list_club_events(p_club_id uuid, p_as_member boolean");
+    expect(memberView).toContain("grant execute on function public.list_club_events(uuid, boolean) to authenticated");
+    expect(memberView).toContain("grant execute on function public.list_my_event_page(uuid, boolean) to authenticated");
+    expect(memberView).not.toContain("grant execute on function public.list_club_events(uuid) to authenticated");
     expect(migration).toContain("grant execute on function public.set_my_event_registration");
   });
 
