@@ -184,7 +184,7 @@ export default async function EventDetailPage({
       </Notice>}
 
       {event.can_manage && <p className="hint">
-        管理這場活動請回到<Link href="/events?mode=management">活動管理</Link>。
+        管理這場活動請回到<a href={`/clubs/${encodeURIComponent(payload.club_id)}/events?mode=management`}>活動管理</a>。
       </p>}
     </article>
   </div>;

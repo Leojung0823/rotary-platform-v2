@@ -17,17 +17,29 @@ import { createClient } from "@/lib/supabase/server";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 function eventPath(clubId: string, key: "success" | "error", code: string, mode?: string) {
-  const params = new URLSearchParams({ clubId, [key]: code });
+  const params = new URLSearchParams(mode === "management" ? { [key]: code, mode } : { clubId, [key]: code });
   // The mode has to survive the redirect. Without it a manager who has just
   // created a draft lands back in the member view, where drafts are correctly
   // hidden -- so the event they just made appears not to exist.
   if (mode === "management") params.set("mode", mode);
-  return `/events?${params.toString()}`;
+  return mode === "management"
+    ? `/clubs/${encodeURIComponent(clubId)}/events?${params.toString()}`
+    : `/events?${params.toString()}`;
 }
 
 function readMode(formData: FormData) {
   const mode = formData.get("mode");
   return mode === "management" ? "management" : undefined;
+}
+
+function invalidEventPath(formData: FormData) {
+  const rawClubId = typeof formData.get("clubId") === "string"
+    ? String(formData.get("clubId")).trim()
+    : "";
+  const mode = readMode(formData);
+  return uuidPattern.test(rawClubId)
+    ? eventPath(rawClubId, "error", "invalid_input", mode)
+    : "/events?error=invalid_input";
 }
 
 /** Repeated form entries, filtered to well-formed ids. */
@@ -137,6 +149,7 @@ export async function createEventAction(
       // failure would send the officer to create it again and leave two.
       if (audience.error) {
         revalidatePath("/events");
+        revalidatePath(`/clubs/${clubId}/events`);
         return createEventFailure(
           values,
           revision,
@@ -149,6 +162,7 @@ export async function createEventAction(
   }
   if (rpcError) return createEventRpcFailure(values, revision, rpcError.message);
   revalidatePath("/events");
+  revalidatePath(`/clubs/${clubId}/events`);
   redirect(eventPath(clubId, "success", "event_created", readMode(formData)));
 }
 
@@ -186,17 +200,19 @@ export async function recordEventCoverAction({
     await supabase.storage.from(COVER_BUCKET).remove([`${club}/${event}`]);
   }
   revalidatePath("/events");
+  revalidatePath(`/clubs/${club}/events`);
   revalidatePath("/dashboard");
 }
 
 export async function publishEventAction(formData: FormData) {
   let clubId: string;
   let eventId: string;
+  const mode = readMode(formData);
   try {
     clubId = parseUuid(formData.get("clubId"));
     eventId = parseUuid(formData.get("eventId"));
   } catch {
-    redirect("/events?error=invalid_input");
+    redirect(invalidEventPath(formData));
   }
 
   const supabase = await createClient();
@@ -204,21 +220,23 @@ export async function publishEventAction(formData: FormData) {
     p_club_id: clubId,
     p_event_id: eventId,
   });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
+  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message), mode));
   revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "event_published"));
+  revalidatePath(`/clubs/${clubId}/events`);
+  redirect(eventPath(clubId, "success", "event_published", mode));
 }
 
 export async function cancelEventAction(formData: FormData) {
   let clubId: string;
   let eventId: string;
   let reason: string;
+  const mode = readMode(formData);
   try {
     clubId = parseUuid(formData.get("clubId"));
     eventId = parseUuid(formData.get("eventId"));
     reason = parseEventText(formData.get("reason"), 500, true);
   } catch {
-    redirect("/events?error=invalid_input");
+    redirect(invalidEventPath(formData));
   }
 
   const supabase = await createClient();
@@ -227,9 +245,10 @@ export async function cancelEventAction(formData: FormData) {
     p_event_id: eventId,
     p_reason: reason,
   });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
+  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message), mode));
   revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "event_cancelled"));
+  revalidatePath(`/clubs/${clubId}/events`);
+  redirect(eventPath(clubId, "success", "event_cancelled", mode));
 }
 
 export async function registerEventAction(formData: FormData) {

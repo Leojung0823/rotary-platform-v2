@@ -8,6 +8,7 @@ import { RoleAwareDashboardLanding } from "@/components/role-aware-dashboard";
 import { resolveDashboardRoleContext } from "@/lib/dashboard-role-context";
 import { hasPlatformAccess, requireIdentity, type Identity } from "@/lib/auth";
 import { activeClubForMode } from "@/lib/experience-context";
+import { readClubPermissions } from "@/lib/club-permissions.server";
 import {
   activeClubCookieName,
   readActiveClubPreference,
@@ -191,12 +192,22 @@ export default async function DashboardPage({
 
   const identity = await requireIdentity();
   await flagRecordsPromise;
-  const [evaluation, roleShellsEvaluation, memberHomeEvaluation, blessingIouEvaluation, messageCenterEvaluation] = await Promise.all([
+  const [
+    evaluation,
+    roleShellsEvaluation,
+    memberHomeEvaluation,
+    blessingIouEvaluation,
+    messageCenterEvaluation,
+    birthdayCollectionEvaluation,
+    archiveHandoverEvaluation,
+  ] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_context_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "member_home_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "announcements_v09", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "birthday_wishes_collection_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "archive_handover_v1", subjectUuid: identity.id }),
   ]);
   if (!evaluation.enabled) {
     void contextPromise;
@@ -219,6 +230,11 @@ export default async function DashboardPage({
     return <ExperienceContextResolver context={context.context} requestedMode={null} />;
   }
 
+  const managedClub = activeClubForMode(context.context, "management");
+  const managementPermissionResult = resolved.resolution.mode === "management" && managedClub
+    ? await readClubPermissions(managedClub.clubId)
+    : { ok: true, permissions: [] as readonly string[] };
+
   if (roleShellsEvaluation.enabled) {
     if (resolved.resolution.mode === "member") {
       if (!memberHomeEvaluation.enabled) {
@@ -237,6 +253,13 @@ export default async function DashboardPage({
       identity={identity}
       context={context.context}
       mode={resolved.resolution.mode}
+      managementPermissions={managementPermissionResult.permissions}
+      managementFeatures={{
+        blessingIouEnabled: blessingIouEvaluation.enabled,
+        birthdayCollectionEnabled: birthdayCollectionEvaluation.enabled,
+        archiveHandoverEnabled: archiveHandoverEvaluation.enabled,
+        messageCenterEnabled: messageCenterEvaluation.enabled,
+      }}
     />;
   }
 

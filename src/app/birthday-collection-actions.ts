@@ -12,10 +12,19 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 const questionKeyPattern = /^[a-z][a-z0-9_]{2,63}$/u;
 const questionTones = new Set(["warm", "humorous", "moving"]);
 
-function collectionPath(clubId: string, kind?: "success" | "error", code?: string) {
-  const query = new URLSearchParams({ clubId });
+function collectionPath(clubId: string, kind?: "success" | "error", code?: string, management = false) {
+  const query = new URLSearchParams(management ? { mode: "management" } : { clubId });
   if (kind && code) query.set(kind, code);
-  return `/birthday-collection?${query.toString()}`;
+  return management
+    ? `/clubs/${encodeURIComponent(clubId)}/birthday-collection?${query.toString()}`
+    : `/birthday-collection?${query.toString()}`;
+}
+
+function managementInvalidInputPath(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "").trim().toLowerCase();
+  return uuidPattern.test(clubId)
+    ? collectionPath(clubId, "error", "invalid_input", true)
+    : "/dashboard?mode=management&error=invalid_input";
 }
 
 function uuid(formData: FormData, name: string) {
@@ -152,16 +161,16 @@ export async function publishBirthdayCollectionSubmissionAction(formData: FormDa
     clubId = uuid(formData, "clubId");
     participantId = uuid(formData, "participantId");
   } catch {
-    redirect("/birthdays?error=invalid_input");
+    redirect(managementInvalidInputPath(formData));
   }
-  if (!await requireCollectionFlag()) redirect("/birthdays?error=feature_disabled");
+  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled", true));
 
   const { error } = await (await createClient()).rpc("publish_birthday_wish_submission", {
     p_club_id: clubId,
     p_participant_id: participantId,
   });
-  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message)));
-  redirect(collectionPath(clubId, "success", "published"));
+  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message), true));
+  redirect(collectionPath(clubId, "success", "published", true));
 }
 
 export async function hideBirthdayCollectionSubmissionAction(formData: FormData) {
@@ -171,16 +180,16 @@ export async function hideBirthdayCollectionSubmissionAction(formData: FormData)
     clubId = uuid(formData, "clubId");
     participantId = uuid(formData, "participantId");
   } catch {
-    redirect("/birthdays?error=invalid_input");
+    redirect(managementInvalidInputPath(formData));
   }
-  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled"));
+  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled", true));
 
   const { error } = await (await createClient()).rpc("hide_birthday_wish_submission", {
     p_club_id: clubId,
     p_participant_id: participantId,
   });
-  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message)));
-  redirect(collectionPath(clubId, "success", "hidden"));
+  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message), true));
+  redirect(collectionPath(clubId, "success", "hidden", true));
 }
 
 export async function createBirthdayCollectionQuestionAction(formData: FormData) {
@@ -196,9 +205,9 @@ export async function createBirthdayCollectionQuestionAction(formData: FormData)
     tone = questionTone(formData);
     order = sortOrder(formData);
   } catch {
-    redirect("/birthdays?error=invalid_input");
+    redirect(managementInvalidInputPath(formData));
   }
-  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled"));
+  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled", true));
 
   const { error } = await (await createClient()).rpc("create_birthday_wish_question", {
     p_club_id: clubId,
@@ -207,8 +216,8 @@ export async function createBirthdayCollectionQuestionAction(formData: FormData)
     p_tone: tone,
     p_sort_order: order,
   });
-  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message)));
-  redirect(collectionPath(clubId, "success", "question_created"));
+  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message), true));
+  redirect(collectionPath(clubId, "success", "question_created", true));
 }
 
 export async function updateBirthdayCollectionQuestionAction(formData: FormData) {
@@ -226,9 +235,9 @@ export async function updateBirthdayCollectionQuestionAction(formData: FormData)
     order = sortOrder(formData);
     isEnabled = enabled(formData);
   } catch {
-    redirect("/birthdays?error=invalid_input");
+    redirect(managementInvalidInputPath(formData));
   }
-  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled"));
+  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled", true));
 
   const { error } = await (await createClient()).rpc("update_birthday_wish_question", {
     p_club_id: clubId,
@@ -238,8 +247,8 @@ export async function updateBirthdayCollectionQuestionAction(formData: FormData)
     p_sort_order: order,
     p_is_enabled: isEnabled,
   });
-  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message)));
-  redirect(collectionPath(clubId, "success", "question_updated"));
+  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message), true));
+  redirect(collectionPath(clubId, "success", "question_updated", true));
 }
 
 export async function runBirthdayCollectionMonthAction(formData: FormData) {
@@ -250,9 +259,9 @@ export async function runBirthdayCollectionMonthAction(formData: FormData) {
     clubId = uuid(formData, "clubId");
     ({ year, month } = period(formData));
   } catch {
-    redirect("/birthdays?error=invalid_input");
+    redirect(managementInvalidInputPath(formData));
   }
-  if (!await requireCollectionFlag()) redirect("/birthdays?error=feature_disabled");
+  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled", true));
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("generate_birthday_wish_collection_month", {
@@ -260,24 +269,24 @@ export async function runBirthdayCollectionMonthAction(formData: FormData) {
     p_birthday_year: year,
     p_birthday_month: month,
   });
-  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message)));
+  if (error) redirect(collectionPath(clubId, "error", birthdayCollectionRpcErrorCode(error.message), true));
 
   const batch = objectValue(data);
   if (!batch) {
-    redirect(collectionPath(clubId, "error", "unexpected"));
+    redirect(collectionPath(clubId, "error", "unexpected", true));
     return;
   }
   const batchId = typeof batch.batch_id === "string" && uuidPattern.test(batch.batch_id)
     ? batch.batch_id
     : null;
   if (!batchId) {
-    redirect(collectionPath(clubId, "error", "unexpected"));
+    redirect(collectionPath(clubId, "error", "unexpected", true));
     return;
   }
 
   const batchStatus = birthdayCollectionBatchStatus(batch);
   if (!batchStatus) {
-    redirect(collectionPath(clubId, "error", "unexpected"));
+    redirect(collectionPath(clubId, "error", "unexpected", true));
     return;
   }
 
@@ -286,13 +295,13 @@ export async function runBirthdayCollectionMonthAction(formData: FormData) {
       p_club_id: clubId,
       p_assignment_batch_id: batchId,
     });
-    if (notification.error) redirect(collectionPath(clubId, "error", "notification_failed"));
+    if (notification.error) redirect(collectionPath(clubId, "error", "notification_failed", true));
     const successCode = birthdayCollectionGenerationSuccessCode(notification.data);
     if (!successCode) {
-      redirect(collectionPath(clubId, "error", "notification_failed"));
+      redirect(collectionPath(clubId, "error", "notification_failed", true));
     }
-    redirect(collectionPath(clubId, "success", successCode));
+    redirect(collectionPath(clubId, "success", successCode, true));
   }
 
-  redirect(collectionPath(clubId, "success", "generation_failed"));
+  redirect(collectionPath(clubId, "success", "generation_failed", true));
 }

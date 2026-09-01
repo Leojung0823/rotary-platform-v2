@@ -9,6 +9,9 @@ describe("archive and handover security boundary", () => {
   const migration = source("supabase/migrations/20260820002000_archive_handover.sql");
   const upload = source("src/app/api/v1/archive/uploads/route.ts");
   const download = source("src/app/api/v1/archive/versions/[versionId]/download/route.ts");
+  const memberPage = source("src/app/(authenticated)/archives/page.tsx");
+  const managementRoute = source("src/app/(authenticated)/clubs/[clubId]/archives/page.tsx");
+  const actions = source("src/app/archive-actions.ts");
 
   it("keeps the bucket private and serves downloads through short signed URLs", () => {
     expect(migration).toContain("'rotary-archives'");
@@ -38,5 +41,15 @@ describe("archive and handover security boundary", () => {
     expect(migration).toContain("incoming.confirmed_by_app_account_id <> outgoing.confirmed_by_app_account_id");
     expect(migration).toContain("handover_checklist_incomplete");
     expect(migration).toContain("archive.handover_confirmed");
+  });
+
+  it("keeps member browsing separate from manager mutations", () => {
+    expect(memberPage).not.toContain("createRotaryYearAction");
+    expect(memberPage).not.toContain("ArchiveUploadForm");
+    expect(managementRoute).toContain('rpc("get_my_archive_page"');
+    expect(managementRoute).toContain("!page.canManage");
+    expect(managementRoute).toContain("<ArchiveManagementPanel");
+    expect(actions).toContain("/clubs/${encodeURIComponent(clubId)}/archives");
+    expect(actions).toContain("mode: \"management\"");
   });
 });

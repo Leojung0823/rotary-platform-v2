@@ -13,6 +13,7 @@ import {
 import { RoleAwareShellNavigation } from "@/components/role-aware-shell-navigation";
 import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
+import { readClubPermissions } from "@/lib/club-permissions.server";
 import { displayableEmail, type Identity } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
@@ -216,27 +217,27 @@ export function RoleAwareAppShell({
   context,
   mode,
   pathname,
-  blessingIouEnabled = false,
   attendanceEnabled = false,
   messageCenterEnabled = false,
   unreadMessageCount = 0,
+  managementPermissions = [],
   children,
 }: {
   identity: Identity;
   context: ExperienceContext;
   mode: ExperienceMode;
   pathname: string;
-  blessingIouEnabled?: boolean;
   attendanceEnabled?: boolean;
   messageCenterEnabled?: boolean;
   unreadMessageCount?: number;
+  managementPermissions?: readonly string[];
   children: ReactNode;
 }) {
   const navigation = roleShellNavigation(context, mode, {
-    blessingIouEnabled,
     attendanceEnabled,
     messageCenterEnabled,
     unreadMessageCount,
+    managementPermissions,
   });
   return <div className={`${styles.shell} ${styles[`shell${mode[0].toUpperCase()}${mode.slice(1)}`]}`}>
     <aside className={styles.rail}>
@@ -292,14 +293,12 @@ export async function RoleAwareAppShellBoundary({
   // result is simply discarded when the message centre is switched off.
   const [
     evaluation,
-    blessingIouEvaluation,
     attendanceEvaluation,
     messageCenterEvaluation,
     messageBoardEvaluation,
     unreadMessageCount,
   ] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
-    evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "attendance_ui_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "announcements_v09", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "message_board_v1", subjectUuid: identity.id }),
@@ -332,15 +331,23 @@ export async function RoleAwareAppShellBoundary({
     </LegacyAppShell>;
   }
 
+  // The shell can hide management destinations only from a permission
+  // projection returned by the database. A failed read fails closed, while
+  // the route's own RPC/RLS checks remain the real authorization boundary.
+  const managedClub = activeClubForMode(contextResolution.context, shell.mode);
+  const managementPermissionResult = shell.mode === "management" && managedClub
+    ? await readClubPermissions(managedClub.clubId)
+    : { ok: true, permissions: [] as readonly string[] };
+
   return <RoleAwareAppShell
     identity={identity}
     context={contextResolution.context}
     mode={shell.mode}
     pathname={headerStore.get("x-rotary-pathname") ?? "/dashboard"}
-    blessingIouEnabled={blessingIouEvaluation.enabled}
     attendanceEnabled={attendanceEvaluation.enabled}
     messageCenterEnabled={messageCenterEvaluation.enabled}
     unreadMessageCount={unreadMessageCount}
+    managementPermissions={managementPermissionResult.permissions}
   >
     {children}
   </RoleAwareAppShell>;

@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   cancelEventAction,
   publishEventAction,
@@ -145,14 +146,17 @@ function statusBadge(status: ClubEvent["status"]) {
   return "badge badge-neutral";
 }
 
-function EventHeader() {
+function EventHeader({ clubId, canManage = false }: { clubId?: string | null; canManage?: boolean }) {
   return <header className="page-header">
     <div>
       <p className="eyebrow">社務互動</p>
       <h1>活動與報名</h1>
       <p>社員查看同社活動並回覆參加狀態；活動資料、名額、簽到與權限都由資料庫依社別驗證。</p>
     </div>
-    <Link className="button" href="/events/checkin">社員簽到</Link>
+    <div className="form-actions">
+      {clubId && canManage && <a className="button button-secondary" href={`/clubs/${encodeURIComponent(clubId)}/events?mode=management`}>活動管理</a>}
+      <Link className="button" href="/events/checkin">社員簽到</Link>
+    </div>
   </header>;
 }
 
@@ -188,6 +192,10 @@ export default async function EventsPage({
   }
 
   const selectedClub = clubRows.find((club) => club.club_id === params.clubId) ?? clubRows[0] ?? null;
+  if (mode === "management") {
+    if (!selectedClub?.can_manage) redirect("/access-denied");
+    redirect(`/clubs/${encodeURIComponent(selectedClub.club_id)}/events?mode=management`);
+  }
   const canManageHere = managementView && Boolean(selectedClub?.can_manage);
 
   let events: ClubEvent[] = [];
@@ -216,7 +224,7 @@ export default async function EventsPage({
   const coverUrls = await signCoverImageUrls(events.map((event) => event.cover_image_path));
 
   return <div className="page-stack">
-    <EventHeader />
+    <EventHeader clubId={selectedClub?.club_id} canManage={Boolean(selectedClub?.can_manage)} />
 
     {params.success && successMessages[params.success] && <div className="notice notice-success" role="status">
       {successMessages[params.success]}

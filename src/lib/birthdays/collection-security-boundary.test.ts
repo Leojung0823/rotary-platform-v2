@@ -14,6 +14,8 @@ describe("birthday collection security boundary", () => {
   const schedulerRoute = source("src/app/api/internal/birthday-collection/scheduler/route.ts");
   const schedulerWorkflow = source(".github/workflows/birthday-collection-scheduler.yml");
   const page = source("src/app/(authenticated)/birthday-collection/page.tsx");
+  const managementPage = source("src/components/birthday-collection/birthday-collection-management.tsx");
+  const managementRoute = source("src/app/(authenticated)/clubs/[clubId]/birthday-collection/page.tsx");
   const actions = source("src/app/birthday-collection-actions.ts");
 
   it("fails closed before loading the collection projection when the flag is off", () => {
@@ -32,6 +34,7 @@ describe("birthday collection security boundary", () => {
     expect(actions).toContain('rpc("hide_birthday_wish_submission"');
     expect(actions).toContain('rpc("create_birthday_wish_question"');
     expect(actions).toContain('rpc("update_birthday_wish_question"');
+    expect(actions).toContain("managementInvalidInputPath");
     expect(actions).not.toMatch(/\.from\("birthday_wish_/u);
     expect(actions).not.toContain("author_app_account_id");
   });
@@ -76,6 +79,15 @@ describe("birthday collection security boundary", () => {
     expect(review).toContain("grant execute on function public.hide_birthday_wish_submission(uuid, uuid) to authenticated");
     expect(review).toContain("grant execute on function public.decline_birthday_wish_assignment(uuid, uuid) to authenticated");
     expect(review).toContain("revoke all on function public.append_birthday_wish_submission_event");
-    expect(page).toContain("processingHistory");
+    expect(managementPage).toContain("processingHistory");
+  });
+
+  it("keeps the manager route tenant-bound and uses one manager projection read", () => {
+    expect(managementRoute).toContain('key: "birthday_wishes_collection_v1"');
+    expect(managementRoute).toContain('rpc("get_my_birthday_wish_collection_page"');
+    expect(managementRoute).toContain("page.clubId.toLowerCase() !== clubId.toLowerCase()");
+    expect(managementRoute).toContain("!page.canManage");
+    expect(managementRoute).toContain("parseBirthdayCollectionPageProjection(data, [])");
+    expect(managementRoute).not.toContain('rpc("list_published_birthday_wish_submissions"');
   });
 });

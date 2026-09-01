@@ -7,6 +7,9 @@ function source(path: string) {
 
 describe("event application boundary", () => {
   const page = source("app/(authenticated)/events/page.tsx");
+  const detailPage = source("app/(authenticated)/events/[eventId]/page.tsx");
+  const managementRoute = source("app/(authenticated)/clubs/[clubId]/events/page.tsx");
+  const managementPanel = source("components/events/event-management-panel.tsx");
   const actions = source("app/event-actions.ts");
   const createForm = source("components/events/event-create-form.tsx");
   const shell = source("components/app-shell.tsx");
@@ -36,6 +39,13 @@ describe("event application boundary", () => {
     expect(page).toContain("selectedClub.can_register");
     expect(page).not.toContain("list_my_board_clubs");
     expect(page).not.toContain("list_my_directory_clubs");
+    expect(page).toContain('if (mode === "management")');
+    expect(detailPage).toContain("/clubs/${encodeURIComponent(payload.club_id)}/events?mode=management");
+    expect(managementRoute).toContain('rpc("list_my_event_page"');
+    expect(managementRoute).toContain("p_as_member: false");
+    expect(managementRoute).toContain("!selectedClub?.can_manage");
+    expect(managementPanel).toContain("publishEventAction");
+    expect(managementPanel).not.toContain("registerEventAction");
     for (const rpc of [
       "create_club_event",
       "publish_club_event",

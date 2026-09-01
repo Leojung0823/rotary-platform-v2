@@ -70,10 +70,10 @@ export default async function BlessingsPage({
       : <>
         <section className="section-heading">
           <div><p className="eyebrow">目前社別</p><h2>{selectedClub.clubName}</h2></div>
-          {selectedClub.canManage && <Link
+          {selectedClub.canManage && <a
             className="button button-secondary"
             href={`/clubs/${encodeURIComponent(selectedClub.clubId)}/blessing-iou?mode=management`}
-          >幹部管理</Link>}
+          >幹部管理</a>}
         </section>
         <Notice>
           祝福內容會讓本社社員看見。{selectedClub.allowPublicAmounts

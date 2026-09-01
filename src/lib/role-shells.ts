@@ -49,7 +49,15 @@ const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefin
   ],
   management: [
     { id: "overview", label: "社務總覽", mobileLabel: "總覽", icon: "home", href: () => "/dashboard" },
-    { id: "events", label: "活動", mobileLabel: "活動", icon: "calendar", href: () => "/events" },
+    {
+      id: "events",
+      label: "活動",
+      mobileLabel: "活動",
+      icon: "calendar",
+      href: (context) => activeClubForMode(context, "management")
+        ? `/clubs/${encodeURIComponent(activeClubForMode(context, "management")!.clubId)}/events`
+        : null,
+    },
     {
       id: "members",
       label: "社員管理",
@@ -57,24 +65,6 @@ const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefin
       icon: "users",
       href: (context) => activeClubForMode(context, "management")
         ? `/clubs/${encodeURIComponent(activeClubForMode(context, "management")!.clubId)}/members`
-        : null,
-    },
-    {
-      id: "invitations",
-      label: "邀請管理",
-      mobileLabel: "邀請",
-      icon: "userPlus",
-      href: (context) => activeClubForMode(context, "management")
-        ? `/clubs/${encodeURIComponent(activeClubForMode(context, "management")!.clubId)}/invitations`
-        : null,
-    },
-    {
-      id: "club-settings",
-      label: "社務資料",
-      mobileLabel: "社務",
-      icon: "gear",
-      href: (context) => activeClubForMode(context, "management")
-        ? `/clubs/${encodeURIComponent(activeClubForMode(context, "management")!.clubId)}/identity`
         : null,
     },
   ],
@@ -118,7 +108,17 @@ export function resolveCurrentNavigationItemId(
     }
   }
 
-  return bestMatch?.id ?? null;
+  if (bestMatch) return bestMatch.id;
+
+  // Low-frequency management tools intentionally live in the overview card
+  // area instead of consuming a first-level tab. Keep the overview selected
+  // while one of those child routes is open, so the shell never looks blank.
+  const managementOverview = items.find((item) => item.id === "overview");
+  if (managementOverview && /^\/clubs\/[^/]+\/(?:archives|birthday-collection|blessing-iou|identity|invitations|operators)(?:\/|$)/u.test(currentPath)) {
+    return managementOverview.id;
+  }
+
+  return null;
 }
 
 export function resolveRoleShell({
@@ -139,18 +139,27 @@ export function roleShellNavigation(
   context: ExperienceContext,
   mode: ExperienceMode,
   {
-    blessingIouEnabled = false,
     attendanceEnabled = false,
     messageCenterEnabled = false,
     unreadMessageCount = 0,
+    managementPermissions = [],
   }: {
-    blessingIouEnabled?: boolean;
     attendanceEnabled?: boolean;
     messageCenterEnabled?: boolean;
     unreadMessageCount?: number;
+    managementPermissions?: readonly string[];
   } = {},
 ): readonly ShellNavigationItem[] {
+  const hasPermission = (permission: string) => managementPermissions.includes(permission);
+  const canShowManagementDefinition = (definition: NavigationDefinition) => {
+    if (mode !== "management") return true;
+    if (definition.id === "events") return hasPermission("event.manage");
+    if (definition.id === "members") return hasPermission("member.manage");
+    return true;
+  };
+
   const items: ShellNavigationItem[] = navigationByMode[mode].flatMap((definition) => {
+    if (!canShowManagementDefinition(definition)) return [];
     const href = definition.href(context, mode);
     return href ? [{
       id: definition.id,
@@ -172,7 +181,7 @@ export function roleShellNavigation(
   // something they check occasionally, so it lives inside 我的 instead of
   // spending a tab. Gated on the same flag as the page it opens, so the nav
   // can never offer a link that renders notFound().
-  if (attendanceEnabled && mode === "management") {
+  if (attendanceEnabled && mode === "management" && hasPermission("attendance.manage")) {
     const anchorIndex = items.findIndex((item) => item.id === "members");
     const attendanceItem: ShellNavigationItem = {
       id: "attendance",
@@ -185,28 +194,9 @@ export function roleShellNavigation(
     else items.splice(anchorIndex, 0, attendanceItem);
   }
 
-  if (mode === "management" && blessingIouEnabled) {
-    const managedClub = activeClubForMode(context, "management");
-    if (managedClub) {
-      const clubSettingsIndex = items.findIndex((item) => item.id === "club-settings");
-      const blessingIouItem: ShellNavigationItem = {
-        id: "blessing-iou",
-        label: "祝福 IOU",
-        mobileLabel: "IOU",
-        icon: "heart",
-        href: withModePreference(
-          `/clubs/${encodeURIComponent(managedClub.clubId)}/blessing-iou`,
-          "management",
-        ),
-      };
-      if (clubSettingsIndex === -1) items.push(blessingIouItem);
-      else items.splice(clubSettingsIndex, 0, blessingIouItem);
-    }
-  }
-
   // Management keeps the message centre as a work destination. Member mode
   // exposes it from the homepage instead, with unread work announced there.
-  if (mode === "management" && messageCenterEnabled) {
+  if (mode === "management" && messageCenterEnabled && hasPermission("member.manage")) {
     items.push({
       id: "messages",
       label: "訊息中心",

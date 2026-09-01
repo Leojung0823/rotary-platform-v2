@@ -19,6 +19,16 @@ const managedOnlyClub = {
   can_manage: true,
 };
 
+const allManagementPermissions = [
+  "event.manage",
+  "attendance.manage",
+  "member.manage",
+  "invitation.manage",
+  "identity.read",
+  "blessing_iou.manage",
+  "role.manage",
+];
+
 function context({
   member = true,
   management = true,
@@ -78,12 +88,10 @@ describe("role-aware navigation", () => {
       "/directory?mode=member",
       "/me?mode=member",
     ]);
-    expect(roleShellNavigation(projected, "management").map((item) => item.href)).toEqual([
+    expect(roleShellNavigation(projected, "management", { managementPermissions: allManagementPermissions }).map((item) => item.href)).toEqual([
       "/dashboard?mode=management",
-      "/events?mode=management",
+      `/clubs/${memberClub.club_id}/events?mode=management`,
       `/clubs/${memberClub.club_id}/members?mode=management`,
-      `/clubs/${memberClub.club_id}/invitations?mode=management`,
-      `/clubs/${memberClub.club_id}/identity?mode=management`,
     ]);
     expect(roleShellNavigation(projected, "platform").map((item) => item.href)).toEqual([
       "/dashboard?mode=platform",
@@ -112,15 +120,13 @@ describe("role-aware navigation", () => {
     }
   });
 
-  it("adds the complete blessing IOU domain only to management navigation when enabled", () => {
+  it("keeps low-frequency blessing IOU work out of first-level navigation", () => {
     const projected = context();
-    expect(roleShellNavigation(projected, "management", { blessingIouEnabled: true }).map((item) => item.id))
-      .toEqual(["overview", "events", "members", "invitations", "blessing-iou", "club-settings"]);
-    expect(roleShellNavigation(projected, "management", { blessingIouEnabled: true })
-      .find((item) => item.id === "blessing-iou")?.href)
-      .toBe(`/clubs/${memberClub.club_id}/blessing-iou?mode=management`);
-    expect(roleShellNavigation(projected, "member", { blessingIouEnabled: true })
-      .some((item) => item.id === "blessing-iou")).toBe(false);
+    const items = roleShellNavigation(projected, "management", {
+      managementPermissions: [...allManagementPermissions, "blessing_iou.manage"],
+    });
+    expect(items.map((item) => item.id)).toEqual(["overview", "events", "members"]);
+    expect(items.some((item) => item.id === "blessing-iou")).toBe(false);
   });
 
   it("hides attendance entirely while the flag is off, so the nav never links to a notFound page", () => {
@@ -133,7 +139,10 @@ describe("role-aware navigation", () => {
   it("gives management an attendance tab and keeps the member's own inside 我的", () => {
     const projected = context();
     const member = roleShellNavigation(projected, "member", { attendanceEnabled: true });
-    const management = roleShellNavigation(projected, "management", { attendanceEnabled: true });
+    const management = roleShellNavigation(projected, "management", {
+      attendanceEnabled: true,
+      managementPermissions: allManagementPermissions,
+    });
 
     // Rosters and adjustments are repeated work and earn a tab. A member's own
     // rate is checked occasionally, so it lives in 我的 rather than the bar.
@@ -145,7 +154,15 @@ describe("role-aware navigation", () => {
     expect(member.map((item) => item.id))
       .toEqual(["home", "events", "directory", "account"]);
     expect(management.map((item) => item.id))
-      .toEqual(["overview", "events", "attendance", "members", "invitations", "club-settings"]);
+      .toEqual(["overview", "events", "attendance", "members"]);
+  });
+
+  it("fails closed when the permission projection is unavailable", () => {
+    const projected = context();
+    expect(roleShellNavigation(projected, "management", {
+      attendanceEnabled: true,
+      messageCenterEnabled: true,
+    }).map((item) => item.id)).toEqual(["overview"]);
   });
 });
 
@@ -156,7 +173,10 @@ describe("message centre navigation", () => {
     expect(roleShellNavigation(projected, "member").some((item) => item.id === "messages")).toBe(false);
     expect(roleShellNavigation(projected, "member", { messageCenterEnabled: true })
       .some((item) => item.id === "messages")).toBe(false);
-    expect(roleShellNavigation(projected, "management", { messageCenterEnabled: true })
+    expect(roleShellNavigation(projected, "management", {
+      messageCenterEnabled: true,
+      managementPermissions: allManagementPermissions,
+    })
       .find((item) => item.id === "messages")?.href).toBe("/messages?mode=management");
     expect(roleShellNavigation(projected, "platform", { messageCenterEnabled: true })
       .some((item) => item.id === "messages")).toBe(false);
@@ -203,8 +223,8 @@ describe("current navigation resolver", () => {
   it("marks management descendants and chooses the most specific platform item", () => {
     const management = roleShellNavigation(projected, "management", {
       attendanceEnabled: true,
-      blessingIouEnabled: true,
       messageCenterEnabled: true,
+      managementPermissions: allManagementPermissions,
     });
     expect(resolveCurrentNavigationItemId(
       management,
@@ -212,8 +232,16 @@ describe("current navigation resolver", () => {
     )).toBe("members");
     expect(resolveCurrentNavigationItemId(
       management,
+      `/clubs/${memberClub.club_id}/events/fixture-event`,
+    )).toBe("events");
+    expect(resolveCurrentNavigationItemId(
+      management,
       `/clubs/${memberClub.club_id}/invitations/new`,
-    )).toBe("invitations");
+    )).toBe("overview");
+    expect(resolveCurrentNavigationItemId(
+      management,
+      `/clubs/${memberClub.club_id}/blessing-iou`,
+    )).toBe("overview");
     expect(resolveCurrentNavigationItemId(management, "/attendance/manage/fixture-event"))
       .toBe("attendance");
     expect(resolveCurrentNavigationItemId(management, "/messages/fixture-message"))

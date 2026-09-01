@@ -45,8 +45,8 @@ export function ArchiveUploadForm({
         setMessage(response.status === 413 ? "檔案超過 10 MB。" : "上傳沒有完成，請稍後再試。");
         return;
       }
-      const query = new URLSearchParams({ clubId, yearId, success: "version_uploaded" });
-      window.location.assign(`/archives?${query.toString()}`);
+      const query = new URLSearchParams({ yearId, mode: "management", success: "version_uploaded" });
+      window.location.assign(`/clubs/${encodeURIComponent(clubId)}/archives?${query.toString()}`);
     } catch {
       setMessage("網路中斷，檔案尚未完成上傳。");
     } finally {

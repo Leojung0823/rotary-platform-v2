@@ -58,10 +58,10 @@ export default async function BlessingIouManagementPage({
           className="button button-secondary"
           href={`/clubs/${encodeURIComponent(context.clubId)}/blessing-iou/reports?mode=management`}
         >年度統計</Link>}
-        <Link
+        <a
           className="button button-secondary"
           href={`/blessings?clubId=${encodeURIComponent(context.clubId)}&mode=member`}
-        >查看社員畫面</Link>
+        >查看社員畫面</a>
       </div>
     </header>
     <Notice>{collectionsEvaluation.enabled

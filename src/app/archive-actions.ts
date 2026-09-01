@@ -33,9 +33,16 @@ function category(formData: FormData): ArchiveCategory {
 }
 
 function returnPath(clubId: string, yearId?: string | null) {
-  const query = new URLSearchParams({ clubId });
+  const query = new URLSearchParams({ mode: "management" });
   if (yearId) query.set("yearId", yearId);
-  return `/archives?${query.toString()}`;
+  return `/clubs/${encodeURIComponent(clubId)}/archives?${query.toString()}`;
+}
+
+function invalidInputPath(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "").trim().toLowerCase();
+  return uuidPattern.test(clubId)
+    ? `${returnPath(clubId)}&error=invalid_input`
+    : "/dashboard?mode=management&error=invalid_input";
 }
 
 function redirectResult(clubId: string, yearId: string | null, kind: "success" | "error", code: string): never {
@@ -65,7 +72,7 @@ export async function createRotaryYearAction(formData: FormData) {
     presidentName = bounded(formData, "presidentName", 160);
     secretaryName = bounded(formData, "secretaryName", 160);
   } catch {
-    redirect("/archives?error=invalid_input");
+    redirect(invalidInputPath(formData));
   }
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_rotary_year", {
@@ -92,7 +99,7 @@ export async function updateRotaryYearAction(formData: FormData) {
     presidentName = bounded(formData, "presidentName", 160);
     secretaryName = bounded(formData, "secretaryName", 160);
   } catch {
-    redirect("/archives?error=invalid_input");
+    redirect(invalidInputPath(formData));
   }
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_rotary_year", {
@@ -127,7 +134,7 @@ export async function createArchiveItemAction(formData: FormData) {
     if (rawConfidentiality !== "club_internal" && rawConfidentiality !== "officers_only") throw new Error("invalid_input");
     confidentiality = rawConfidentiality;
   } catch {
-    redirect("/archives?error=invalid_input");
+    redirect(invalidInputPath(formData));
   }
   const supabase = await createClient();
   const { error } = await supabase.rpc("create_archive_item", {
@@ -167,7 +174,7 @@ export async function updateArchiveItemAction(formData: FormData) {
     if (rawConfidentiality !== "club_internal" && rawConfidentiality !== "officers_only") throw new Error("invalid_input");
     confidentiality = rawConfidentiality;
   } catch {
-    redirect("/archives?error=invalid_input");
+    redirect(invalidInputPath(formData));
   }
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_archive_item", {
@@ -193,7 +200,7 @@ export async function archiveArchiveItemAction(formData: FormData) {
     yearId = uuid(formData, "yearId");
     itemId = uuid(formData, "itemId");
   } catch {
-    redirect("/archives?error=invalid_input");
+    redirect(invalidInputPath(formData));
   }
   const supabase = await createClient();
   const { error } = await supabase.rpc("archive_archive_item", { p_club_id: clubId, p_archive_item_id: itemId });
@@ -218,7 +225,7 @@ export async function updateHandoverChecklistAction(formData: FormData) {
     status = rawStatus as typeof status;
     notes = bounded(formData, "notes", 1000);
   } catch {
-    redirect("/archives?error=invalid_input");
+    redirect(invalidInputPath(formData));
   }
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_handover_checklist", {
@@ -243,7 +250,7 @@ export async function confirmArchiveHandoverAction(formData: FormData) {
     if (role !== "outgoing" && role !== "incoming") throw new Error("invalid_input");
     confirmationRole = role;
   } catch {
-    redirect("/archives?error=invalid_input");
+    redirect(invalidInputPath(formData));
   }
   const supabase = await createClient();
   const { error } = await supabase.rpc("confirm_archive_handover", {
