@@ -161,5 +161,5 @@ export default async function ArchivesPage({
 }
 
 function ArchiveHeader({ clubId, canManage = false }: { clubId?: string | null; canManage?: boolean }) {
-  return <header className="page-header"><div><p className="eyebrow">社務傳承</p><h1>文件中心與年度交接</h1><p>依扶輪年度保存文件版本，讓新舊幹部知道資料是否完整、是否已收到。</p></div><div className="form-actions">{clubId && canManage && <a className="button" href={`/clubs/${encodeURIComponent(clubId)}/archives?mode=management`}>幹部管理</a>}<Link className="button button-secondary" href="/features">返回功能總覽</Link></div></header>;
+  return <header className="page-header"><div><p className="eyebrow">社務傳承</p><h1>文件中心與年度交接</h1><p>依扶輪年度保存文件版本，讓新舊幹部知道資料是否完整、是否已收到。</p></div><div className="form-actions">{clubId && canManage && <><a className="button" href={`/clubs/${encodeURIComponent(clubId)}/archives?mode=management`}>幹部管理</a><span className="hint">幹部功能已移至社務管理模式。</span></>}<Link className="button button-secondary" href="/features">返回功能總覽</Link></div></header>;
 }

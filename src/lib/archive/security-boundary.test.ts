@@ -59,6 +59,7 @@ describe("archive and handover security boundary", () => {
     expect(memberPage).toContain("redirect(\"/access-denied\")");
     expect(memberPage).toContain("page.selectedClubId.toLowerCase() !== requestedClubId");
     expect(memberPage).toContain("/clubs/${encodeURIComponent(page.selectedClubId)}/archives?mode=management");
+    expect(memberPage).toContain("幹部功能已移至社務管理模式。");
     expect(memberPage).not.toContain("ArchiveManagementPanel");
   });
 });

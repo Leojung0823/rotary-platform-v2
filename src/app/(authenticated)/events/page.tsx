@@ -147,7 +147,10 @@ function EventHeader({ clubId, canManage = false }: { clubId?: string | null; ca
       <p>社員查看同社活動並回覆參加狀態；活動資料、名額、簽到與權限都由資料庫依社別驗證。</p>
     </div>
     <div className="form-actions">
-      {clubId && canManage && <a className="button button-secondary" href={`/clubs/${encodeURIComponent(clubId)}/events?mode=management`}>活動管理</a>}
+      {clubId && canManage && <>
+        <a className="button button-secondary" href={`/clubs/${encodeURIComponent(clubId)}/events?mode=management`}>活動管理</a>
+        <span className="hint">幹部功能已移至社務管理模式。</span>
+      </>}
       <Link className="button" href="/events/checkin">社員簽到</Link>
     </div>
   </header>;

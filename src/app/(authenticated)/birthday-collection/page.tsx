@@ -132,5 +132,5 @@ export default async function BirthdayCollectionPage({
 }
 
 function CollectionHeader({ clubId, canManage = false }: { clubId: string; canManage?: boolean }) {
-  return <header className="page-header"><div><p className="eyebrow">生日祝福</p><h1>生日祝福徵集</h1><p>系統每月最多派給您一則任務；您仍可自行祝福更多社員。壽星與一般社員看不到作者，幹部才能管理作者。</p></div><div className="form-actions">{canManage && <a className="button" href={`/clubs/${encodeURIComponent(clubId)}/birthday-collection?mode=management`}>幹部管理</a>}<Link className="button button-secondary" href={`/birthdays?clubId=${clubId}`}>返回生日頁</Link></div></header>;
+  return <header className="page-header"><div><p className="eyebrow">生日祝福</p><h1>生日祝福徵集</h1><p>系統每月最多派給您一則任務；您仍可自行祝福更多社員。壽星與一般社員看不到作者，幹部才能管理作者。</p></div><div className="form-actions">{canManage && <><a className="button" href={`/clubs/${encodeURIComponent(clubId)}/birthday-collection?mode=management`}>幹部管理</a><span className="hint">幹部功能已移至社務管理模式。</span></>}<Link className="button button-secondary" href={`/birthdays?clubId=${clubId}`}>返回生日頁</Link></div></header>;
 }

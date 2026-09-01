@@ -46,6 +46,7 @@ describe("event application boundary", () => {
     expect(page).not.toContain("cancelEventAction");
     expect(page).not.toContain("EventCoverUpload");
     expect(page).toContain("/clubs/${encodeURIComponent(selectedClub.club_id)}/events?mode=management");
+    expect(page).toContain("幹部功能已移至社務管理模式。");
     expect(detailPage).toContain("/clubs/${encodeURIComponent(payload.club_id)}/events?mode=management");
     expect(managementRoute).toContain('rpc("list_my_event_page"');
     expect(managementRoute).toContain("p_as_member: false");

@@ -97,6 +97,7 @@ describe("birthday collection security boundary", () => {
     expect(page).toContain('query.mode === "management"');
     expect(page).toContain("redirect(\"/access-denied\")");
     expect(page).toContain("/clubs/${encodeURIComponent(managerPage.clubId)}/birthday-collection?mode=management");
+    expect(page).toContain("幹部功能已移至社務管理模式。");
     expect(page).not.toContain("BirthdayCollectionManagement");
   });
 });

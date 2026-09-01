@@ -15,7 +15,8 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
   管理路由；三者都先驗證 UUID、指定社團、RPC 回傳社團與 `canManage/can_manage`，未通過就導向
   `/access-denied`，不渲染管理資料。
 - 抽出 `BirthdayCollectionManagement`、`ArchiveManagementPanel`、`EventManagementPanel`，管理表單與
-  原本的 server action 共用；社員頁只保留社員操作／唯讀內容與通往管理模式的連結。
+  原本的 server action 共用；社員頁只保留社員操作／唯讀內容、通往管理模式的連結，並在入口旁說明
+  幹部功能已移至社務管理模式。
 - 舊的 `?mode=management` 收藏網址保留相容導向；管理 action、文件上傳完成後回到新的管理路由，不接受
   瀏覽器提供的 `returnUrl`；生日／封存操作會同時失效社員頁與新管理頁的快取。
 - 管理第一層導覽固定為總覽、活動、出席（旗標開啟且有權限）、社員、訊息（旗標開啟且有權限）；生日、
