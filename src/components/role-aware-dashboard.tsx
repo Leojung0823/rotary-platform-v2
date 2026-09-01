@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { activeClubForMode, type ExperienceContext, type ExperienceMode } from "@/lib/experience-context";
 import type { Identity } from "@/lib/auth";
+import { managementToolsForClub, type ManagementToolFeatures } from "@/lib/management-tools";
 
 const modeContent: Readonly<Record<ExperienceMode, Readonly<{
   eyebrow: string;
@@ -20,16 +21,6 @@ const modeContent: Readonly<Record<ExperienceMode, Readonly<{
     description: "平台權限與作用社別分開處理，這裡不會把全平台扶輪社設為作用社別。",
   },
 };
-
-type ManagementFeatures = Readonly<{
-  blessingIouEnabled: boolean;
-  birthdayCollectionEnabled: boolean;
-  archiveHandoverEnabled: boolean;
-}>;
-
-function managementToolHref(clubId: string, path: string) {
-  return `/clubs/${encodeURIComponent(clubId)}/${path}?mode=management`;
-}
 
 function ManagementToolCard({
   id,
@@ -71,56 +62,14 @@ export function RoleAwareDashboardLanding({
   context: ExperienceContext;
   mode: ExperienceMode;
   managementPermissions?: readonly string[];
-  managementFeatures?: ManagementFeatures;
+  managementFeatures?: ManagementToolFeatures;
 }) {
   const content = modeContent[mode];
   const activeClub = activeClubForMode(context, mode);
   const memberDestination = activeClub ? `/club/${encodeURIComponent(activeClub.clubId)}?mode=member` : null;
-  const hasPermission = (permission: string) => managementPermissions.includes(permission);
-  const managementTools = activeClub && mode === "management" ? [
-    hasPermission("member.manage") ? {
-      id: "members",
-      title: "社員管理",
-      description: "查看社員、調整社籍與處理邀請相關工作。",
-      href: managementToolHref(activeClub.clubId, "members"),
-    } : null,
-    hasPermission("invitation.manage") ? {
-      id: "invitations",
-      title: "邀請管理",
-      description: "建立、重送或取消社員邀請。",
-      href: managementToolHref(activeClub.clubId, "invitations"),
-    } : null,
-    hasPermission("identity.read") ? {
-      id: "identity",
-      title: "社務資料",
-      description: "維護扶輪社名稱與基本資料。",
-      href: managementToolHref(activeClub.clubId, "identity"),
-    } : null,
-    managementFeatures.blessingIouEnabled && hasPermission("blessing_iou.manage") ? {
-      id: "blessing-iou",
-      title: "祝福 IOU",
-      description: "查看祝福、承諾捐款與收款統計。",
-      href: managementToolHref(activeClub.clubId, "blessing-iou"),
-    } : null,
-    managementFeatures.birthdayCollectionEnabled && hasPermission("member.manage") ? {
-      id: "birthday-collection",
-      title: "生日祝福徵集",
-      description: "派發每人一則生日任務、審核內容與管理題庫。",
-      href: managementToolHref(activeClub.clubId, "birthday-collection"),
-    } : null,
-    managementFeatures.archiveHandoverEnabled && hasPermission("member.manage") ? {
-      id: "archives",
-      title: "文件中心與年度交接",
-      description: "管理年度文件、版本與交接清單。",
-      href: managementToolHref(activeClub.clubId, "archives"),
-    } : null,
-    hasPermission("role.manage") ? {
-      id: "operators",
-      title: "執行秘書管理",
-      description: "管理社務操作人員與管理範圍。",
-      href: managementToolHref(activeClub.clubId, "operators"),
-    } : null,
-  ].filter((tool): tool is NonNullable<typeof tool> => tool !== null) : [];
+  const managementTools = activeClub && mode === "management"
+    ? managementToolsForClub(activeClub.clubId, managementPermissions, managementFeatures)
+    : [];
 
   return <div className="page-stack">
     <header className="page-header">

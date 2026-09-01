@@ -38,7 +38,7 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
 本輪驗證（隔離分支）：
 
 ```text
-npm test                         107 files / 680 tests passed
+npm test                         108 files / 683 tests passed
 npm run lint                     passed
 npm run typecheck                passed
 npm run build                    passed; 3 new management routes collected
