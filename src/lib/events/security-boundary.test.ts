@@ -50,6 +50,8 @@ describe("event application boundary", () => {
     expect(detailPage).toContain("/clubs/${encodeURIComponent(payload.club_id)}/events?mode=management");
     expect(managementRoute).toContain('rpc("list_my_event_page"');
     expect(managementRoute).toContain("p_as_member: false");
+    expect(managementRoute).toContain("selected_club_id");
+    expect(managementRoute).toContain("selectedClubId?.toLowerCase() !== clubId.toLowerCase()");
     expect(managementRoute).toContain("!selectedClub?.can_manage");
     expect(managementPanel).toContain("publishEventAction");
     expect(managementPanel).not.toContain("registerEventAction");

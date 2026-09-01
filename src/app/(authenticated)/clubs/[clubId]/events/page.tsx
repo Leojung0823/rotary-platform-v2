@@ -41,7 +41,7 @@ export default async function EventManagementPage({
     p_as_member: false,
   });
   const projection = pageResult.data && typeof pageResult.data === "object" && !Array.isArray(pageResult.data)
-    ? pageResult.data as { clubs?: unknown; events?: unknown }
+    ? pageResult.data as { clubs?: unknown; selected_club_id?: unknown; events?: unknown }
     : null;
   const clubRows = projection && Array.isArray(projection.clubs) ? projection.clubs : null;
   if (pageResult.error?.code === "42501") redirect("/access-denied");
@@ -56,8 +56,11 @@ export default async function EventManagementPage({
   }
 
   const selectedClub = clubRows.find((club) => club.club_id.toLowerCase() === clubId.toLowerCase()) ?? null;
+  const selectedClubId = projection && typeof projection.selected_club_id === "string"
+    ? projection.selected_club_id
+    : null;
   const events = projection ? parseEvents({ events: projection.events }) : null;
-  if (!selectedClub?.can_manage) redirect("/access-denied");
+  if (selectedClubId?.toLowerCase() !== clubId.toLowerCase() || !selectedClub?.can_manage) redirect("/access-denied");
   if (!events) {
     return <div className="page-stack">
       <header className="page-header">
