@@ -87,6 +87,7 @@ describe("birthday collection security boundary", () => {
   it("keeps the manager route tenant-bound and uses one manager projection read", () => {
     expect(managementRoute).toContain('key: "birthday_wishes_collection_v1"');
     expect(managementRoute).toContain('rpc("get_my_birthday_wish_collection_page"');
+    expect(managementRoute).toContain('query.mode !== "management"');
     expect(managementRoute).toContain("page.clubId.toLowerCase() !== clubId.toLowerCase()");
     expect(managementRoute).toContain("!page.canManage");
     expect(managementRoute).toContain("parseBirthdayCollectionPageProjection(data, [])");

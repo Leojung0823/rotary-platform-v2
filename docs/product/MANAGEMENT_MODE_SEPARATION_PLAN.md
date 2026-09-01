@@ -255,6 +255,8 @@ verification 驗證；活動封面由 `event_cover_storage_security.sql` 驗證 
 - `/birthday-collection`：社員任務與祝福牆
 
 舊的 `?mode=management` 收藏網址保留一個版本的相容導向，送往新的管理頁。
+canonical 管理頁若缺少或收到其他 `mode`，先導向同一個含 `?mode=management` 的網址，再讀取管理資料，避免管理
+面板被放在社員模式外殼中；這只是模式偏好正規化，不取代後端授權。
 
 ## 8. 路由與導覽契約
 

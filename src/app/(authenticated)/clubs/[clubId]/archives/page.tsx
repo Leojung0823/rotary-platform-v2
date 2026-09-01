@@ -33,7 +33,7 @@ export default async function ArchiveManagementPage({
   searchParams,
 }: {
   params: Promise<{ clubId: string }>;
-  searchParams: Promise<{ yearId?: string; success?: string; error?: string }>;
+  searchParams: Promise<{ mode?: string; yearId?: string; success?: string; error?: string }>;
 }) {
   const [identity, { clubId }, query] = await Promise.all([requireIdentity(), params, searchParams]);
   if (!uuidPattern.test(clubId)) notFound();
@@ -43,6 +43,11 @@ export default async function ArchiveManagementPage({
     subjectUuid: identity.id,
   });
   if (!evaluation.enabled) notFound();
+  if (query.mode !== "management") {
+    const canonicalQuery = new URLSearchParams({ mode: "management" });
+    if (query.yearId) canonicalQuery.set("yearId", query.yearId);
+    redirect(`/clubs/${encodeURIComponent(clubId)}/archives?${canonicalQuery.toString()}`);
+  }
 
   // The management route has no search filters. That keeps the checklist's
   // document selector complete and lets this page render the whole manager

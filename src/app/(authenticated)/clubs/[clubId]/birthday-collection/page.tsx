@@ -36,7 +36,7 @@ export default async function BirthdayCollectionManagementPage({
   searchParams,
 }: {
   params: Promise<{ clubId: string }>;
-  searchParams: Promise<{ success?: string; error?: string }>;
+  searchParams: Promise<{ mode?: string; success?: string; error?: string }>;
 }) {
   const [identity, { clubId }, query] = await Promise.all([requireIdentity(), params, searchParams]);
   if (!uuidPattern.test(clubId)) notFound();
@@ -46,6 +46,9 @@ export default async function BirthdayCollectionManagementPage({
     subjectUuid: identity.id,
   });
   if (!evaluation.enabled) notFound();
+  if (query.mode !== "management") {
+    redirect(`/clubs/${encodeURIComponent(clubId)}/birthday-collection?mode=management`);
+  }
 
   const { data, error } = await (await createClient()).rpc("get_my_birthday_wish_collection_page", {
     p_club_id: clubId,

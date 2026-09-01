@@ -13,7 +13,7 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
 
 - 新增 `/clubs/{clubId}/birthday-collection`、`/clubs/{clubId}/archives`、`/clubs/{clubId}/events` 三個
   管理路由；三者都先驗證 UUID、指定社團、RPC 回傳社團與 `canManage/can_manage`，未通過就導向
-  `/access-denied`，不渲染管理資料。
+  `/access-denied`，不渲染管理資料；沒有 `?mode=management` 時先正規化網址，避免管理面板出現在社員外殼。
 - 抽出 `BirthdayCollectionManagement`、`ArchiveManagementPanel`、`EventManagementPanel`，管理表單與
   原本的 server action 共用；社員頁只保留社員操作／唯讀內容、通往管理模式的連結，並在入口旁說明
   幹部功能已移至社務管理模式。

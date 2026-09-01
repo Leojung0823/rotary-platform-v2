@@ -67,6 +67,7 @@ describe("archive and handover security boundary", () => {
     expect(memberPage).not.toContain("createRotaryYearAction");
     expect(memberPage).not.toContain("ArchiveUploadForm");
     expect(managementRoute).toContain('rpc("get_my_archive_page"');
+    expect(managementRoute).toContain('query.mode !== "management"');
     expect(managementRoute).toContain("!page.canManage");
     expect(managementRoute).toContain("<ArchiveManagementPanel");
     expect(actions).toContain("/clubs/${encodeURIComponent(clubId)}/archives");

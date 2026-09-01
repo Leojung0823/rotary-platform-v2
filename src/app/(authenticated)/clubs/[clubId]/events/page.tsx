@@ -27,10 +27,13 @@ export default async function EventManagementPage({
   searchParams,
 }: {
   params: Promise<{ clubId: string }>;
-  searchParams: Promise<{ success?: string; error?: string }>;
+  searchParams: Promise<{ mode?: string; success?: string; error?: string }>;
 }) {
   const [, { clubId }, query] = await Promise.all([requireIdentity(), params, searchParams]);
   if (!uuidPattern.test(clubId)) notFound();
+  if (query.mode !== "management") {
+    redirect(`/clubs/${encodeURIComponent(clubId)}/events?mode=management`);
+  }
 
   const supabase = await createClient();
   // Management asks the same canonical projection as the old events page, but
