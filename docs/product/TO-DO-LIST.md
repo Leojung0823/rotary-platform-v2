@@ -168,13 +168,53 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
 ## 下一步順序
 
-1. 補齊生日派發的 staging 測試資料（該社有效社長／秘書，加上一位下個月生日且已開放祝福的社員），
-   再手動觸發 `Birthday Collection Scheduler` 完成驗收。程式面已修復並部署；目前的
-   `skipped_reasons.no_active_birthday_manager` 是資料缺口，不是缺陷。
+1. ~~補齊生日派發的 staging 測試資料~~ **已完成驗收**（2026-09-01，run `33467004279`）：
+
+   ```json
+   {"generated_count":1,"notified_count":1,"failed_count":0,
+    "skipped_count":1,"skipped_reasons":{"no_active_birthday_manager":1}}
+   ```
+
+   賽博ＡＩ扶輪社找到管理者、產生十月批次並送出通知。`skipped_count: 1` 是
+   Rotary Platform Staging Test Club 尚未指派幹部，**這是驗收條件第 9 條要的正確略過，不是缺陷**。
+
+   仍待人工確認一項：以該社十月壽星**以外**的社員登入，確認畫面上真的看得到任務、題目正確、可以填寫。
+   資料庫層已回報產生與通知，但畫面呈現無法由排程結果證明。
+
+   指派幹部時注意排程要求 `auth_user_id is not null`：只有真的能登入的社員才會被選為執行身分，
+   匯入但從未建立登入帳號的社員即使畫面上指派了角色也不會被採用。
 2. **上線前必辦**：生日徵集排程目前只有 `run-staging-scheduler` 一個 job，只打 `STAGING_BASE_URL`。
    production 沒有對應排程，正式上線後生日徵集不會自動派發，需要另做 production job、secret 與核准閘門。
-3. 安排 iOS Safari、Android Chrome 實機驗收，以及 M1 五位目標使用者形成性測試。實機驗收應一併涵蓋訊息中心。
-4. 另行決定是否對 production 開啟 `announcements_v09`；staging 已開啟不代表 production 已公開。
+3. **幹部功能一律收進管理模式，社員頁面不放幹部控制項** `[!]`
+
+   產品決定（2026-09-01）：社員看到的畫面只放社員自己的事，幹部的建立、審核、發布、隱藏、重跑等操作
+   一律移到管理模式／社務管理。
+
+   起因是生日徵集：幹部要管題庫、發布投稿或重跑當月批次，得先以社員身分登入，從
+   `首頁 → 社內互動 → 生日祝福 → 生日祝福任務` 繞進去，管理後台沒有任何入口。更糟的是**執行秘書不是
+   社員**（`active_member_cannot_be_operator`），所以執秘帳號根本走不到這條路徑，只有社長、秘書這種
+   本身也是社員的角色進得去。
+
+   盤點後這不是生日頁獨有，而是全站模式。目前在社員頁面內以 `canManage` 分岔的檔案：
+
+   | 社員頁面 | `canManage` 出現次數 |
+   |---|---|
+   | `events/page.tsx` | 8 |
+   | `archives/page.tsx` | 7 |
+   | `attendance/page.tsx` | 4 |
+   | `birthday-collection/page.tsx` | 3 |
+   | `blessings/page.tsx` | 1 |
+
+   `attendance/manage` 已經是獨立的管理頁，可以作為要收斂到的形狀參考。
+
+   **這是 UX 與資訊架構的改動，不是安全修補。** 依 AGENTS.md 第 5 節，mode、active-club cookie 與導覽
+   visibility 只能作 UX；protected route、RPC 與 RLS 仍必須各自授權。搬動畫面後**不可以**把權限檢查
+   從 RPC 移到前端，也不可以因為「入口藏起來了」就放寬後端判斷。
+
+   規劃時要一併決定執行秘書的落點：他不是社員，卻需要管理生日徵集等社務，管理模式必須容得下這個身分。
+
+4. 安排 iOS Safari、Android Chrome 實機驗收，以及 M1 五位目標使用者形成性測試。實機驗收應一併涵蓋訊息中心。
+5. 另行決定是否對 production 開啟 `announcements_v09`；staging 已開啟不代表 production 已公開。
 
 已結案、不在下一步內：staging Management API token 已修復且 Auth 設定同步通過（run `33400262734`）；
 recovery email 範本與 custom SMTP 已由產品決定擱置；GPS accuracy 政策已決定不設門檻；
