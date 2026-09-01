@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { archiveCategories, type ArchiveCategory } from "@/lib/archive/contracts";
 import { createClient } from "@/lib/supabase/server";
@@ -46,6 +47,8 @@ function invalidInputPath(formData: FormData) {
 }
 
 function redirectResult(clubId: string, yearId: string | null, kind: "success" | "error", code: string): never {
+  revalidatePath("/archives");
+  revalidatePath(`/clubs/${encodeURIComponent(clubId)}/archives`);
   const path = new URL(returnPath(clubId, yearId), "http://local");
   path.searchParams.set(kind, code);
   redirect(`${path.pathname}${path.search}`);

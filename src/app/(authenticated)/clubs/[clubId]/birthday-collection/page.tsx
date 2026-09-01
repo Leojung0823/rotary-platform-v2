@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { BirthdayCollectionManagement } from "@/components/birthday-collection/birthday-collection-management";
 import { Notice } from "@/components/ui";
@@ -56,7 +55,7 @@ export default async function BirthdayCollectionManagementPage({
     return <div className="page-stack">
       <header className="page-header">
         <div><p className="eyebrow">生日祝福 · 社務管理</p><h1>生日祝福徵集</h1></div>
-        <Link className="button button-secondary" href={`/birthday-collection?clubId=${encodeURIComponent(clubId)}`}>返回社員頁</Link>
+        <a className="button button-secondary" href={`/birthday-collection?clubId=${encodeURIComponent(clubId)}&mode=member`}>返回社員頁</a>
       </header>
       <Notice tone="error">目前無法確認生日祝福徵集權限，請稍後重新整理。</Notice>
     </div>;
@@ -87,8 +86,8 @@ export default async function BirthdayCollectionManagementPage({
         <p>每位社員每月最多收到一則自動任務；幹部可在這裡派發、審核內容與維護題庫。</p>
       </div>
       <div className="form-actions">
-        <Link className="button button-secondary" href={`/birthday-collection?clubId=${encodeURIComponent(page.clubId)}`}>查看社員頁</Link>
-        <Link className="button button-secondary" href={`/birthdays?clubId=${encodeURIComponent(page.clubId)}`}>返回生日頁</Link>
+        <a className="button button-secondary" href={`/birthday-collection?clubId=${encodeURIComponent(page.clubId)}&mode=member`}>查看社員頁</a>
+        <a className="button button-secondary" href={`/birthdays?clubId=${encodeURIComponent(page.clubId)}&mode=member`}>返回生日頁</a>
       </div>
     </header>
     {query.success && successMessages[query.success] && <Notice tone="success">{successMessages[query.success]}</Notice>}

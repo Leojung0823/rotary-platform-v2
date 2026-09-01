@@ -16,6 +16,7 @@ async function openEventForm(page) {
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/dashboard$/u);
   await page.goto(new URL("/events?mode=management", baseURL).toString());
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/events\?mode=management$/u);
   await expect(page.getByRole("heading", { name: "建立活動草稿" })).toBeVisible();
 }
 

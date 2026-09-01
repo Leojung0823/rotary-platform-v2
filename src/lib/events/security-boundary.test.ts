@@ -39,7 +39,13 @@ describe("event application boundary", () => {
     expect(page).toContain("selectedClub.can_register");
     expect(page).not.toContain("list_my_board_clubs");
     expect(page).not.toContain("list_my_directory_clubs");
-    expect(page).toContain('if (mode === "management")');
+    expect(page).toContain("p_as_member: !requestedManagement");
+    expect(page).toContain('if (requestedManagement)');
+    expect(page).not.toContain("EventCreateForm");
+    expect(page).not.toContain("publishEventAction");
+    expect(page).not.toContain("cancelEventAction");
+    expect(page).not.toContain("EventCoverUpload");
+    expect(page).toContain("/clubs/${encodeURIComponent(selectedClub.club_id)}/events?mode=management");
     expect(detailPage).toContain("/clubs/${encodeURIComponent(payload.club_id)}/events?mode=management");
     expect(managementRoute).toContain('rpc("list_my_event_page"');
     expect(managementRoute).toContain("p_as_member: false");

@@ -1,15 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  cancelEventAction,
-  publishEventAction,
-  registerEventAction,
-} from "@/app/event-actions";
-import { EventCreateForm } from "@/components/events/event-create-form";
+import { registerEventAction } from "@/app/event-actions";
 import { requireIdentity } from "@/lib/auth";
-import { currentExperienceMode } from "@/lib/experience-mode.server";
-import { EventCoverUpload } from "@/components/events/event-cover-upload";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -163,40 +156,38 @@ function EventHeader({ clubId, canManage = false }: { clubId?: string | null; ca
 export default async function EventsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ clubId?: string; success?: string; error?: string }>;
+  searchParams: Promise<{ clubId?: string; mode?: string; success?: string; error?: string }>;
 }) {
-  const [identity, params] = await Promise.all([requireIdentity(), searchParams]);
-  // An officer is also an ordinary member. In member mode they get the member
-  // view of their own club -- no drafts, no management controls, and their own
-  // check-in -- and the database is asked the member's question so the two
-  // never drift apart. A null mode means role shells are off, where there is
-  // no member/management distinction to honour.
-  const mode = await currentExperienceMode(identity.id);
-  const managementView = mode === null || mode === "management";
+  const [, params] = await Promise.all([requireIdentity(), searchParams]);
+  const requestedManagement = params.mode === "management";
   const supabase = await createClient();
-  // One call: the database picks the club the same way this page used to --
-  // the one named in the query string, otherwise the first -- so the events
-  // come back with the club list instead of a round trip behind it.
+  // The old URL remains a compatibility entry point only. Ask for the
+  // manager projection long enough to identify and authorize its club, then
+  // redirect to the canonical manager route. Every normal /events request is
+  // a member read, including when the role shell feature is disabled.
   const pageResult = await supabase.rpc("list_my_event_page", {
     p_club_id: params.clubId ?? null,
-    p_as_member: !managementView,
+    p_as_member: !requestedManagement,
   });
   const projection = (pageResult.data ?? {}) as { clubs?: unknown; events?: unknown };
 
   const clubRows = Array.isArray(projection.clubs) ? projection.clubs : null;
   if (pageResult.error || !clubRows || !clubRows.every(isEventClub)) {
+    if (requestedManagement) redirect("/access-denied");
     return <div className="page-stack">
       <EventHeader />
       <div className="notice notice-error" role="alert">目前無法確認活動社別與權限，請稍後重新整理。</div>
     </div>;
   }
 
-  const selectedClub = clubRows.find((club) => club.club_id === params.clubId) ?? clubRows[0] ?? null;
-  if (mode === "management") {
+  const requestedClubId = params.clubId?.trim().toLowerCase() || null;
+  const selectedClub = requestedClubId
+    ? clubRows.find((club) => club.club_id.toLowerCase() === requestedClubId) ?? null
+    : clubRows[0] ?? null;
+  if (requestedManagement) {
     if (!selectedClub?.can_manage) redirect("/access-denied");
     redirect(`/clubs/${encodeURIComponent(selectedClub.club_id)}/events?mode=management`);
   }
-  const canManageHere = managementView && Boolean(selectedClub?.can_manage);
 
   let events: ClubEvent[] = [];
   let eventsUnavailable = false;
@@ -204,21 +195,6 @@ export default async function EventsPage({
     const parsed = parseEvents({ events: projection.events });
     if (!parsed) eventsUnavailable = true;
     else events = parsed;
-  }
-
-  // Only a manager can address an audience, and only in management mode, so
-  // the tag and member lists are fetched only then -- a member's events page
-  // gains no query for a control it will never see.
-  let audienceTags: { tag_id: string; tag_name: string; member_count: number }[] = [];
-  let audienceMembers: { membership_id: string; display_name: string }[] = [];
-  if (canManageHere && selectedClub) {
-    const [tagsResult, membersResult] = await Promise.all([
-      supabase.rpc("list_club_member_tags", { p_club_id: selectedClub.club_id }),
-      supabase.rpc("list_club_members", { p_club_id: selectedClub.club_id, p_query: null, p_status: "active" }),
-    ]);
-    audienceTags = ((tagsResult.data as { tags?: typeof audienceTags } | null)?.tags ?? []);
-    audienceMembers = ((membersResult.data ?? []) as { membership_id: string; display_name: string }[])
-      .map((member) => ({ membership_id: member.membership_id, display_name: member.display_name }));
   }
 
   const coverUrls = await signCoverImageUrls(events.map((event) => event.cover_image_path));
@@ -254,19 +230,6 @@ export default async function EventsPage({
       <p>只有啟用中的扶輪社、有效社員或具活動管理權限的帳號會顯示。</p>
     </div>}
 
-    {canManageHere && selectedClub && <section className="card">
-      <div className="section-heading">
-        <div><p className="eyebrow">活動管理</p><h2>建立活動草稿</h2></div>
-        <span>{selectedClub.club_name}</span>
-      </div>
-      <EventCreateForm
-        clubId={selectedClub.club_id}
-        eventTypeLabels={eventTypeLabels}
-        tags={audienceTags}
-        members={audienceMembers}
-      />
-    </section>}
-
     {selectedClub && <section>
       <div className="section-heading">
         <div><p className="eyebrow">目前社別</p><h2>{selectedClub.club_name}</h2></div>
@@ -277,7 +240,7 @@ export default async function EventsPage({
       {!eventsUnavailable && events.length === 0 && <div className="empty">
         <div className="empty-icon">日</div>
         <h2>目前沒有活動</h2>
-        <p>{canManageHere ? "可以先建立草稿，確認後再發布給社員。" : "活動發布後會顯示在這裡。"}</p>
+        <p>活動發布後會顯示在這裡。</p>
       </div>}
 
       <div className="form-stack">
@@ -345,33 +308,11 @@ export default async function EventsPage({
 
           {event.status === "published" && event.counts_for_attendance && <div className="form-actions">
             {selectedClub.can_register && <Link className="button button-secondary" href="/events/checkin">本人簽到</Link>}
-            {canManageHere && <Link
+            {selectedClub.can_manage && <a
               className="button"
-              href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}`}
-            >管理簽到</Link>}
+              href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}&mode=management`}
+            >管理簽到</a>}
           </div>}
-
-          {canManageHere && event.status !== "cancelled" && <EventCoverUpload
-            clubId={selectedClub.club_id}
-            eventId={event.id}
-            hasCover={Boolean(event.cover_image_path)}
-          />}
-
-          {canManageHere && event.status === "draft" && <form action={publishEventAction} className="form-actions">
-            <input type="hidden" name="clubId" value={selectedClub.club_id} />
-            <input type="hidden" name="eventId" value={event.id} />
-            <button className="button" type="submit">發布活動</button>
-          </form>}
-
-          {canManageHere && event.status !== "cancelled" && event.status !== "completed" && <form action={cancelEventAction} className="inline-form">
-            <input type="hidden" name="clubId" value={selectedClub.club_id} />
-            <input type="hidden" name="eventId" value={event.id} />
-            <label className="field"><span className="label">取消原因</span>
-              <input className="input" name="reason" maxLength={500} required />
-            </label>
-            <span className="hint">取消後不可恢復，並會關閉 active 簽到 token、保留簽到歷史。</span>
-            <button className="button button-danger" type="submit">取消活動</button>
-          </form>}
         </article>)}
       </div>
     </section>}

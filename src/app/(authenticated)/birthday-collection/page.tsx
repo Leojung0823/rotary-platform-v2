@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   declineBirthdayCollectionAssignmentAction,
   deleteBirthdayCollectionSubmissionAction,
@@ -45,7 +45,7 @@ function submissionLabel(status: string | null) {
 export default async function BirthdayCollectionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ clubId?: string; success?: string; error?: string }>;
+  searchParams: Promise<{ clubId?: string; mode?: string; success?: string; error?: string }>;
 }) {
   const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
   const evaluation = await evaluateCurrentFeatureFlag({
@@ -55,6 +55,23 @@ export default async function BirthdayCollectionPage({
   if (!evaluation.enabled || !query.clubId) notFound();
 
   const supabase = await createClient();
+  // Keep a bookmarked manager URL as a redirect only. Do not fetch the public
+  // wall on this path; the canonical manager route will repeat its own exact
+  // tenant and permission checks before rendering manager data.
+  if (query.mode === "management") {
+    const { data: managerData, error: managerError } = await supabase.rpc("get_my_birthday_wish_collection_page", {
+      p_club_id: query.clubId,
+    });
+    if (managerError || !managerData) redirect("/access-denied");
+    try {
+      const managerPage = parseBirthdayCollectionPageProjection(managerData, []);
+      if (managerPage.clubId.toLowerCase() !== query.clubId.toLowerCase() || !managerPage.canManage) redirect("/access-denied");
+      redirect(`/clubs/${encodeURIComponent(managerPage.clubId)}/birthday-collection?mode=management`);
+    } catch {
+      redirect("/access-denied");
+    }
+  }
+
   const [{ data, error }, { data: publishedData, error: publishedError }] = await Promise.all([
     supabase.rpc("get_my_birthday_wish_collection_page", { p_club_id: query.clubId }),
     supabase.rpc("list_published_birthday_wish_submissions", { p_club_id: query.clubId }),

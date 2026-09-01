@@ -1,7 +1,50 @@
-# 交接筆記（2026-08-31）
+# 交接筆記（2026-09-01）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 幹部功能收斂到管理模式（2026-09-01）
+
+本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1 實作，程式在隔離
+分支 `codex/management-mode-separation`，目前尚未 push、開 PR、合併或部署；不要把這個分支的結果說成
+GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 Browser Smoke。
+
+已完成的程式範圍：
+
+- 新增 `/clubs/{clubId}/birthday-collection`、`/clubs/{clubId}/archives`、`/clubs/{clubId}/events` 三個
+  管理路由；三者都先驗證 UUID、指定社團、RPC 回傳社團與 `canManage/can_manage`，未通過就導向
+  `/access-denied`，不渲染管理資料。
+- 抽出 `BirthdayCollectionManagement`、`ArchiveManagementPanel`、`EventManagementPanel`，管理表單與
+  原本的 server action 共用；社員頁只保留社員操作／唯讀內容與通往管理模式的連結。
+- 舊的 `?mode=management` 收藏網址保留相容導向；管理 action、文件上傳完成後回到新的管理路由，不接受
+  瀏覽器提供的 `returnUrl`；生日／封存操作會同時失效社員頁與新管理頁的快取。
+- 管理第一層導覽固定為總覽、活動、出席（旗標開啟且有權限）、社員、訊息（旗標開啟且有權限）；生日、
+  封存、IOU 等低頻功能改由總覽卡片依 `list_my_permissions(clubId)` 顯示。
+- 權限 projection 使用 request-scoped、以 `clubId` 為 key 的 React cache；沒有新增 migration、沒有改
+  RPC／RLS／Storage 授權規則。
+- 本機 E2E fixture 的 enabled 情境補上 `archive_handover_v1`，並新增執行秘書從總覽進入生日徵集、封存
+  建立／編輯／上傳的測試路徑。
+
+效能記錄：管理總覽依每個作用社別最多讀一次 permission projection，並以 request-scoped cache 重用；生日／
+封存管理頁各以一次主要 projection 讀取，活動管理頁在權限通過後才並行讀取標籤、社員與封面 URL。查詢總數
+與 TTFB 的前後比較本輪未量測，因此是否退步仍標記為「未量測」。
+
+本輪驗證（隔離分支）：
+
+```text
+npm test                         106 files / 671 tests passed
+npm run lint                     passed
+npm run typecheck                passed
+npm run build                    passed; 3 new management routes collected
+npm run check:migrations         passed
+npm run check:db-verifications   passed; 47 SQL files covered
+git diff --check                 passed
+E2E node --check / Playwright --list passed; 199 tests discovered
+```
+
+尚未完成、不能誤報為通過：`npm run verify:db` 曾因本機 Docker／Supabase 無回應而中止；本輪沒有執行
+Browser Smoke、staging acceptance 或 production deploy。效能 TTFB 也尚未量測。下一步是先確認本機資料庫可用
+後跑完整 verify，或依使用者授權把分支推上 GitHub，再由 staging 流程做執行秘書的真實驗收。
 
 ## 生日祝福派發修復（2026-09-01）
 

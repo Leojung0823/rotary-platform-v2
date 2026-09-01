@@ -14,7 +14,7 @@ async function login(page) {
   await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/dashboard$/u);
-  await page.goto("/events");
+  await page.goto("/events?mode=management");
   await expect(page.getByRole("heading", { name: "建立活動草稿" })).toBeVisible();
 }
 

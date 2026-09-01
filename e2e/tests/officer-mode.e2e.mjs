@@ -38,8 +38,8 @@ test("an officer in member mode sees the events page a plain member sees", async
   await expect(page.getByRole("heading", { name: "建立活動草稿" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "發布活動" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "取消活動" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "管理簽到" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^(上傳圖片|更換圖片)$/u })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "管理簽到" }).first()).toBeVisible();
 
   // Drafts are a manager's business; a member never sees one.
   await expect(page.getByText("草稿", { exact: true })).toHaveCount(0);
@@ -53,6 +53,9 @@ test("the same officer still gets the full management view in management mode", 
   await login(page, officerEmail);
   await page.goto(new URL("/events?mode=management", baseURL).toString());
 
+  // The old URL is only a compatibility redirect; the canonical page is now
+  // under the selected club's management namespace.
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/events\?mode=management$/u);
   await expect(page.getByRole("heading", { name: "建立活動草稿" })).toBeVisible();
   await expect(page.getByRole("link", { name: "管理簽到" }).first()).toBeVisible();
 });
@@ -80,7 +83,86 @@ test("an operator with no membership is not offered a member mode to return to",
   await page.goto(new URL("/dashboard", baseURL).toString());
 
   await expect(page.getByRole("link", { name: backToMemberName })).toHaveCount(0);
-  // And their own management view is untouched by the member-view change.
-  await page.goto(new URL("/events", baseURL).toString());
+  // Their normal management navigation now enters the canonical club route;
+  // the old member URL no longer exposes a manager surface.
+  await page.goto(new URL("/dashboard?mode=management", baseURL).toString());
+  await page.getByRole("link", { name: "活動", exact: true }).click();
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/events\?mode=management$/u);
   await expect(page.getByRole("heading", { name: "建立活動草稿" })).toBeVisible();
+});
+
+test("an executive secretary reaches birthday management from the overview", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "officer-mode-1440", "This flow mutates shared local birthday fixtures.");
+  test.setTimeout(90_000);
+
+  await login(page, operatorEmail);
+  await page.goto(new URL("/dashboard?mode=management", baseURL).toString());
+  await page.getByTestId("management-card-birthday-collection").click();
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/birthday-collection\?mode=management$/u);
+  await expect(page.getByTestId("birthday-collection-management")).toBeVisible();
+
+  await page.getByRole("button", { name: "建立／重跑本月任務" }).click();
+  await expect(page).toHaveURL(/success=(generated|generated_notification_skipped)/u, { timeout: 30_000 });
+});
+
+test("an executive secretary can create, edit and upload a disposable archive item", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "officer-mode-1440", "This flow mutates shared local archive fixtures.");
+  test.setTimeout(120_000);
+
+  await login(page, operatorEmail);
+  await page.goto(new URL("/dashboard?mode=management", baseURL).toString());
+  await page.getByTestId("management-card-archives").click();
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/archives\?mode=management$/u);
+  await expect(page.getByTestId("archive-management")).toBeVisible();
+
+  const startYear = 2000 + (Date.now() % 200);
+  const yearDetails = page.locator("details").filter({ hasText: "建立扶輪年度" }).first();
+  if (!(await yearDetails.evaluate((element) => element instanceof HTMLDetailsElement && element.open))) {
+    await yearDetails.locator("summary").click();
+  }
+  const yearForm = yearDetails.locator("form");
+  await yearForm.getByLabel("起始年份").fill(String(startYear));
+  await yearForm.getByLabel("年度主題").fill("可回收文件驗收");
+  await yearForm.getByRole("button", { name: "建立年度與清單" }).click();
+  await expect(page).toHaveURL(/success=year_created/u, { timeout: 30_000 });
+
+  const itemTitle = `可回收文件驗收 ${Date.now()}`;
+  const itemDetails = page.locator("details").filter({ hasText: "建立文件項目" }).first();
+  if (!(await itemDetails.evaluate((element) => element instanceof HTMLDetailsElement && element.open))) {
+    await itemDetails.locator("summary").click();
+  }
+  const itemForm = itemDetails.locator("form");
+  await itemForm.getByLabel("標題").fill(itemTitle);
+  await itemForm.getByLabel("資料夾").fill("e2e-disposable");
+  await itemForm.getByLabel("標籤").fill("e2e, disposable");
+  await itemForm.getByLabel("說明").fill("供管理模式驗收後保留作為可回收測試資料。");
+  await itemForm.getByRole("button", { name: "建立文件項目" }).click();
+  await expect(page).toHaveURL(/success=item_created/u, { timeout: 30_000 });
+
+  const itemCard = page.locator("section.card").filter({ hasText: itemTitle }).first();
+  await expect(itemCard).toBeVisible();
+  const uploadDetails = itemCard.locator("details").filter({ hasText: "上傳新版本" }).first();
+  if (!(await uploadDetails.evaluate((element) => element instanceof HTMLDetailsElement && element.open))) {
+    await uploadDetails.locator("summary").click();
+  }
+  await uploadDetails.locator('input[name="file"]').setInputFiles({
+    name: "handover-acceptance.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("可回收文件驗收\n"),
+  });
+  await uploadDetails.getByLabel("版本說明").fill("管理模式上傳驗收");
+  await uploadDetails.getByRole("button", { name: "上傳新版本" }).click();
+  await expect(page).toHaveURL(/success=version_uploaded/u, { timeout: 30_000 });
+  await expect(page.getByText("handover-acceptance.txt", { exact: true })).toBeVisible();
+
+  const updatedTitle = `${itemTitle}（已編輯）`;
+  const updatedCard = page.locator("section.card").filter({ hasText: itemTitle }).first();
+  const editDetails = updatedCard.locator("details").filter({ hasText: "修改文件說明" }).first();
+  if (!(await editDetails.evaluate((element) => element instanceof HTMLDetailsElement && element.open))) {
+    await editDetails.locator("summary").click();
+  }
+  await editDetails.getByLabel("標題").fill(updatedTitle);
+  await editDetails.getByRole("button", { name: "儲存文件說明" }).click();
+  await expect(page).toHaveURL(/success=item_updated/u, { timeout: 30_000 });
+  await expect(page.getByRole("heading", { name: updatedTitle, exact: true })).toBeVisible();
 });

@@ -50,6 +50,15 @@ describe("archive and handover security boundary", () => {
     expect(managementRoute).toContain("!page.canManage");
     expect(managementRoute).toContain("<ArchiveManagementPanel");
     expect(actions).toContain("/clubs/${encodeURIComponent(clubId)}/archives");
+    expect(actions).toContain('revalidatePath("/archives")');
     expect(actions).toContain("mode: \"management\"");
+  });
+
+  it("keeps the old management URL as a redirect instead of a second manager page", () => {
+    expect(memberPage).toContain('query.mode === "management"');
+    expect(memberPage).toContain("redirect(\"/access-denied\")");
+    expect(memberPage).toContain("page.selectedClubId.toLowerCase() !== requestedClubId");
+    expect(memberPage).toContain("/clubs/${encodeURIComponent(page.selectedClubId)}/archives?mode=management");
+    expect(memberPage).not.toContain("ArchiveManagementPanel");
   });
 });

@@ -35,6 +35,8 @@ describe("birthday collection security boundary", () => {
     expect(actions).toContain('rpc("create_birthday_wish_question"');
     expect(actions).toContain('rpc("update_birthday_wish_question"');
     expect(actions).toContain("managementInvalidInputPath");
+    expect(actions).toContain('revalidatePath("/birthday-collection")');
+    expect(actions).toContain("/clubs/${encodeURIComponent(clubId)}/birthday-collection");
     expect(actions).not.toMatch(/\.from\("birthday_wish_/u);
     expect(actions).not.toContain("author_app_account_id");
   });
@@ -89,5 +91,12 @@ describe("birthday collection security boundary", () => {
     expect(managementRoute).toContain("!page.canManage");
     expect(managementRoute).toContain("parseBirthdayCollectionPageProjection(data, [])");
     expect(managementRoute).not.toContain('rpc("list_published_birthday_wish_submissions"');
+  });
+
+  it("keeps the old management URL as a redirect instead of a second manager page", () => {
+    expect(page).toContain('query.mode === "management"');
+    expect(page).toContain("redirect(\"/access-denied\")");
+    expect(page).toContain("/clubs/${encodeURIComponent(managerPage.clubId)}/birthday-collection?mode=management");
+    expect(page).not.toContain("BirthdayCollectionManagement");
   });
 });

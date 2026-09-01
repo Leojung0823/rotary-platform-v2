@@ -2,10 +2,10 @@ import { createClient } from "@supabase/supabase-js";
 import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 
 const scenarios = {
-  disabled: { roleShells: false, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: false, birthdayV2: false, birthdayCollection: false },
-  "member-home-disabled": { roleShells: true, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: false, birthdayV2: false, birthdayCollection: false },
-  "checkin-disabled": { roleShells: true, memberHome: true, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: true, birthdayV2: false, birthdayCollection: false },
-  enabled: { roleShells: true, memberHome: true, checkinQr: true, gpsCheckin: true, attendanceUi: true, messageCenter: true, birthdayV2: true, birthdayCollection: true },
+  disabled: { roleShells: false, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: false, birthdayV2: false, birthdayCollection: false, archiveHandover: false },
+  "member-home-disabled": { roleShells: true, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: false, birthdayV2: false, birthdayCollection: false, archiveHandover: false },
+  "checkin-disabled": { roleShells: true, memberHome: true, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: true, birthdayV2: false, birthdayCollection: false, archiveHandover: false },
+  enabled: { roleShells: true, memberHome: true, checkinQr: true, gpsCheckin: true, attendanceUi: true, messageCenter: true, birthdayV2: true, birthdayCollection: true, archiveHandover: true },
 };
 const scenario = scenarios[process.argv[2]] ?? null;
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -36,6 +36,7 @@ for (const [featureKey, enabled] of [
   ["announcements_v09", scenario.messageCenter],
   ["birthday_wishes_v2", scenario.birthdayV2],
   ["birthday_wishes_collection_v1", scenario.birthdayCollection],
+  ["archive_handover_v1", scenario.archiveHandover],
 ]) {
   const { error } = await client.rpc("set_platform_feature_flag", {
     p_feature_key: featureKey,

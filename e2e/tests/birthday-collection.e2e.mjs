@@ -43,7 +43,7 @@ async function waitForState(page, readState, label) {
 async function submitBirthdayAction(page, button) {
   const responsePromise = page.waitForResponse((response) => {
     const request = response.request();
-    return request.method() === "POST" && new URL(response.url()).pathname === "/birthday-collection";
+    return request.method() === "POST" && new URL(response.url()).pathname.endsWith("/birthday-collection");
   }, { timeout: 20_000 });
   await button.click();
   await responsePromise;
@@ -79,7 +79,7 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
     test.setTimeout(90_000);
 
     await login(page, managerEmail);
-    await page.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
+    await page.goto(new URL(`/clubs/${clubId}/birthday-collection?mode=management`, baseURL).toString());
     await expect(page.getByRole("heading", { name: "生日祝福徵集" })).toBeVisible();
     await expect(page.getByText(/管理題庫（平台 100 題／本社 \d+ 題）/u)).toBeVisible();
     const campaignWorkspace = page.locator("section").filter({ has: page.getByRole("heading", { name: "生日徵集狀態" }) }).first();

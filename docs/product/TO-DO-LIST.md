@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-08-31（Asia/Taipei）
+更新日期：2026-09-01（Asia/Taipei）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
@@ -13,6 +13,7 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併。
+本輪管理模式分離已在隔離分支完成程式搬遷，但尚未 push、開 PR、合併或部署；其外部驗收仍待完成。
 
 目前權威來源是 GitHub `main`；staging `/api/health`
 於 2026-08-31 掃描通過，執行版本已透過 plan `33403385635`／Go-Live `33403560211` 更新為
@@ -185,24 +186,20 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
    匯入但從未建立登入帳號的社員即使畫面上指派了角色也不會被採用。
 2. **上線前必辦**：生日徵集排程目前只有 `run-staging-scheduler` 一個 job，只打 `STAGING_BASE_URL`。
    production 沒有對應排程，正式上線後生日徵集不會自動派發，需要另做 production job、secret 與核准閘門。
-3. **幹部功能一律收進管理模式，社員頁面不放幹部控制項** `[!]`
+3. **幹部功能一律收進管理模式，社員頁面不放幹部控制項** `[>]`
 
    產品決定（2026-09-01）。完整企劃見
    **[`docs/product/MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md)**，
    內含現況盤點、目標架構、逐頁執行內容、測試策略與驗收條件。
 
-   重點摘要：
+   已完成隔離分支的程式搬遷：三個管理路由、三個共用管理 panel、舊管理網址相容導向、管理 action 回程、
+   權限投影快取與管理總覽卡片均已加入；沒有新增 migration，也沒有改 RPC／RLS。社員頁已移除管理表單，
+   只保留社員操作／唯讀內容與管理模式連結。
 
-   - 要搬的是三頁：`events`、`archives`、`birthday-collection`。`attendance` 與 `blessings`
-     已經是正確形狀（社員頁只放一顆通往管理頁的連結），可直接當範本。
-   - 模式切換機制**已經存在**（`role-aware-app-shell.tsx` 的 `availableModes` 與
-     `?mode=management`），本企劃是收編漏網頁面，不是新建架構。
-   - 最重要的一項是**執行秘書**：他不是社員（`active_member_cannot_be_operator`），
-     所以走不到掛在社員首頁下的生日徵集管理功能。搬遷後這個結構性障礙才會消失。
-   - **不動權限模型**：不新增 migration，不改 RPC 與 RLS。依 AGENTS.md 第 5 節，mode 與導覽
-     visibility 只能作 UX；搬完之後一般社員手動輸入管理頁網址仍必須被**後端**擋下。
-
-   開工前要先決定企劃書第 9 節的三個未決問題，其中最關鍵的是 `archives` 社員頁搬空後是否保留。
+   本輪本機驗證：106 個測試檔、671 tests passed；lint、typecheck、build、migration／verification manifest
+   檢查與 E2E 語法／清單檢查通過。`npm run verify:db` 因 Docker／Supabase 無回應未完成；Browser Smoke、
+   staging 執行秘書驗收與效能 TTFB 尚未量測／執行。程式目前在隔離分支
+   `codex/management-mode-separation`，待外部驗收後才可標記 `[x]`。
 
 4. 安排 iOS Safari、Android Chrome 實機驗收，以及 M1 五位目標使用者形成性測試。實機驗收應一併涵蓋訊息中心。
 5. 另行決定是否對 production 開啟 `announcements_v09`；staging 已開啟不代表 production 已公開。
@@ -214,18 +211,16 @@ draft PR #40 已關閉，分支保留；生日派發的權限與提前一個月�
 
 ## 本輪驗證證據
 
-已在本機執行：
+管理模式分離隔離分支已在本機執行：
 
-- 上一輪程式基線的 `npm test`：100 files、631 tests passed；本次只做進度與部署狀態掃描，未重跑本機完整測試。
-- 上一輪程式基線的 `npm run typecheck`、`npm run lint`、`npm run build`：passed；本次未重跑。
-- `npm run verify:db`：本機未完成，因 Docker／Supabase 沒有回應而停止；PR #86 的 CI database job 已通過 46 份 verification SQL，schema lint 只有既有 3 個 warning。
+- `npm test`：106 files、671 tests passed。
+- `npm run typecheck`、`npm run lint`、`npm run build`：passed。
 - `npm run check:migrations`：passed。
-- `npm run check:db-verifications`：manifest covers all 46 SQL files。
-- role shell：18/18 passed。
-- production build 關鍵 role／互動／訊息 E2E：29 passed、1 skipped。
-- `git diff --check`：本輪程式與文件修改通過。
-- PR #93 的 CI、Quality 與 Browser Smoke：passed（PR checks run `33347745255`、`33347745250`、`33347745221`）。
-- current `main` push CI：passed（run `33348357979`）；同一 SHA 的 Browser Smoke `33348357995` 掃描時仍在執行。
+- `npm run check:db-verifications`：manifest covers all 47 SQL files。
+- `git diff --check`：passed。
+- E2E `node --check` 與 Playwright `--list`：passed，199 tests discovered；沒有啟動 Browser Smoke。
+- `npm run verify:db`：本機未完成，因 Docker／Supabase 沒有回應而停止；PR #86 的 CI database job 已通過 46 份 verification SQL，schema lint 只有既有 3 個 warning。
+- 既有 main／staging 的歷史驗證仍保留，但不當成本輪隔離分支的驗收證據；本輪沒有跑 CI、Browser Smoke、staging acceptance 或部署。
 
 以上程式與資料庫結果為既有驗證證據；current-main 的 Staging Go-Live run `33121275958` 已完成
 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。現在 `/api/health` 仍回報

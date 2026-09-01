@@ -46,6 +46,7 @@ test("a manager uploads a cover, and the browser shrinks it first", async ({ pag
   test.setTimeout(120_000);
   await login(page, managerEmail);
   await page.goto(new URL("/events?mode=management", baseURL).toString());
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/events\?mode=management$/u);
 
   // The control reads "上傳圖片" for an event with no picture yet and "更換圖片"
   // for one that already has it. Both are valid starting states -- an earlier

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, Select } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
 import {
@@ -56,7 +56,7 @@ function bytes(value: number) {
 export default async function ArchivesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ clubId?: string; yearId?: string; q?: string; category?: string; success?: string; error?: string }>;
+  searchParams: Promise<{ clubId?: string; yearId?: string; q?: string; category?: string; mode?: string; success?: string; error?: string }>;
 }) {
   const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
   const evaluation = await evaluateCurrentFeatureFlag({
@@ -82,6 +82,18 @@ export default async function ArchivesPage({
   }
   const selectedClub = page.clubs.find((club) => club.clubId === page.selectedClubId) ?? null;
   const selectedYear = page.years.find((year) => year.id === page.selectedYearId) ?? null;
+  const requestedClubId = query.clubId?.trim().toLowerCase() || null;
+
+  // Preserve old bookmarked management URLs as a redirect only. The member
+  // page must never become a second manager surface, and the canonical route
+  // repeats the exact club and permission checks before rendering controls.
+  if (query.mode === "management") {
+    if (!page.selectedClubId || !selectedClub || !page.canManage
+      || (requestedClubId && page.selectedClubId.toLowerCase() !== requestedClubId)) {
+      redirect("/access-denied");
+    }
+    redirect(`/clubs/${encodeURIComponent(page.selectedClubId)}/archives?mode=management`);
+  }
 
   return <div className="page-stack">
     <ArchiveHeader clubId={page.selectedClubId} canManage={page.canManage} />
