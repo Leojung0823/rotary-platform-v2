@@ -1,4 +1,6 @@
 -- Birthday wish collection scheduler and message notification verification.
+-- Dispatch runs a month ahead, so each as_of below sits in the month before
+-- the birthday it is expected to pick up.
 -- Run against local Supabase only. Every fixture is rolled back.
 
 begin;
@@ -121,8 +123,8 @@ reset role;
 -- creates exactly one notification message for the two non-birthday members.
 set local role service_role;
 select set_config('request.jwt.claim.sub', '15000000-0000-4000-8000-000000000001', true);
-select public.run_birthday_wish_collection_scheduler(timestamptz '2026-08-01 00:00:00+00');
-select public.run_birthday_wish_collection_scheduler(timestamptz '2026-08-01 00:00:00+00');
+select public.run_birthday_wish_collection_scheduler(timestamptz '2026-07-01 00:00:00+00');
+select public.run_birthday_wish_collection_scheduler(timestamptz '2026-07-01 00:00:00+00');
 reset role;
 
 do $$
@@ -176,7 +178,7 @@ update public.platform_feature_flags
 set enabled = false
 where feature_key = 'announcements_v09';
 set local role service_role;
-select public.run_birthday_wish_collection_scheduler(timestamptz '2026-09-01 00:00:00+00');
+select public.run_birthday_wish_collection_scheduler(timestamptz '2026-08-01 00:00:00+00');
 
 reset role;
 do $$
@@ -191,7 +193,7 @@ update public.platform_feature_flags
 set enabled = true
 where feature_key = 'announcements_v09';
 set local role service_role;
-select public.run_birthday_wish_collection_scheduler(timestamptz '2026-09-01 00:00:00+00');
+select public.run_birthday_wish_collection_scheduler(timestamptz '2026-08-01 00:00:00+00');
 reset role;
 do $$
 begin

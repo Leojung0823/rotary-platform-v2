@@ -122,7 +122,7 @@ declare
   outcome jsonb;
 begin
   set local role service_role;
-  outcome := public.run_birthday_wish_collection_scheduler(timestamptz '2026-09-01 00:00:00+00');
+  outcome := public.run_birthday_wish_collection_scheduler(timestamptz '2026-08-01 00:00:00+00');
   reset role;
 
   if (outcome ->> 'generated_count')::integer < 1 then
@@ -133,8 +133,8 @@ begin
   end if;
 end $$;
 
--- A birthday earlier in the same month must still be dispatched, which the
--- previous seven-day window could not do.
+-- A September birthday is dispatched from August, a month ahead, so a member
+-- born on the 1st still has time to write.
 do $$
 declare
   covered integer;

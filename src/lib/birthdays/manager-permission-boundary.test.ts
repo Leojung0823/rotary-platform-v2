@@ -65,9 +65,9 @@ describe("birthday collection manager permission boundary", () => {
     expect(result).not.toContain("club_row.id");
   });
 
-  it("dispatches for the whole club-local month", () => {
-    expect(migration).toContain("date_trunc('month', clock.local_today)::date");
-    expect(migration).toContain("(date_trunc('month', clock.local_today) + interval '1 month')::date");
+  it("leaves the seven-day window behind", () => {
+    // The window itself moved on again in 20260901000200; see
+    // dispatch-lead-month-boundary.test.ts for the window that is current.
     expect(migration).not.toContain("clock.local_today + 7");
     // The month is still read in the club's own timezone.
     expect(migration).toContain("(p_as_of at time zone club_row.timezone_name)::date as local_today");
