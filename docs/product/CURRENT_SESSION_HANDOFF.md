@@ -23,7 +23,7 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
 - 權限 projection 使用 request-scoped、以 `clubId` 為 key 的 React cache；沒有新增 migration、沒有改
   RPC／RLS／Storage 授權規則。
 - 本機 E2E fixture 的 enabled 情境補上 `archive_handover_v1`，並新增執行秘書從總覽進入生日徵集、封存
-  建立／編輯／上傳的測試路徑。
+  建立／編輯／上傳，以及一般社員直開管理頁、跨社團 `clubId` 的拒絕測試路徑。
 
 效能記錄：管理總覽依每個作用社別最多讀一次 permission projection，並以 request-scoped cache 重用；生日／
 封存管理頁各以一次主要 projection 讀取，活動管理頁在權限通過後才並行讀取標籤、社員與封面 URL。查詢總數
@@ -39,7 +39,7 @@ npm run build                    passed; 3 new management routes collected
 npm run check:migrations         passed
 npm run check:db-verifications   passed; 47 SQL files covered
 git diff --check                 passed
-E2E node --check / Playwright --list passed; 199 tests discovered
+E2E node --check / Playwright --list passed; 207 tests discovered
 ```
 
 尚未完成、不能誤報為通過：`npm run verify:db` 曾因本機 Docker／Supabase 無回應而中止；本輪沒有執行

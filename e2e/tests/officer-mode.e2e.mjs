@@ -6,6 +6,9 @@ const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const officerEmail = "e2e-shell-member-manager@example.test";
 // Manages a club without belonging to it: an executive secretary.
 const operatorEmail = "e2e-shell-management@example.test";
+const ordinaryMemberEmail = "e2e-shell-ordinary@example.test";
+const memberClubId = "a1000000-0000-4000-8000-000000000001";
+const managedClubId = "a1000000-0000-4000-8000-000000000003";
 
 const backToMemberName = /^(回社員模式|返回)$/u;
 
@@ -88,6 +91,39 @@ test("an operator with no membership is not offered a member mode to return to",
   await page.goto(new URL("/dashboard?mode=management", baseURL).toString());
   await page.getByRole("link", { name: "活動", exact: true }).click();
   await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/events\?mode=management$/u);
+  await expect(page.getByRole("heading", { name: "建立活動草稿" })).toBeVisible();
+});
+
+test("an ordinary member is denied every canonical management route", async ({ page }) => {
+  await login(page, ordinaryMemberEmail);
+
+  for (const [path, testId] of [
+    [`/clubs/${managedClubId}/birthday-collection?mode=management`, "birthday-collection-management"],
+    [`/clubs/${managedClubId}/archives?mode=management`, "archive-management"],
+    [`/clubs/${managedClubId}/events?mode=management`, "event-management"],
+  ]) {
+    await page.goto(new URL(path, baseURL).toString());
+    await expect(page).toHaveURL(/\/access-denied(?:\?|$)/u);
+    await expect(page.getByTestId(testId)).toHaveCount(0);
+  }
+});
+
+test("a manager cannot use another club id to open a management route", async ({ page }) => {
+  await login(page, officerEmail);
+
+  for (const path of [
+    `/clubs/${managedClubId}/birthday-collection?mode=management`,
+    `/clubs/${managedClubId}/archives?mode=management`,
+    `/clubs/${managedClubId}/events?mode=management`,
+  ]) {
+    await page.goto(new URL(path, baseURL).toString());
+    await expect(page).toHaveURL(/\/access-denied(?:\?|$)/u);
+  }
+
+  // The same account still owns its own club route; this guards against a
+  // denial check that accidentally removes the legitimate tenant.
+  await page.goto(new URL(`/clubs/${memberClubId}/events?mode=management`, baseURL).toString());
+  await expect(page).toHaveURL(/\/clubs\/a1000000-0000-4000-8000-000000000001\/events\?mode=management$/u);
   await expect(page.getByRole("heading", { name: "建立活動草稿" })).toBeVisible();
 });
 

@@ -218,7 +218,7 @@ draft PR #40 已關閉，分支保留；生日派發的權限與提前一個月�
 - `npm run check:migrations`：passed。
 - `npm run check:db-verifications`：manifest covers all 47 SQL files。
 - `git diff --check`：passed。
-- E2E `node --check` 與 Playwright `--list`：passed，199 tests discovered；沒有啟動 Browser Smoke。
+- E2E `node --check` 與 Playwright `--list`：passed，207 tests discovered；沒有啟動 Browser Smoke。
 - `npm run verify:db`：本機未完成，因 Docker／Supabase 沒有回應而停止；PR #86 的 CI database job 已通過 46 份 verification SQL，schema lint 只有既有 3 個 warning。
 - 既有 main／staging 的歷史驗證仍保留，但不當成本輪隔離分支的驗收證據；本輪沒有跑 CI、Browser Smoke、staging acceptance 或部署。
 
