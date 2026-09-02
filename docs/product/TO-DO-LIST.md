@@ -238,6 +238,15 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 完整本機 Playwright 170 passed、33 刻意 skip、0 failed，`line-oa-audience` 在重新 build 後再跑 2 passed。
 第一輪的 6 個失敗是啟動時缺 `E2E_ADMIN_EMAIL`／`E2E_ADMIN_PASSWORD`，補上後 8 passed、2 skipped。
 
+#### 設定時發現的缺口 `[ ]`
+
+- `[ ]` **後台沒有顯示該社要設定的環境變數名稱**。`/clubs/{clubId}/line-oa` 只說「由各社專屬的
+  server environment key 讀取」，但沒有顯示是哪一個 key，設定的人得自己從 club code 推算
+  （`LINE_OA_<CLUB_CODE 大寫、非英數字換底線>_CHANNEL_ACCESS_TOKEN` 與 `_CHANNEL_SECRET`）。
+  `line_oa_accounts.access_token_env_key`／`webhook_secret_env_key` 存的是**變數名稱不是 secret**，
+  可以安全地投影給有 `oa.manage` 的幹部看。需要改 `get_line_oa_admin` 的投影並補 verification，
+  所以會有一個新的 migration，不併進本輪。
+
 #### 本輪明確不做（已排序在後）
 
 - `[ ]` 事件驅動自動推播：訊息中心公告、活動通知、生日祝福徵集邀請自動推 LINE。
