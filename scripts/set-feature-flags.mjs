@@ -24,6 +24,8 @@ const IMPLEMENTED = [
   "blessing_iou_reporting_v1",
   "birthday_wishes_v2",
   "birthday_wishes_collection_v1",
+  "line_oa_event_push_v1",
+  "line_oa_auto_pairing_v1",
 ];
 const UNIMPLEMENTED = [];
 
