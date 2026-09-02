@@ -4,7 +4,7 @@
 修訂：v2.1.3，2026-09-02（補上執行秘書 staging 專項驗收契約）
 狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke 與一般 staging Go-Live 已完成；待執行秘書 staging 專項驗收
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次掃描基準：`origin/main@402bd77bc12c7ece01a42d294a7b3d7eb518adda`
+本次掃描基準：`origin/main@fe1a5cf1392f3eecb4411d1bac74c68e467cfeb5`
 
 > 本版已同步為 repository 內的唯一權威企劃；下載資料夾的原檔僅作為本次規格輸入。
 > 程式搬遷與一般 staging Go-Live 已完成；執行秘書專項 hosted acceptance 尚未執行。不得把社員驗收或本機執秘 E2E 代替成 staging 執秘驗收。
@@ -206,9 +206,9 @@ verification 驗證；活動封面由 `event_cover_storage_security.sql` 驗證 
 
 ### 5.3 staging 版本與執行證據（一般發布已完成）
 
-- `[x]` Staging Release plan `33615755337` 以 exact SHA `402bd77bc12c7ece01a42d294a7b3d7eb518adda` 通過，remote migration dry-run 顯示 up to date。
-- `[x]` Staging Go-Live `33617070120` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
-- `[x]` staging health：`status=ok`、`environment=staging`、revision `402bd77bc12c`、`issues=[]`；`DEPLOYMENT_WARNING` 來自 staging 的 mock LINE OA 設定，不能誤報成零 warning。
+- `[x]` Staging Release plan `33634864876` 以 exact SHA `fe1a5cf1392f3eecb4411d1bac74c68e467cfeb5` 通過，remote migration dry-run 顯示 up to date。
+- `[x]` Staging Go-Live `33635029050` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
+- `[x]` staging health：`status=ok`、`environment=staging`、revision `fe1a5cf1392f`、`issues=[]`；`DEPLOYMENT_WARNING` 來自 staging 的 mock LINE OA 設定，不能誤報成零 warning。
 - `[>]` 執行秘書專項尚未執行：目前 GitHub `staging` environment 沒有 `STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD`，因此尚未證明無社籍執行秘書能在 hosted staging 完成生日與文件操作。
 
 本項的安全驗收流程已寫入 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md) 與

@@ -54,11 +54,11 @@ E2E node --check / Playwright --list passed; 207 tests discovered
 歷史，不代表目前 runtime overload。
 `npm run verify:db` 已於 2026-09-02 完成：local database reset、schema lint 與全部 47 份 verification
 均通過；schema lint 的 3 個既有 warning 未新增。本輪兩個 Browser Smoke 失敗案例已在本機回歸通過，完整
-Browser Smoke `33614549502` 也已通過。Staging Release `33615755337` 與 Staging Go-Live `33617070120` 已以
-exact SHA `402bd77bc12c7ece01a42d294a7b3d7eb518adda` 完成，staging health revision `402bd77bc12c`、`issues=[]`，
+Browser Smoke `33614549502` 也已通過。新增驗收流程的 Staging Release `33634864876` 與 Staging Go-Live `33635029050` 已以
+exact SHA `fe1a5cf1392f3eecb4411d1bac74c68e467cfeb5` 完成，staging health revision `fe1a5cf1392f`、`issues=[]`，
 一般 hosted 社員驗收通過。效能 TTFB 也尚未量測；目前唯一未完成的是使用 staging 專用無社籍執行秘書完成生日與文件的 hosted acceptance。
 
-已新增待執行的 `.github/workflows/staging-management-acceptance.yml` 與 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md)。目前 GitHub `staging` environment 尚未設定
+已新增並部署 `.github/workflows/staging-management-acceptance.yml` 與 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md)。目前 GitHub `staging` environment 尚未設定
 `STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD`；在帳號與 secrets 建好前，不得宣稱第 11.2 節已通過。
 
 ## 生日祝福派發修復（2026-09-01）
