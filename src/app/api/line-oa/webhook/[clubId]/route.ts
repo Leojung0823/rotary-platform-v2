@@ -142,6 +142,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const userId = event.source?.userId;
     let failureCode: string | null = null;
+    let nonRetryableFailureCode: string | null = null;
     if (event.type === "follow" && userId) {
       const follower = await admin.from("line_oa_followers").upsert(
         {
@@ -155,6 +156,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         { onConflict: "line_oa_account_id,oa_user_id" },
       );
       if (follower.error) failureCode = "follower_upsert_failed";
+      else {
+        // The follower row is already durable. A trusted pairing failure must
+        // not make LINE retry the whole webhook and repeat that side effect.
+        try {
+          const pairing = await admin.rpc("auto_pair_line_oa_follower", {
+            p_line_oa_account_id: account.data.id,
+            p_club_id: clubId,
+            p_oa_user_id: userId,
+          });
+          if (pairing.error) nonRetryableFailureCode = "auto_pairing_failed";
+        } catch {
+          nonRetryableFailureCode = "auto_pairing_failed";
+        }
+      }
     }
     if (event.type === "unfollow" && userId) {
       const follower = await admin
@@ -175,7 +190,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const completed = await admin
       .from("line_webhooks")
-      .update({ processing_status: "processed", processed_at: new Date().toISOString() })
+      .update({
+        processing_status: "processed",
+        processed_at: new Date().toISOString(),
+        failure_code: nonRetryableFailureCode,
+      })
       .eq("id", claimed.log_id);
     if (completed.error) {
       return NextResponse.json({ error: "webhook_persistence_failed" }, { status: 503 });
