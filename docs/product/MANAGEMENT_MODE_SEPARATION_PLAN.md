@@ -1,8 +1,8 @@
 # 改版企劃：幹部功能收斂到管理模式（v2.1）
 
 建立日期：2026-09-01（Asia/Taipei）
-修訂：v2.1，2026-09-01
-狀態：`[>]` 程式搬遷已完成；待本機資料庫、Browser Smoke 與 staging 驗收
+修訂：v2.1.1，2026-09-02（補記本機資料庫驗證）
+狀態：`[>]` 程式搬遷與本機資料庫驗證已完成；待本分支 Browser Smoke、staging 驗收與發布
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
 本次掃描基準：`origin/main@b137e516cb91b72c7252eb384924843b7874f93b`
 
@@ -182,23 +182,24 @@ club ID 與 `can_manage`，不能僅依函式名稱推測。
 
 | 流程 | 實際授權層 | 目前程式判定 | 驗證狀態與關卡 |
 |---|---|---|---|
-| 生日五支管理 action | RPC：`member.manage` | 執秘可管理 | `[x]` DB 驗證與 staging 排程；`[ ]` PR 2a 後做 hosted acceptance，通過才進 2b |
-| 活動建立／發布／取消 | RPC：`event.manage` | 執秘可管理 | `[>]` 既有 operator E2E、發布 fixture 與取消 fixture 已存在；待本機執行 |
-| 活動封面上傳 | Storage policy → `event.manage`，再記錄 action | 執秘可管理 | `[>]` 既有 Storage 上傳／跨社拒絕 fixture 已存在；待本機執行 |
-| 封存七支 action | RPC：`member.manage` | 執秘可管理 | `[>]` 每支 mutation 的成功、同社 `42501` 與跨社 `42501` fixture 已補；待本機執行 |
-| `POST /api/v1/archive/uploads` | same-origin + auth → begin/complete/fail RPC | 執秘可管理 | `[>]` route 單元測試涵蓋成功、失敗清理與 DB `42501`；待本機／staging 執行 |
-| 封存檔案寫入 | API route 使用 trusted admin Storage client | 不走終端使用者 Storage policy | `[>]` route 只經 begin/complete/fail，且失敗會清理唯一物件路徑；待 runtime 驗證 |
+| 生日五支管理 action | RPC：`member.manage` | 執秘可管理 | `[x]` 本機 DB 驗證與 staging 排程；`[ ]` 本分支 hosted acceptance，通過才完成 2b |
+| 活動建立／發布／取消 | RPC：`event.manage` | 執秘可管理 | `[>]` 既有 operator E2E、發布 fixture 與取消 fixture 已存在；待本分支 Browser／staging 驗收 |
+| 活動封面上傳 | Storage policy → `event.manage`，再記錄 action | 執秘可管理 | `[>]` 既有 Storage 上傳／跨社拒絕 fixture 已存在；待本分支 Browser／staging 驗收 |
+| 封存七支 action | RPC：`member.manage` | 執秘可管理 | `[x]` 本機 `verify:db` 已驗證管理者成功、同社與跨社 `42501` 拒絕 |
+| `POST /api/v1/archive/uploads` | same-origin + auth → begin/complete/fail RPC | 執秘可管理 | `[>]` route 單元測試已通過，待 staging runtime 驗收 |
+| 封存檔案寫入 | API route 使用 trusted admin Storage client | 不走終端使用者 Storage policy | `[>]` route 單元測試已通過，待 staging runtime 驗證失敗清理與檔案流程 |
 
 `supabase/verification/archive_handover_security.sql` 已補成可回滾的隔離 fixture，涵蓋七支封存 server action
 背後的十支管理 RPC（年度建立／編輯、項目建立／編輯／封存、版本開始／完成／失敗、清單更新、交接確認）：
-管理者成功、同社一般社員得到 `42501`、跨社帳號得到 `42501` 都各有斷言。這只代表驗證腳本已具備，
-尚未代表本機 `npm run verify:db` 已執行成功；資料庫仍維持階段 0 的待驗證狀態。
+管理者成功、同社一般社員得到 `42501`、跨社帳號得到 `42501` 都各有斷言。`npm run verify:db`
+已於 2026-09-02 在本機完成 reset、schema lint 與全部 47 份 verification；schema lint 的 3 個既有
+warning 未新增。這證明本機資料庫驗證已完成，但不取代尚未執行的本分支 Browser／staging 驗收。
 
 活動的發布成功由 `event_registration_security.sql` 驗證，取消成功由既有 check-in／dynamic QR
 verification 驗證；活動封面由 `event_cover_storage_security.sql` 驗證 Storage 的同社成功與跨社拒絕。
 封存上傳 API 的 same-origin、身份、begin／complete／fail 順序、Storage 失敗清理與跨社 RPC 拒絕，
-由 `src/app/api/v1/archive/uploads/route.test.ts` 補上本機 route 測試。上述 fixture／測試已寫入，
-但未執行的本機資料庫與 staging runtime 仍不得標成通過。
+由 `src/app/api/v1/archive/uploads/route.test.ts` 補上本機 route 測試；該測試已隨本分支單元測試通過，
+但 staging runtime 尚未驗收，仍不得標成完整通過。
 
 活動封面的 Storage policy 已存在 migration SQL；封存上傳則是 API route 的 trusted admin 流程。
 兩者不得用同一種「檢查 Storage policy」方法驗收。

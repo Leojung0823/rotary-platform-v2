@@ -1,11 +1,11 @@
-# 交接筆記（2026-09-01）
+# 交接筆記（2026-09-02）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
 ## 幹部功能收斂到管理模式（2026-09-01）
 
-本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1 實作，程式在隔離
+本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.1 實作，程式在隔離
 分支 `codex/management-mode-separation`，目前尚未 push、開 PR、合併或部署；不要把這個分支的結果說成
 GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 Browser Smoke。
 
@@ -35,7 +35,7 @@ GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 B
 封存管理頁各以一次主要 projection 讀取，活動管理頁在權限通過後才並行讀取標籤、社員與封面 URL。查詢總數
 與 TTFB 的前後比較本輪未量測，因此是否退步仍標記為「未量測」。
 
-本輪驗證（隔離分支）：
+本輪驗證（隔離分支，2026-09-02 更新）：
 
 ```text
 npm test                         108 files / 683 tests passed
@@ -48,12 +48,14 @@ git diff --check                 passed
 E2E node --check / Playwright --list passed; 207 tests discovered
 ```
 
-上述新增的封存 SQL fixture 尚未在本機資料庫執行；它是驗證內容的補強，不是資料庫通過證據。
+`supabase/verification/archive_handover_security.sql` 的新增 fixture 已隨完整 `npm run verify:db` 在本機資料庫
+執行成功；它現在是本機資料庫通過證據的一部分，不再是只有靜態檔案的補強。
 活動 verification 的有效呼叫也已全部明確傳入 `p_as_member`；歷史 migration 中的舊定義仍保留作為 migration
 歷史，不代表目前 runtime overload。
-尚未完成、不能誤報為通過：`npm run verify:db` 曾因本機 Docker／Supabase 無回應而中止；本輪沒有執行
-Browser Smoke、staging acceptance 或 production deploy。效能 TTFB 也尚未量測。下一步是先確認本機資料庫可用
-後跑完整 verify，或依使用者授權把分支推上 GitHub，再由 staging 流程做執行秘書的真實驗收。
+`npm run verify:db` 已於 2026-09-02 完成：local database reset、schema lint 與全部 47 份 verification
+均通過；schema lint 的 3 個既有 warning 未新增。尚未完成、不能誤報為通過：本輪沒有執行 Browser Smoke、
+本分支 staging acceptance 或 production deploy。效能 TTFB 也尚未量測。下一步是依既定發布流程把本分支同步
+到 GitHub，再用 staging 做執行秘書的真實驗收；Browser Smoke 仍遵守本輪不手動執行的決定。
 
 ## 生日祝福派發修復（2026-09-01）
 
@@ -232,9 +234,9 @@ npm test                         100 files / 631 tests passed
 npm run typecheck                passed
 npm run lint                     passed
 npm run build                    passed
-npm run verify:db                not completed locally (Docker/Supabase unresponsive)
+npm run verify:db                passed (2026-09-02; reset, lint, 47 verification SQL)
 npm run check:migrations         passed
-npm run check:db-verifications   46 files covered
+npm run check:db-verifications   47 files covered
 git diff --check                 passed
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
 PR #86 CI database                passed (run 33120346988; 46 verification SQL)
