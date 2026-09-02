@@ -242,6 +242,16 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 #### 設定時發現的缺口 `[ ]`
 
+- `[x]` **Follower 表格沒有配對控制項**（2026-09-03 已修）。webhook 送進來的 follower 是未配對的，
+  但那一列只有「解除 OA 配對」，而表格把 OA userId 截斷顯示，所以幹部得回 LINE Console 抄完整
+  ID 才配得了。現在未配對的列可以直接下拉選社員完成配對；完整 ID 本來就在伺服器端，不用新增 migration。
+
+- `[ ]` **「尚未加入官方帳號」文案誤導**。畫面說的是「平台沒有配對紀錄」，不是「這個人沒加好友」。
+  已經加了好友但還沒配對的人看到這句，只會以為自己加錯了。應改成「尚未與平台配對」之類的說法。
+
+- `[ ]` **設錯社的 OA 帳號無法從畫面移除**。`configure_line_oa` 支援 `disabled` 狀態，但後台沒有
+  對應的操作，設錯社之後那筆資料只能留著（沒有對應環境變數，所以會 fail closed，不會誤送）。
+
 - `[ ]` **旗標 CLI 不認得三個已上線的 rollback key**：`birthday_wishes_v1`、`message_board_v1`、
   `archive_handover_v1` 不在 `scripts/set-feature-flags.mjs` 的 `IMPLEMENTED` 裡，
   所以**沒辦法用這支受保護的 CLI 回滾留言板、文件中心或生日 V1**。
