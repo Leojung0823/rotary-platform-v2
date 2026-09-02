@@ -242,6 +242,13 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 #### 設定時發現的缺口 `[ ]`
 
+- `[ ]` **旗標 CLI 不認得三個已上線的 rollback key**：`birthday_wishes_v1`、`message_board_v1`、
+  `archive_handover_v1` 不在 `scripts/set-feature-flags.mjs` 的 `IMPLEMENTED` 裡，
+  所以**沒辦法用這支受保護的 CLI 回滾留言板、文件中心或生日 V1**。
+  直接加進 `IMPLEMENTED` 會連帶讓 `--all-implemented` 把它們打開，那是「開啟」不是「可回滾」，
+  兩件事需要分開的分類才對。`feature-flag-cli-security.test.ts` 已把這三個記成已知缺口，
+  新增第四個沒登記的 key 會讓測試失敗。
+
 - `[ ]` **後台沒有顯示該社要設定的環境變數名稱**。`/clubs/{clubId}/line-oa` 只說「由各社專屬的
   server environment key 讀取」，但沒有顯示是哪一個 key，設定的人得自己從 club code 推算
   （`LINE_OA_<CLUB_CODE 大寫、非英數字換底線>_CHANNEL_ACCESS_TOKEN` 與 `_CHANNEL_SECRET`）。
