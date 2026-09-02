@@ -12,6 +12,8 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 const successMessages: Record<string, string> = {
   event_created: "活動草稿已建立，確認內容後即可發布。",
   event_published: "活動已發布，社員現在可以報名。",
+  event_published_line_failed:
+    "活動已發布，社員現在可以報名；但 LINE 推播沒有成功，請到 LINE OA 的推播紀錄確認。",
   event_cancelled: "活動已取消並留下稽核紀錄。",
 };
 

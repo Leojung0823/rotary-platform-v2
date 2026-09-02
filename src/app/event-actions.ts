@@ -12,6 +12,8 @@ import {
   validateEventCreateForm,
 } from "@/lib/events/validation";
 import { COVER_BUCKET } from "@/lib/events/cover-image";
+import { pushPublishedEventToLine } from "@/lib/line/event-push";
+import type { MessagePushOutcome } from "@/lib/line/message-push-outcome";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -221,9 +223,21 @@ export async function publishEventAction(formData: FormData) {
     p_event_id: eventId,
   });
   if (error) redirect(eventPath(clubId, "error", mapEventError(error.message), mode));
+
+  // The event is published either way. A failed push is reported as a different
+  // success code, never as a failed publish -- an officer told the publish
+  // failed would try again and the second attempt would be refused anyway.
+  const linePush = await pushPublishedEventToLine({ supabase, clubId, eventId })
+    .catch((): MessagePushOutcome => ({ status: "failed", reason: "unexpected" }));
+
   revalidatePath("/events");
   revalidatePath(`/clubs/${clubId}/events`);
-  redirect(eventPath(clubId, "success", "event_published", mode));
+  redirect(eventPath(
+    clubId,
+    "success",
+    linePush.status === "failed" ? "event_published_line_failed" : "event_published",
+    mode,
+  ));
 }
 
 export async function cancelEventAction(formData: FormData) {
