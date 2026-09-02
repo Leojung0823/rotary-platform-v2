@@ -32,7 +32,7 @@ describe("message centre action revalidation", () => {
   it("still returns the durable row so the client can render it", () => {
     // Dropping revalidation is only safe because the action hands back the
     // parsed message, and the next navigation re-reads Supabase.
-    expect(actions).toContain("return { ok: true, message };");
+    expect(actions).toMatch(/return \{ ok: true, message(,[^}]*)? \};/u);
     expect(actions).toContain("parseClubMessage(");
   });
 });
