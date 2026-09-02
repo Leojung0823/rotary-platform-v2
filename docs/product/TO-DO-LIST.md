@@ -242,6 +242,19 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 #### 設定時發現的缺口 `[ ]`
 
+- `[ ]` **webhook 冪等的 payload hash 會把合法重送誤判成竄改**。
+  `claim_line_webhook_event` 比對的 `payload_hash` 是**整個 request body** 的 SHA-256，
+  但 LINE 重送同一個事件時會帶 `deliveryContext.isRedelivery: true`（原本是 `false`），
+  body 因此不同、hash 也不同，同一個 `webhookEventId` 會撞上
+  `webhook_event_payload_mismatch` 並回 409。
+
+  影響範圍有限：事件完全沒送達時（Render 冷啟動逾時）重送仍會成功，那是重送的主要價值；
+  只有「送達但處理失敗」的事件救不回來，而那種情況不開重送也一樣救不回來。
+  所以 staging 已開啟 LINE 的 webhook 重送。
+
+  正確做法是 hash 時排除 `deliveryContext`，或改成只比對事件本身的內容，
+  讓「同一事件的重送」與「同一 event id 但內容被竄改」能分辨開來。
+
 - `[x]` **Follower 表格沒有配對控制項**（2026-09-03 已修）。webhook 送進來的 follower 是未配對的，
   但那一列只有「解除 OA 配對」，而表格把 OA userId 截斷顯示，所以幹部得回 LINE Console 抄完整
   ID 才配得了。現在未配對的列可以直接下拉選社員完成配對；完整 ID 本來就在伺服器端，不用新增 migration。
