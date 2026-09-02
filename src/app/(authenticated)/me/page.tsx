@@ -48,9 +48,10 @@ export default async function IdentityCenterPage({
   const [query, identity] = await Promise.all([searchParams, requireIdentity()]);
   // Both are request-cached and already resolved by the shell, so this costs
   // no additional round trip.
-  const [attendance, blessingIou] = await Promise.all([
+  const [attendance, blessingIou, lineOaOnboarding] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "attendance_ui_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "line_oa_onboarding_v1", subjectUuid: identity.id }),
   ]);
   const supabase = await createClient();
   const selectedLedgerClub = typeof query.clubId === "string" && uuidPattern.test(query.clubId)
@@ -106,6 +107,17 @@ export default async function IdentityCenterPage({
       <Card><span className="metric-label">LINE Login</span><strong className="metric-value metric-text">{center.line_identity?.status === "active" ? "已綁定" : "未綁定"}</strong></Card>
       <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>
     </div>
+
+    {lineOaOnboarding.enabled && <Card>
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">本社 LINE 官方帳號</p>
+          <h2>LINE 通知連接</h2>
+        </div>
+        <Link className="button button-secondary" href="/me/line-oa">查看各社狀態</Link>
+      </div>
+      <p>加入目前社別的官方帳號，並確認是否已連接到您的社員身份。</p>
+    </Card>}
 
     {ledger?.selected_club_id && ledger.totals && <Card className="identity-ledger-card">
       <div className="section-heading">

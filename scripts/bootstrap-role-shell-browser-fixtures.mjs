@@ -361,9 +361,25 @@ async function configureLineOaFixture({ clubId, email }) {
     p_display_name: "本機測試 OA",
     p_basic_id: "@e2e-rotary",
     p_channel_id: "0000000000",
+    p_mode: "active",
   });
   if (error) fail("LINE OA fixture configuration did not succeed");
   await officer.auth.signOut();
+
+  const account = await admin.from("line_oa_accounts")
+    .select("id")
+    .eq("club_id", clubId)
+    .eq("account_status", "active")
+    .single();
+  if (account.error || !account.data) fail("LINE OA fixture account lookup did not succeed");
+  const verification = await admin.rpc("record_line_oa_account_identity_verification", {
+    p_line_oa_account_id: account.data.id,
+    p_basic_id: "@e2e-rotary",
+    p_bot_user_id: "U-e2e-rotary-bot",
+  });
+  if (verification.error || verification.data !== true) {
+    fail("LINE OA fixture identity verification did not succeed");
+  }
 }
 
 async function addBlessingIouLedgerFixture({ clubId, email }) {

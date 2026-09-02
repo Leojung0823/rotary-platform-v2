@@ -200,6 +200,7 @@ export default async function DashboardPage({
     messageCenterEvaluation,
     birthdayCollectionEvaluation,
     archiveHandoverEvaluation,
+    lineOaOnboardingEvaluation,
   ] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_context_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
@@ -208,6 +209,7 @@ export default async function DashboardPage({
     evaluateCurrentFeatureFlag({ key: "announcements_v09", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_collection_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "archive_handover_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "line_oa_onboarding_v1", subjectUuid: identity.id }),
   ]);
   if (!evaluation.enabled) {
     void contextPromise;
@@ -246,6 +248,7 @@ export default async function DashboardPage({
           activeClub={activeClub}
           blessingIouEnabled={blessingIouEvaluation.enabled}
           messageCenterEnabled={messageCenterEvaluation.enabled}
+          lineOaOnboardingEnabled={lineOaOnboardingEvaluation.enabled}
         />;
       }
     }

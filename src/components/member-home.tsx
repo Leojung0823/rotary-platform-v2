@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Badge, Card, Notice } from "@/components/ui";
+import {
+  MemberLineOaOnboarding,
+  MemberLineOaOnboardingLoading,
+} from "@/components/member-line-oa-onboarding";
 import type { Identity } from "@/lib/auth";
 import type { ClubContext } from "@/lib/experience-context";
 import {
@@ -167,13 +171,18 @@ export function MemberHome({
   activeClub,
   blessingIouEnabled = false,
   messageCenterEnabled = false,
+  lineOaOnboardingEnabled = false,
 }: {
   identity: Identity;
   activeClub: Pick<ClubContext, "clubId" | "clubCode" | "clubName">;
   blessingIouEnabled?: boolean;
   messageCenterEnabled?: boolean;
+  lineOaOnboardingEnabled?: boolean;
 }) {
   return <div className={`page-stack ${styles.memberHome}`}>
+    {lineOaOnboardingEnabled && <Suspense fallback={<MemberLineOaOnboardingLoading />}>
+      <MemberLineOaOnboarding clubId={activeClub.clubId} />
+    </Suspense>}
     <header className="page-header">
       <div>
         <p className="eyebrow">社員首頁 · {activeClub.clubCode}</p>

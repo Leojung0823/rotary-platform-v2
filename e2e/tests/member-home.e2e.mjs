@@ -29,6 +29,11 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const memberPage = await memberContext.newPage();
     await login(memberPage, "e2e-shell-ordinary@example.test");
+    await expect(memberPage.getByRole("heading", { name: "加入「本機 Shell 社員社」LINE 官方帳號" })).toBeVisible();
+    await expect(memberPage.getByRole("link", { name: "加入本社 LINE" })).toHaveAttribute(
+      "href",
+      "https://line.me/R/ti/p/%40e2e-rotary",
+    );
     await expect(memberPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
     await expect(memberPage.getByRole("heading", { name: "本機社員首頁例會" })).toBeVisible();
     await memberPage.getByRole("link", { name: "前往簽到" }).click();
@@ -62,6 +67,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
   }
 
   await login(page, "e2e-shell-ordinary@example.test");
+  await expect(page.getByRole("heading", { name: "加入「本機 Shell 社員社」LINE 官方帳號" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(1);
   if (testInfo.project.name === "member-home-320") await expectNoHorizontalOverflow(page);
