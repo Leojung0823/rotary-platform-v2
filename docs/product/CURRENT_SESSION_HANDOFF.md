@@ -29,8 +29,14 @@ LINE Developers Console 的 `Use webhook`，以及 LINE Official Account Manager
 POST：回 `401 invalid_signature` 就代表路由、OA 帳號與 channel secret 環境變數全部正確，
 問題在 LINE 端；回 `503 webhook_not_configured` 才是環境變數名稱不對。
 
-**仍未驗收**：活動發布推播（`20260902000400`）尚未在真實環境送過；多收件人分批、
-額度上限與 429 的行為也還沒遇過。
+**活動發布推播也已驗收（2026-09-03）**：發布活動後，「【新活動】…」的推播實際送達手機。
+四條路徑（真實 Messaging API、訊息中心公告、活動發布、webhook follow 事件）都有真實送達證據。
+
+**仍未驗收**：
+- 自動配對（`line_oa_auto_pairing_v1`）是否真的靠 LINE Login identity 對上，尚未確認；
+  驗收時的 follower 也可能是用後台新的下拉配對完成的。要確認就需要一位**用 LINE Login 登入過**
+  的社員加入官方帳號，看名字是否自動出現。
+- 多收件人的 multicast 分批（超過 500 位）、月額度上限與 429 的行為，都還沒在真實環境遇過。
 
 ### 部署過程中的兩個真實教訓
 
