@@ -142,4 +142,43 @@ describe("deployment environment validation", () => {
     });
     expect(JSON.stringify(report)).not.toContain(secret);
   });
+
+  it("requires paired LINE OA credentials before the live Messaging API is used", () => {
+    const liveOa = { ...stagingEnvironment, LINE_OA_MODE: "line" };
+    expect(inspectDeploymentEnvironment(liveOa).errors).toContain("LINE_OA_CHANNEL_ACCESS_TOKEN_REQUIRED");
+
+    const tokenOnly = { ...liveOa, LINE_OA_RC_TAIPEI_CHANNEL_ACCESS_TOKEN: "a".repeat(40) };
+    expect(inspectDeploymentEnvironment(tokenOnly).errors).toContain("LINE_OA_CHANNEL_SECRET_REQUIRED");
+
+    const shortToken = {
+      ...liveOa,
+      LINE_OA_RC_TAIPEI_CHANNEL_ACCESS_TOKEN: "short",
+      LINE_OA_RC_TAIPEI_CHANNEL_SECRET: "b".repeat(32),
+    };
+    expect(inspectDeploymentEnvironment(shortToken).errors).toContain("LINE_OA_CHANNEL_ACCESS_TOKEN_INVALID");
+
+    const paired = {
+      ...liveOa,
+      LINE_OA_RC_TAIPEI_CHANNEL_ACCESS_TOKEN: "a".repeat(40),
+      LINE_OA_RC_TAIPEI_CHANNEL_SECRET: "b".repeat(32),
+    };
+    const report = inspectDeploymentEnvironment(paired);
+    expect(report.errors).toEqual([]);
+    expect(report.warnings).not.toContain("STAGING_LINE_OA_IS_MOCK");
+  });
+
+  it("keeps mock mode free of live credential requirements", () => {
+    expect(inspectDeploymentEnvironment(stagingEnvironment).errors).toEqual([]);
+  });
+
+  it("does not report club codes or credential values", () => {
+    const report = inspectDeploymentEnvironment({
+      ...stagingEnvironment,
+      LINE_OA_MODE: "line",
+      LINE_OA_RC_TAIPEI_CHANNEL_ACCESS_TOKEN: "token-value-that-must-not-leak",
+    });
+    const rendered = JSON.stringify(report);
+    expect(rendered).not.toContain("RC_TAIPEI");
+    expect(rendered).not.toContain("token-value-that-must-not-leak");
+  });
 });

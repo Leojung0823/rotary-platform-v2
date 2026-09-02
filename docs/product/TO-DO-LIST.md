@@ -16,6 +16,10 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 本輪管理模式分離已在隔離分支完成程式搬遷，本機資料庫、GitHub CI、完整 Browser Smoke 與兩個失敗案例回歸均通過；
 staging 驗收與部署仍待完成。
 
+本輪新增 LINE OA 訊息推播的工作：既有的手動推播、webhook 驗章與推播紀錄都已在 `main`，
+但 `LINE_OA_MODE` 一直是 `mock`，真實 Messaging API 從未送出過訊息。本輪先補真實模式的
+錯誤分類、逾時、multicast 分批、憑證環境檢查與部署檢查表；憑證與 hosted 驗收仍待外部條件。
+
 目前權威來源是 GitHub `main`；staging `/api/health`
 於 2026-08-31 掃描通過，執行版本已透過 plan `33403385635`／Go-Live `33403560211` 更新為
 `9a0b0fcb959c2c9398c70e133ef5b04880998f16`，與當時的 `main` 一致。本輪的 Auth 設定同步修復、功能目錄與
@@ -164,6 +168,83 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
 
+### LINE OA 訊息推播（真實 Messaging API）`[>]`
+
+產品決定（2026-09-02）：本輪先把**真實 Messaging API 接通**，事件驅動推播、Flex 圖文與 webhook
+自動配對排在後面。憑證狀態：已有 LINE OA 帳號，channel access token／secret **尚未取得**，
+所以本輪只做「不需要憑證就能完成」的程式、測試與文件，hosted 驗收留待憑證到位。
+**下面「本輪要做」的九項程式與文件已完成**，憑證與 hosted 驗收仍未完成。
+
+#### 現況（已在 `main`，不是待辦）
+
+- `src/lib/line/messaging.ts`：broadcast／multicast／push／reply 與 webhook HMAC-SHA256 驗章。
+- `/clubs/[clubId]/line-oa`：OA 設定、webhook URL、手動配對 follower、手動發送純文字訊息
+  （可用標籤／社員鎖定對象，經 `resolve_club_audience`）、推播紀錄。
+- `/api/line-oa/webhook/[clubId]`：驗章、256KB／100 events／120 req-per-min 上限與冪等。
+- `record_line_push` RPC 需要 `oa.manage`，並寫入 `line_push_logs` 與 `audit_logs`。
+- 各社憑證只從 server 環境變數讀取，key 命名為
+  `LINE_OA_<CLUB_CODE>_CHANNEL_ACCESS_TOKEN` 與 `LINE_OA_<CLUB_CODE>_CHANNEL_SECRET`，不入庫、不進瀏覽器。
+
+**但 `LINE_OA_MODE` 預設 `mock`，staging 也是 `mock`；真實 Messaging API 從未實際送出過任何一則訊息。**
+`/api/health` 目前的 `DEPLOYMENT_WARNING` 就是由 `deployment-env.mjs` 的 `STAGING_LINE_OA_IS_MOCK` 產生。
+
+#### 本輪已完成（不需要憑證）`[x]`
+
+1. `[x]` **真實模式的錯誤分類**。原本非 2xx 一律 `throw`，全部記成 `provider_error`。
+   現在分成 `credentials_rejected`（401／403）、`rate_limited`（429，保留 `Retry-After`）、
+   `request_rejected`（其他 4xx）、`provider_unavailable`（5xx）與 `provider_timeout`，
+   並寫進 `line_push_logs.failure_code` 與後台的錯誤提示。
+2. `[x]` **fetch 逾時**。對 `api.line.me` 的請求加上 10 秒 `AbortSignal.timeout`，
+   provider 不回應時不再讓 server action 一直掛著。
+3. `[x]` **multicast 分批**。單次最多 500 個 userId（`MULTICAST_RECIPIENT_LIMIT`），
+   超過會自動分批；先前超過 500 位已配對社員的社整批會被 LINE 退回。
+4. `[x]` **重試沿用同一個 `x-line-retry-key`**。429／5xx／逾時會重試一次，
+   同一批用同一個 retry key，所以重試不會造成重複發送；不可恢復的 4xx 不重試。
+   憑證被拒或達到額度上限時會停止剩下的批次，不再把配額打完。
+5. `[x]` **部分成功的紀錄方式**。`line_push_logs.delivery_status` 仍只有
+   `queued`／`sent`／`failed`／`mocked`，改以 `payload_summary` 記錄
+   `batch_count`／`sent_batch_count`／`delivered_recipient_count`。**沒有新增 migration。**
+6. `[x]` **`deployment-env.mjs` 補憑證檢查**。`LINE_OA_MODE=line` 時要求
+   `LINE_OA_<CLUB_CODE>_CHANNEL_ACCESS_TOKEN` 與對應的 `_CHANNEL_SECRET` 成對存在且長度合理；
+   檢查結果不會回報社代碼或憑證值。mock 模式不受影響。
+7. `[x]` **真實模式的 localhost 防呆**。`NEXT_PUBLIC_SITE_URL` 指向 `localhost`／`127.0.0.1` 時
+   拒絕呼叫真實 API，避免開發機把真實訊息送給真實社員（mock 的 local-only 檢查的鏡像）。
+8. `[x]` **收斂兩條重複的推播路徑**。新增 `src/lib/line/oa-dispatch.ts`，
+   `src/app/line-oa-actions.ts` 與 `src/app/api/v1/[...path]/route.ts` 共用同一套
+   帳號／follower／憑證載入、送出與推播紀錄組裝；邊界測試會擋住任一方再直接呼叫
+   `sendLineOaMessage` 或 `readServerSecret`。
+9. `[x]` **測試與文件**。`messaging.test.ts` 補 10 個案例（分類、分批、重試同 key、
+   不重試 4xx、逾時、access token 不外流）；`oa-dispatch.test.ts` 補紀錄組裝與共用邊界；
+   `deployment-env.test.ts` 補憑證成對檢查與不洩漏社代碼。文件新增
+   [`LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md`](../mvp/LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md)。
+
+#### 需要外部條件，本輪不能做
+
+- `[ ]` 取得該社的 **channel access token 與 channel secret**（LINE Developers Console → Messaging API channel）。
+- `[ ]` 在 **LINE Developers Console 設定 webhook URL** 為
+  `<站台>/api/line-oa/webhook/<clubId>` 並啟用 webhook、關閉自動回覆訊息。
+  依 `AGENTS.md` 第 2 節，**更動 LINE channel 設定需要事先取得你的同意**，我不會自己動。
+- `[ ]` 在 Render staging 設定 `LINE_OA_MODE=line` 與該社的兩個環境變數，重新部署。
+- `[ ]` **staging 真實推播驗收**：對測試 follower 送一則訊息，確認實際收到、推播紀錄為 `sent`、
+  有 provider request id，且 `/api/health` 不再出現 `STAGING_LINE_OA_IS_MOCK` 警告。
+- `[ ]` 確認你所在區域與方案的**每月推播額度**與超額行為，決定超額時要擋下還是照送。
+- `[ ]` **production 憑證**：`deployment-env.mjs` 已強制 production 必須是 `LINE_OA_MODE=line`，
+  沒有 production 憑證就無法部署 production。
+
+#### 本輪驗證
+
+typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify:db`（47 份、exit 0、
+沒有新增 migration）、`check:migrations`、`check:db-verifications`、`git diff --check` 全部通過；
+完整本機 Playwright 170 passed、33 刻意 skip、0 failed，`line-oa-audience` 在重新 build 後再跑 2 passed。
+第一輪的 6 個失敗是啟動時缺 `E2E_ADMIN_EMAIL`／`E2E_ADMIN_PASSWORD`，補上後 8 passed、2 skipped。
+
+#### 本輪明確不做（已排序在後）
+
+- `[ ]` 事件驅動自動推播：訊息中心公告、活動通知、生日祝福徵集邀請自動推 LINE。
+  需要另做社員 opt-in 偏好、冪等鍵與「站內＋LINE 不重複打擾」規則。
+- `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
+- `[ ]` webhook `follow` 事件自動配對 follower，減少後台手動輸入 OA userId。
+
 ### M1 五位使用者形成性測試 `[ ]`
 
 需要安排實際社員／幹部測試，不以自動化測試代替產品訪談與觀察。
@@ -204,6 +285,13 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
 4. 安排 iOS Safari、Android Chrome 實機驗收，以及 M1 五位目標使用者形成性測試。實機驗收應一併涵蓋訊息中心。
 5. 另行決定是否對 production 開啟 `announcements_v09`；staging 已開啟不代表 production 已公開。
+
+6. **LINE OA 訊息推播接上真實 Messaging API** `[ ]`（2026-09-02 起進行中）
+
+   產品決定先做這一段，事件驅動推播、Flex 圖文與 webhook 自動配對排在後面。
+   完整項目見上面的〈LINE OA 訊息推播（真實 Messaging API）〉。程式與文件不需要憑證即可完成；
+   staging 真實推播驗收要等 channel access token／secret 到位，且 LINE Console 的 webhook
+   設定需要另外取得同意才會動。
 
 已結案、不在下一步內：staging Management API token 已修復且 Auth 設定同步通過（run `33400262734`）；
 recovery email 範本與 custom SMTP 已由產品決定擱置；GPS accuracy 政策已決定不設門檻；
