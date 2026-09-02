@@ -2,14 +2,14 @@
 
 建立日期：2026-09-01（Asia/Taipei）
 修訂：v2.1.2，2026-09-02（補記 Browser Smoke 回歸修正與本機驗收）
-狀態：`[>]` 程式搬遷、本機資料庫驗證與兩項失敗案例回歸已完成；待 GitHub 自動檢查、staging 驗收與發布
+狀態：`[>]` 程式搬遷、本機資料庫驗證與 GitHub CI／Browser Smoke 已完成；待 staging 驗收與發布
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次掃描基準：`origin/main@9db87125e56f76f91d8195872ff589eeeba71914`
+本次掃描基準：`origin/main@3a430687837f0d00cf3cc64053c7d7e08b4fbf9f`
 
 > 本版已同步為 repository 內的唯一權威企劃；下載資料夾的原檔僅作為本次規格輸入。
 > 程式搬遷與本機回歸在隔離分支完成，外部驗收尚未宣稱通過；不得把未執行的資料庫或瀏覽器驗收寫成完成。
 >
-> 本次實作分支：`codex/management-mode-separation`；本輪修正須通過 GitHub 自動檢查後，才進入 staging 驗收。
+> 本次實作分支：`codex/management-mode-separation`；本輪修正已通過 GitHub 自動檢查，下一步進入 staging 驗收。
 
 > 先讀根目錄 `AGENTS.md`，特別是第 5 節「安全邊界」。本企劃**只動呈現層**，
 > 不動權限模型，也不新增 migration。若第 0 階段發現必須新增 migration，
@@ -476,7 +476,7 @@ Browser Smoke；階段 4 若執行也同樣跑一次。會改資料的瀏覽器�
 - 封存上傳實際成功，但檔名和版本資訊共用同一個文字節點，精準檔名 locator 找不到；現在檔名有獨立的 `span`。
 
 修正後以 `localhost:3000`、單一 worker 重跑兩個失敗案例：生日徵集通過（21.1 秒），執行秘書文件建立／編輯／上傳通過（2.7 秒）。
-完整 Browser Smoke 尚待這次修正同步後由 GitHub workflow 自動驗證；本輪沒有手動 dispatch。
+完整 Browser Smoke `33614549502` 已通過；本輪沒有手動 dispatch，結果由推送後的 GitHub workflow 自動產生。
 
 ## 12. 驗收條件
 

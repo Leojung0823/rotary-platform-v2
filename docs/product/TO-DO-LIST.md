@@ -13,8 +13,8 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心與生日祝福徵集程式已完成，PR #77 已合併，出席日期修正 PR #86 也已合併。
-本輪管理模式分離已在隔離分支完成程式搬遷，本機資料庫與兩個 Browser Smoke 失敗案例回歸均通過；完整 GitHub
-自動檢查、staging 驗收與部署仍待完成。
+本輪管理模式分離已在隔離分支完成程式搬遷，本機資料庫、GitHub CI、完整 Browser Smoke 與兩個失敗案例回歸均通過；
+staging 驗收與部署仍待完成。
 
 目前權威來源是 GitHub `main`；staging `/api/health`
 於 2026-08-31 掃描通過，執行版本已透過 plan `33403385635`／Go-Live `33403560211` 更新為
@@ -199,8 +199,8 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
    本輪本機驗證：108 個測試檔、683 tests passed；lint、typecheck、build、migration／verification manifest
    檢查、`npm run verify:db` 與 E2E 語法／清單檢查通過。先前 Browser Smoke 的生日題庫與執秘文件上傳失敗案例，
-   已用 `localhost:3000` 在本機回歸通過；完整 Browser Smoke、staging 執行秘書驗收與效能 TTFB 尚未完成。程式目前在隔離分支
-   `codex/management-mode-separation`，待 GitHub 自動檢查與外部驗收後才可標記 `[x]`。
+   已用 `localhost:3000` 在本機回歸通過；完整 Browser Smoke `33614549502` 與 GitHub CI 已通過，staging 執行秘書驗收與效能 TTFB 尚未完成。程式目前在隔離分支
+   `codex/management-mode-separation`，待 staging 外部驗收後才可標記 `[x]`。
 
 4. 安排 iOS Safari、Android Chrome 實機驗收，以及 M1 五位目標使用者形成性測試。實機驗收應一併涵蓋訊息中心。
 5. 另行決定是否對 production 開啟 `announcements_v09`；staging 已開啟不代表 production 已公開。
@@ -221,12 +221,12 @@ draft PR #40 已關閉，分支保留；生日派發的權限與提前一個月�
 - `git diff --check`：passed。
 - E2E `node --check` 與 Playwright `--list`：passed，207 tests discovered。
 - `npm run verify:db`：本機 reset、schema lint 與全部 47 份 verification SQL 均通過；schema lint 只有既有 3 個 warning。
-- 本機針對先前 Browser Smoke 兩個失敗案例的回歸均通過；本輪沒有手動 dispatch CI／Browser Smoke，完整 workflow、staging acceptance 與部署仍待完成。
+- 本機針對先前 Browser Smoke 兩個失敗案例的回歸均通過；GitHub CI 與完整 Browser Smoke `33614549502` 已通過（本輪沒有手動 dispatch），staging acceptance 與部署仍待完成。
 
 以上程式與資料庫結果為既有驗證證據；current-main 的 Staging Go-Live run `33121275958` 已完成
 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。現在 `/api/health` 仍回報
 staging runtime `26520424b415`，而主線可能已在文件合併後前進；生日 V2／徵集 hosted acceptance `33345182984`
 與 protected scheduler `33361427466` 是針對前一個已部署程式版本的成功證據。不能把文件或主線 merge SHA
 誤當成 staging runtime revision，也不能用歷史失敗 run 取代最新成功結果。
-瀏覽器本機驗收已在本機 Supabase 與 `localhost:3000` 完成兩個失敗案例回歸，但不能代替完整 Browser Smoke 或 staging
+瀏覽器本機驗收已在本機 Supabase 與 `localhost:3000` 完成兩個失敗案例回歸，GitHub 完整 Browser Smoke 也已通過；仍不能代替 staging
 執行秘書驗收。production 不在本輪範圍。
