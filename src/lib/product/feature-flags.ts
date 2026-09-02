@@ -17,6 +17,8 @@ export const featureFlagKeys = [
   "birthday_wishes_collection_v1",
   "message_board_v1",
   "archive_handover_v1",
+  "line_oa_auto_pairing_v1",
+  "line_oa_event_push_v1",
 ] as const;
 
 export type FeatureFlagKey = (typeof featureFlagKeys)[number];
