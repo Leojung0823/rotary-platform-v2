@@ -30,6 +30,11 @@ describe("club input validation", () => {
 describe("safe error and redirect handling", () => {
   it("maps database details to stable UI codes", () => {
     expect(mapDatabaseError("active_member_cannot_be_operator")).toBe("member_conflict");
+    // The pairing failure has to survive the generic rules that follow it:
+    // "required" and "P0002" would both turn it into a message that does not
+    // tell an officer to save the OA settings first.
+    expect(mapDatabaseError("oa_or_member_not_found")).toBe("oa_or_member_not_found");
+    expect(safeMessage("oa_or_member_not_found")).toContain("OA 設定");
     expect(mapDatabaseError("cannot_revoke_last_active_operator")).toBe("last_operator");
     expect(mapDatabaseError("account_not_in_club")).toBe("line_unbind_membership_mismatch");
     expect(mapDatabaseError("invalid_club_name")).toBe("invalid_club_name");

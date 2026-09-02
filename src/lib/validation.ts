@@ -130,6 +130,8 @@ export function safeMessage(code?: string): string | null {
     password_signin_failed: "平台帳號已建立，但登入未完成。請使用忘記密碼重新設定後登入。",
     member_exists: "這位社員已存在於扶輪社。",
     oa_not_configured: "請先完成 LINE Official Account 設定。",
+    oa_or_member_not_found:
+      "本社尚未儲存 LINE OA 設定，或這位社員不在本社。請先在上方「OA 設定」儲存後再配對。",
     unexpected: "操作未完成，請稍後再試。",
   };
   return messages[code] ?? messages.unexpected;
@@ -151,6 +153,9 @@ export function mapDatabaseError(message: string): string {
   if (message.includes("password_login_required")) return "password_login_required";
   if (message.includes("line_identity_already_bound") || message.includes("account_already_has_another_line_identity")) return "line_identity_conflict";
   if (message.includes("account_not_in_club")) return "line_unbind_membership_mismatch";
+  // Checked before the generic "required"/"P0002" rules below, which would
+  // otherwise swallow it into a message that does not say what to do.
+  if (message.includes("oa_or_member_not_found")) return "oa_or_member_not_found";
   if (message.includes("required") || message.includes("42501")) return "forbidden";
   if (message.includes("already_exists") || message.includes("23505")) return "duplicate";
   if (message.includes("active_member")) return "member_conflict";
