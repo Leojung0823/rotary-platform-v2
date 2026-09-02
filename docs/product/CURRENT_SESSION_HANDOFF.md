@@ -5,8 +5,8 @@
 
 ## 幹部功能收斂到管理模式（2026-09-02）
 
-本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.4 實作，程式已同步至
-`main@56db4f617159e8dcf8db680ce7ab21af2e2462c3`；本機與 GitHub 回歸、一般 staging Go-Live，以及執行秘書 staging 專項 hosted acceptance 均已完成。使用者要求
+本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.5 實作，管理模式 runtime 已在
+`main@9291584016ba0fb091f0115d5022d7bc0855834c` 部署並完成 staging 驗收；本機與 GitHub 回歸、一般 staging Go-Live，以及執行秘書 staging 專項 hosted acceptance 均已完成。使用者要求
 本輪不手動 dispatch CI 與 Browser Smoke；兩者由同步到 `main` 後的既有 workflow 自動驗證。
 
 已完成的程式範圍：
@@ -56,12 +56,12 @@ E2E node --check / Playwright --list passed; 207 tests discovered
 均通過；schema lint 的 3 個既有 warning 未新增。本輪兩個 Browser Smoke 失敗案例已在本機回歸通過，完整
 Browser Smoke `33614549502` 也已通過。新增驗收流程的 Staging Release `33634864876` 與 Staging Go-Live `33635029050` 已以
 exact SHA `fe1a5cf1392f3eecb4411d1bac74c68e467cfeb5` 完成，staging health revision `fe1a5cf1392f`、`issues=[]`，
-一般 hosted 社員驗收通過。其後最新的 Staging Release `33635527193`、Staging Go-Live `33635621097` 與執行秘書專項
-`Staging Management Acceptance` `33638696189` 均以 exact SHA `56db4f617159e8dcf8db680ce7ab21af2e2462c3` 完成；health
-revision `56db4f617159`、`issues=[]`。執行秘書 hosted acceptance 已驗證無社籍 operator 可完成生日重跑與文件建立／上傳／編輯，且沒有執行不可逆交接確認。效能 TTFB 仍未量測；活動／活動封面仍待 staging 端到端驗收。
+一般 hosted 社員驗收通過。其後最新的 Staging Release `33639237610`、Staging Go-Live `33639395650` 與執行秘書專項
+`Staging Management Acceptance` `33639758501` 均以 exact SHA `9291584016ba0fb091f0115d5022d7bc0855834c` 完成；health
+revision `9291584016ba`、`issues=[]`。執行秘書 hosted acceptance 已驗證無社籍 operator 可完成生日重跑與文件建立／上傳／編輯，且沒有執行不可逆交接確認。效能 TTFB 仍未量測；活動／活動封面仍待 staging 端到端驗收。
 
 已新增並部署 `.github/workflows/staging-management-acceptance.yml` 與 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md)。GitHub `staging` environment 的
-`STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD` 已設定；只確認 secret 名稱存在，不讀取或記錄值。workflow `33638696189` 已通過，因此第 11.2 節的生日／文件執行秘書 hosted acceptance 已完成。
+`STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD` 已設定；只確認 secret 名稱存在，不讀取或記錄值。workflow `33639758501` 已通過，因此第 11.2 節的生日／文件執行秘書 hosted acceptance 已完成。
 
 ## 生日祝福派發修復（2026-09-01）
 
