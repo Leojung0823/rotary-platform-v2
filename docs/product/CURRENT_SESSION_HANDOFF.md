@@ -34,9 +34,28 @@ follower 排在後面。憑證狀態：已有 LINE OA 帳號，**channel access 
 - 新增 [`LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md`](../mvp/LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md)；
   先前只有 LINE Login 的檢查表。
 
+### staging 已切換到真實 Messaging API（2026-09-02）
+
+使用者已在 Render staging 設定 `LINE_OA_MODE=line` 與該社的 channel access token／channel secret。
+Plan `33642182951`（sha `338c50c`）與 Go-Live `33644157634` 都已成功，staging 執行版本為
+`338c50ca22ce`。部署後健康檢查：
+
+```json
+{"status":"ok","revision":"338c50ca22ce","checks":{"configuration":true,"database":true},
+ "issues":[],"warnings":[]}
+```
+
+`warnings` 為空是這一輪的關鍵證據，它同時說明兩件事：`STAGING_LINE_OA_IS_MOCK` 不再成立，
+所以 staging 確實是 `LINE_OA_MODE=line`；而且 `configuration` 仍為 true，代表本輪新增的憑證檢查
+通過，也就是該社的 `..._CHANNEL_ACCESS_TOKEN` 與 `..._CHANNEL_SECRET` 成對存在且長度合理。
+憑證缺一個的話 `configuration` 會變成 false、`issues` 會出現 `CONFIGURATION_INVALID`。
+
+**但這還不是推播驗收。** 健康檢查只證明設定是通的，沒有證明任何訊息真的送到 LINE。
+仍待：LINE Console 的 webhook 設定、至少一位已配對的 follower，以及實際送出一則訊息。
+
 仍未完成、需要外部條件：
 
-- 取得 channel access token 與 channel secret，並設進 Render staging 的該社環境變數。
+- ~~取得 channel access token 與 channel secret，並設進 Render staging 的該社環境變數。~~ **已完成（2026-09-02）**，見上。
 - 在 LINE Developers Console 設定 webhook URL 與開啟 webhook。依 `AGENTS.md` 第 2 節，
   **更動 LINE channel 設定要先取得使用者同意**，本輪沒有動。
 - staging 真實推播驗收：實際收到訊息、推播紀錄為 `sent` 且有 provider request id、
