@@ -267,8 +267,18 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
   仍待：`npm run verify:db`（等 Codex 讓出本機資料庫）、staging 驗收。
 
-- `[ ]` 事件驅動自動推播的**其餘來源**：活動通知、生日祝福徵集邀請。
-  訊息中心這條已經把資料庫權限、冪等與偏好的模式建立起來，其餘來源照同一套接。
+- `[>]` **活動發布推播已完成**（2026-09-03，分支 `codex/line-oa-event-publish-push`）。
+  掛在 `publish_club_event` 之後而不是建立時 —— 草稿還不是消息。
+  授權用 `event.manage`（發布活動的同一個權限），不是訊息中心的 `member.manage`。
+  收件人尊重活動本身的對象設定（沒有 audience 列＝全社），加上已配對、仍在追蹤、通知開關沒關。
+  `line_push_logs.source_event_id` 有 partial unique index，一場活動只推一次。
+  推播文字帶標題、時間（Asia/Taipei、24 小時制、含星期）與地點；推播失敗只改成另一個成功代碼，
+  不會讓發布變成失敗。
+
+- `[ ]` 事件驅動自動推播的**最後一個來源**：生日祝福徵集邀請。
+  訊息中心與活動這兩條已經把資料庫權限、冪等與偏好的模式建立起來，照同一套接即可。
+  注意生日徵集的通知目前走 `ensure_birthday_wish_collection_notification`（service-role scheduler），
+  沒有登入使用者，所以推播紀錄需要一個 service-role 版本，跟前兩條的 `member.manage`／`event.manage` 不同。
 - `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
 - `[ ]` webhook `follow` 事件自動配對 follower，減少後台手動輸入 OA userId。
 

@@ -48,3 +48,4 @@ supabase/verification/birthday_collection_manager_permissions_security.sql
 supabase/verification/line_oa_push_feature_flags_security.sql
 supabase/verification/line_oa_follow_event_pairing_security.sql
 supabase/verification/line_oa_message_center_push_security.sql
+supabase/verification/line_oa_event_publish_push_security.sql
