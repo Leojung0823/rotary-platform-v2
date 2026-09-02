@@ -3,6 +3,39 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## LINE OA 推播 staging 上線狀態（2026-09-03）
+
+staging 執行版本 `67763b1`，`/api/health` 的 `issues` 與 `warnings` 都是空的。
+
+已經在 staging 生效的：
+
+- 訊息中心公告推播（`20260902000300`）與活動發布推播（`20260902000400`）。
+- follow 事件自動配對（`20260902000200`，Codex 在平行分支完成，已審閱後整合）。
+- 兩個旗標都已由平台管理員透過受保護 CLI 開啟：`line_oa_event_push_v1`、
+  `line_oa_auto_pairing_v1`（CLI 一律送 `rollout=100`、單一環境，正好滿足自動配對要求的全量條件）。
+- Render staging 已設 `LINE_OA_MODE=line`，以及 `LINE_OA_PANCHIAO_ELITE_CHANNEL_ACCESS_TOKEN`
+  與 `LINE_OA_PANCHIAO_ELITE_CHANNEL_SECRET`（社代碼 `PANCHIAO-ELITE`）。
+- **LINE Developers Console 的 webhook 已設定且 Verify 通過。** 這是整輪第一個
+  「LINE 真的和平台講到話」的證據：它同時證明 webhook URL 可達、channel secret 的環境變數
+  名稱與值正確，以及 HMAC-SHA256 驗章整條路可用。
+
+**仍未完成**：實際送出一則 LINE 訊息並由真人收到。follower 配對與端對端推播驗收尚未執行。
+
+### 部署過程中的兩個真實教訓
+
+1. **加 feature flag key 要改六個地方，第七個是 CLI。** `scripts/set-feature-flags.mjs` 有自己的
+   `IMPLEMENTED` 白名單，漏掉時的失敗點是「操作員已經在輸入密碼」，migration 早就部署完了。
+   已補 `feature-flag-cli-security.test.ts` 的防回歸檢查。順帶發現
+   `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 這三個已上線的 rollback key
+   從來沒登記進 CLI，所以**目前無法用受保護 CLI 回滾留言板、文件中心或生日 V1**；已記入 TO-DO。
+
+2. **Go-Live 曾在 `Trigger the protected staging deployment hook` 失敗一次**（run `33658380098`，
+   `STAGING_DEPLOY_HOOK_REQUEST_FAILED`，15 秒逾時），但 `Apply remote migrations` **在那之前已經成功**。
+   結果是資料庫比程式新。這次因為該 migration 純屬新增（可空欄位、index、兩個新 RPC、一個函式替換），
+   舊程式不會呼叫新 RPC，所以是安全的，`/api/health` 也維持正常。
+   用同一組 `expected_sha` 與 `plan_run_id` 重跑 Go-Live（run `33658883276`）即成功；
+   migration 會自動跳過已套用的部分。**這個順序值得記住：migration 先於部署，失敗點在中間時資料庫會領先。**
+
 ## LINE OA 訊息推播接上真實 Messaging API（2026-09-02）
 
 產品決定本輪先把**真實 Messaging API 接通**；事件驅動自動推播、Flex 圖文訊息與 webhook 自動配對
