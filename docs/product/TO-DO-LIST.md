@@ -227,8 +227,10 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 - `[x]` 在 Render staging 設定 `LINE_OA_MODE=line` 與該社的兩個環境變數，重新部署。
   **已完成（2026-09-02）**：Go-Live `33644157634` 後 staging 執行 `338c50ca22ce`，
   `/api/health` 的 `issues` 與 `warnings` 都是空的，代表 mode 已是 `line` 且憑證成對檢查通過。
-- `[ ]` **staging 真實推播驗收**：對測試 follower 送一則訊息，確認實際收到、推播紀錄為 `sent`、
-  有 provider request id，且 `/api/health` 不再出現 `STAGING_LINE_OA_IS_MOCK` 警告。
+- `[x]` **staging 真實推播驗收（2026-09-03 通過）**：webhook 收到 follow 事件、follower 自動
+  出現在後台、訊息中心公告實際送達真人的 LINE。`/api/health` 的 `warnings` 已為空。
+  卡關原因是 LINE Official Account Manager「回應設定」裡的 Webhook 開關預設關閉，
+  而 Developers Console 的 Verify 在它關著時仍會成功。
 - `[ ]` 確認你所在區域與方案的**每月推播額度**與超額行為，決定超額時要擋下還是照送。
 - `[ ]` **production 憑證**：`deployment-env.mjs` 已強制 production 必須是 `LINE_OA_MODE=line`，
   沒有 production 憑證就無法部署 production。

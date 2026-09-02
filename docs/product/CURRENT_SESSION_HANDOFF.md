@@ -19,7 +19,18 @@ staging 執行版本 `67763b1`，`/api/health` 的 `issues` 與 `warnings` 都�
   「LINE 真的和平台講到話」的證據：它同時證明 webhook URL 可達、channel secret 的環境變數
   名稱與值正確，以及 HMAC-SHA256 驗章整條路可用。
 
-**仍未完成**：實際送出一則 LINE 訊息並由真人收到。follower 配對與端對端推播驗收尚未執行。
+**端對端驗收已通過（2026-09-03）**：webhook 收到 follow 事件、follower 自動出現在後台、
+從訊息中心發出的公告實際送達真人的 LINE。這是整段工作第一個真正的送達證據。
+
+過程中 webhook 一直收不到事件，原因是 **LINE 有兩個各自獨立的 webhook 開關**：
+LINE Developers Console 的 `Use webhook`，以及 LINE Official Account Manager
+「回應設定」裡的 Webhook。**後者預設關閉，而且 Developers Console 的 Verify 在它關著時
+依然會成功**，所以 Verify 通過不代表事件會送達。診斷方式是對 webhook 端點送一個簽章錯誤的
+POST：回 `401 invalid_signature` 就代表路由、OA 帳號與 channel secret 環境變數全部正確，
+問題在 LINE 端；回 `503 webhook_not_configured` 才是環境變數名稱不對。
+
+**仍未驗收**：活動發布推播（`20260902000400`）尚未在真實環境送過；多收件人分批、
+額度上限與 429 的行為也還沒遇過。
 
 ### 部署過程中的兩個真實教訓
 
