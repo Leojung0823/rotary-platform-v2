@@ -110,3 +110,32 @@ export function buildPushLogArgs(
     p_failure_code: delivery.status === "failed" ? (delivery.failureCode ?? "provider_error") : null,
   };
 }
+
+/**
+ * The push log arguments for a message centre announcement. The message centre
+ * has its own log RPC, authorised on the message rather than on `oa.manage`, so
+ * the summary is built here rather than reusing the manual-push shape.
+ */
+export function buildMessagePushLogArgs(
+  clubId: string,
+  messageId: string,
+  attemptedRecipientCount: number,
+  text: string,
+  delivery: LineDeliveryResult,
+) {
+  return {
+    p_club_id: clubId,
+    p_message_id: messageId,
+    p_recipient_count: attemptedRecipientCount,
+    p_payload_summary: {
+      message_type: "text",
+      character_count: text.length,
+      batch_count: delivery.batchCount,
+      sent_batch_count: delivery.sentBatchCount,
+      delivered_recipient_count: delivery.deliveredRecipientCount,
+    },
+    p_delivery_status: delivery.status,
+    p_provider_request_id: delivery.requestId ?? null,
+    p_failure_code: delivery.status === "failed" ? (delivery.failureCode ?? "provider_error") : null,
+  };
+}

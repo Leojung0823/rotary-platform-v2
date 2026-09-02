@@ -8,6 +8,7 @@ import {
   withdrawClubMessageAction,
 } from "@/app/message-center-actions";
 import { AudiencePicker, type AudienceMember, type AudienceTag } from "@/components/audience/audience-picker";
+import { describeMessagePushOutcome } from "@/lib/line/message-push-outcome";
 import type {
   ClubMessage,
   MessageDeliveries,
@@ -240,7 +241,7 @@ export function MessageCenter({
     }, ...current]);
     // The counts come from the server on the next load; saying "sent" with a
     // recipient count we made up would be worse than saying nothing.
-    setStateMessage("訊息已送出。重新整理可以看到送達與已讀人數。");
+    setStateMessage(`訊息已送出。重新整理可以看到送達與已讀人數。${describeMessagePushOutcome(result.linePush)}`);
   };
 
   return <div className={styles.center}>
