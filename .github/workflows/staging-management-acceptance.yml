@@ -1,0 +1,100 @@
+name: Staging Management Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Enter the exact 40-character main commit SHA deployed to staging"
+        required: true
+        type: string
+      confirmation:
+        description: "Enter TEST-STAGING-MANAGEMENT"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-management-acceptance
+  cancel-in-progress: false
+
+jobs:
+  acceptance:
+    name: Hosted staging management acceptance
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+    env:
+      STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      STAGING_MANAGEMENT_ACCEPTANCE_CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
+      E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      E2E_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      E2E_REMOTE: "1"
+      E2E_SENSITIVE: "1"
+
+    steps:
+      - name: Check out the exact acceptance revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Validate manual acceptance inputs and protected operator identity
+        env:
+          STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
+          STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+        run: node scripts/verify-staging-management-acceptance-inputs.mjs
+
+      - name: Install isolated browser test dependencies
+        run: npm ci --prefix e2e
+
+      - name: Install Chromium and operating-system dependencies
+        shell: bash
+        run: |
+          # Bound each attempt because the Ubuntu mirror can stall instead of
+          # failing. The runner is ephemeral, so clearing locks is safe here.
+          for attempt in 1 2 3; do
+            if timeout -k 30 240 npm --prefix e2e run install:chromium; then
+              exit 0
+            fi
+            echo "Chromium install attempt ${attempt} failed or stalled; retrying."
+            sudo pkill -9 -x apt-get 2>/dev/null || true
+            sudo pkill -9 -x dpkg 2>/dev/null || true
+            sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock 2>/dev/null || true
+            sudo dpkg --configure -a 2>/dev/null || true
+            sleep 20
+          done
+          echo "Chromium install did not succeed after 3 attempts."
+          exit 1
+
+      - name: Run protected hosted staging management acceptance
+        env:
+          STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
+          STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+        run: npm --prefix e2e run test:staging-management
+
+      - name: Record successful staging management acceptance
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Hosted staging management acceptance passed"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Health environment and 12-character deployed revision matched."
+            echo "- A staging-only non-member operator reached management mode."
+            echo "- Birthday rerun and disposable archive create/upload/edit passed."
+            echo "- No screenshots, video, trace or HTML report were retained."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,15 +1,15 @@
 # 改版企劃：幹部功能收斂到管理模式（v2.1）
 
 建立日期：2026-09-01（Asia/Taipei）
-修訂：v2.1.2，2026-09-02（補記 Browser Smoke 回歸修正與本機驗收）
-狀態：`[>]` 程式搬遷、本機資料庫驗證與 GitHub CI／Browser Smoke 已完成；待 staging 驗收與發布
+修訂：v2.1.3，2026-09-02（補上執行秘書 staging 專項驗收契約）
+狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke 與一般 staging Go-Live 已完成；待執行秘書 staging 專項驗收
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次掃描基準：`origin/main@3a430687837f0d00cf3cc64053c7d7e08b4fbf9f`
+本次掃描基準：`origin/main@402bd77bc12c7ece01a42d294a7b3d7eb518adda`
 
 > 本版已同步為 repository 內的唯一權威企劃；下載資料夾的原檔僅作為本次規格輸入。
-> 程式搬遷與本機回歸在隔離分支完成，外部驗收尚未宣稱通過；不得把未執行的資料庫或瀏覽器驗收寫成完成。
+> 程式搬遷與一般 staging Go-Live 已完成；執行秘書專項 hosted acceptance 尚未執行。不得把社員驗收或本機執秘 E2E 代替成 staging 執秘驗收。
 >
-> 本次實作分支：`codex/management-mode-separation`；本輪修正已通過 GitHub 自動檢查，下一步進入 staging 驗收。
+> 本次實作分支：`codex/management-mode-separation`；下一步是使用 staging 專用、無社籍執行秘書帳號執行 `Staging Management Acceptance`。
 
 > 先讀根目錄 `AGENTS.md`，特別是第 5 節「安全邊界」。本企劃**只動呈現層**，
 > 不動權限模型，也不新增 migration。若第 0 階段發現必須新增 migration，
@@ -204,13 +204,15 @@ verification 驗證；活動封面由 `event_cover_storage_security.sql` 驗證 
 活動封面的 Storage policy 已存在 migration SQL；封存上傳則是 API route 的 trusted admin 流程。
 兩者不得用同一種「檢查 Storage policy」方法驗收。
 
-### 5.3 staging 版本與執行證據（已完成）
+### 5.3 staging 版本與執行證據（一般發布已完成）
 
-- `[x]` `20260901000100_birthday_collection_manager_permissions.sql` 已套用 staging。
-- `[x]` staging health：`status=ok`、`environment=staging`、revision `2b0f68242f7c`；
-  `issues=[]`，另有一項 `DEPLOYMENT_WARNING`，不得誤報為零警告。
-- `[x]` birthday scheduler run `33467004279` 成功：`generated_count=1`、`notified_count=1`、
-  `failed=0`、`skipped=1`；被略過的另一社沒有有效管理者。
+- `[x]` Staging Release plan `33615755337` 以 exact SHA `402bd77bc12c7ece01a42d294a7b3d7eb518adda` 通過，remote migration dry-run 顯示 up to date。
+- `[x]` Staging Go-Live `33617070120` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
+- `[x]` staging health：`status=ok`、`environment=staging`、revision `402bd77bc12c`、`issues=[]`；`DEPLOYMENT_WARNING` 來自 staging 的 mock LINE OA 設定，不能誤報成零 warning。
+- `[>]` 執行秘書專項尚未執行：目前 GitHub `staging` environment 沒有 `STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD`，因此尚未證明無社籍執行秘書能在 hosted staging 完成生日與文件操作。
+
+本項的安全驗收流程已寫入 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md) 與
+`.github/workflows/staging-management-acceptance.yml`。它只拿 staging operator 登入帳密，不拿 Supabase access token、資料庫密碼或 service-role；建立的年度、文件與版本是可回收測試資料，不會執行不可逆交接確認。
 
 ### 5.4 文件一致性
 
@@ -457,6 +459,15 @@ expect(memberPage).not.toContain("runBirthdayCollectionMonthAction")
 完成一個可回收測試項目的建立、上傳與編輯。**這是本企劃最重要的驗收**，因為它證明
 非社員 operator 不只後端有權限，也有找得到、走得完的操作路徑。
 
+Hosted staging 使用獨立的 `Staging Management Acceptance` workflow。它要求：
+
+- `main` 上已部署且 health revision 完全相同的 40 字元 SHA；
+- GitHub `staging` environment 的 `STAGING_TEST_OPERATOR_EMAIL` 與 `STAGING_TEST_OPERATOR_PASSWORD`；
+- operator 是保留測試身份、具有指定測試社 `club_manager` 權限、沒有 `club_memberships`，且不是 platform admin；
+- 生日旗標已開啟，測試社有可供當月批次重跑的生日／題庫資料。
+
+沒有這些外部前置條件，不能把 workflow 未執行寫成通過；一般社員 hosted acceptance 也不能代替本項。
+
 ### 11.3 CI 節奏
 
 文件修改與小型純重構不手動跑 CI 或 Browser Smoke；每個小 PR 先跑本機針對性測試。
@@ -517,6 +528,7 @@ Browser Smoke；階段 4 若執行也同樣跑一次。會改資料的瀏覽器�
 - `docs/product/EXPERIENCE_CONTEXT.md`：模式與 active club 的既有語意
 - `docs/product/TO-DO-LIST.md` 第 3 項：本企劃的待辦入口
 - `docs/product/CURRENT_SESSION_HANDOFF.md`：本輪實作狀態、驗證結果與未完成外部條件
+- `docs/deployment/STAGING_MANAGEMENT_ACCEPTANCE.md`：staging 執行秘書專項驗收流程
 - `docs/mvp/BIRTHDAY_WISHES_V2_PLAN.md`：生日徵集的產品規則，本企劃不得更動
 - `supabase/migrations/20260901000100_birthday_collection_manager_permissions.sql`：階段 2 的前提
 - `supabase/migrations/20260901000200_birthday_collection_dispatch_lead_month.sql`：目前 scheduler 行為依據
