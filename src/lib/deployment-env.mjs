@@ -48,6 +48,60 @@ function validateCredential(errors, environment, name, minimumLength = 20) {
   return credential;
 }
 
+const LINE_OA_ACCESS_TOKEN_PATTERN = /^LINE_OA_(?:(.+)_)?CHANNEL_ACCESS_TOKEN$/u;
+const LINE_OA_CHANNEL_SECRET_PATTERN = /^LINE_OA_(?:(.+)_)?CHANNEL_SECRET$/u;
+
+function collectNamespaces(environment, pattern) {
+  const namespaces = new Map();
+  for (const [name, rawValue] of Object.entries(environment)) {
+    const match = pattern.exec(name);
+    if (!match) continue;
+    namespaces.set(match[1] ?? "", String(rawValue ?? "").trim());
+  }
+  return namespaces;
+}
+
+/**
+ * Each club reads its own credentials from its own environment keys, named
+ * `LINE_OA_<CLUB_CODE>_CHANNEL_ACCESS_TOKEN` and `..._CHANNEL_SECRET`. The club
+ * codes are not known here, so this checks the shape of what is configured
+ * rather than a fixed list, and never reports a club code or a credential value.
+ */
+function validateLineOaCredentials(errors, warnings, environment) {
+  const tokens = collectNamespaces(environment, LINE_OA_ACCESS_TOKEN_PATTERN);
+  const secrets = collectNamespaces(environment, LINE_OA_CHANNEL_SECRET_PATTERN);
+
+  if (tokens.size === 0) {
+    errors.push("LINE_OA_CHANNEL_ACCESS_TOKEN_REQUIRED");
+  }
+  for (const [, token] of tokens) {
+    if (!token || token.length < 20 || /\s/u.test(token)) {
+      errors.push("LINE_OA_CHANNEL_ACCESS_TOKEN_INVALID");
+      break;
+    }
+  }
+  for (const [, secret] of secrets) {
+    if (!secret || secret.length < 20 || /\s/u.test(secret)) {
+      errors.push("LINE_OA_CHANNEL_SECRET_INVALID");
+      break;
+    }
+  }
+  // Without the matching channel secret the webhook cannot verify a signature,
+  // so the account could send but never receive an event it trusts.
+  for (const namespace of tokens.keys()) {
+    if (!secrets.has(namespace)) {
+      errors.push("LINE_OA_CHANNEL_SECRET_REQUIRED");
+      break;
+    }
+  }
+  for (const namespace of secrets.keys()) {
+    if (!tokens.has(namespace)) {
+      warnings.push("LINE_OA_CHANNEL_SECRET_WITHOUT_ACCESS_TOKEN");
+      break;
+    }
+  }
+}
+
 /**
  * Validate deployment configuration without returning any credential values.
  * @param {NodeJS.ProcessEnv | Record<string, string | undefined>} environment
@@ -111,6 +165,7 @@ export function inspectDeploymentEnvironment(environment = process.env) {
   if (!LINE_OA_MODES.has(lineOaMode)) errors.push("LINE_OA_MODE_INVALID");
   if (isStaging && lineOaMode === "mock") warnings.push("STAGING_LINE_OA_IS_MOCK");
   if (isProduction && lineOaMode !== "line") errors.push("PRODUCTION_LINE_OA_MUST_USE_LINE");
+  if (lineOaMode === "line") validateLineOaCredentials(errors, warnings, environment);
 
   if (isHosted && value(environment, "BOOTSTRAP_SUPERADMIN_PASSWORD")) {
     warnings.push("HOSTED_BOOTSTRAP_PASSWORD_REMOVE_AFTER_USE");

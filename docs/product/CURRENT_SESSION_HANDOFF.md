@@ -3,6 +3,69 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## LINE OA 訊息推播接上真實 Messaging API（2026-09-02）
+
+產品決定本輪先把**真實 Messaging API 接通**；事件驅動自動推播、Flex 圖文訊息與 webhook 自動配對
+follower 排在後面。憑證狀態：已有 LINE OA 帳號，**channel access token 與 channel secret 尚未取得**，
+所以本輪只做不需要憑證的程式、測試與文件。分支 `codex/line-oa-messaging-api`，起點 `main@9291584`。
+
+**沒有新增 migration，沒有改任何 RPC／RLS，沒有動 LINE Developers Console，沒有修改 hosted 環境。**
+
+已完成：
+
+- `src/lib/line/messaging.ts` 真實模式的 provider 結果不再只有「成功或丟例外」：
+  `credentials_rejected`（401／403）、`rate_limited`（429，保留 `Retry-After`）、
+  `request_rejected`（其他 4xx）、`provider_unavailable`（5xx）與 `provider_timeout` 分開回報。
+- 對 `api.line.me` 的請求加上 10 秒逾時，provider 不回應時 server action 不再無限等待。
+- multicast 依 LINE 的 500 個 userId 上限自動分批；先前超過 500 位已配對社員的社整批會被退回。
+- 429／5xx／逾時會重試一次，同一批沿用同一個 `x-line-retry-key`，所以重試不會重複發送；
+  4xx 不重試。憑證被拒或達到額度上限時停止剩餘批次。
+- 部分送達仍記在既有欄位裡：`delivery_status` 保持 `queued`／`sent`／`failed`／`mocked`，
+  批次成敗放進 `payload_summary` 的 `batch_count`／`sent_batch_count`／`delivered_recipient_count`。
+- 新增 `src/lib/line/oa-dispatch.ts`，讓 `src/app/line-oa-actions.ts` 與
+  `src/app/api/v1/[...path]/route.ts` 共用同一套載入、送出與紀錄組裝；邊界測試會擋住任一方
+  再直接呼叫 `sendLineOaMessage` 或 `readServerSecret`。這兩條路徑先前已經漂移：
+  server action 支援標籤／社員鎖定，v1 路徑只會送給全部 following。
+- 真實模式加上 localhost 防呆（mock 的 local-only 檢查的鏡像），避免開發機把真實訊息送給真實社員。
+- `deployment-env.mjs` 在 `LINE_OA_MODE=line` 時要求
+  `LINE_OA_<CLUB_CODE>_CHANNEL_ACCESS_TOKEN` 與對應 `_CHANNEL_SECRET` 成對存在且長度合理；
+  檢查結果不回報社代碼或憑證值。mock 模式不受影響，所以現在的 staging 不會因此變成 degraded。
+- 後台把新的 failure code 翻成可理解的中文提示，並提示查看推播紀錄。
+- 新增 [`LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md`](../mvp/LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md)；
+  先前只有 LINE Login 的檢查表。
+
+仍未完成、需要外部條件：
+
+- 取得 channel access token 與 channel secret，並設進 Render staging 的該社環境變數。
+- 在 LINE Developers Console 設定 webhook URL 與開啟 webhook。依 `AGENTS.md` 第 2 節，
+  **更動 LINE channel 設定要先取得使用者同意**，本輪沒有動。
+- staging 真實推播驗收：實際收到訊息、推播紀錄為 `sent` 且有 provider request id、
+  `/api/health` 不再出現由 `STAGING_LINE_OA_IS_MOCK` 產生的 `DEPLOYMENT_WARNING`。
+- 每月推播額度的超額行為要由產品決定；平台目前不會預先擋下超額送出。
+
+本輪本機驗證（2026-09-02）：
+
+```text
+npm run typecheck                passed
+npm run lint                     passed
+npm test                         110 files / 705 tests passed
+npm run build                    passed
+npm run verify:db                47 verification SQL passed（exit 0，沒有新增 migration）
+npm run check:migrations         passed
+npm run check:db-verifications   47 files covered
+git diff --check                 passed
+full local Playwright E2E        170 passed、33 intentional skips、0 failed
+line-oa-audience targeted E2E    2 passed（重新 build 後再跑一次）
+```
+
+完整 E2E 第一輪曾有 6 個失敗，全部是啟動時沒帶 `E2E_ADMIN_EMAIL`／`E2E_ADMIN_PASSWORD`
+（`member-smoke`、`operator-invitation`、`password-recovery` 在 login helper 就丟錯）；
+補上憑證後 8 passed、2 skipped，不是程式回歸。
+
+`verify:db` 前要先 `scripts/configure-local-e2e-role-shells.mjs enabled` 再跑 fixture bootstrap：
+`db reset` 後生日旗標預設關閉，`set_my_birthday_preference_v2` 的 `authenticated` EXECUTE 會被撤掉，
+順序反了 fixture 會失敗。CI 的 browser-smoke workflow 就是這個順序。
+
 ## 幹部功能收斂到管理模式（2026-09-02）
 
 本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.4 實作，程式已同步至

@@ -1,7 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { sendLineOaMessage } from "@/lib/line/messaging";
-import { readServerSecret } from "@/lib/line/oa-runtime";
-import { createTrustedAdminClient } from "@/lib/supabase/admin";
+import { buildPushLogArgs, deliverClubOaText, loadClubOaDispatchContext } from "@/lib/line/oa-dispatch";
 import { createClient } from "@/lib/supabase/server";
 
 function sameOrigin(request: NextRequest) {
@@ -147,44 +145,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ pa
     const text = String(body.text ?? "").trim();
     if (!text || text.length > 2000) return failure();
 
-    const admin = createTrustedAdminClient();
-    const [accountResult, recipientsResult] = await Promise.all([
-      admin
-        .from("line_oa_accounts")
-        .select("access_token_env_key")
-        .eq("club_id", path[1])
-        .neq("account_status", "disabled")
-        .maybeSingle(),
-      admin
-        .from("line_oa_followers")
-        .select("oa_user_id")
-        .eq("club_id", path[1])
-        .eq("follower_status", "following"),
-    ]);
-    if (accountResult.error || !accountResult.data || recipientsResult.error) return failure(503);
+    const dispatch = await loadClubOaDispatchContext(path[1]);
+    if (!dispatch.ok) return failure(503);
 
-    const recipients = (recipientsResult.data ?? []).map((row) => row.oa_user_id);
-    let accessToken: string | undefined;
-    try {
-      if ((process.env.LINE_OA_MODE ?? "mock") === "line") {
-        accessToken = readServerSecret(accountResult.data.access_token_env_key, "LINE OA access token");
-      }
-    } catch {
-      return failure(503);
-    }
-
-    const delivery = await sendLineOaMessage(kind, recipients, [{ type: "text", text }], { accessToken }).catch(
-      () => ({ status: "failed" as const, requestId: undefined }),
+    const recipients = dispatch.context.followers;
+    const delivery = await deliverClubOaText(kind, recipients, text, dispatch.context);
+    result = await client.rpc(
+      "record_line_push",
+      buildPushLogArgs(path[1], kind, recipients.length, text, delivery),
     );
-    result = await client.rpc("record_line_push", {
-      p_club_id: path[1],
-      p_push_kind: kind,
-      p_recipient_count: recipients.length,
-      p_payload_summary: { message_type: "text", character_count: text.length },
-      p_delivery_status: delivery.status,
-      p_provider_request_id: delivery.requestId ?? null,
-      p_failure_code: delivery.status === "failed" ? "provider_error" : null,
-    });
     if (delivery.status === "failed") return failure(502);
   } else return failure(404);
 
