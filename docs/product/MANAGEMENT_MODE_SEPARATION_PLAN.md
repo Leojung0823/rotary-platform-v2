@@ -1,15 +1,15 @@
 # 改版企劃：幹部功能收斂到管理模式（v2.1）
 
 建立日期：2026-09-01（Asia/Taipei）
-修訂：v2.1.1，2026-09-02（補記本機資料庫驗證）
-狀態：`[>]` 程式搬遷與本機資料庫驗證已完成；待本分支 Browser Smoke、staging 驗收與發布
+修訂：v2.1.2，2026-09-02（補記 Browser Smoke 回歸修正與本機驗收）
+狀態：`[>]` 程式搬遷、本機資料庫驗證與兩項失敗案例回歸已完成；待 GitHub 自動檢查、staging 驗收與發布
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次掃描基準：`origin/main@b137e516cb91b72c7252eb384924843b7874f93b`
+本次掃描基準：`origin/main@9db87125e56f76f91d8195872ff589eeeba71914`
 
 > 本版已同步為 repository 內的唯一權威企劃；下載資料夾的原檔僅作為本次規格輸入。
-> 程式搬遷在隔離分支完成，外部驗收尚未宣稱通過；不得把未執行的資料庫或瀏覽器驗收寫成完成。
+> 程式搬遷與本機回歸在隔離分支完成，外部驗收尚未宣稱通過；不得把未執行的資料庫或瀏覽器驗收寫成完成。
 >
-> 本次實作分支：`codex/management-mode-separation`；目前尚未 push、開 PR 或部署。
+> 本次實作分支：`codex/management-mode-separation`；本輪修正須通過 GitHub 自動檢查後，才進入 staging 驗收。
 
 > 先讀根目錄 `AGENTS.md`，特別是第 5 節「安全邊界」。本企劃**只動呈現層**，
 > 不動權限模型，也不新增 migration。若第 0 階段發現必須新增 migration，
@@ -182,12 +182,12 @@ club ID 與 `can_manage`，不能僅依函式名稱推測。
 
 | 流程 | 實際授權層 | 目前程式判定 | 驗證狀態與關卡 |
 |---|---|---|---|
-| 生日五支管理 action | RPC：`member.manage` | 執秘可管理 | `[x]` 本機 DB 驗證與 staging 排程；`[ ]` 本分支 hosted acceptance，通過才完成 2b |
+| 生日五支管理 action | RPC：`member.manage` | 執秘可管理 | `[>]` 本機 DB 驗證與生日徵集 Browser 回歸通過；待本輪 staging hosted acceptance，通過才完成 2b |
 | 活動建立／發布／取消 | RPC：`event.manage` | 執秘可管理 | `[>]` 既有 operator E2E、發布 fixture 與取消 fixture 已存在；待本分支 Browser／staging 驗收 |
 | 活動封面上傳 | Storage policy → `event.manage`，再記錄 action | 執秘可管理 | `[>]` 既有 Storage 上傳／跨社拒絕 fixture 已存在；待本分支 Browser／staging 驗收 |
-| 封存七支 action | RPC：`member.manage` | 執秘可管理 | `[x]` 本機 `verify:db` 已驗證管理者成功、同社與跨社 `42501` 拒絕 |
-| `POST /api/v1/archive/uploads` | same-origin + auth → begin/complete/fail RPC | 執秘可管理 | `[>]` route 單元測試已通過，待 staging runtime 驗收 |
-| 封存檔案寫入 | API route 使用 trusted admin Storage client | 不走終端使用者 Storage policy | `[>]` route 單元測試已通過，待 staging runtime 驗證失敗清理與檔案流程 |
+| 封存七支 action | RPC：`member.manage` | 執秘可管理 | `[>]` 本機 `verify:db` 與執秘文件 Browser 回歸通過；待 staging 驗收 |
+| `POST /api/v1/archive/uploads` | same-origin + auth → begin/complete/fail RPC | 執秘可管理 | `[>]` route 單元測試與執秘上傳 Browser 回歸通過，待 staging runtime 驗收 |
+| 封存檔案寫入 | API route 使用 trusted admin Storage client | 不走終端使用者 Storage policy | `[>]` route 單元測試與本機上傳流程通過，待 staging runtime 驗證失敗清理與檔案流程 |
 
 `supabase/verification/archive_handover_security.sql` 已補成可回滾的隔離 fixture，涵蓋七支封存 server action
 背後的十支管理 RPC（年度建立／編輯、項目建立／編輯／封存、版本開始／完成／失敗、清單更新、交接確認）：
@@ -466,6 +466,17 @@ Browser Smoke；階段 4 若執行也同樣跑一次。會改資料的瀏覽器�
 
 **不要使用 `[skip ci]`**，讓現有的變更範圍 gate 自行決定跑輕量或完整流程。
 （文件提交 `2311445` 使用了 `[skip ci]`，與 `AGENTS.md` 規則不一致，後續不沿用。）
+
+### 11.4 本輪 Browser 回歸記錄
+
+先前針對本輪管理模式程式的 Browser Smoke run `33607348078` 結果為：172 passed、2 failed、2 flaky、31 skipped。
+兩個失敗都是畫面語意問題，不是權限或資料庫失敗：
+
+- 生日題庫 `<details>` 預設展開，測試點擊「管理題庫」後反而將它收起，導致表單不可見；現在預設收起，首次畫面也不必渲染 100 題。
+- 封存上傳實際成功，但檔名和版本資訊共用同一個文字節點，精準檔名 locator 找不到；現在檔名有獨立的 `span`。
+
+修正後以 `localhost:3000`、單一 worker 重跑兩個失敗案例：生日徵集通過（21.1 秒），執行秘書文件建立／編輯／上傳通過（2.7 秒）。
+完整 Browser Smoke 尚待這次修正同步後由 GitHub workflow 自動驗證；本輪沒有手動 dispatch。
 
 ## 12. 驗收條件
 

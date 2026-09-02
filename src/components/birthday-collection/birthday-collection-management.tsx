@@ -113,7 +113,7 @@ export function BirthdayCollectionManagement({ page }: { page: BirthdayCollectio
 
     <section>
       <div className="section-heading"><div><p className="eyebrow">幹部設定</p><h2>題庫管理</h2></div><span>{page.questionBank.platform.length + page.questionBank.club.length} 題</span></div>
-      <details className={styles.questionBank} open>
+      <details className={styles.questionBank}>
         <summary>管理題庫（平台 {page.questionBank.platform.length} 題／本社 {page.questionBank.club.length} 題）</summary>
         <p className={styles.hint}>平台題庫只能查看；本社題庫可以新增、修改、排序或暫停使用。已派發的任務會保留當時的題目。</p>
         <div className={styles.questionSection}>

@@ -3,11 +3,11 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 幹部功能收斂到管理模式（2026-09-01）
+## 幹部功能收斂到管理模式（2026-09-02）
 
-本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.1 實作，程式在隔離
-分支 `codex/management-mode-separation`，目前尚未 push、開 PR、合併或部署；不要把這個分支的結果說成
-GitHub `main` 或 staging 已上線。使用者要求本輪不手動跑 CI 與 Browser Smoke。
+本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.2 實作，程式在隔離
+分支 `codex/management-mode-separation`；本機回歸已通過，但不要把本分支結果說成 staging 已上線。使用者要求
+本輪不手動 dispatch CI 與 Browser Smoke；同步到 `main` 後由既有 workflow 自動驗證。
 
 已完成的程式範圍：
 
@@ -53,9 +53,9 @@ E2E node --check / Playwright --list passed; 207 tests discovered
 活動 verification 的有效呼叫也已全部明確傳入 `p_as_member`；歷史 migration 中的舊定義仍保留作為 migration
 歷史，不代表目前 runtime overload。
 `npm run verify:db` 已於 2026-09-02 完成：local database reset、schema lint 與全部 47 份 verification
-均通過；schema lint 的 3 個既有 warning 未新增。尚未完成、不能誤報為通過：本輪沒有執行 Browser Smoke、
-本分支 staging acceptance 或 production deploy。效能 TTFB 也尚未量測。下一步是依既定發布流程把本分支同步
-到 GitHub，再用 staging 做執行秘書的真實驗收；Browser Smoke 仍遵守本輪不手動執行的決定。
+均通過；schema lint 的 3 個既有 warning 未新增。本輪兩個 Browser Smoke 失敗案例已在本機回歸通過，但完整
+Browser Smoke、本分支 staging acceptance 或 production deploy 尚未完成。效能 TTFB 也尚未量測。下一步是依既定
+發布流程把修正同步到 GitHub，等待自動檢查，再用 staging 做執行秘書的真實驗收。
 
 ## 生日祝福派發修復（2026-09-01）
 
@@ -238,11 +238,12 @@ npm run verify:db                passed (2026-09-02; reset, lint, 47 verificatio
 npm run check:migrations         passed
 npm run check:db-verifications   47 files covered
 git diff --check                 passed
+targeted Browser regression       birthday collection passed; executive secretary archive upload passed
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
 PR #86 CI database                passed (run 33120346988; 46 verification SQL)
 PR #93 CI／Quality／Browser Smoke passed (runs 33347745255／33347745250／33347745221)
 current main push CI              passed (run 33348357979)
-current main Browser Smoke        in progress at scan (run 33348357995)
+previous management-mode Browser Smoke failed (run 33607348078; 172 passed / 2 failed / 2 flaky / 31 skipped)
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
@@ -257,5 +258,5 @@ staging Go-Live (this round)       passed (run 33403560211; revision 9a0b0fcb959
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
-的 PL/pgSQL 變數；本輪沒有新增 warning。瀏覽器本機若沒有 Supabase 不得宣稱已完成；本輪 PR 與 main
-的隔離 Browser Smoke 均已通過。production 不在本輪範圍。
+的 PL/pgSQL 變數；本輪沒有新增 warning。先前 Browser Smoke 的兩個失敗案例已在本機 Supabase 與
+`localhost:3000` 回歸通過；完整 Browser Smoke、staging acceptance 與 production 不在目前已完成證據內。
