@@ -5,8 +5,8 @@
 
 ## 幹部功能收斂到管理模式（2026-09-02）
 
-本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.3 實作，程式在隔離
-分支 `codex/management-mode-separation`；本機與 GitHub 回歸已通過，一般 staging Go-Live 也已完成。使用者要求
+本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.4 實作，程式已同步至
+`main@56db4f617159e8dcf8db680ce7ab21af2e2462c3`；本機與 GitHub 回歸、一般 staging Go-Live，以及執行秘書 staging 專項 hosted acceptance 均已完成。使用者要求
 本輪不手動 dispatch CI 與 Browser Smoke；兩者由同步到 `main` 後的既有 workflow 自動驗證。
 
 已完成的程式範圍：
@@ -38,7 +38,7 @@
 本輪驗證（隔離分支，2026-09-02 更新）：
 
 ```text
-npm test                         108 files / 683 tests passed
+npm test                         109 files / 691 tests passed
 npm run lint                     passed
 npm run typecheck                passed
 npm run build                    passed; 3 new management routes collected
@@ -56,10 +56,12 @@ E2E node --check / Playwright --list passed; 207 tests discovered
 均通過；schema lint 的 3 個既有 warning 未新增。本輪兩個 Browser Smoke 失敗案例已在本機回歸通過，完整
 Browser Smoke `33614549502` 也已通過。新增驗收流程的 Staging Release `33634864876` 與 Staging Go-Live `33635029050` 已以
 exact SHA `fe1a5cf1392f3eecb4411d1bac74c68e467cfeb5` 完成，staging health revision `fe1a5cf1392f`、`issues=[]`，
-一般 hosted 社員驗收通過。效能 TTFB 也尚未量測；目前唯一未完成的是使用 staging 專用無社籍執行秘書完成生日與文件的 hosted acceptance。
+一般 hosted 社員驗收通過。其後最新的 Staging Release `33635527193`、Staging Go-Live `33635621097` 與執行秘書專項
+`Staging Management Acceptance` `33638696189` 均以 exact SHA `56db4f617159e8dcf8db680ce7ab21af2e2462c3` 完成；health
+revision `56db4f617159`、`issues=[]`。執行秘書 hosted acceptance 已驗證無社籍 operator 可完成生日重跑與文件建立／上傳／編輯，且沒有執行不可逆交接確認。效能 TTFB 仍未量測；活動／活動封面仍待 staging 端到端驗收。
 
-已新增並部署 `.github/workflows/staging-management-acceptance.yml` 與 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md)。目前 GitHub `staging` environment 尚未設定
-`STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD`；在帳號與 secrets 建好前，不得宣稱第 11.2 節已通過。
+已新增並部署 `.github/workflows/staging-management-acceptance.yml` 與 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md)。GitHub `staging` environment 的
+`STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD` 已設定；只確認 secret 名稱存在，不讀取或記錄值。workflow `33638696189` 已通過，因此第 11.2 節的生日／文件執行秘書 hosted acceptance 已完成。
 
 ## 生日祝福派發修復（2026-09-01）
 

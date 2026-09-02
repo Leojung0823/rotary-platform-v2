@@ -1,15 +1,15 @@
 # 改版企劃：幹部功能收斂到管理模式（v2.1）
 
 建立日期：2026-09-01（Asia/Taipei）
-修訂：v2.1.3，2026-09-02（補上執行秘書 staging 專項驗收契約）
-狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke 與一般 staging Go-Live 已完成；待執行秘書 staging 專項驗收
+修訂：v2.1.4，2026-09-02（執行秘書 staging 專項驗收完成）
+狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke、一般 staging Go-Live，以及生日／文件的執行秘書 hosted acceptance 已完成；活動／活動封面仍待專案後續做 staging 端到端驗收
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次掃描基準：`origin/main@fe1a5cf1392f3eecb4411d1bac74c68e467cfeb5`
+本次已驗收 runtime：`origin/main@56db4f617159e8dcf8db680ce7ab21af2e2462c3`
 
 > 本版已同步為 repository 內的唯一權威企劃；下載資料夾的原檔僅作為本次規格輸入。
-> 程式搬遷與一般 staging Go-Live 已完成；執行秘書專項 hosted acceptance 尚未執行。不得把社員驗收或本機執秘 E2E 代替成 staging 執秘驗收。
+> 程式搬遷、一般 staging Go-Live 與執行秘書專項 hosted acceptance 已完成。活動／活動封面仍有未完成的 staging 端到端驗收，不能把生日／文件的通過擴大解讀成所有管理領域都已驗收。
 >
-> 本次實作分支：`codex/management-mode-separation`；下一步是使用 staging 專用、無社籍執行秘書帳號執行 `Staging Management Acceptance`。
+> 本次實作分支：`codex/management-mode-separation`；執行秘書測試資料只留在 staging，沒有修改正式環境。
 
 > 先讀根目錄 `AGENTS.md`，特別是第 5 節「安全邊界」。本企劃**只動呈現層**，
 > 不動權限模型，也不新增 migration。若第 0 階段發現必須新增 migration，
@@ -182,12 +182,12 @@ club ID 與 `can_manage`，不能僅依函式名稱推測。
 
 | 流程 | 實際授權層 | 目前程式判定 | 驗證狀態與關卡 |
 |---|---|---|---|
-| 生日五支管理 action | RPC：`member.manage` | 執秘可管理 | `[>]` 本機 DB 驗證與生日徵集 Browser 回歸通過；待本輪 staging hosted acceptance，通過才完成 2b |
+| 生日五支管理 action | RPC：`member.manage` | 執秘可管理 | `[x]` 本機 DB、Browser 與 staging 執秘 hosted acceptance 通過（run `33638696189`） |
 | 活動建立／發布／取消 | RPC：`event.manage` | 執秘可管理 | `[>]` 既有 operator E2E、發布 fixture 與取消 fixture 已存在；待本分支 Browser／staging 驗收 |
 | 活動封面上傳 | Storage policy → `event.manage`，再記錄 action | 執秘可管理 | `[>]` 既有 Storage 上傳／跨社拒絕 fixture 已存在；待本分支 Browser／staging 驗收 |
-| 封存七支 action | RPC：`member.manage` | 執秘可管理 | `[>]` 本機 `verify:db` 與執秘文件 Browser 回歸通過；待 staging 驗收 |
-| `POST /api/v1/archive/uploads` | same-origin + auth → begin/complete/fail RPC | 執秘可管理 | `[>]` route 單元測試與執秘上傳 Browser 回歸通過，待 staging runtime 驗收 |
-| 封存檔案寫入 | API route 使用 trusted admin Storage client | 不走終端使用者 Storage policy | `[>]` route 單元測試與本機上傳流程通過，待 staging runtime 驗證失敗清理與檔案流程 |
+| 封存七支 action | RPC：`member.manage` | 執秘可管理 | `[>]` 建立／編輯／上傳的 staging 成功路徑通過（run `33638696189`）；不可逆交接確認與失敗清理仍只在本機驗證，未納入 hosted 流程 |
+| `POST /api/v1/archive/uploads` | same-origin + auth → begin/complete/fail RPC | 執秘可管理 | `[>]` route 單元測試、執秘 Browser 與 staging 成功上傳通過；失敗清理仍由本機 route 驗證 |
+| 封存檔案寫入 | API route 使用 trusted admin Storage client | 不走終端使用者 Storage policy | `[>]` staging 檔案建立／上傳／編輯通過；失敗清理仍未在 hosted staging 執行 |
 
 `supabase/verification/archive_handover_security.sql` 已補成可回滾的隔離 fixture，涵蓋七支封存 server action
 背後的十支管理 RPC（年度建立／編輯、項目建立／編輯／封存、版本開始／完成／失敗、清單更新、交接確認）：
@@ -206,10 +206,10 @@ verification 驗證；活動封面由 `event_cover_storage_security.sql` 驗證 
 
 ### 5.3 staging 版本與執行證據（一般發布已完成）
 
-- `[x]` Staging Release plan `33634864876` 以 exact SHA `fe1a5cf1392f3eecb4411d1bac74c68e467cfeb5` 通過，remote migration dry-run 顯示 up to date。
-- `[x]` Staging Go-Live `33635029050` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
-- `[x]` staging health：`status=ok`、`environment=staging`、revision `fe1a5cf1392f`、`issues=[]`；`DEPLOYMENT_WARNING` 來自 staging 的 mock LINE OA 設定，不能誤報成零 warning。
-- `[>]` 執行秘書專項尚未執行：目前 GitHub `staging` environment 沒有 `STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD`，因此尚未證明無社籍執行秘書能在 hosted staging 完成生日與文件操作。
+- `[x]` 最新 Staging Release plan `33635527193` 以 exact SHA `56db4f617159e8dcf8db680ce7ab21af2e2462c3` 通過，remote migration dry-run 顯示 up to date。
+- `[x]` 最新 Staging Go-Live `33635621097` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
+- `[x]` staging health：`status=ok`、`environment=staging`、revision `56db4f617159`、`issues=[]`；`DEPLOYMENT_WARNING` 來自 staging 的 mock LINE OA 設定，不能誤報成零 warning。
+- `[x]` 執行秘書專項 hosted acceptance：workflow `33638696189` 以同一個 exact SHA 通過。無社籍、非平台管理員的 staging operator 已從管理總覽完成生日任務重跑，以及文件年度／項目建立、上傳與編輯；沒有執行不可逆交接確認。
 
 本項的安全驗收流程已寫入 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md) 與
 `.github/workflows/staging-management-acceptance.yml`。它只拿 staging operator 登入帳密，不拿 Supabase access token、資料庫密碼或 service-role；建立的年度、文件與版本是可回收測試資料，不會執行不可逆交接確認。
