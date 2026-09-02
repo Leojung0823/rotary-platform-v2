@@ -96,5 +96,6 @@ jobs:
             echo "- Health environment and 12-character deployed revision matched."
             echo "- A staging-only non-member operator reached management mode."
             echo "- Birthday rerun and disposable archive create/upload/edit passed."
+            echo "- Disposable event create/cover upload/publish/cancel passed."
             echo "- No screenshots, video, trace or HTML report were retained."
           } >> "$GITHUB_STEP_SUMMARY"
