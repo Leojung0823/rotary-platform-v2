@@ -71,6 +71,28 @@ async function chooseUnusedYear(page) {
   throw new Error("No disposable staging Rotary year remains.");
 }
 
+function dateTimeLocalFromNow(daysFromNow, hour, minute = 0) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + daysFromNow);
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(hour)}:${pad(minute)}`;
+}
+
+async function smallPngBytes(page) {
+  return page.evaluate(async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 8;
+    canvas.height = 8;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("canvas_unavailable");
+    context.fillStyle = "#1677a8";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("png_unavailable");
+    return Array.from(new Uint8Array(await blob.arrayBuffer()));
+  });
+}
+
 test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
   test.skip(process.env.E2E_REMOTE !== "1", "Hosted staging acceptance only runs in protected remote mode.");
 
@@ -157,6 +179,73 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await editDetails.getByRole("button", { name: "儲存文件說明" }).click();
     await expect(page).toHaveURL(/success=item_updated/u, { timeout: 30_000 });
     await expect(page.getByRole("heading", { name: updatedTitle, exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("從管理總覽完成活動建立、封面上傳、發布與取消", async ({ page }) => {
+    test.setTimeout(180_000);
+
+    await login(page);
+    await openManagementOverview(page);
+
+    await page.getByTestId("management-card-events").click();
+    await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]{36}\/events\?mode=management$/u);
+    await expect(page.getByTestId("event-management")).toBeVisible();
+
+    const eventTitle = `staging 活動驗收 ${Date.now()}`;
+    const createForm = page.getByTestId("event-management").locator("section.card").first().locator("form");
+    await createForm.getByLabel("活動類型").selectOption("regular_meeting");
+    await createForm.getByLabel("活動名稱").fill(eventTitle);
+    await createForm.getByLabel("開始時間（台北）").fill(dateTimeLocalFromNow(30, 10));
+    await createForm.getByLabel("結束時間（台北）").fill(dateTimeLocalFromNow(30, 11));
+    await createForm.getByLabel("報名截止（台北）").fill(dateTimeLocalFromNow(29, 18));
+    await createForm.getByLabel("名額（留空表示不限）").fill("20");
+    await createForm.getByLabel("地點").fill("staging 驗收測試場地");
+    await createForm.getByLabel("活動說明").fill("供管理模式驗收後保留的可回收測試活動。");
+    await createForm.getByRole("button", { name: "建立草稿" }).click();
+    await expect(page).toHaveURL(/success=event_created/u, { timeout: 30_000 });
+
+    let eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
+    await expect(eventCard).toBeVisible();
+    await expect(eventCard.getByText("草稿", { exact: true })).toBeVisible();
+
+    const imageBytes = await smallPngBytes(page);
+    await eventCard.locator('input[type="file"]').setInputFiles({
+      name: "staging-event-cover.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(imageBytes),
+    });
+    await expect(eventCard.getByText("圖片已更新。", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    // The client shows success before the server action finishes recording the
+    // path. Reload until the signed URL is present, proving the Storage write
+    // and event projection both completed.
+    await expect.poll(async () => {
+      await page.reload();
+      return await page.locator("article.card").filter({ hasText: eventTitle }).locator("img.event-cover").count();
+    }, { timeout: 30_000, intervals: [500, 1_000, 2_000] }).toBe(1);
+    eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
+    const cover = eventCard.locator("img.event-cover").first();
+    await cover.scrollIntoViewIfNeeded();
+    await expect(cover).toBeVisible();
+    await expect.poll(
+      () => cover.evaluate((image) => image.naturalWidth),
+      { timeout: 15_000 },
+    ).toBeGreaterThan(0);
+    expect(await cover.getAttribute("src")).toContain("token=");
+
+    await eventCard.getByRole("button", { name: "發布活動" }).click();
+    await expect(page).toHaveURL(/success=event_published/u, { timeout: 30_000 });
+    eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
+    await expect(eventCard.getByText("已發布", { exact: true })).toBeVisible();
+
+    const cancelForm = eventCard.locator("form.inline-form");
+    await cancelForm.getByLabel("取消原因").fill("staging 活動驗收完成，保留為可回收測試資料。");
+    await cancelForm.getByRole("button", { name: "取消活動" }).click();
+    await expect(page).toHaveURL(/success=event_cancelled/u, { timeout: 30_000 });
+    eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
+    await expect(eventCard.getByText("已取消", { exact: true })).toBeVisible();
+    await expect(eventCard.getByRole("button", { name: "取消活動" })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   });
 });
