@@ -1,5 +1,7 @@
 "use server";
 
+import { pushClubMessageToLine } from "@/lib/line/message-center-push";
+import type { MessagePushOutcome } from "@/lib/line/message-push-outcome";
 import { parseClubMessage, parseReadReceipt } from "@/lib/message-center/contracts";
 import {
   normalizeMessageBody,
@@ -17,7 +19,9 @@ import { createClient } from "@/lib/supabase/server";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 export type MessageActionResult =
-  | { ok: true; message: ReturnType<typeof parseClubMessage> }
+  // `linePush` describes an echo of the message, never the message itself: the
+  // row is committed either way, so a failed push must not read as a failed send.
+  | { ok: true; message: ReturnType<typeof parseClubMessage>; linePush?: MessagePushOutcome }
   | { ok: false; reason: "invalid_input" | "forbidden" | "failed" };
 
 export type ReadActionResult =
@@ -76,12 +80,24 @@ export async function sendClubMessageAction(formData: FormData): Promise<Message
   });
   if (error) return { ok: false, reason: failureReason(error) };
 
+  let message: ReturnType<typeof parseClubMessage>;
   try {
-    const message = parseClubMessage({ ...(data as object), read_at: null });
-    return { ok: true, message };
+    message = parseClubMessage({ ...(data as object), read_at: null });
   } catch {
     return { ok: false, reason: "failed" };
   }
+
+  // The push runs after the message exists so a member who opens LINE and taps
+  // through always finds the message centre row already there.
+  const linePush = await pushClubMessageToLine({
+    supabase,
+    clubId,
+    messageId: message.id,
+    title,
+    body,
+  }).catch((): MessagePushOutcome => ({ status: "failed", reason: "unexpected" }));
+
+  return { ok: true, message, linePush };
 }
 
 export async function markClubMessageReadAction(

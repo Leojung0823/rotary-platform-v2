@@ -251,8 +251,24 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 #### 本輪明確不做（已排序在後）
 
-- `[ ]` 事件驅動自動推播：訊息中心公告、活動通知、生日祝福徵集邀請自動推 LINE。
-  需要另做社員 opt-in 偏好、冪等鍵與「站內＋LINE 不重複打擾」規則。
+- `[>]` **事件驅動自動推播：訊息中心公告已完成**（2026-09-02，分支 `codex/line-oa-event-push`）。
+  幹部在訊息中心發布訊息後，會自動推播 LINE 給「被指定到、已配對 LINE、且兩個通知開關都開著」的社員。
+
+  - 社員偏好沿用既有的 `notification_settings.line_enabled` 與 `club_announcements`，
+    沒有新做偏好資料表；缺列視為預設開啟。
+  - 收件人由 `list_club_message_line_targets` 在資料庫解析，**不是**拿該社全部 follower —
+    指定對象的訊息不能外洩給沒被指定的人。
+  - `line_push_logs.source_message_id` 加上 partial unique index，一則訊息只會推一次；
+    重複送出或連點不會讓同一則公告推兩次（LINE 訊息無法收回）。
+  - 推播紀錄用 `record_club_message_line_push`，權限是 `member.manage`（發訊息的同一個權限），
+    不是 `oa.manage`。手動推播的 `record_line_push` 維持原樣不動。
+  - 旗標 `line_oa_event_push_v1` 預設關閉，關閉時連 `authenticated` 的 EXECUTE 都撤掉。
+  - **LINE 推播失敗不會讓訊息變成發送失敗**：訊息中心的資料列已經寫入，畫面另外提示推播結果。
+
+  仍待：`npm run verify:db`（等 Codex 讓出本機資料庫）、staging 驗收。
+
+- `[ ]` 事件驅動自動推播的**其餘來源**：活動通知、生日祝福徵集邀請。
+  訊息中心這條已經把資料庫權限、冪等與偏好的模式建立起來，其餘來源照同一套接。
 - `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
 - `[ ]` webhook `follow` 事件自動配對 follower，減少後台手動輸入 OA userId。
 
