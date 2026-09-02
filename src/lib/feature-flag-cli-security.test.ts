@@ -35,21 +35,33 @@ describe("feature flag CLI security boundary", () => {
       const match = source.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`, "u"));
       return [...(match?.[1] ?? "").matchAll(/"([a-z0-9_]+)"/gu)].map((entry) => entry[1]);
     };
-    const known = new Set([...listed("IMPLEMENTED"), ...listed("UNIMPLEMENTED")]);
+    const known = new Set([...listed("TOGGLEABLE"), ...listed("UNIMPLEMENTED")]);
 
-    // Shipped rollback keys the CLI never registered. Adding them to
-    // IMPLEMENTED would also add them to `--all-implemented`, which would turn
-    // features on rather than leave them rollback-only, so they are recorded
-    // here until that distinction exists. Listed in TO-DO-LIST.md.
-    const knownAbsent = new Set(["birthday_wishes_v1", "message_board_v1", "archive_handover_v1"]);
-
-    const missing = featureFlagKeys.filter((key) => !known.has(key) && !knownAbsent.has(key));
+    const missing = featureFlagKeys.filter((key) => !known.has(key));
     expect(missing).toEqual([]);
   });
 
   it("does not offer a key the application no longer declares", () => {
-    const match = source.match(/const IMPLEMENTED = \[([\s\S]*?)\];/u);
-    const implemented = [...(match?.[1] ?? "").matchAll(/"([a-z0-9_]+)"/gu)].map((entry) => entry[1]);
-    expect(implemented.filter((key) => !featureFlagKeys.includes(key as never))).toEqual([]);
+    const match = source.match(/const TOGGLEABLE = \[([\s\S]*?)\];/u);
+    const toggleable = [...(match?.[1] ?? "").matchAll(/"([a-z0-9_]+)"/gu)].map((entry) => entry[1]);
+    expect(toggleable.filter((key) => !featureFlagKeys.includes(key as never))).toEqual([]);
+  });
+
+  it("keeps a bulk enable narrower than what the CLI can switch off", () => {
+    const listed = (name: string) => {
+      const match = source.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`, "u"));
+      return [...(match?.[1] ?? "").matchAll(/"([a-z0-9_]+)"/gu)].map((entry) => entry[1]);
+    };
+    const toggleable = new Set(listed("TOGGLEABLE"));
+    const bulk = listed("BULK_ENABLE");
+
+    // `--all-implemented` turns features on. A key that exists so a shipped
+    // feature can be rolled back must stay reachable by name and stay out of
+    // the bulk enable, or a rollback list becomes a switch-everything-on list.
+    expect(bulk.filter((key) => !toggleable.has(key))).toEqual([]);
+    for (const rollbackOnly of ["birthday_wishes_v1", "message_board_v1", "archive_handover_v1"]) {
+      expect(toggleable.has(rollbackOnly)).toBe(true);
+      expect(bulk).not.toContain(rollbackOnly);
+    }
   });
 });

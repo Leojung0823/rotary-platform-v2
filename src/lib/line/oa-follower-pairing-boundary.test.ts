@@ -27,3 +27,28 @@ describe("LINE OA follower pairing controls", () => {
     expect(page).toContain("follower.oa_user_id.slice(0, 10)");
   });
 });
+
+describe("LINE OA account retirement", () => {
+  const actions = readFileSync("src/app/actions.ts", "utf8");
+
+  it("can reach the disabled state the database already supports", () => {
+    // The configure form only ever sent "active", so an account saved against
+    // the wrong club could never be retired from any screen.
+    expect(actions).toContain("disableLineOaAction");
+    expect(actions).toContain('p_mode: "disabled"');
+    expect(page).toContain("action={disableLineOaAction}");
+  });
+
+  it("carries the stored display name, which the RPC refuses to be empty", () => {
+    const block = actions.slice(
+      actions.indexOf("export async function disableLineOaAction"),
+      actions.indexOf("export async function pairLineOaAction"),
+    );
+    expect(block).toContain('formData.get("displayName")');
+    expect(page).toContain('value={oa.account.display_name}');
+  });
+
+  it("only offers retirement once an account exists", () => {
+    expect(page).toContain("{oa.account && <form action={disableLineOaAction}");
+  });
+});

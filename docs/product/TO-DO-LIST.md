@@ -264,15 +264,18 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 - `[ ]` **「尚未加入官方帳號」文案誤導**。畫面說的是「平台沒有配對紀錄」，不是「這個人沒加好友」。
   已經加了好友但還沒配對的人看到這句，只會以為自己加錯了。應改成「尚未與平台配對」之類的說法。
 
-- `[ ]` **設錯社的 OA 帳號無法從畫面移除**。`configure_line_oa` 支援 `disabled` 狀態，但後台沒有
-  對應的操作，設錯社之後那筆資料只能留著（沒有對應環境變數，所以會 fail closed，不會誤送）。
+- `[x]` **設錯社的 OA 帳號無法從畫面移除**（2026-09-03 已修）。OA 設定卡片加了「停用這個 OA 帳號」，
+  呼叫既有的 `configure_line_oa` 傳 `disabled`（不用新 migration，資料庫本來就支援）。
+  停用後 `get_line_oa_admin` 不再投影該列，頁面回到未設定狀態，重新儲存即可再次啟用。
+  原本的風險是：殘留的設定在有人建立剛好同名的環境變數時會突然變成活的。
 
-- `[ ]` **旗標 CLI 不認得三個已上線的 rollback key**：`birthday_wishes_v1`、`message_board_v1`、
+- `[x]` **旗標 CLI 不認得三個已上線的 rollback key**（2026-09-03 已修）：`birthday_wishes_v1`、`message_board_v1`、
   `archive_handover_v1` 不在 `scripts/set-feature-flags.mjs` 的 `IMPLEMENTED` 裡，
   所以**沒辦法用這支受保護的 CLI 回滾留言板、文件中心或生日 V1**。
-  直接加進 `IMPLEMENTED` 會連帶讓 `--all-implemented` 把它們打開，那是「開啟」不是「可回滾」，
-  兩件事需要分開的分類才對。`feature-flag-cli-security.test.ts` 已把這三個記成已知缺口，
-  新增第四個沒登記的 key 會讓測試失敗。
+  一份清單被當成兩種用途。已拆成 `TOGGLEABLE`（CLI 認得、可以關掉的全部 key）與
+  `BULK_ENABLE`（`--all-implemented` 會打開的 key）；三個 rollback key 進前者、不進後者。
+  測試會確認 `BULK_ENABLE` 是 `TOGGLEABLE` 的子集、三個 rollback key 在前者不在後者，
+  以及 CLI 認得程式宣告的每一個 key。
 
 - `[ ]` **後台沒有顯示該社要設定的環境變數名稱**。`/clubs/{clubId}/line-oa` 只說「由各社專屬的
   server environment key 讀取」，但沒有顯示是哪一個 key，設定的人得自己從 club code 推算

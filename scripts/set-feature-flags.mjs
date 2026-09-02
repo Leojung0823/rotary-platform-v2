@@ -11,7 +11,33 @@ import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 // it is actually built. The list is empty of unimplemented keys today; keep the
 // split, because a key is usually declared before the feature lands and
 // enabling one of those exposes nothing at best.
-const IMPLEMENTED = [
+// Every key this CLI will act on. It is the only interface that reaches
+// set_platform_feature_flag, so a shipped feature missing from here cannot be
+// rolled back through the protected, audited path at all.
+const TOGGLEABLE = [
+  "role_context_v2",
+  "role_shells_v2",
+  "member_home_v2",
+  "checkin_qr_v2",
+  "checkin_gps_v2",
+  "attendance_ui_v2",
+  "announcements_v09",
+  "blessing_iou_v1",
+  "blessing_iou_collections_v1",
+  "blessing_iou_reporting_v1",
+  "birthday_wishes_v1",
+  "birthday_wishes_v2",
+  "birthday_wishes_collection_v1",
+  "message_board_v1",
+  "archive_handover_v1",
+  "line_oa_event_push_v1",
+  "line_oa_auto_pairing_v1",
+];
+
+// What `--all-implemented` turns on. Deliberately narrower than TOGGLEABLE:
+// a key that exists so a shipped feature can be switched off must not be
+// switched on by a bulk enable that was aimed at something else.
+const BULK_ENABLE = [
   "role_context_v2",
   "role_shells_v2",
   "member_home_v2",
@@ -27,6 +53,7 @@ const IMPLEMENTED = [
   "line_oa_event_push_v1",
   "line_oa_auto_pairing_v1",
 ];
+
 const UNIMPLEMENTED = [];
 
 function fail(message) {
@@ -39,7 +66,7 @@ if (action !== "enable" && action !== "disable") {
 }
 
 const keys = requested.includes("--all-implemented")
-  ? IMPLEMENTED
+  ? BULK_ENABLE
   : requested.filter((value) => !value.startsWith("--"));
 if (keys.length === 0) fail("no feature flag keys given");
 
@@ -47,7 +74,7 @@ for (const key of keys) {
   if (UNIMPLEMENTED.includes(key)) {
     fail(`${key} has no implementation behind it; refusing to enable a flag that exposes nothing`);
   }
-  if (!IMPLEMENTED.includes(key)) {
+  if (!TOGGLEABLE.includes(key)) {
     fail(`${key} is not a known feature flag key`);
   }
 }

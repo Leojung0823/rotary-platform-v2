@@ -350,6 +350,26 @@ export async function configureLineOaAction(formData: FormData) {
   redirect(`/clubs/${clubId}/line-oa?success=configured`);
 }
 
+// A club configured on the wrong club, or an account being retired, otherwise
+// stays forever: the form only ever sends "active", so nothing can reach the
+// disabled state the database already supports. A stale row is harmless only
+// while no environment variable happens to match its derived key.
+export async function disableLineOaAction(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("configure_line_oa", {
+    p_club_id: clubId,
+    // configure_line_oa refuses an empty display name, so the current one is
+    // carried through rather than invented here.
+    p_display_name: String(formData.get("displayName") ?? ""),
+    p_basic_id: String(formData.get("basicId") ?? ""),
+    p_channel_id: String(formData.get("channelId") ?? ""),
+    p_mode: "disabled",
+  });
+  if (error) redirect(errorPath(`/clubs/${clubId}/line-oa`, mapDatabaseError(error.message)));
+  redirect(`/clubs/${clubId}/line-oa?success=disabled`);
+}
+
 export async function pairLineOaAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
   const supabase = await createClient();
