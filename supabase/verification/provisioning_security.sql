@@ -169,19 +169,26 @@ begin
 end;
 $$;
 
--- Member/operator exclusivity is enforced in both directions.
+-- Member and operator are no longer exclusive: an executive secretary may also
+-- be a Rotary member, in their own club or another one. The membership is
+-- removed again so the assertions further down see the roster they expect.
 do $$
 declare operator_person_id uuid := (
   select account.person_id from public.app_accounts as account
   where account.auth_user_id = '10000000-0000-0000-0000-000000000002'
 );
 declare club_b_id uuid := (select id from public.clubs where club_code = 'CLUB-B');
+declare inserted_id uuid;
 begin
-  begin
-    insert into public.club_memberships (club_id, person_id) values (club_b_id, operator_person_id);
-    raise exception 'active operator received active membership';
-  exception when check_violation then null;
-  end;
+  insert into public.club_memberships (club_id, person_id)
+  values (club_b_id, operator_person_id)
+  returning id into inserted_id;
+
+  if inserted_id is null then
+    raise exception 'an operator must be allowed an active membership';
+  end if;
+
+  delete from public.club_memberships where id = inserted_id;
 end;
 $$;
 
@@ -207,16 +214,22 @@ insert into auth.users (
 ) values ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'member@example.test', '', now(), '{}', '{}', now(), now());
 insert into public.app_accounts (auth_user_id, person_id, login_email, account_display_name)
 values ('10000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000005', 'member@example.test', '跨社社友');
+-- The other direction: a Rotary member may be given executive-secretary
+-- authority. Removed again so the roster assertions below are unchanged.
 do $$
 declare member_account_id uuid := (select id from public.app_accounts where login_email_normalized = 'member@example.test');
 declare club_a_id uuid := (select id from public.clubs where club_code = 'CLUB-A');
+declare granted_id uuid;
 begin
-  begin
-    insert into public.club_operator_permissions (club_id, app_account_id)
-    values (club_a_id, member_account_id);
-    raise exception 'active member received active operator permission';
-  exception when check_violation then null;
-  end;
+  insert into public.club_operator_permissions (club_id, app_account_id)
+  values (club_a_id, member_account_id)
+  returning id into granted_id;
+
+  if granted_id is null then
+    raise exception 'a member must be allowed an executive-secretary assignment';
+  end if;
+
+  delete from public.club_operator_permissions where id = granted_id;
 end;
 $$;
 

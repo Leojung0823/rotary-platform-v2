@@ -317,6 +317,34 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 - `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
 - `[ ]` webhook `follow` 事件自動配對 follower，減少後台手動輸入 OA userId。
 
+### 雙重社籍與跨社執行秘書 `[>]`
+
+產品決定（2026-09-03）：**同一個人可以同時在多個扶輪社有有效社籍，也可以在擔任社員的同時
+擔任執行秘書**（本社或他社）。原本的「有效社友不能當執行秘書」規則已移除。
+
+`20260903000100_allow_operator_membership.sql`：
+
+- 移除四個 provisioning RPC 裡的 `active_member_cannot_be_operator` 檢查。
+  這四處只是提前給出好看的錯誤，**真正的把關者是兩個 trigger**，
+  `club_memberships_prevent_operator_overlap` 與 `club_operator_permissions_prevent_member_overlap`，
+  兩個都已刪除（連同它們的函式，避免被重新掛上）。
+- **修掉移除互斥後才會出現的破洞**：`resolve_my_experience_context` 的 `member_clubs.can_manage`
+  原本只看社長／秘書／財務的角色指派。同時是某社社員又是該社執行秘書的人，會被投影成
+  `can_manage=false` 的一般社員，而且因為已在 `member_clubs` 而被排除於 `managed_only_clubs`
+  之外，**管理外殼會整個消失**。現在 `can_manage` 也認 `club_operator_permissions`。
+- 資料模型本來就允許雙重社籍：唯一索引是 `(club_id, person_id)`，沒有跨社數量限制。
+
+驗證：`operator_membership_coexistence_security.sql` 測雙重社籍、跨社執行秘書、名錄不重複、
+`can_manage` 不會遺失、**以及社籍不會憑空變成管理權限**。
+`core_identity_baseline.sql` 與 `provisioning_security.sql` 的舊斷言已改成驗證新的不變條件，
+不是刪掉：baseline 現在斷言那兩個 trigger 與其函式**不存在**，重新掛上會失敗。
+
+切換社別不需要新做：側欄本來就有收合式的 `ClubSwitcher`（兩次點擊），
+`member_clubs` 也本來就會投影全部社籍，只是先前不可能有多社社員所以沒人走到。
+只更新了那段寫著「membership and operator status are mutually exclusive」的過時註解與畫面文案。
+
+仍待：staging 部署與真人操作驗收。
+
 ### M1 五位使用者形成性測試 `[ ]`
 
 需要安排實際社員／幹部測試，不以自動化測試代替產品訪談與觀察。

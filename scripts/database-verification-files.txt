@@ -50,3 +50,4 @@ supabase/verification/line_oa_follow_event_pairing_security.sql
 supabase/verification/line_oa_member_onboarding_security.sql
 supabase/verification/line_oa_message_center_push_security.sql
 supabase/verification/line_oa_event_publish_push_security.sql
+supabase/verification/operator_membership_coexistence_security.sql

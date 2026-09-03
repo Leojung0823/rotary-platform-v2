@@ -85,22 +85,33 @@ begin
     raise exception 'A club-wide unique index would incorrectly limit a club to one operator.';
   end if;
 
-  if not exists (
+  -- Membership and operator authority used to be mutually exclusive, enforced
+  -- by a trigger on each table. Rotary practice allows dual membership and
+  -- allows a member of one club to serve as another club's executive secretary,
+  -- so both triggers were dropped deliberately. Asserting their absence keeps
+  -- the removal explicit: a reintroduced trigger would start refusing the
+  -- pairings the platform now supports.
+  if exists (
     select 1
     from pg_trigger
-    where tgname = 'club_memberships_prevent_operator_overlap'
+    where tgname in (
+      'club_memberships_prevent_operator_overlap',
+      'club_operator_permissions_prevent_member_overlap'
+    )
       and not tgisinternal
   ) then
-    raise exception 'Missing member/operator overlap trigger on club_memberships.';
+    raise exception 'The member/operator overlap triggers were reintroduced; dual membership is intended.';
   end if;
 
-  if not exists (
+  -- What must not be lost with them: a membership row is not authority. That
+  -- is asserted against live data in operator_membership_coexistence_security.
+  if exists (
     select 1
-    from pg_trigger
-    where tgname = 'club_operator_permissions_prevent_member_overlap'
-      and not tgisinternal
+    from pg_proc
+    where pronamespace = 'public'::regnamespace
+      and proname in ('prevent_member_operator_overlap', 'prevent_operator_member_overlap')
   ) then
-    raise exception 'Missing member/operator overlap trigger on club_operator_permissions.';
+    raise exception 'The overlap trigger functions still exist and could be re-attached.';
   end if;
 end;
 $$;

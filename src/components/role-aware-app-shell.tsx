@@ -254,12 +254,11 @@ export function RoleAwareAppShell({
           <MobileShellContext context={context} mode={mode} />
           <ModeSwitcher context={context} mode={mode} />
         </>}
-        {/* A single club is the common case (one person, one club) and needs
-            no picker. Platform admins keep the switcher regardless of count
-            (they oversee the whole platform); everyone else only gets it if
-            they genuinely manage more than one club (a multi-club operator,
-            never a multi-club member — membership and operator status are
-            mutually exclusive). */}
+        {/* A single club is the common case and needs no picker. Platform
+            admins keep the switcher regardless of count (they oversee the whole
+            platform); everyone else gets it once they actually have more than
+            one club in this mode -- which now includes a member of two clubs,
+            and a member who is also another club's executive secretary. */}
         {(context.hasPlatformAccess || clubsForExperienceMode(context, mode).length > 1)
           && <ClubSwitcher context={context} mode={mode} />}
       </header>
