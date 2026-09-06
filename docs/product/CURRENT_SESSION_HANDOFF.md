@@ -3,6 +3,23 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## LINE OA 社員導引 PR-1 已部署並啟用（2026-09-07）
+
+`f4051db feat(line-oa): add member onboarding entry points`（含
+`20260902000500_line_oa_member_onboarding.sql`）已隨 Go-Live `33704642718` 部署到 staging，
+執行版本 `e554985`；該次流程的 `Apply remote migrations` 與 hosted member acceptance 都成功，
+`/api/health` 的 `issues` 與 `warnings` 皆為空。沒有手動執行 CI，production 未變更。
+
+`line_oa_onboarding_v1` 已由平台管理員透過受保護 CLI 對 staging 開啟
+（`enabled`、單一環境 `staging`、rollout 100；CLI 會核對 RPC 回傳值相符才回報成功）。
+`line_oa_account_link_v1` 目前在程式與 CLI 中都不存在，未開啟也無從開啟。
+
+**仍未確認**：功能是否真的顯示給社員。`line_oa_onboarding_v1` 有緊急停用開關
+`DISABLE_LINE_OA_ONBOARDING`（見 `emergencyKillSwitches`）；Render staging 若設有這個環境變數，
+旗標開啟後功能仍為關閉。這台開發機沒有任何 Render 存取途徑（無 CLI、無 API key、
+deploy hook 只存在 GitHub secrets），所以無法從這裡查證，需由有 Render 權限的人確認，
+或直接以「會員中心是否出現導引入口」判定。
+
 ## LINE OA 推播 staging 上線狀態（2026-09-03）
 
 staging 執行版本 `67763b1`，`/api/health` 的 `issues` 與 `warnings` 都是空的。
