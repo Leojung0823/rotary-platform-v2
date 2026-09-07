@@ -176,7 +176,17 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
       const assignment = assignmentCard.locator('textarea[name="content"]');
       await expect(assignmentCard).toBeVisible();
       await expect(assignment).toBeVisible();
+      // This account belongs to both the ordinary member fixture club and the
+      // managed birthday fixture club. Select the club whose assignment was
+      // just generated before checking the member homepage projection.
       await memberPage.goto(new URL("/dashboard", baseURL).toString());
+      await memberPage.locator('summary[aria-label="切換目前所在的社或委員會"]').click();
+      const birthdayClubChoice = memberPage.locator(
+        `form:has(input[name="clubId"][value="${clubId}"]) button`,
+      );
+      await expect(birthdayClubChoice).toBeVisible();
+      await birthdayClubChoice.click();
+      await expect(memberPage).toHaveURL(/\/dashboard(?:\?mode=member)?$/u);
       await expect(memberPage.getByRole("heading", { name: "最新通知" })).toBeVisible();
       await expect(memberPage.getByText("本月生日祝福任務", { exact: true })).toBeVisible();
       await memberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
