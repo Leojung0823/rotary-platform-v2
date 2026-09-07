@@ -42,8 +42,8 @@ export function ExperienceContextResolver({
     <header className="page-header">
       <div>
         <p className="eyebrow">工作台</p>
-        <h1>角色與作用社別</h1>
-        <p>模式與作用社別僅決定導覽；每個頁面和資料庫操作仍會重新驗證權限與社別。</p>
+        <h1>選擇目前所在的社／委員會</h1>
+        <p>這個選擇只影響畫面顯示的內容；每個頁面和資料庫操作仍會各自重新驗證您的權限。</p>
       </div>
       <Badge tone="success">{modeLabels[mode]}</Badge>
     </header>
@@ -62,11 +62,11 @@ export function ExperienceContextResolver({
     {mode === "platform" ? <Card>
       <p className="eyebrow">平台管理</p>
       <h2>平台管理入口</h2>
-      <p>平台權限不會將作用社別當成資料授權來源。</p>
+      <p>平台權限不會因為這個選擇而改變。</p>
       <Link className="card-link" href={route.destination}>前往平台管理 →</Link>
     </Card> : clubs.length === 0 ? <EmptyState
       title="目前沒有可用的扶輪社"
-      body="作用社別已失效，請聯絡平台或社務管理員確認社籍與權限。"
+      body="目前選擇的社已失效，請聯絡平台或社務管理員確認社籍與權限。"
     /> : <section>
       <div className="section-heading">
         <div>
@@ -79,13 +79,13 @@ export function ExperienceContextResolver({
         {clubs.map((club) => <Card key={club.clubId}>
           <span className="club-code">{club.clubCode}</span>
           <h3>{club.clubName}</h3>
-          <p>{club.clubId === activeClub?.clubId ? "目前作用社別" : "可切換為作用社別"}</p>
+          <p>{club.clubId === activeClub?.clubId ? "目前所在" : "點選即可切換到這裡"}</p>
           <div className="form-actions">
             <Link className="button button-secondary" href={clubDestination(mode, club)}>前往 →</Link>
             <form action={setActiveClubPreferenceAction}>
               <input type="hidden" name="clubId" value={club.clubId} />
               <input type="hidden" name="mode" value={mode} />
-              <Button type="submit">設為作用社別</Button>
+              <Button type="submit">切換到這個社</Button>
             </form>
           </div>
         </Card>)}

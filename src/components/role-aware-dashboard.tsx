@@ -18,7 +18,7 @@ const modeContent: Readonly<Record<ExperienceMode, Readonly<{
   },
   platform: {
     eyebrow: "平台管理模式",
-    description: "平台權限與作用社別分開處理，這裡不會把全平台扶輪社設為作用社別。",
+    description: "平台權限與目前所在的社分開處理；這裡不會把全平台扶輪社設為您所在的社。",
   },
 };
 
@@ -87,7 +87,7 @@ export function RoleAwareDashboardLanding({
       <Link className="card-link" href="/platform/clubs?mode=platform">前往扶輪社管理 →</Link>
     </Card> : !activeClub ? <EmptyState
       title="目前沒有可用的扶輪社"
-      body="作用社別已失效，請聯絡平台或社務管理員確認社籍與權限。"
+      body="目前選擇的社已失效，請聯絡平台或社務管理員確認社籍與權限。"
     /> : mode === "member" ? <Card>
       <p className="eyebrow">目前作用扶輪社</p>
       <h2>{activeClub.clubName}</h2>

@@ -102,7 +102,7 @@ function ClubOption({ club, mode, active }: { club: ClubContext; mode: Experienc
     <input type="hidden" name="mode" value={mode} />
     <button type="submit" aria-current={active ? "true" : undefined}>
       <span>{club.clubName}</span>
-      <small>{club.clubCode}{active ? " · 目前作用社別" : ""}</small>
+      <small>{club.clubCode}{active ? " · 目前所在" : ""}</small>
     </button>
   </form>;
 }
@@ -132,16 +132,21 @@ function ClubGroup({
 
 function ClubSwitcher({ context, mode }: { context: ExperienceContext; mode: ExperienceMode }) {
   if (mode === "platform") {
-    return <p className={styles.scopeLabel}>平台範圍不使用作用社別</p>;
+    return <p className={styles.scopeLabel}>平台範圍不限定單一社或委員會</p>;
   }
 
   const clubs = clubsForExperienceMode(context, mode);
   const activeClub = clubs.find((club) => club.clubId === context.activeClubId) ?? clubs[0] ?? null;
   const managedMemberClubs = context.memberClubs.filter((club) => club.canManage);
   return <details className={styles.clubSwitcher}>
-    <summary aria-label="切換作用扶輪社">
-      <span className={styles.controlLabel}>目前作用社別</span>
-      <strong>{activeClub?.clubName ?? "尚無可用扶輪社"}</strong>
+    <summary aria-label="切換目前所在的社或委員會">
+      <span className={styles.controlLabel}>目前所在的社／委員會</span>
+      <span className={styles.clubSummaryRow}>
+        <strong>{activeClub?.clubName ?? "尚無可用扶輪社"}</strong>
+        {/* "作用社別" is the model's word, not a member's. The chevron is the
+            only thing that says this box does something when tapped. */}
+        <span className={styles.clubChevron} aria-hidden="true">▾</span>
+      </span>
     </summary>
     <div className={styles.clubPanel}>
       {mode === "member" ? <ClubGroup
