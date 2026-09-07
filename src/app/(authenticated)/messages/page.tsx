@@ -1,7 +1,11 @@
-import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { MessageCenter } from "@/components/message-center/message-center";
 import { requireIdentity } from "@/lib/auth";
+import {
+  activeClubCookieName,
+  readActiveClubPreference,
+} from "@/lib/experience-context-cookie";
 import {
   parseClubMessageInbox,
   parseSentClubMessages,
@@ -31,7 +35,7 @@ function MessageHeader() {
     <div>
       <p className="eyebrow">社內通知</p>
       <h1>訊息中心</h1>
-      <p>幹部發布的訊息會送到這裡，不需要加入 LINE 官方帳號也收得到。每個扶輪社的訊息彼此隔離。</p>
+      <p>幹部發布的訊息會送到這裡，不需要加入 LINE 官方帳號也收得到。只顯示您目前所在社的訊息；要看另一個社，請用左側的社別切換。</p>
     </div>
   </header>;
 }
@@ -41,7 +45,11 @@ export default async function MessagesPage({
 }: {
   searchParams: Promise<{ clubId?: string }>;
 }) {
-  const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
+  const [identity, query, cookieStore] = await Promise.all([
+    requireIdentity(),
+    searchParams,
+    cookies(),
+  ]);
   const evaluation = await evaluateCurrentFeatureFlag({
     key: "announcements_v09",
     subjectUuid: identity.id,
@@ -66,7 +74,14 @@ export default async function MessagesPage({
   }
 
   const clubs = rows;
-  const selectedClub = clubs.find((club) => club.club_id === query.clubId) ?? clubs[0] ?? null;
+  // The club the shell switcher is pointing at. It is only ever used to pick
+  // from the clubs this account is already an active member of, so a stale or
+  // forged cookie can at worst land on the first of them.
+  const activeClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
+  const selectedClub = clubs.find((club) => club.club_id === query.clubId)
+    ?? clubs.find((club) => club.club_id === activeClubId)
+    ?? clubs[0]
+    ?? null;
 
   if (!selectedClub) {
     return <div className="page-stack">
@@ -137,21 +152,6 @@ export default async function MessagesPage({
 
   return <div className="page-stack">
     <MessageHeader />
-
-    {clubs.length > 1 && <section>
-      <div className="section-heading"><h2>選擇扶輪社</h2></div>
-      <div className="club-grid">
-        {clubs.map((club) => <Link
-          key={club.club_id}
-          href={`/messages?clubId=${encodeURIComponent(club.club_id)}`}
-          className="club-card"
-          aria-current={selectedClub.club_id === club.club_id ? "page" : undefined}
-        >
-          <div><span className="club-code">{club.club_code}</span><h3>{club.club_name}</h3></div>
-          <span className="card-link">{selectedClub.club_id === club.club_id ? "目前顯示" : "開啟訊息中心 →"}</span>
-        </Link>)}
-      </div>
-    </section>}
 
     <MessageCenter
       clubId={selectedClub.club_id}

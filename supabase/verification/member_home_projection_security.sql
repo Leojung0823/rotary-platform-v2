@@ -59,14 +59,14 @@ insert into public.event_checkin_sessions (
 
 insert into public.club_messages (
   id, club_id, author_app_account_id, title, body, audience_kind, status,
-  published_at, deleted_at
+  action_path, published_at, deleted_at
 ) values
-  ('68000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '最新未讀通知', '請記得回覆本週例會出席狀況。', 'everyone', 'active', now() - interval '5 minutes', null),
-  ('68000000-0000-4000-8000-000000000002', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '已讀通知', '這則已讀通知仍可出現在最新三則。', 'everyone', 'active', now() - interval '10 minutes', null),
-  ('68000000-0000-4000-8000-000000000003', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '第三則通知', '首頁最多只顯示三則通知。', 'everyone', 'active', now() - interval '15 minutes', null),
-  ('68000000-0000-4000-8000-000000000004', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '超出首頁上限', '這則仍計入未讀，但不應出現在首頁預覽。', 'everyone', 'active', now() - interval '20 minutes', null),
-  ('68000000-0000-4000-8000-000000000005', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '已撤回的通知', '已撤回內容不應顯示。', 'everyone', 'deleted', now() - interval '1 minute', now()),
-  ('68000000-0000-4000-8000-000000000006', '64000000-0000-4000-8000-000000000002', '63000000-0000-4000-8000-000000000002', '乙社機密通知', '甲社社員絕對不能看到。', 'everyone', 'active', now() - interval '2 minutes', null);
+  ('68000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '最新未讀通知', '請記得回覆本週例會出席狀況。', 'everyone', 'active', '/birthday-collection?clubId=64000000-0000-4000-8000-000000000001', now() - interval '5 minutes', null),
+  ('68000000-0000-4000-8000-000000000002', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '已讀通知', '這則已讀通知仍可出現在最新三則。', 'everyone', 'active', null, now() - interval '10 minutes', null),
+  ('68000000-0000-4000-8000-000000000003', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '第三則通知', '首頁最多只顯示三則通知。', 'everyone', 'active', null, now() - interval '15 minutes', null),
+  ('68000000-0000-4000-8000-000000000004', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '超出首頁上限', '這則仍計入未讀，但不應出現在首頁預覽。', 'everyone', 'active', null, now() - interval '20 minutes', null),
+  ('68000000-0000-4000-8000-000000000005', '64000000-0000-4000-8000-000000000001', '63000000-0000-4000-8000-000000000001', '已撤回的通知', '已撤回內容不應顯示。', 'everyone', 'deleted', null, now() - interval '1 minute', now()),
+  ('68000000-0000-4000-8000-000000000006', '64000000-0000-4000-8000-000000000002', '63000000-0000-4000-8000-000000000002', '乙社機密通知', '甲社社員絕對不能看到。', 'everyone', 'active', null, now() - interval '2 minutes', null);
 
 insert into public.club_message_recipients (message_id, membership_id, club_id, read_at) values
   ('68000000-0000-4000-8000-000000000001', '65000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001', null),
@@ -111,6 +111,13 @@ begin
     or home->'notifications'->'items'->0->>'is_unread' <> 'true'
     or home->'notifications'->'items'->1->>'is_unread' <> 'false' then
     raise exception 'member-home notification summary is invalid: %', home->'notifications';
+  end if;
+  -- A notification that names a destination carries it through to the member,
+  -- and one that names none says so rather than inventing a link.
+  if home->'notifications'->'items'->0->>'action_path'
+      <> '/birthday-collection?clubId=64000000-0000-4000-8000-000000000001'
+    or home->'notifications'->'items'->1->'action_path' <> 'null'::jsonb then
+    raise exception 'member-home notification destination is invalid: %', home->'notifications';
   end if;
   if home::text like '%不應顯示%'
     or home::text like '%乙社%'

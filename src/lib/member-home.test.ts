@@ -26,6 +26,7 @@ const recentEvent = {
 const notification = {
   title: "本週社務提醒",
   body_preview: "請記得回覆例會出席狀況。",
+  action_path: null,
   published_at: "2026-08-12T09:00:00.000Z",
   is_unread: true,
 };
@@ -85,10 +86,39 @@ describe("member-home projection contract", () => {
       items: [{
         title: "本週社務提醒",
         bodyPreview: "請記得回覆例會出席狀況。",
+        actionPath: null,
         publishedAt: "2026-08-12T09:00:00.000Z",
         unread: true,
       }],
     });
+  });
+
+  it("keeps a safe relative destination so the notification can be opened", () => {
+    const parsed = parseMemberHomeProjection(projection({
+      notifications: {
+        unread_count: 1,
+        items: [{
+          ...notification,
+          action_path: "/birthday-collection?clubId=11111111-1111-4111-8111-111111111111",
+        }],
+      },
+    }));
+    expect(parsed?.notifications.items[0]?.actionPath)
+      .toBe("/birthday-collection?clubId=11111111-1111-4111-8111-111111111111");
+  });
+
+  it("rejects a destination that leaves the platform", () => {
+    for (const actionPath of [
+      "https://example.test/phish",
+      "//example.test/phish",
+      "javascript:alert(1)",
+      "/../etc/passwd",
+      "birthday-collection",
+    ]) {
+      expect(parseMemberHomeProjection(projection({
+        notifications: { unread_count: 1, items: [{ ...notification, action_path: actionPath }] },
+      }))).toBeNull();
+    }
   });
 
   it("rejects unbounded or identifier-bearing notifications", () => {

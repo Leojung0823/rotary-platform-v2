@@ -81,8 +81,24 @@ function RecentEventRow({ event }: { event: MemberHomeRecentEvent }) {
   </div>;
 }
 
-function NotificationRow({ notification }: { notification: MemberHomeNotification }) {
-  return <article className={styles.notificationItem}>
+// A notification that asks the member to go and do something opens the place
+// it is talking about. Where the sender named no destination, the message
+// centre is still a better landing place than nothing at all.
+function NotificationRow({
+  notification,
+  clubId,
+}: {
+  notification: MemberHomeNotification;
+  clubId: string;
+}) {
+  const href = notification.actionPath
+    ?? `/messages?clubId=${encodeURIComponent(clubId)}`;
+
+  return <Link
+    className={`${styles.notificationItem} ${styles.notificationLink}`}
+    href={href}
+    prefetch={false}
+  >
     <div>
       <span className={styles.notificationTitle}>
         <strong>{notification.title}</strong>
@@ -91,7 +107,8 @@ function NotificationRow({ notification }: { notification: MemberHomeNotificatio
       <p>{notification.bodyPreview}</p>
       <small>{formatDateTime(notification.publishedAt)}</small>
     </div>
-  </article>;
+    <span className={styles.notificationChevron} aria-hidden="true">›</span>
+  </Link>;
 }
 
 function MemberHomeContentLoading() {
@@ -134,6 +151,7 @@ async function MemberHomeContent({
           ? projection.notifications.items.map((notification, index) => <NotificationRow
             key={`${notification.publishedAt}-${index}`}
             notification={notification}
+            clubId={activeClubId}
           />)
           : <p>目前沒有可顯示的通知內容。</p>}
       </div>

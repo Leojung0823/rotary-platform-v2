@@ -36,6 +36,7 @@ export type MemberHomeRecentEvent = Readonly<{
 export type MemberHomeNotification = Readonly<{
   title: string;
   bodyPreview: string;
+  actionPath: string | null;
   publishedAt: string;
   unread: boolean;
 }>;
@@ -54,6 +55,17 @@ export type MemberHomeProjection = Readonly<{
 }>;
 
 const maximumEventTextLength = 300;
+
+// The same shape the message centre accepts: a relative in-app path, never a
+// URL. The column constraint already rejects the rest, and this is the second
+// gate before the value reaches an href.
+const safeActionPathPattern = /^\/[A-Za-z0-9][-A-Za-z0-9/?=&._%]{0,498}$/u;
+
+function isSafeActionPath(value: unknown): value is string {
+  return typeof value === "string"
+    && safeActionPathPattern.test(value)
+    && !value.startsWith("//");
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -132,19 +144,21 @@ function parseRecentEvents(value: unknown): readonly MemberHomeRecentEvent[] | n
 
 function parseNotification(value: unknown): MemberHomeNotification | null {
   if (!isRecord(value)
-    || !hasExactKeys(value, ["title", "body_preview", "published_at", "is_unread"])
+    || !hasExactKeys(value, ["title", "body_preview", "action_path", "published_at", "is_unread"])
     || typeof value.title !== "string"
     || value.title.length === 0
     || value.title.length > 120
     || typeof value.body_preview !== "string"
     || value.body_preview.length === 0
     || value.body_preview.length > 240
+    || (value.action_path !== null && !isSafeActionPath(value.action_path))
     || !isIsoDateTime(value.published_at)
     || typeof value.is_unread !== "boolean") return null;
 
   return {
     title: value.title,
     bodyPreview: value.body_preview,
+    actionPath: value.action_path as string | null,
     publishedAt: value.published_at,
     unread: value.is_unread,
   };
