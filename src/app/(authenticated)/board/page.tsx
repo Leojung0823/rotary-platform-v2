@@ -1,7 +1,11 @@
-import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { MessageBoard } from "@/components/message-board/message-board";
 import { requireIdentity } from "@/lib/auth";
+import {
+  activeClubCookieName,
+  readActiveClubPreference,
+} from "@/lib/experience-context-cookie";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -57,7 +61,13 @@ export default async function BoardPage({
 
   const clubs = rows;
   const requested = (await searchParams).clubId;
-  const selectedClub = clubs.find((club) => club.club_id === requested) ?? clubs[0] ?? null;
+  // The club the shell switcher is pointing at, chosen only from the clubs the
+  // database already said this account is an active member of.
+  const activeClubId = readActiveClubPreference((await cookies()).get(activeClubCookieName)?.value);
+  const selectedClub = clubs.find((club) => club.club_id === requested)
+    ?? clubs.find((club) => club.club_id === activeClubId)
+    ?? clubs[0]
+    ?? null;
 
   // Offered only to someone who may manage members: addressing a tag means
   // choosing which members see the post. The RPC refuses anyone else, so an
@@ -73,20 +83,6 @@ export default async function BoardPage({
   return <div className="page-stack">
     <BoardHeader />
 
-    {clubs.length > 1 && <section>
-      <div className="section-heading"><h2>選擇扶輪社</h2></div>
-      <div className="club-grid">
-        {clubs.map((club) => <Link
-          key={club.club_id}
-          href={`/board?clubId=${encodeURIComponent(club.club_id)}`}
-          className="club-card"
-          aria-current={selectedClub?.club_id === club.club_id ? "page" : undefined}
-        >
-          <div><span className="club-code">{club.club_code}</span><h3>{club.club_name}</h3></div>
-          <span className="card-link">{selectedClub?.club_id === club.club_id ? "目前顯示" : "開啟留言板 →"}</span>
-        </Link>)}
-      </div>
-    </section>}
 
     {!selectedClub
       ? <div className="empty-state"><h2>目前沒有可使用的社內留言板</h2><p>只有啟用中的扶輪社與有效社員身分會顯示在這裡。</p></div>

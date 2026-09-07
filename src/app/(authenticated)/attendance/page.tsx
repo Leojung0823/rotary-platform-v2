@@ -1,7 +1,12 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EmptyState, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
+import {
+  activeClubCookieName,
+  readActiveClubPreference,
+} from "@/lib/experience-context-cookie";
 import {
   attendanceStatusBadge,
   attendanceStatusLabels,
@@ -122,11 +127,14 @@ export default async function AttendancePage({
   }
 
   const supabase = await createClient();
+  // The club the shell switcher is pointing at. The database still decides
+  // whether this caller has an active membership there.
+  const activeClubId = readActiveClubPreference((await cookies()).get(activeClubCookieName)?.value);
   // One call: the database picks the club and applies the default Rotary-year
   // range, so the summary and history come back with the club list rather than
   // a round trip behind it.
   const { data, error } = await supabase.rpc("get_my_attendance_page", {
-    p_club_id: params.clubId ?? null,
+    p_club_id: params.clubId ?? activeClubId,
     p_date_from: range?.dateFrom ?? null,
     p_date_to: range?.dateTo ?? null,
   });
@@ -154,20 +162,6 @@ export default async function AttendancePage({
       查詢期間不正確，已改用預設期間。起訖日必須是有效日期，且間隔不超過 366 天。
     </Notice>}
 
-    {memberClubs.length > 1 && <section>
-      <div className="section-heading"><h2>選擇扶輪社</h2></div>
-      <div className="club-grid">
-        {memberClubs.map((club) => <Link
-          key={club.club_id}
-          href={`/attendance?clubId=${encodeURIComponent(club.club_id)}`}
-          className="club-card"
-          aria-current={selectedClub?.club_id === club.club_id ? "page" : undefined}
-        >
-          <div><span className="club-code">{club.club_code}</span><h3>{club.club_name}</h3></div>
-          <span className="card-link">{selectedClub?.club_id === club.club_id ? "目前顯示" : "查看出席 →"}</span>
-        </Link>)}
-      </div>
-    </section>}
 
     {!selectedClub && <EmptyState
       title="目前沒有可查詢的出席社別"

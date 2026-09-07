@@ -1,8 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { registerEventAction } from "@/app/event-actions";
 import { requireIdentity } from "@/lib/auth";
+import {
+  activeClubCookieName,
+  readActiveClubPreference,
+} from "@/lib/experience-context-cookie";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -141,12 +146,20 @@ function statusBadge(status: ClubEvent["status"]) {
   return "badge badge-neutral";
 }
 
-function EventHeader({ clubId, canManage = false }: { clubId?: string | null; canManage?: boolean }) {
+function EventHeader({
+  clubId,
+  canManage = false,
+  hasOtherClubs = false,
+}: {
+  clubId?: string | null;
+  canManage?: boolean;
+  hasOtherClubs?: boolean;
+}) {
   return <header className="page-header">
     <div>
       <p className="eyebrow">社務互動</p>
       <h1>活動與報名</h1>
-      <p>社員查看同社活動並回覆參加狀態；活動資料、名額、簽到與權限都由資料庫依社別驗證。</p>
+      <p>只顯示您目前所在社的活動；活動資料、名額、簽到與權限都由資料庫依社別驗證。{hasOtherClubs ? "要看另一個社，請用左側的社別切換。" : ""}</p>
     </div>
     <div className="form-actions">
       {clubId && canManage && <>
@@ -163,18 +176,29 @@ export default async function EventsPage({
 }: {
   searchParams: Promise<{ clubId?: string; mode?: string; success?: string; error?: string }>;
 }) {
-  const [, params] = await Promise.all([requireIdentity(), searchParams]);
+  const [, params, cookieStore] = await Promise.all([
+    requireIdentity(),
+    searchParams,
+    cookies(),
+  ]);
   const requestedManagement = params.mode === "management";
+  // The club the shell switcher is pointing at. The database still decides
+  // whether this caller may see it, and falls back to the first club it may.
+  const activeClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
   const supabase = await createClient();
   // The old URL remains a compatibility entry point only. Ask for the
   // manager projection long enough to identify and authorize its club, then
   // redirect to the canonical manager route. Every normal /events request is
   // a member read, including when the role shell feature is disabled.
   const pageResult = await supabase.rpc("list_my_event_page", {
-    p_club_id: params.clubId ?? null,
+    p_club_id: params.clubId ?? activeClubId,
     p_as_member: !requestedManagement,
   });
-  const projection = (pageResult.data ?? {}) as { clubs?: unknown; events?: unknown };
+  const projection = (pageResult.data ?? {}) as {
+    clubs?: unknown;
+    selected_club_id?: unknown;
+    events?: unknown;
+  };
 
   const clubRows = Array.isArray(projection.clubs) ? projection.clubs : null;
   if (pageResult.error || !clubRows || !clubRows.every(isEventClub)) {
@@ -185,10 +209,13 @@ export default async function EventsPage({
     </div>;
   }
 
-  const requestedClubId = params.clubId?.trim().toLowerCase() || null;
-  const selectedClub = requestedClubId
-    ? clubRows.find((club) => club.club_id.toLowerCase() === requestedClubId) ?? null
-    : clubRows[0] ?? null;
+  // The database already resolved which club it read events for. Deriving the
+  // selection a second time here is how a page ends up showing one club's name
+  // above another club's rows.
+  const resolvedClubId = typeof projection.selected_club_id === "string"
+    ? projection.selected_club_id.toLowerCase()
+    : null;
+  const selectedClub = clubRows.find((club) => club.club_id.toLowerCase() === resolvedClubId) ?? null;
   if (requestedManagement) {
     if (!selectedClub?.can_manage) redirect("/access-denied");
     redirect(`/clubs/${encodeURIComponent(selectedClub.club_id)}/events?mode=management`);
@@ -205,7 +232,11 @@ export default async function EventsPage({
   const coverUrls = await signCoverImageUrls(events.map((event) => event.cover_image_path));
 
   return <div className="page-stack">
-    <EventHeader clubId={selectedClub?.club_id} canManage={Boolean(selectedClub?.can_manage)} />
+    <EventHeader
+      clubId={selectedClub?.club_id}
+      canManage={Boolean(selectedClub?.can_manage)}
+      hasOtherClubs={clubRows.length > 1}
+    />
 
     {params.success && successMessages[params.success] && <div className="notice notice-success" role="status">
       {successMessages[params.success]}
@@ -214,20 +245,6 @@ export default async function EventsPage({
       {errorMessages[params.error] ?? errorMessages.unexpected}
     </div>}
 
-    {clubRows.length > 1 && <section>
-      <div className="section-heading"><h2>選擇扶輪社</h2></div>
-      <div className="club-grid">
-        {clubRows.map((club) => <Link
-          key={club.club_id}
-          href={`/events?clubId=${encodeURIComponent(club.club_id)}`}
-          className="club-card"
-          aria-current={selectedClub?.club_id === club.club_id ? "page" : undefined}
-        >
-          <div><span className="club-code">{club.club_code}</span><h3>{club.club_name}</h3></div>
-          <span className="card-link">{selectedClub?.club_id === club.club_id ? "目前顯示" : "查看活動 →"}</span>
-        </Link>)}
-      </div>
-    </section>}
 
     {!selectedClub && <div className="empty">
       <div className="empty-icon">日</div>

@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -6,6 +7,10 @@ import {
 } from "@/app/attendance-actions";
 import { EmptyState, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
+import {
+  activeClubCookieName,
+  readActiveClubPreference,
+} from "@/lib/experience-context-cookie";
 import {
   adjustmentTypeLabels,
   attendanceStatusBadge,
@@ -162,8 +167,11 @@ export default async function AttendanceManagePage({
   const supabase = await createClient();
   // One call returns the managed club list, the club summary, the events that
   // count for attendance, and -- when one is selected -- its roster.
+  // The same switcher the shell shows in 社務管理模式. A club the caller cannot
+  // manage is rejected by the database, which falls back to one they can.
+  const activeClubId = readActiveClubPreference((await cookies()).get(activeClubCookieName)?.value);
   const { data, error } = await supabase.rpc("get_club_attendance_page", {
-    p_club_id: params.clubId ?? null,
+    p_club_id: params.clubId ?? activeClubId,
     p_date_from: range?.dateFrom ?? null,
     p_date_to: range?.dateTo ?? null,
     p_event_id: params.eventId ?? null,
@@ -212,20 +220,6 @@ export default async function AttendanceManagePage({
       body="需要該社的出席管理權限（社長、秘書、執行秘書）才能使用這個頁面。"
     />}
 
-    {clubRows.length > 1 && <section>
-      <div className="section-heading"><h2>選擇扶輪社</h2></div>
-      <div className="club-grid">
-        {clubRows.map((club) => <Link
-          key={club.club_id}
-          href={`/attendance/manage?clubId=${encodeURIComponent(club.club_id)}`}
-          className="club-card"
-          aria-current={selectedClub?.club_id === club.club_id ? "page" : undefined}
-        >
-          <div><span className="club-code">{club.club_code}</span><h3>{club.club_name}</h3></div>
-          <span className="card-link">{selectedClub?.club_id === club.club_id ? "目前顯示" : "查看出席 →"}</span>
-        </Link>)}
-      </div>
-    </section>}
 
     {selectedClub && dateFrom && dateTo && <section className="card">
       <div className="section-heading">
