@@ -41,7 +41,7 @@ describe("senior-friendly UX guardrails", () => {
     expect(featurePage).toContain('redirect("/dashboard")');
     expect(featureDetailPage).toContain("hasPlatformAccess");
     expect(featureDetailPage).toContain('redirect("/dashboard")');
-    expect(legacyShell).not.toContain('href="/features"');
+    expect(legacyShell).toContain('{isPlatform && <Link href="/features">功能總覽</Link>}');
   });
 
   it("keeps important home work ahead of secondary links", () => {
