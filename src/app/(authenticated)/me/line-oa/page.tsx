@@ -24,32 +24,30 @@ export default async function MyLineOaPage() {
   if (!context.ok && context.reason === "authorization_denied") redirect("/access-denied");
   if (!context.ok) return <Notice tone="error">目前無法載入您的扶輪社資料，請稍後重新整理。</Notice>;
 
+  // One club: the one the shell switcher is pointing at. Listing every club at
+  // once asked the member which official account they were looking at, which is
+  // the question the switcher already answers.
   const activeClub = activeClubForMode(context.context, "member");
-  const orderedClubs = [...context.context.memberClubs].sort((left, right) => {
-    if (left.clubId === activeClub?.clubId) return -1;
-    if (right.clubId === activeClub?.clubId) return 1;
-    return left.clubName.localeCompare(right.clubName, "zh-Hant");
-  });
-  const resolutions = await Promise.all(
-    orderedClubs.map((club) => resolveLineOaOnboardingStatus(club.clubId)),
-  );
-  const statuses = resolutions.flatMap((resolution) => resolution.ok ? [resolution.status] : []);
+  const resolution = activeClub ? await resolveLineOaOnboardingStatus(activeClub.clubId) : null;
+  const hasOtherClubs = context.context.memberClubs.length > 1;
 
   return <div className="page-stack narrow">
     <header className="page-header">
       <div>
         <p className="eyebrow">會員中心</p>
         <h1>LINE 官方帳號</h1>
-        <p>每個扶輪社有自己的官方帳號；這裡只顯示您目前仍有有效社籍的社。</p>
+        <p>每個扶輪社有自己的官方帳號；這裡只顯示您目前所在的社。{hasOtherClubs ? "要看另一個社，請用左側的社別切換。" : ""}</p>
       </div>
     </header>
 
-    {statuses.length === 0 ? <Notice>
-      您的扶輪社尚未完成 LINE 官方帳號驗證，因此目前沒有可用的加入連結。
-    </Notice> : statuses.map((status) => <LineOaOnboarding
-      key={status.clubId}
-      initialStatus={status}
+    {!activeClub ? <Notice>
+      您目前沒有有效社籍，因此沒有可加入的扶輪社官方帳號。
+    </Notice> : resolution?.ok ? <LineOaOnboarding
+      key={resolution.status.clubId}
+      initialStatus={resolution.status}
       surface="profile"
-    />)}
+    /> : <Notice>
+      「{activeClub.clubName}」尚未完成 LINE 官方帳號驗證，因此目前沒有可用的加入連結。
+    </Notice>}
   </div>;
 }

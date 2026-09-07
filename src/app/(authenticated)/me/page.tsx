@@ -114,9 +114,9 @@ export default async function IdentityCenterPage({
           <p className="eyebrow">本社 LINE 官方帳號</p>
           <h2>LINE 通知連接</h2>
         </div>
-        <Link className="button button-secondary" href="/me/line-oa">查看各社狀態</Link>
+        <Link className="button button-secondary" href="/me/line-oa">查看連接狀態</Link>
       </div>
-      <p>加入目前社別的官方帳號，並確認是否已連接到您的社員身份。</p>
+      <p>加入目前所在社的官方帳號，並確認是否已連接到您的社員身份。</p>
     </Card>}
 
     {ledger?.selected_club_id && ledger.totals && <Card className="identity-ledger-card">
