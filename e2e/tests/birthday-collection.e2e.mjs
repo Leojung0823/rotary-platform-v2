@@ -176,11 +176,18 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
       const assignment = assignmentCard.locator('textarea[name="content"]');
       await expect(assignmentCard).toBeVisible();
       await expect(assignment).toBeVisible();
+      await memberPage.goto(new URL("/dashboard", baseURL).toString());
+      await expect(memberPage.getByRole("heading", { name: "最新通知" })).toBeVisible();
+      await expect(memberPage.getByText("本月生日祝福任務", { exact: true })).toBeVisible();
+      await memberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
       const content = `瀏覽器生日徵集驗收 ${Date.now()}`;
       await assignment.fill(content);
       await submitBirthdayAction(memberPage, assignmentCard.getByRole("button", { name: "送出祝福" }));
       await memberPage.reload();
       await expect(assignment).toHaveValue(content);
+
+      await memberPage.goto(new URL("/dashboard", baseURL).toString());
+      await expect(memberPage.getByText("本月生日祝福任務", { exact: true })).toHaveCount(0);
 
       await page.reload();
       const submittedCard = managerWorkspace.locator("section.card").filter({ hasText: content }).first();
