@@ -8,6 +8,7 @@ import {
 
 export type RoleShellResolution =
   | Readonly<{ kind: "legacy"; contextUnavailable: boolean }>
+  | Readonly<{ kind: "unavailable"; reason: "context_unavailable" }>
   | Readonly<{ kind: "role_aware"; mode: ExperienceMode }>;
 
 export type ShellNavigationItem = Readonly<{
@@ -131,7 +132,7 @@ export function resolveRoleShell({
   requestedMode: unknown;
 }): RoleShellResolution {
   if (!roleShellsEnabled) return { kind: "legacy", contextUnavailable: false };
-  if (!context) return { kind: "legacy", contextUnavailable: true };
+  if (!context) return { kind: "unavailable", reason: "context_unavailable" };
   return { kind: "role_aware", mode: resolveExperienceMode(context, requestedMode) };
 }
 

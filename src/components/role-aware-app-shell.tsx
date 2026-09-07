@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { setActiveClubPreferenceAction } from "@/app/experience-context-actions";
 import { LegacyAppShell } from "@/components/app-shell";
+import { ContextUnavailableScreen } from "@/components/context-unavailable";
 import {
   activeClubForMode,
   clubsForExperienceMode,
@@ -325,10 +326,12 @@ export async function RoleAwareAppShellBoundary({
     context: contextResolution.ok ? contextResolution.context : null,
     requestedMode: headerStore.get("x-rotary-requested-mode"),
   });
-  if (!contextResolution.ok || shell.kind === "legacy") {
+  if (!contextResolution.ok || shell.kind === "unavailable") {
+    return <ContextUnavailableScreen />;
+  }
+  if (shell.kind === "legacy") {
     return <LegacyAppShell
       identity={identity}
-      fallbackNotice="目前無法解析新版角色脈絡，已安全保留原有導覽；請稍後重新整理。"
       messageBoardEnabled={messageBoardEvaluation.enabled}
     >
       {children}

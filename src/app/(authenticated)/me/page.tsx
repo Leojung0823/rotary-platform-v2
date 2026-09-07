@@ -159,16 +159,16 @@ export default async function IdentityCenterPage({
           <strong className="metric-value metric-text">{formatMoney(ledger.totals.outstanding_total)}</strong>
         </Card>
       </div>
-      {ledger.entries.length === 0 ? <p className="subtle">這個期間還沒有捐款承諾。</p> : <div className="table-wrap">
+      {ledger.entries.length === 0 ? <p className="subtle">這個期間還沒有捐款承諾。</p> : <div className="table-wrap" data-mobile-cards>
         <table>
           <thead><tr><th>日期</th><th>內容</th><th>承諾</th><th>已收</th><th>未收</th></tr></thead>
           <tbody>
             {ledger.entries.map((entry) => <tr key={entry.entry_id}>
-              <td>{entry.pledged_on}</td>
-              <td>{entry.blessing_text.trim() || <span className="subtle">（僅捐款，未留文字）</span>}</td>
-              <td>{entry.pledged_amount === null ? "—" : formatMoney(entry.pledged_amount)}</td>
-              <td>{formatMoney(entry.collected_amount)}</td>
-              <td>{formatMoney(entry.outstanding_amount)}</td>
+              <td data-label="日期">{entry.pledged_on}</td>
+              <td data-label="內容">{entry.blessing_text.trim() || <span className="subtle">（僅捐款，未留文字）</span>}</td>
+              <td data-label="承諾">{entry.pledged_amount === null ? "—" : formatMoney(entry.pledged_amount)}</td>
+              <td data-label="已收">{formatMoney(entry.collected_amount)}</td>
+              <td data-label="未收">{formatMoney(entry.outstanding_amount)}</td>
             </tr>)}
           </tbody>
         </table>

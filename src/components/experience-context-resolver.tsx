@@ -5,7 +5,6 @@ import {
   activeClubForMode,
   clubsForExperienceMode,
   resolveExperienceMode,
-  type ClubContext,
   type ExperienceContext,
   type ExperienceMode,
 } from "@/lib/experience-context";
@@ -16,12 +15,6 @@ const modeLabels: Record<ExperienceMode, string> = {
   management: "社務管理模式",
   platform: "平台管理模式",
 };
-
-function clubDestination(mode: Exclude<ExperienceMode, "platform">, club: ClubContext) {
-  return mode === "member"
-    ? `/club/${encodeURIComponent(club.clubId)}`
-    : `/clubs/${encodeURIComponent(club.clubId)}/identity`;
-}
 
 export function ExperienceContextResolver({
   context,
@@ -42,7 +35,7 @@ export function ExperienceContextResolver({
     <header className="page-header">
       <div>
         <p className="eyebrow">工作台</p>
-        <h1>選擇目前所在的社／委員會</h1>
+        <h1>選擇目前所在的扶輪社</h1>
         <p>這個選擇只影響畫面顯示的內容；每個頁面和資料庫操作仍會各自重新驗證您的權限。</p>
       </div>
       <Badge tone="success">{modeLabels[mode]}</Badge>
@@ -71,7 +64,7 @@ export function ExperienceContextResolver({
       <div className="section-heading">
         <div>
           <p className="eyebrow">{modeLabels[mode]}</p>
-          <h2>選擇作用扶輪社</h2>
+          <h2>選擇目前的扶輪社</h2>
         </div>
         {activeClub && <span>目前：{activeClub.clubName}</span>}
       </div>
@@ -79,15 +72,12 @@ export function ExperienceContextResolver({
         {clubs.map((club) => <Card key={club.clubId}>
           <span className="club-code">{club.clubCode}</span>
           <h3>{club.clubName}</h3>
-          <p>{club.clubId === activeClub?.clubId ? "目前所在" : "點選即可切換到這裡"}</p>
-          <div className="form-actions">
-            <Link className="button button-secondary" href={clubDestination(mode, club)}>前往 →</Link>
-            <form action={setActiveClubPreferenceAction}>
-              <input type="hidden" name="clubId" value={club.clubId} />
-              <input type="hidden" name="mode" value={mode} />
-              <Button type="submit">切換到這個社</Button>
-            </form>
-          </div>
+          <p>{club.clubId === activeClub?.clubId ? "目前所在" : "選擇後會回到這個工作模式"}</p>
+          <form action={setActiveClubPreferenceAction}>
+            <input type="hidden" name="clubId" value={club.clubId} />
+            <input type="hidden" name="mode" value={mode} />
+            <Button type="submit">{club.clubId === activeClub?.clubId ? "繼續使用這個社" : "選擇這個社"}</Button>
+          </form>
         </Card>)}
       </div>
     </section>}

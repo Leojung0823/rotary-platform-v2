@@ -104,7 +104,7 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     // non-platform manager of their own single club. Mode changes live in the
     // account menu so member navigation remains exactly four destinations.
     await expect(rolePage.getByRole("navigation", { name: "切換工作模式" })).toHaveCount(0);
-    await expect(rolePage.getByLabel("切換作用扶輪社")).toHaveCount(0);
+    await expect(rolePage.getByLabel("切換目前所在的社或委員會")).toHaveCount(0);
     const memberNavigation = rolePage.getByRole("navigation", { name: "主要導覽" });
     await expect(memberNavigation.getByRole("link")).toHaveCount(4);
     await expect(memberNavigation.getByRole("link", { name: "社團管理" })).toHaveCount(0);
@@ -125,7 +125,7 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     const managementContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const managementPage = await managementContext.newPage();
     await login(managementPage, accounts.management.email);
-    await managementPage.getByLabel("切換作用扶輪社").focus();
+    await managementPage.getByLabel("切換目前所在的社或委員會").focus();
     await managementPage.keyboard.press("Enter");
     await expect(managementPage.getByRole("region", { name: "其他可管理扶輪社" })).toBeVisible();
     await expect(managementPage.getByRole("region", { name: "我的扶輪社" })).toHaveCount(0);
@@ -167,7 +167,7 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     await expectShell(page, "社務管理模式");
 
     await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
-    await page.getByLabel("切換作用扶輪社").click();
+    await page.getByLabel("切換目前所在的社或委員會").click();
     await expect(page.getByRole("region", { name: "我的扶輪社" })).toBeVisible();
     await page.getByLabel("帳號選單").click();
     await expect(page.getByRole("link", { name: "我的帳號" })).toBeVisible();

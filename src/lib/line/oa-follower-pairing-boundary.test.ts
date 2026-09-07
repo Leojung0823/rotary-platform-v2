@@ -10,12 +10,14 @@ describe("LINE OA follower pairing controls", () => {
     // was never made, and the officer had to copy the OA userId out of the LINE
     // console because the table truncates it.
     expect(page).toContain("follower.person_id");
-    expect(page).toContain('<input type="hidden" name="oaUserId" value={follower.oa_user_id}/>');
+    expect(page).toMatch(/name="oaUserId"\s+value=\{follower\.oa_user_id\}/u);
     expect(page).toContain("action={pairLineOaAction}");
   });
 
   it("does not offer unpairing on a follower that is not paired", () => {
-    const row = page.slice(page.indexOf('follower.status === "following" && (follower.person_id'));
+    const rowStart = page.indexOf('follower.status === "following" &&');
+    expect(rowStart).toBeGreaterThan(-1);
+    const row = page.slice(rowStart);
     const unpairIndex = row.indexOf("unpairLineOaAction");
     const pairIndex = row.indexOf("pairLineOaAction");
     // The paired branch comes first, the unpaired branch second; both exist.
@@ -49,6 +51,6 @@ describe("LINE OA account retirement", () => {
   });
 
   it("only offers retirement once an account exists", () => {
-    expect(page).toContain("{oa.account && <form action={disableLineOaAction}");
+    expect(page).toMatch(/\{oa\.account && \(\s*<form action=\{disableLineOaAction\}/u);
   });
 });

@@ -240,7 +240,7 @@ function BirthdayHeader({
     </div>
     <div className="form-actions">
       {collectionEnabled && clubId && <Link className="button button-secondary" href={`/birthday-collection?clubId=${clubId}`}>生日祝福任務</Link>}
-      <Link className="button button-secondary" href="/features">返回功能總覽</Link>
+      <Link className="button button-secondary" href="/dashboard">返回首頁</Link>
     </div>
   </header>;
 }

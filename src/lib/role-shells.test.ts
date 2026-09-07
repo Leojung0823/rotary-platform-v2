@@ -60,11 +60,11 @@ function context({
 }
 
 describe("role-aware shell boundary", () => {
-  it("keeps the legacy shell when the feature is off or context cannot be resolved", () => {
+  it("keeps the legacy shell only when the feature is off and blocks one coherent screen on context failure", () => {
     expect(resolveRoleShell({ roleShellsEnabled: false, context: context(), requestedMode: "platform" }))
       .toEqual({ kind: "legacy", contextUnavailable: false });
     expect(resolveRoleShell({ roleShellsEnabled: true, context: null, requestedMode: "member" }))
-      .toEqual({ kind: "legacy", contextUnavailable: true });
+      .toEqual({ kind: "unavailable", reason: "context_unavailable" });
   });
 
   it("uses only server-projected modes and preserves member-first defaults", () => {

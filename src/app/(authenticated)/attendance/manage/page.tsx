@@ -266,15 +266,15 @@ export default async function AttendanceManagePage({
 
       {summary.trend.length > 0 && <div className="card">
         <div className="section-heading"><h3>逐月出席率</h3></div>
-        <div className="table-wrap">
+        <div className="table-wrap" data-mobile-cards>
           <table>
             <thead><tr><th>月份</th><th>計入人次</th><th>出席</th><th>出席率</th></tr></thead>
             <tbody>
               {summary.trend.map((point) => <tr key={point.period}>
-                <td>{formatTrendPeriod(point.period)}</td>
-                <td>{point.denominator}</td>
-                <td>{point.attended}</td>
-                <td>{formatAttendanceRate(point.attendance_rate)}</td>
+                <td data-label="月份">{formatTrendPeriod(point.period)}</td>
+                <td data-label="計入人次">{point.denominator}</td>
+                <td data-label="出席">{point.attended}</td>
+                <td data-label="出席率">{formatAttendanceRate(point.attendance_rate)}</td>
               </tr>)}
             </tbody>
           </table>
@@ -292,15 +292,15 @@ export default async function AttendanceManagePage({
         <div><p className="eyebrow">逐場名冊</p><h2>選擇活動</h2></div>
         <span>{events.length} 場</span>
       </div>
-      <div className="table-wrap">
+      <div className="table-wrap" data-mobile-cards>
         <table>
           <thead><tr><th>日期</th><th>活動</th><th>狀態</th><th>名冊</th></tr></thead>
           <tbody>
             {events.map((event) => <tr key={event.event_id}>
-              <td>{formatAttendanceDate(event.event_date)}</td>
-              <td>{event.title}</td>
-              <td>{event.status === "completed" ? "已結束" : "已發布"}</td>
-              <td>
+              <td data-label="日期">{formatAttendanceDate(event.event_date)}</td>
+              <td data-label="活動">{event.title}</td>
+              <td data-label="狀態">{event.status === "completed" ? "已結束" : "已發布"}</td>
+              <td data-label="名冊">
                 {selectedEventId === event.event_id
                   ? <span className="badge badge-success">目前顯示</span>
                   : <Link className="card-link" href={linkFor(event.event_id)}>查看名冊 →</Link>}
@@ -378,16 +378,16 @@ export default async function AttendanceManagePage({
 
       {roster.adjustment_history.length > 0 && <div className="card">
         <div className="section-heading"><h3>調整紀錄</h3></div>
-        <div className="table-wrap">
+        <div className="table-wrap" data-mobile-cards>
           <table>
             <thead><tr><th>社員</th><th>類型</th><th>原因</th><th>時間</th><th>狀態</th></tr></thead>
             <tbody>
               {roster.adjustment_history.map((entry) => <tr key={entry.adjustment_id}>
-                <td>{entry.display_name}</td>
-                <td>{adjustmentTypeLabels[entry.adjustment_type as keyof typeof adjustmentTypeLabels] ?? entry.adjustment_type}</td>
-                <td>{entry.reason}</td>
-                <td>{formatAttendanceDateTime(entry.created_at)}</td>
-                <td>{entry.revoked_at
+                <td data-label="社員">{entry.display_name}</td>
+                <td data-label="類型">{adjustmentTypeLabels[entry.adjustment_type as keyof typeof adjustmentTypeLabels] ?? entry.adjustment_type}</td>
+                <td data-label="原因">{entry.reason}</td>
+                <td data-label="時間">{formatAttendanceDateTime(entry.created_at)}</td>
+                <td data-label="狀態">{entry.revoked_at
                   ? `已撤銷（${entry.revocation_reason ?? "未填原因"}）`
                   : "生效中"}</td>
               </tr>)}

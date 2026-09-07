@@ -41,7 +41,6 @@ export async function LegacyAppShell({
       <Link href="/dashboard" className="brand"><span className="brand-mark">R</span><span>扶輪管理平台<small>ROTARY V2 · {environmentLabel()}</small></span></Link>
       <nav aria-label="主要導覽">
         <Link href="/dashboard">總覽</Link>
-        <Link href="/features">功能總覽</Link>
         <Link href="/directory">社員名冊</Link>
         <Link href="/events">活動</Link>
         {messageBoardEnabled && <Link href="/board">留言板</Link>}
@@ -60,7 +59,6 @@ export async function LegacyAppShell({
     <main id="main" tabIndex={-1} className="content">{fallbackNotice && <Notice tone="error">{fallbackNotice}</Notice>}{children}</main>
     <nav className="mobile-nav" aria-label="行動版導覽">
       <Link href="/dashboard">總覽</Link>
-      <Link href="/features">功能</Link>
       <Link href="/directory">名冊</Link>
       <Link href="/events">活動</Link>
       {messageBoardEnabled && <Link href="/board">留言板</Link>}
