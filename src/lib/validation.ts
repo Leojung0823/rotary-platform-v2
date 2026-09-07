@@ -17,6 +17,12 @@ export function isValidClubName(value: string) {
   return value.length >= 2 && value.length <= 100 && !clubNameControlCharacterPattern.test(value);
 }
 
+// The English name is optional, so "" is handled by the caller as a deliberate
+// clear rather than as an invalid value.
+export function isValidClubEnglishName(value: string) {
+  return isValidClubName(value);
+}
+
 export function parseClubInput(formData: FormData): ClubInput {
   const input = {
     clubCode: String(formData.get("clubCode") ?? "").trim().toUpperCase(),
@@ -102,6 +108,7 @@ export function safeMessage(code?: string): string | null {
     invalid_credentials: "電子郵件或密碼不正確，請再試一次。",
     invalid_club_code: "社代碼請使用 2–32 個英數字、連字號或底線。",
     invalid_club_name: "請輸入 2–100 個字的扶輪社名稱。",
+    invalid_club_english_name: "英文名稱請輸入 2–100 個字，或留空不填。",
     invalid_email: "請輸入有效的電子郵件地址。",
     invalid_name: "請輸入 2–80 個字的姓名。",
     forbidden: "您的帳號沒有執行這項操作的權限。",
@@ -146,6 +153,7 @@ export function parseNewPassword(formData: FormData) {
 
 export function mapDatabaseError(message: string): string {
   if (message.includes("invalid_self_profile_input")) return "invalid_profile_input";
+  if (message.includes("invalid_club_english_name")) return "invalid_club_english_name";
   if (message.includes("invalid_club_name")) return "invalid_club_name";
   if (message.includes("last_active_superadmin")) return "last_superadmin";
   if (message.includes("shared_identity") || message.includes("cross_club_identity")) return "shared_identity";

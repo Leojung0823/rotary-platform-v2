@@ -11,6 +11,7 @@ import {
   parseMemberInput,
   parseNewPassword,
   parseOperatorInput,
+  isValidClubEnglishName,
   isValidClubName,
 } from "@/lib/validation";
 
@@ -86,8 +87,21 @@ export async function updateClubNameAction(formData: FormData) {
   const clubName = String(formData.get("clubName") ?? "").trim();
   if (!isValidClubName(clubName)) redirect(errorPath(returnPath, "invalid_club_name"));
 
+  // A form that does not carry the field at all leaves the English name alone;
+  // one that carries it empty clears it. The database draws the same
+  // distinction, so a caller cannot erase it by not knowing about it.
+  const englishNameField = formData.get("englishName");
+  const englishName = englishNameField === null ? null : String(englishNameField).trim();
+  if (englishName !== null && englishName !== "" && !isValidClubEnglishName(englishName)) {
+    redirect(errorPath(returnPath, "invalid_club_english_name"));
+  }
+
   const supabase = await createClient();
-  const { error } = await supabase.rpc("update_club_name", { p_club_id: clubId, p_club_name: clubName });
+  const { error } = await supabase.rpc("update_club_name", {
+    p_club_id: clubId,
+    p_club_name: clubName,
+    p_english_name: englishName,
+  });
   if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
   redirect(`${returnPath}?success=renamed`);
 }

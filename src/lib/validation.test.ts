@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPlausibleBirthDate, isValidClubName, mapDatabaseError, parseClubInput, parseMemberInput, parseNewPassword, parseOperatorInput, safeMessage, safeRedirectPath, taipeiToday } from "./validation";
+import { isPlausibleBirthDate, isValidClubEnglishName, isValidClubName, mapDatabaseError, parseClubInput, parseMemberInput, parseNewPassword, parseOperatorInput, safeMessage, safeRedirectPath, taipeiToday } from "./validation";
 
 function form(values: Record<string, string>) { const data = new FormData(); Object.entries(values).forEach(([key, value]) => data.set(key, value)); return data; }
 
@@ -16,6 +16,12 @@ describe("club input validation", () => {
     expect(isValidClubName("A")).toBe(false);
     expect(isValidClubName(`台北\n扶輪社`)).toBe(false);
     expect(isValidClubName("x".repeat(101))).toBe(false);
+  });
+  it("holds the English club name to the same shape as the name", () => {
+    expect(isValidClubEnglishName("Rotary Club of Taipei")).toBe(true);
+    expect(isValidClubEnglishName("A")).toBe(false);
+    expect(isValidClubEnglishName(`Rotary\nClub`)).toBe(false);
+    expect(isValidClubEnglishName("x".repeat(101))).toBe(false);
   });
   it("requires matching twelve-character invitation passwords", () => {
     expect(parseNewPassword(form({ password: "a-secure-local-password", passwordConfirmation: "a-secure-local-password" }))).toBe("a-secure-local-password");
@@ -38,6 +44,10 @@ describe("safe error and redirect handling", () => {
     expect(mapDatabaseError("cannot_revoke_last_active_operator")).toBe("last_operator");
     expect(mapDatabaseError("account_not_in_club")).toBe("line_unbind_membership_mismatch");
     expect(mapDatabaseError("invalid_club_name")).toBe("invalid_club_name");
+    // A distinct code, so an English-name rejection does not tell the officer
+    // to fix the club name they just typed correctly.
+    expect(mapDatabaseError("invalid_club_english_name")).toBe("invalid_club_english_name");
+    expect(safeMessage("invalid_club_english_name")).toContain("英文名稱");
   });
   it("explains how to finish an already-bound LINE invitation", () => {
     expect(safeMessage("line_login_no_active_access")).toContain("最新重發的邀請連結");
