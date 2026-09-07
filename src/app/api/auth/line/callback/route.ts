@@ -231,7 +231,25 @@ export async function GET(request: NextRequest) {
             throw new Error("LINE Login existing identity account lookup failed.");
           }
           if (existingAccount.data.person_id !== invitationPersonId) {
-            throw new Error("LINE Login invitation conflicts with an existing member account.");
+            // The invited record is a second copy of someone the platform
+            // already knows: the inviting club had no way to find them, because
+            // it cannot see another club's members and matches only on an exact
+            // email or phone it may not have. Move the invitation onto the
+            // person this identity belongs to rather than refusing and asking
+            // an officer to merge duplicates by hand.
+            const transferred = await admin.rpc("transfer_member_invitation_to_identity", {
+              p_token_hash: digest(invitationToken),
+              p_target_app_account_id: existingAccount.data.id,
+            });
+            const outcome = (transferred.data ?? {}) as { status?: unknown; person_id?: unknown };
+            if (transferred.error || outcome.status !== "transferred") {
+              // Anything else means the two records are not the same human, or
+              // the membership already exists. Both need a person to look.
+              throw new Error("LINE Login invitation conflicts with an existing member account.");
+            }
+            invitationPersonId = typeof outcome.person_id === "string"
+              ? outcome.person_id
+              : existingAccount.data.person_id;
           }
           account = existingAccount.data;
         }

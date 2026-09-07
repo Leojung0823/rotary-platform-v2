@@ -78,3 +78,46 @@ describe("binding before joining", () => {
     expect(card).toContain("本社帳號完成安全驗證後開放");
   });
 });
+
+describe("claiming an invitation as someone the platform already knows", () => {
+  const migration = readFileSync(
+    "supabase/migrations/20260907000200_invitation_transfer_to_known_identity.sql", "utf8",
+  );
+
+  it("moves the invitation instead of refusing it outright", () => {
+    const start = callback.indexOf("existingAccount.data.person_id !== invitationPersonId");
+    const block = callback.slice(start, callback.indexOf("account = existingAccount.data", start));
+    expect(block).toContain("transfer_member_invitation_to_identity");
+    // This call identifies the invitation by its hash. The trusted binding RPC
+    // further down takes the raw token by design; that is not this call.
+    expect(block).toContain("p_token_hash: digest(invitationToken)");
+    expect(block).not.toMatch(/p_token:\s/u);
+  });
+
+  it("still refuses when the transfer says the records are different people", () => {
+    const block = callback.slice(callback.indexOf("transfer_member_invitation_to_identity"));
+    expect(block).toContain('outcome.status !== "transferred"');
+    expect(block.slice(0, block.indexOf("account = existingAccount.data")))
+      .toContain("conflicts with an existing member account");
+  });
+
+  it("refuses to retire a record that is a person in its own right", () => {
+    // Typed details are the normal case and must not block the transfer; an
+    // account or a bound identity is what makes it a different human.
+    expect(migration).toContain("'source_has_account'");
+    expect(migration).toContain("'source_has_identity'");
+    expect(migration).not.toMatch(/canonical_name is not null|primary_phone is not null|birth_date is not null/u);
+  });
+
+  it("never copies the duplicate's details onto the known person", () => {
+    expect(migration).not.toMatch(/update public\.people\b/u);
+  });
+
+  it("is service-role only and audits what it moved", () => {
+    expect(migration).toMatch(
+      /revoke all on function public\.transfer_member_invitation_to_identity\(text, uuid\)[\s\S]+?from public, anon, authenticated;/u,
+    );
+    expect(migration).toContain("to service_role;");
+    expect(migration).toContain("member_invitation.transferred_to_known_identity");
+  });
+});
