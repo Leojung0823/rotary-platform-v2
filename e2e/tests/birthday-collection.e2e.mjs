@@ -198,6 +198,7 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
 
       await memberPage.goto(new URL("/dashboard", baseURL).toString());
       await expect(memberPage.getByText("本月生日祝福任務", { exact: true })).toHaveCount(0);
+      await memberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
 
       await page.reload();
       const submittedCard = managerWorkspace.locator("section.card").filter({ hasText: content }).first();
