@@ -96,6 +96,13 @@ export function LineOaOnboarding({
 
   const connected = phase === "connected" || status.pairStatus === "paired";
   const unavailable = !status.oaAvailable || !status.joinUrl;
+  // Opening the join link without a bound LINE Login identity produces a
+  // follower the platform cannot match to anyone: the follow event carries an
+  // OA userId, and there is nothing to compare it against. So binding comes
+  // first, and it is stated as the first of two steps rather than as a
+  // different task.
+  const needsBinding = !connected && !status.lineLoginBound;
+  const bindHref = `/api/auth/line/start?flow=bind&returnTo=${encodeURIComponent("/me/line-oa")}`;
   const className = [
     styles.panel,
     surface === "profile" ? styles.profile : "",
@@ -111,8 +118,17 @@ export function LineOaOnboarding({
         {connected ? `已連接「${status.clubName}」LINE` : `加入「${status.clubName}」LINE 官方帳號`}
       </h2>
       {connected ? <p>您已完成好友與社員身份確認，可以接收本社開啟的 LINE 通知。</p>
-        : unavailable ? <p>本社 LINE 官方帳號尚未完成安全驗證，暫時不提供加入連結。</p>
-          : <p>接收會議提醒與重要社務通知，不錯過社內消息。</p>}
+        : needsBinding ? <>
+          <p>需要兩個步驟，先確認您的 LINE 身份，才能把好友對應到您的社員資料。</p>
+          <ol className={styles.steps}>
+            <li>綁定您的 LINE 身份</li>
+            <li>{unavailable
+              ? "加入本社官方 LINE（本社帳號完成安全驗證後開放）"
+              : "加入本社官方 LINE"}</li>
+          </ol>
+        </>
+          : unavailable ? <p>本社 LINE 官方帳號尚未完成安全驗證，暫時不提供加入連結。</p>
+            : <p>接收會議提醒與重要社務通知，不錯過社內消息。</p>}
 
       {status.pairStatus === "conflict" && <p className={styles.warning} role="alert">
         目前的 LINE 連接資料需要社務幹部協助確認；系統不會自動覆蓋既有社員。
@@ -123,7 +139,11 @@ export function LineOaOnboarding({
       </p>}
       {dismissError && <p className={styles.warning} role="alert">目前無法儲存提醒時間，請稍後再試。</p>}
 
-      {!connected && !unavailable && status.pairStatus !== "conflict" && <div className={styles.actions}>
+      {needsBinding && status.pairStatus !== "conflict" && <div className={styles.actions}>
+        <a className="button line-button" href={bindHref}>綁定 LINE 身份</a>
+      </div>}
+
+      {!needsBinding && !connected && !unavailable && status.pairStatus !== "conflict" && <div className={styles.actions}>
         <a
           className="button line-button"
           href={status.joinUrl ?? undefined}

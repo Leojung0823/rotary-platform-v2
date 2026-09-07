@@ -30,3 +30,10 @@
   .actions { display: grid; grid-template-columns: 1fr; }
   .actions :global(.button), .later { width: 100%; }
 }
+
+.steps {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.25rem;
+}

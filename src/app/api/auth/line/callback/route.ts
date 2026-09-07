@@ -18,6 +18,18 @@ const GENERIC_LINE_FAILURE = "line_login_failed";
 const NO_ACTIVE_ACCESS_FAILURE = "line_login_no_active_access";
 const INVITATION_IDENTITY_CONFLICT_FAILURE = "line_invitation_identity_conflict";
 
+/**
+ * Adds the success marker to an already-validated relative return path,
+ * preserving any query it carries. The path is never parsed as an absolute URL:
+ * it has been through safeLineRedirectPath and cross-checked against the
+ * persisted state, and it must stay relative.
+ */
+function withSuccess(path: string, marker: string) {
+  const [withoutHash] = path.split("#");
+  const separator = withoutHash.includes("?") ? "&" : "?";
+  return `${withoutHash}${separator}success=${encodeURIComponent(marker)}`;
+}
+
 function digest(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -157,8 +169,20 @@ export async function GET(request: NextRequest) {
       });
       if (bound.error) throw new Error("LINE Login existing-account binding failed.");
 
+      // The member may have added the club's official account before binding,
+      // leaving a follower row nobody could match. Retrying here is what makes
+      // that order work. A failure must not undo the binding, which succeeded.
+      const retried = await admin.rpc("pair_line_oa_followers_for_subject", {
+        p_provider_subject: profile.subject,
+      });
+      if (retried.error) {
+        console.error("[LINE_BIND_PAIRING_RETRY_FAILED]", { flow });
+      }
+
       clearLineOAuthCookies(store);
-      return NextResponse.redirect(trustedLineRedirectUrl("/me?success=line_bound"));
+      // Back where the member started, so a bind begun from the onboarding card
+      // returns to it instead of dropping them on the profile page.
+      return NextResponse.redirect(trustedLineRedirectUrl(withSuccess(returnTo, "line_bound")));
     }
 
     let account: Account | null = null;
