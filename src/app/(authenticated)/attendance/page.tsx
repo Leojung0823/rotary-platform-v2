@@ -222,15 +222,15 @@ export default async function AttendancePage({
 
       {summary.trend.length > 0 && <div className="card">
         <div className="section-heading"><h3>逐月出席率</h3></div>
-        <div className="table-wrap">
+        <div className="table-wrap" data-mobile-cards>
           <table>
             <thead><tr><th>月份</th><th>計入場次</th><th>出席</th><th>出席率</th></tr></thead>
             <tbody>
               {summary.trend.map((point) => <tr key={point.period}>
-                <td>{formatTrendPeriod(point.period)}</td>
-                <td>{point.denominator}</td>
-                <td>{point.attended}</td>
-                <td>{formatAttendanceRate(point.attendance_rate)}</td>
+                <td data-label="月份">{formatTrendPeriod(point.period)}</td>
+                <td data-label="計入場次">{point.denominator}</td>
+                <td data-label="出席">{point.attended}</td>
+                <td data-label="出席率">{formatAttendanceRate(point.attendance_rate)}</td>
               </tr>)}
             </tbody>
           </table>
@@ -250,27 +250,27 @@ export default async function AttendancePage({
         <div><p className="eyebrow">明細</p><h2>出席紀錄</h2></div>
         <span>{records.length} 筆</span>
       </div>
-      <div className="table-wrap">
+      <div className="table-wrap" data-mobile-cards>
         <table>
           <thead>
             <tr><th>日期</th><th>活動</th><th>結果</th><th>簽到方式</th><th>調整原因</th></tr>
           </thead>
           <tbody>
             {records.map((record, index) => <tr key={`${record.event_date}-${index}`}>
-              <td>{formatAttendanceDate(record.event_date)}</td>
-              <td>{record.event_title}</td>
-              <td>
+              <td data-label="日期">{formatAttendanceDate(record.event_date)}</td>
+              <td data-label="活動">{record.event_title}</td>
+              <td data-label="結果">
                 <span className={attendanceStatusBadge(record.final_status)}>
                   {attendanceStatusLabels[record.final_status] ?? record.final_status}
                 </span>
                 {!record.in_denominator && <span className="badge badge-neutral">不計分母</span>}
               </td>
-              <td>
+              <td data-label="簽到方式">
                 {record.raw_checked_in_at
                   ? `${checkinMethodLabels[record.raw_checkin_method ?? ""] ?? record.raw_checkin_method ?? "已簽到"} · ${formatAttendanceDateTime(record.raw_checked_in_at)}`
                   : "—"}
               </td>
-              <td>{record.adjustment_reason ?? "—"}</td>
+              <td data-label="調整原因">{record.adjustment_reason ?? "—"}</td>
             </tr>)}
           </tbody>
         </table>

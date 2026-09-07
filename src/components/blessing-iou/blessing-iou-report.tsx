@@ -27,20 +27,20 @@ export function BlessingIouReport({ report }: { report: BlessingIouRotaryYearRep
       <div className={styles.sectionHeading}>
         <div><p className={styles.eyebrow}>12 個月份</p><h2 id="report-months-title">每月統計</h2></div>
       </div>
-      <div className={styles.tableWrap}><table>
+      <div className={styles.tableWrap} data-mobile-cards><table>
         <thead><tr><th>月份</th><th>筆數／社員</th><th>承諾</th><th>已收</th><th>未收</th></tr></thead>
         <tbody>{report.months.map((month) => {
           const width = `${Math.round((month.pledgedAmount / maximumMonthlyPledge) * 100)}%`;
           return <tr key={month.month}>
-            <td><strong>{monthLabel(month.month)}</strong><span
+            <td data-label="月份"><strong>{monthLabel(month.month)}</strong><span
               className={styles.monthBar}
               style={{ "--bar-width": width } as CSSProperties}
               aria-hidden="true"
             /></td>
-            <td>{month.entryCount} 筆<small>{month.memberCount} 位社員</small></td>
-            <td>{moneyFormatter.format(month.pledgedAmount)}</td>
-            <td className={styles.received}>{moneyFormatter.format(month.receivedAmount)}</td>
-            <td className={month.outstandingAmount > 0 ? styles.outstanding : undefined}>{moneyFormatter.format(month.outstandingAmount)}</td>
+            <td data-label="筆數／社員">{month.entryCount} 筆<small>{month.memberCount} 位社員</small></td>
+            <td data-label="承諾">{moneyFormatter.format(month.pledgedAmount)}</td>
+            <td data-label="已收" className={styles.received}>{moneyFormatter.format(month.receivedAmount)}</td>
+            <td data-label="未收" className={month.outstandingAmount > 0 ? styles.outstanding : undefined}>{moneyFormatter.format(month.outstandingAmount)}</td>
           </tr>;
         })}</tbody>
       </table></div>
@@ -52,15 +52,15 @@ export function BlessingIouReport({ report }: { report: BlessingIouRotaryYearRep
         <span>依未收金額排序</span>
       </div>
       {report.members.length === 0 ? <div className={styles.empty}><strong>本扶輪年度沒有捐款承諾</strong><span>有社員填寫金額後，統計會自動出現在這裡。</span></div>
-        : <div className={styles.tableWrap}><table>
+        : <div className={styles.tableWrap} data-mobile-cards><table>
           <thead><tr><th>社員</th><th>筆數</th><th>承諾</th><th>已收</th><th>未收</th><th>收款進度</th></tr></thead>
           <tbody>{report.members.map((member) => <tr key={member.authorMembershipId}>
-            <td><strong>{member.authorDisplayName}</strong></td>
-            <td>{member.entryCount}</td>
-            <td>{moneyFormatter.format(member.pledgedAmount)}</td>
-            <td className={styles.received}>{moneyFormatter.format(member.receivedAmount)}</td>
-            <td className={member.outstandingAmount > 0 ? styles.outstanding : undefined}>{moneyFormatter.format(member.outstandingAmount)}</td>
-            <td><span className={styles.statuses}>
+            <td data-label="社員"><strong>{member.authorDisplayName}</strong></td>
+            <td data-label="筆數">{member.entryCount}</td>
+            <td data-label="承諾">{moneyFormatter.format(member.pledgedAmount)}</td>
+            <td data-label="已收" className={styles.received}>{moneyFormatter.format(member.receivedAmount)}</td>
+            <td data-label="未收" className={member.outstandingAmount > 0 ? styles.outstanding : undefined}>{moneyFormatter.format(member.outstandingAmount)}</td>
+            <td data-label="收款進度"><span className={styles.statuses}>
               {member.paidEntryCount > 0 && <small className={styles.paid}>{member.paidEntryCount} 收清</small>}
               {member.partialEntryCount > 0 && <small className={styles.partial}>{member.partialEntryCount} 部分</small>}
               {member.unpaidEntryCount > 0 && <small className={styles.unpaid}>{member.unpaidEntryCount} 未收</small>}

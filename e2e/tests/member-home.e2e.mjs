@@ -30,10 +30,11 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     const memberPage = await memberContext.newPage();
     await login(memberPage, "e2e-shell-ordinary@example.test");
     await expect(memberPage.getByRole("heading", { name: "加入「本機 Shell 社員社」LINE 官方帳號" })).toBeVisible();
-    await expect(memberPage.getByRole("link", { name: "加入本社 LINE" })).toHaveAttribute(
+    await expect(memberPage.getByRole("link", { name: "綁定 LINE 身份" })).toHaveAttribute(
       "href",
-      "https://line.me/R/ti/p/%40e2e-rotary",
+      "/api/auth/line/start?flow=bind&returnTo=%2Fme%2Fline-oa",
     );
+    await expect(memberPage.getByRole("link", { name: "加入本社 LINE" })).toHaveCount(0);
     await expect(memberPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
     await expect(memberPage.getByRole("heading", { name: "本機社員首頁例會" })).toBeVisible();
     await memberPage.getByRole("link", { name: "前往簽到" }).click();
@@ -44,7 +45,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     const multiPage = await multiContext.newPage();
     await login(multiPage, "e2e-shell-multi@example.test");
     await expect(multiPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
-    await multiPage.getByLabel("切換作用扶輪社").click();
+    await multiPage.getByLabel("切換目前所在的社或委員會").click();
     await multiPage.getByRole("button", { name: /^本機 Shell 第二社 E2E-SHELL-SECOND/u }).click();
     await expect(multiPage.getByText("本機 Shell 第二社", { exact: true })).toBeVisible();
     await multiContext.close();

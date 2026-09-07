@@ -27,12 +27,12 @@ describe("dashboard role-context feature boundary", () => {
     })).toEqual({ kind: "legacy", contextUnavailable: false });
   });
 
-  it("keeps the legacy dashboard with a generic fallback when an enabled projection fails", () => {
+  it("stops at one coherent unavailable screen when an enabled projection fails", () => {
     expect(resolveDashboardRoleContext({
       roleContextEnabled: true,
       context: null,
       requestedMode: "member",
-    })).toEqual({ kind: "legacy", contextUnavailable: true });
+    })).toEqual({ kind: "unavailable", reason: "context_unavailable" });
   });
 
   it("uses the server projection only when the flag is on", () => {

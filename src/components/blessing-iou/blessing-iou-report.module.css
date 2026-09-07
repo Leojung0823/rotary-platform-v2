@@ -29,3 +29,12 @@
   .metrics { grid-template-columns: 1fr; }
   .sectionHeading { align-items: flex-start; }
 }
+
+@media (max-width: 640px) {
+  .tableWrap[data-mobile-cards] table { min-width: 0; }
+  .tableWrap[data-mobile-cards] th,
+  .tableWrap[data-mobile-cards] td { padding: 0; border: 0; text-align: left; }
+  .tableWrap[data-mobile-cards] td::before { color: #64748b; font-size: 0.8125rem; font-weight: 750; }
+  .tableWrap[data-mobile-cards] .monthBar { width: 100%; }
+  .tableWrap[data-mobile-cards] .statuses { justify-content: flex-start; }
+}

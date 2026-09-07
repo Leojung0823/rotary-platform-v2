@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Badge, Card, EmptyState, Notice } from "@/components/ui";
 import { ExperienceContextResolver } from "@/components/experience-context-resolver";
+import { ContextUnavailableScreen } from "@/components/context-unavailable";
 import { MemberHome } from "@/components/member-home";
 import { RoleAwareDashboardLanding } from "@/components/role-aware-dashboard";
 import { resolveDashboardRoleContext } from "@/lib/dashboard-role-context";
@@ -81,10 +82,8 @@ async function recordMemberHomeFlagFailure(evaluation: FeatureFlagEvaluation) {
 
 async function LegacyDashboard({
   identity,
-  contextUnavailable = false,
 }: {
   identity: Identity;
-  contextUnavailable?: boolean;
 }) {
   const { data, error } = await createClient().then((supabase) => supabase.rpc("list_manageable_clubs"));
   const clubs = (data ?? []) as Club[];
@@ -94,9 +93,6 @@ async function LegacyDashboard({
 
   return (
     <div className="page-stack">
-      {contextUnavailable && <Notice tone="error">
-        目前無法解析新版角色脈絡，已安全保留原有工作台；請稍後重新整理。
-      </Notice>}
       <header className="page-header">
         <div>
           <p className="eyebrow">工作台</p>
@@ -108,9 +104,6 @@ async function LegacyDashboard({
           </p>
         </div>
         <div className="form-actions">
-          <Link className="button button-secondary" href="/features">
-            功能總覽
-          </Link>
           {platformAccess && (
             <Link className="button" href="/platform/clubs/new">
               建立扶輪社
@@ -224,10 +217,8 @@ export default async function DashboardPage({
     context: context.ok ? context.context : null,
     requestedMode: query.mode,
   });
-  if (resolved.kind === "legacy") {
-    return <LegacyDashboard identity={identity} contextUnavailable={resolved.contextUnavailable} />;
-  }
-  if (!context.ok) return <LegacyDashboard identity={identity} contextUnavailable />;
+  if (resolved.kind === "unavailable" || !context.ok) return <ContextUnavailableScreen />;
+  if (resolved.kind === "legacy") return <LegacyDashboard identity={identity} />;
   if (resolved.resolution.kind === "access_denied") {
     return <ExperienceContextResolver context={context.context} requestedMode={null} />;
   }

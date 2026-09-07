@@ -1,34 +1,415 @@
-import { configureLineOaAction, disableLineOaAction, pairLineOaAction, unpairLineOaAction } from "@/app/actions";
+import {
+  configureLineOaAction,
+  disableLineOaAction,
+  pairLineOaAction,
+  unpairLineOaAction,
+} from "@/app/actions";
 import { sendLineOaAction } from "@/app/line-oa-actions";
 import { AudiencePicker } from "@/components/audience/audience-picker";
 import { createClient } from "@/lib/supabase/server";
 import { ClubAdminNav } from "@/components/club-admin-nav";
-import { Badge, Button, Card, Field, Input, Notice, Select } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  Field,
+  Input,
+  Notice,
+  Select,
+} from "@/components/ui";
 import { safeMessage } from "@/lib/validation";
 import type { MemberRow } from "../members/page";
 
-type OaAdmin = { account: { id: string; display_name: string; basic_id: string | null; channel_id: string | null; rich_menu_id: string | null; status: string } | null; followers: { id: string; oa_user_id: string; status: string; person_id: string | null; display_name: string | null; paired_at: string | null }[]; push_logs: { id: string; kind: string; recipient_count: number; status: string; created_at: string }[]; webhooks: { id: number; event_type: string; signature_valid: boolean; status: string; received_at: string }[] };
+type OaAdmin = {
+  account: {
+    id: string;
+    display_name: string;
+    basic_id: string | null;
+    channel_id: string | null;
+    rich_menu_id: string | null;
+    status: string;
+  } | null;
+  followers: {
+    id: string;
+    oa_user_id: string;
+    status: string;
+    person_id: string | null;
+    display_name: string | null;
+    paired_at: string | null;
+  }[];
+  push_logs: {
+    id: string;
+    kind: string;
+    recipient_count: number;
+    status: string;
+    created_at: string;
+  }[];
+  webhooks: {
+    id: number;
+    event_type: string;
+    signature_valid: boolean;
+    status: string;
+    received_at: string;
+  }[];
+};
 
-export default async function LineOaPage({ params, searchParams }: { params: Promise<{ clubId: string }>; searchParams: Promise<{ error?: string; success?: string }> }) {
-  const { clubId } = await params; const query = await searchParams; const supabase = await createClient();
-  const [oaResult, membersResult, tagsResult] = await Promise.all([supabase.rpc("get_line_oa_admin", { p_club_id: clubId }), supabase.rpc("list_club_members", { p_club_id: clubId, p_query: null, p_status: "active" }), supabase.rpc("list_club_member_tags", { p_club_id: clubId })]);
-  if (oaResult.error) return <Notice tone="error">您沒有查看 LINE OA 的權限。</Notice>; const oa = oaResult.data as OaAdmin; const members = (membersResult.data ?? []) as MemberRow[];
+export default async function LineOaPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ clubId: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
+}) {
+  const { clubId } = await params;
+  const query = await searchParams;
+  const supabase = await createClient();
+  const [oaResult, membersResult, tagsResult] = await Promise.all([
+    supabase.rpc("get_line_oa_admin", { p_club_id: clubId }),
+    supabase.rpc("list_club_members", {
+      p_club_id: clubId,
+      p_query: null,
+      p_status: "active",
+    }),
+    supabase.rpc("list_club_member_tags", { p_club_id: clubId }),
+  ]);
+  if (oaResult.error)
+    return <Notice tone="error">您沒有查看 LINE OA 的權限。</Notice>;
+  const oa = oaResult.data as OaAdmin;
+  const members = (membersResult.data ?? []) as MemberRow[];
   // Addressing a tag means selecting named members, so the picker is offered
   // only to someone who may already see the roster. An OA manager without
   // that permission keeps the untargeted controls rather than a broken one.
-  const audienceTags = ((tagsResult.data as { tags?: { tag_id: string; tag_name: string; member_count: number }[] } | null)?.tags ?? []);
+  const audienceTags =
+    (
+      tagsResult.data as {
+        tags?: { tag_id: string; tag_name: string; member_count: number }[];
+      } | null
+    )?.tags ?? [];
   const canTarget = !tagsResult.error;
-  const audienceMembers = members.map(member => ({ membership_id: member.membership_id, display_name: member.display_name }));
+  const audienceMembers = members.map((member) => ({
+    membership_id: member.membership_id,
+    display_name: member.display_name,
+  }));
   const errors: Record<string, string> = {
     audience_unreachable: "指定的對象中沒有人加入官方帳號，訊息沒有送出。",
-    oa_not_configured: "本社的 LINE OA 尚未設定完成，或伺服器缺少該社的 channel access token。",
-    credentials_rejected: "LINE 拒絕了本社的 channel access token，請確認憑證是否過期或屬於正確的 Messaging API channel。",
-    rate_limited: "已達 LINE 的推播頻率或方案額度上限，訊息沒有全部送出；請查看下方推播紀錄。",
+    oa_not_configured:
+      "本社的 LINE OA 尚未設定完成，或伺服器缺少該社的 channel access token。",
+    credentials_rejected:
+      "LINE 拒絕了本社的 channel access token，請確認憑證是否過期或屬於正確的 Messaging API channel。",
+    rate_limited:
+      "已達 LINE 的推播頻率或方案額度上限，訊息沒有全部送出；請查看下方推播紀錄。",
     request_rejected: "LINE 退回了這則訊息的內容或收件對象，訊息沒有送出。",
-    provider_unavailable: "LINE 服務目前無法回應，訊息沒有全部送出；請查看下方推播紀錄後再重試。",
-    provider_timeout: "送往 LINE 逾時，部分收件人可能已收到；請先查看下方推播紀錄再決定是否重送。",
+    provider_unavailable:
+      "LINE 服務目前無法回應，訊息沒有全部送出；請查看下方推播紀錄後再重試。",
+    provider_timeout:
+      "送往 LINE 逾時，部分收件人可能已收到；請先查看下方推播紀錄再決定是否重送。",
     provider_error: "訊息送出失敗，請查看下方推播紀錄。",
   };
-  const success: Record<string, string> = { configured: "LINE OA 設定已儲存。", paired: "OA follower 已配對社員。", unpaired: "OA 配對已解除，LINE Login 不受影響。", message_sent: "訊息已送出或由 local mock 完成。", disabled: "這個 LINE OA 帳號已停用；重新儲存設定即可再次啟用。" };
-  return <div className="page-stack"><header><p className="eyebrow">通訊模組</p><h1>LINE Official Account</h1><p>Webhook、好友配對與訊息推播；此模組不參與登入。</p></header><ClubAdminNav clubId={clubId}/>{query.error && <Notice tone="error">{errors[query.error] ?? safeMessage(query.error)}</Notice>}{query.success && <Notice tone="success">{success[query.success]}</Notice>}<div className="two-column"><Card><h2>OA 設定</h2><form action={configureLineOaAction} className="form-stack"><input type="hidden" name="clubId" value={clubId}/><Field label="顯示名稱"><Input name="displayName" required defaultValue={oa.account?.display_name ?? "本社 LINE OA"}/></Field><Field label="Basic ID"><Input name="basicId" placeholder="@rotary" defaultValue={oa.account?.basic_id ?? ""}/></Field><Field label="Channel ID（非 secret）"><Input name="channelId" defaultValue={oa.account?.channel_id ?? ""}/></Field><Notice>Channel secret 與 access token 只由各社專屬的 server environment key 讀取，不儲存在瀏覽器或資料表。</Notice><Button type="submit">儲存 OA 設定</Button></form>{oa.account && <form action={disableLineOaAction} className="form-stack"><input type="hidden" name="clubId" value={clubId}/><input type="hidden" name="displayName" value={oa.account.display_name}/><input type="hidden" name="basicId" value={oa.account.basic_id ?? ""}/><input type="hidden" name="channelId" value={oa.account.channel_id ?? ""}/><p className="subtle">設錯扶輪社或不再使用時可以停用。停用後這一頁會回到未設定狀態，推播與 webhook 都會停止；重新儲存設定即可再次啟用。</p><Button type="submit" className="button-secondary">停用這個 OA 帳號</Button></form>}</Card><Card><h2>Webhook</h2><p>設定以下 URL；server 會用該社專屬 secret 對原始 request body 驗證 HMAC-SHA256 signature，再處理事件。</p><div className="token-value">{`${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/api/line-oa/webhook/${clubId}`}</div><div className="status-pair"><Badge tone={oa.webhooks[0]?.signature_valid ? "success" : "neutral"}>{oa.webhooks[0]?.signature_valid ? "最近簽章有效" : "尚無有效事件"}</Badge><Badge tone={process.env.LINE_OA_MODE === "line" ? "success" : "warning"}>{process.env.LINE_OA_MODE === "line" ? "LINE Messaging API" : "Local Mock"}</Badge></div></Card></div>{oa.account && <Card><div className="section-heading"><div><p className="eyebrow">推播</p><h2>發送訊息</h2></div></div><form action={sendLineOaAction} className="form-stack"><input type="hidden" name="clubId" value={clubId}/>{canTarget ? <fieldset className="field"><legend className="label">發送對象</legend><AudiencePicker clubId={clubId} tags={audienceTags} members={audienceMembers} showReach/></fieldset> : <Field label="模式"><Select name="kind"><option value="broadcast">Broadcast 全體好友</option><option value="multicast">Multicast 已配對社員</option></Select></Field>}<Field label="訊息"><Input name="message" required maxLength={2000} placeholder="輸入要發送的訊息"/></Field><div className="form-actions"><Button type="submit">送出訊息</Button></div></form><p className="subtle">未指定對象時為全體好友 broadcast；指定對象時只會送給該對象中已加入官方帳號的社員。</p></Card>}<Card><h2>手動配對 OA follower</h2><form action={pairLineOaAction} className="inline-form"><input type="hidden" name="clubId" value={clubId}/><Field label="社員"><Select name="personId" required><option value="">選擇社員</option>{members.map(member => <option key={member.person_id} value={member.person_id}>{member.display_name}</option>)}</Select></Field><Field label="OA userId"><Input name="oaUserId" required placeholder="U..."/></Field><Button type="submit">建立配對</Button></form></Card><section><div className="section-heading"><h2>Follower 配對</h2><span>{oa.followers.filter(item => item.status === "following").length} 位</span></div><p className="subtle">加入官方帳號的人會自動出現在這裡（需先設定 webhook）。未配對的列可以直接選社員完成配對，不需要另外查 OA userId。</p><div className="table-wrap"><table><thead><tr><th>OA user</th><th>社員</th><th>狀態</th><th>操作</th></tr></thead><tbody>{oa.followers.map(follower => <tr key={follower.id}><td><code>{follower.oa_user_id.slice(0, 10)}…</code></td><td>{follower.display_name ?? "未配對"}</td><td><Badge tone={follower.status === "following" ? "success" : "neutral"}>{follower.status}</Badge></td><td>{follower.status === "following" && (follower.person_id ? <form action={unpairLineOaAction}><input type="hidden" name="clubId" value={clubId}/><input type="hidden" name="followerId" value={follower.id}/><input type="hidden" name="reason" value="後台解除 OA 配對"/><Button type="submit" className="button-secondary">解除 OA 配對</Button></form> : <form action={pairLineOaAction} className="inline-form"><input type="hidden" name="clubId" value={clubId}/><input type="hidden" name="oaUserId" value={follower.oa_user_id}/><Select name="personId" required aria-label={`為 ${follower.oa_user_id.slice(0, 10)}… 選擇社員`}><option value="">選擇社員</option>{members.map(member => <option key={member.person_id} value={member.person_id}>{member.display_name}</option>)}</Select><Button type="submit">配對</Button></form>)}</td></tr>)}</tbody></table></div></section><section><div className="section-heading"><h2>推播紀錄</h2></div><div className="table-wrap"><table><thead><tr><th>時間</th><th>類型</th><th>收件數</th><th>狀態</th></tr></thead><tbody>{oa.push_logs.map(log => <tr key={log.id}><td>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "short" }).format(new Date(log.created_at))}</td><td>{log.kind}</td><td>{log.recipient_count}</td><td><Badge tone={log.status === "sent" || log.status === "mocked" ? "success" : "danger"}>{log.status}</Badge></td></tr>)}</tbody></table></div></section></div>;
+  const success: Record<string, string> = {
+    configured: "LINE OA 設定已儲存。",
+    paired: "OA follower 已配對社員。",
+    unpaired: "OA 配對已解除，LINE Login 不受影響。",
+    message_sent: "訊息已送出或由 local mock 完成。",
+    disabled: "這個 LINE OA 帳號已停用；重新儲存設定即可再次啟用。",
+  };
+  return (
+    <div className="page-stack">
+      <header>
+        <p className="eyebrow">通訊模組</p>
+        <h1>LINE Official Account</h1>
+        <p>Webhook、好友配對與訊息推播；此模組不參與登入。</p>
+      </header>
+      <ClubAdminNav clubId={clubId} />
+      {query.error && (
+        <Notice tone="error">
+          {errors[query.error] ?? safeMessage(query.error)}
+        </Notice>
+      )}
+      {query.success && (
+        <Notice tone="success">{success[query.success]}</Notice>
+      )}
+      <div className="two-column">
+        <Card>
+          <h2>OA 設定</h2>
+          <form action={configureLineOaAction} className="form-stack">
+            <input type="hidden" name="clubId" value={clubId} />
+            <Field label="顯示名稱">
+              <Input
+                name="displayName"
+                required
+                defaultValue={oa.account?.display_name ?? "本社 LINE OA"}
+              />
+            </Field>
+            <Field label="Basic ID">
+              <Input
+                name="basicId"
+                placeholder="@rotary"
+                defaultValue={oa.account?.basic_id ?? ""}
+              />
+            </Field>
+            <Field label="Channel ID（非 secret）">
+              <Input
+                name="channelId"
+                defaultValue={oa.account?.channel_id ?? ""}
+              />
+            </Field>
+            <Notice>
+              Channel secret 與 access token 只由各社專屬的 server environment
+              key 讀取，不儲存在瀏覽器或資料表。
+            </Notice>
+            <Button type="submit">儲存 OA 設定</Button>
+          </form>
+          {oa.account && (
+            <form action={disableLineOaAction} className="form-stack">
+              <input type="hidden" name="clubId" value={clubId} />
+              <input
+                type="hidden"
+                name="displayName"
+                value={oa.account.display_name}
+              />
+              <input
+                type="hidden"
+                name="basicId"
+                value={oa.account.basic_id ?? ""}
+              />
+              <input
+                type="hidden"
+                name="channelId"
+                value={oa.account.channel_id ?? ""}
+              />
+              <p className="subtle">
+                設錯扶輪社或不再使用時可以停用。停用後這一頁會回到未設定狀態，推播與
+                webhook 都會停止；重新儲存設定即可再次啟用。
+              </p>
+              <Button type="submit" className="button-secondary">
+                停用這個 OA 帳號
+              </Button>
+            </form>
+          )}
+        </Card>
+        <Card>
+          <h2>Webhook</h2>
+          <p>
+            設定以下 URL；server 會用該社專屬 secret 對原始 request body 驗證
+            HMAC-SHA256 signature，再處理事件。
+          </p>
+          <div className="token-value">{`${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/api/line-oa/webhook/${clubId}`}</div>
+          <div className="status-pair">
+            <Badge
+              tone={oa.webhooks[0]?.signature_valid ? "success" : "neutral"}
+            >
+              {oa.webhooks[0]?.signature_valid
+                ? "最近簽章有效"
+                : "尚無有效事件"}
+            </Badge>
+            <Badge
+              tone={process.env.LINE_OA_MODE === "line" ? "success" : "warning"}
+            >
+              {process.env.LINE_OA_MODE === "line"
+                ? "LINE Messaging API"
+                : "Local Mock"}
+            </Badge>
+          </div>
+        </Card>
+      </div>
+      {oa.account && (
+        <Card>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">推播</p>
+              <h2>發送訊息</h2>
+            </div>
+          </div>
+          <form action={sendLineOaAction} className="form-stack">
+            <input type="hidden" name="clubId" value={clubId} />
+            {canTarget ? (
+              <fieldset className="field">
+                <legend className="label">發送對象</legend>
+                <AudiencePicker
+                  clubId={clubId}
+                  tags={audienceTags}
+                  members={audienceMembers}
+                  showReach
+                />
+              </fieldset>
+            ) : (
+              <Field label="模式">
+                <Select name="kind">
+                  <option value="broadcast">Broadcast 全體好友</option>
+                  <option value="multicast">Multicast 已配對社員</option>
+                </Select>
+              </Field>
+            )}
+            <Field label="訊息">
+              <Input
+                name="message"
+                required
+                maxLength={2000}
+                placeholder="輸入要發送的訊息"
+              />
+            </Field>
+            <div className="form-actions">
+              <Button type="submit">送出訊息</Button>
+            </div>
+          </form>
+          <p className="subtle">
+            未指定對象時為全體好友
+            broadcast；指定對象時只會送給該對象中已加入官方帳號的社員。
+          </p>
+        </Card>
+      )}
+      <Card>
+        <h2>手動配對 OA follower</h2>
+        <form action={pairLineOaAction} className="inline-form">
+          <input type="hidden" name="clubId" value={clubId} />
+          <Field label="社員">
+            <Select name="personId" required>
+              <option value="">選擇社員</option>
+              {members.map((member) => (
+                <option key={member.person_id} value={member.person_id}>
+                  {member.display_name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="OA userId">
+            <Input name="oaUserId" required placeholder="U..." />
+          </Field>
+          <Button type="submit">建立配對</Button>
+        </form>
+      </Card>
+      <section>
+        <div className="section-heading">
+          <h2>Follower 配對</h2>
+          <span>
+            {oa.followers.filter((item) => item.status === "following").length}{" "}
+            位
+          </span>
+        </div>
+        <p className="subtle">
+          加入官方帳號的人會自動出現在這裡（需先設定
+          webhook）。未配對的列可以直接選社員完成配對，不需要另外查 OA userId。
+        </p>
+        <div className="table-wrap" data-mobile-cards>
+          <table>
+            <thead>
+              <tr>
+                <th>OA user</th>
+                <th>社員</th>
+                <th>狀態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {oa.followers.map((follower) => (
+                <tr key={follower.id}>
+                  <td data-label="OA user">
+                    <code>{follower.oa_user_id.slice(0, 10)}…</code>
+                  </td>
+                  <td data-label="社員">{follower.display_name ?? "未配對"}</td>
+                  <td data-label="狀態">
+                    <Badge
+                      tone={
+                        follower.status === "following" ? "success" : "neutral"
+                      }
+                    >
+                      {follower.status}
+                    </Badge>
+                  </td>
+                  <td data-label="操作">
+                    {follower.status === "following" &&
+                      (follower.person_id ? (
+                        <form action={unpairLineOaAction}>
+                          <input type="hidden" name="clubId" value={clubId} />
+                          <input
+                            type="hidden"
+                            name="followerId"
+                            value={follower.id}
+                          />
+                          <input
+                            type="hidden"
+                            name="reason"
+                            value="後台解除 OA 配對"
+                          />
+                          <Button type="submit" className="button-secondary">
+                            解除 OA 配對
+                          </Button>
+                        </form>
+                      ) : (
+                        <form action={pairLineOaAction} className="inline-form">
+                          <input type="hidden" name="clubId" value={clubId} />
+                          <input
+                            type="hidden"
+                            name="oaUserId"
+                            value={follower.oa_user_id}
+                          />
+                          <Select
+                            name="personId"
+                            required
+                            aria-label={`為 ${follower.oa_user_id.slice(0, 10)}… 選擇社員`}
+                          >
+                            <option value="">選擇社員</option>
+                            {members.map((member) => (
+                              <option
+                                key={member.person_id}
+                                value={member.person_id}
+                              >
+                                {member.display_name}
+                              </option>
+                            ))}
+                          </Select>
+                          <Button type="submit">配對</Button>
+                        </form>
+                      ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section>
+        <div className="section-heading">
+          <h2>推播紀錄</h2>
+        </div>
+        <div className="table-wrap" data-mobile-cards>
+          <table>
+            <thead>
+              <tr>
+                <th>時間</th>
+                <th>類型</th>
+                <th>收件數</th>
+                <th>狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              {oa.push_logs.map((log) => (
+                <tr key={log.id}>
+                  <td data-label="時間">
+                    {new Intl.DateTimeFormat("zh-TW", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    }).format(new Date(log.created_at))}
+                  </td>
+                  <td data-label="類型">{log.kind}</td>
+                  <td data-label="收件數">{log.recipient_count}</td>
+                  <td data-label="狀態">
+                    <Badge
+                      tone={
+                        log.status === "sent" || log.status === "mocked"
+                          ? "success"
+                          : "danger"
+                      }
+                    >
+                      {log.status}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
 }

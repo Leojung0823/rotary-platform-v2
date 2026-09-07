@@ -76,25 +76,25 @@ export default async function AccountSecurityPage({
 
     <section>
       <div className="section-heading"><h2>登入裝置</h2></div>
-      <div className="table-wrap"><table>
+      <div className="table-wrap" data-mobile-cards><table>
         <thead><tr><th>裝置</th><th>最近使用</th><th>狀態</th><th>操作</th></tr></thead>
         <tbody>{center.devices.map((device) => <tr key={device.id}>
-          <td><strong>{device.name}</strong>{device.is_current && <div><Badge tone="neutral">目前裝置</Badge></div>}</td>
-          <td>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "short" }).format(new Date(device.last_seen_at))}</td>
-          <td><Badge tone={device.revoked_at ? "danger" : "success"}>{device.revoked_at ? "已撤銷" : "有效"}</Badge></td>
-          <td>{!device.revoked_at && <form action={revokeDeviceAction}><input type="hidden" name="deviceId" value={device.id} /><Button type="submit" className="button-secondary">{device.is_current ? "登出目前裝置" : "登出此裝置"}</Button></form>}</td>
+          <td data-label="裝置"><strong>{device.name}</strong>{device.is_current && <div><Badge tone="neutral">目前裝置</Badge></div>}</td>
+          <td data-label="最近使用">{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "short" }).format(new Date(device.last_seen_at))}</td>
+          <td data-label="狀態"><Badge tone={device.revoked_at ? "danger" : "success"}>{device.revoked_at ? "已撤銷" : "有效"}</Badge></td>
+          <td data-label="操作">{!device.revoked_at && <form action={revokeDeviceAction}><input type="hidden" name="deviceId" value={device.id} /><Button type="submit" className="button-secondary">{device.is_current ? "登出目前裝置" : "登出此裝置"}</Button></form>}</td>
         </tr>)}</tbody>
       </table></div>
     </section>
 
     <section>
       <div className="section-heading"><h2>最近登入</h2></div>
-      <div className="table-wrap"><table>
+      <div className="table-wrap" data-mobile-cards><table>
         <thead><tr><th>時間</th><th>方式</th><th>結果</th></tr></thead>
         <tbody>{center.login_history.map((history, index) => <tr key={`${history.created_at}-${index}`}>
-          <td>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "medium" }).format(new Date(history.created_at))}</td>
-          <td>{identityProviderLabels[history.provider] ?? history.provider}</td>
-          <td><Badge tone={history.outcome === "success" ? "success" : "danger"}>{history.outcome === "success" ? "成功" : history.outcome === "blocked" ? "已阻擋" : "失敗"}</Badge></td>
+          <td data-label="時間">{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "medium" }).format(new Date(history.created_at))}</td>
+          <td data-label="方式">{identityProviderLabels[history.provider] ?? history.provider}</td>
+          <td data-label="結果"><Badge tone={history.outcome === "success" ? "success" : "danger"}>{history.outcome === "success" ? "成功" : history.outcome === "blocked" ? "已阻擋" : "失敗"}</Badge></td>
         </tr>)}</tbody>
       </table></div>
     </section>

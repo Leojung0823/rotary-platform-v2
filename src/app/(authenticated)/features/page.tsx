@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Badge, Card } from "@/components/ui";
-import { requireIdentity } from "@/lib/auth";
+import { hasPlatformAccess, requireIdentity } from "@/lib/auth";
 import {
   productFeatureFlagKeys,
   productFeatureCategories,
@@ -11,6 +12,7 @@ import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.s
 
 export default async function ProductFeaturesPage() {
   const identity = await requireIdentity();
+  if (!hasPlatformAccess(identity)) redirect("/dashboard");
   const gatedFeatures = productFeatures.filter((feature) => productFeatureFlagKeys(feature).length > 0);
   const evaluations = await Promise.all(gatedFeatures.map(async (feature) => {
     const featureEvaluations = await Promise.all(productFeatureFlagKeys(feature).map((key) => (

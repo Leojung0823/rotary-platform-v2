@@ -198,9 +198,6 @@ export function MemberHome({
   lineOaOnboardingEnabled?: boolean;
 }) {
   return <div className={`page-stack ${styles.memberHome}`}>
-    {lineOaOnboardingEnabled && <Suspense fallback={<MemberLineOaOnboardingLoading />}>
-      <MemberLineOaOnboarding clubId={activeClub.clubId} />
-    </Suspense>}
     <header className="page-header">
       <div>
         <p className="eyebrow">社員首頁 · {activeClub.clubCode}</p>
@@ -209,6 +206,12 @@ export function MemberHome({
       </div>
       <Badge tone="success">{activeClub.clubName}</Badge>
     </header>
+    <Suspense fallback={<MemberHomeContentLoading />}>
+      <MemberHomeContent activeClubId={activeClub.clubId} messageCenterEnabled={messageCenterEnabled} />
+    </Suspense>
+    {lineOaOnboardingEnabled && <Suspense fallback={<MemberLineOaOnboardingLoading />}>
+      <MemberLineOaOnboarding clubId={activeClub.clubId} />
+    </Suspense>}
     <section className={styles.secondarySection} aria-labelledby="member-home-secondary-actions">
       <div className="section-heading">
         <div><p className="eyebrow">常用入口</p><h2 id="member-home-secondary-actions">社內連結</h2></div>
@@ -237,8 +240,5 @@ export function MemberHome({
       <span><strong>祝福 IOU</strong><small>分享祝福，也可以留下希望捐贈的金額</small></span>
       <b aria-hidden="true">→</b>
     </Link>}
-    <Suspense fallback={<MemberHomeContentLoading />}>
-      <MemberHomeContent activeClubId={activeClub.clubId} messageCenterEnabled={messageCenterEnabled} />
-    </Suspense>
   </div>;
 }

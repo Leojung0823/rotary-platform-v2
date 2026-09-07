@@ -53,4 +53,13 @@ describe("performance-first navigation boundaries", () => {
     expect(context).toContain("void recordResolutionTelemetry");
     expect(memberHome).toContain("void recordProjectionTelemetry");
   });
+
+  it("does not render a legacy shell around a failed role projection", () => {
+    const shell = source("src/components/role-aware-app-shell.tsx");
+    const dashboard = source("src/app/(authenticated)/dashboard/page.tsx");
+    expect(shell).toContain("<ContextUnavailableScreen />");
+    expect(shell).not.toContain("fallbackNotice=");
+    expect(dashboard).toContain("<ContextUnavailableScreen />");
+    expect(dashboard).not.toContain("contextUnavailable=");
+  });
 });

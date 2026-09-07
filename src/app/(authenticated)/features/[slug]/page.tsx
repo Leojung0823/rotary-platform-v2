@@ -2,12 +2,15 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge, Card } from "@/components/ui";
 import { findProductFeature } from "@/lib/product/features";
+import { hasPlatformAccess, requireIdentity } from "@/lib/auth";
 
 export default async function ProductFeatureStatusPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const identity = await requireIdentity();
+  if (!hasPlatformAccess(identity)) redirect("/dashboard");
   const { slug } = await params;
   const feature = findProductFeature(slug);
   if (!feature) notFound();
