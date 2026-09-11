@@ -15,12 +15,11 @@
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
 - 排程阻塞根因已確認：舊 scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍缺 scheduler secret 與下一次實際執行驗證。不要為了自動化移除 staging 部署保護。
 - production 沒有修改；staging 最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
-- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查）。Staging Release Plan `34584648135` 目前等待 staging environment 人工核准，尚未把旗標安全修補部署到 staging。
-- 該 plan 建立時的 SHA 是 `802d913`；目前 `main` 後續只有 docs-only commit，不能直接拿它當目前 `main` exact SHA 的 Go-Live plan，需另建對應目前 main 的 plan。
+- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查）。舊的 Staging Release Plan `34584648135` 已因 SHA 過時取消；新的 plan `34586462504` 已對準目前 `main@6c83ad6`，目前等待 staging environment 人工核准，尚未把旗標安全修補部署到 staging。
 
 ## 本輪已合併並部署的待辦收尾（2026-09-11）
 
-目前工作分支 `codex/todo-hardening` 已將產品 commit `e1ea85c3e941528731c0b34b724296ffd0498946` 推送至 `main` 並完成 staging Go-Live，之後以 docs-only commits `5dcf6f7fd55b298cc4f4b7a2d97a33703d7bb39c`、`b89bafa80ba51cd1c243e658d0b80f2d92303db3`、`e26b34dd44c6d2458a08578cc4087da9a4d5cf3d`、`68b12a56a21e02e08ece4c91644ec74cad9b70f9`、`802d9130f18591f96ce2bdf67cedea89f396997f` 連續同步文件與旗標安全修補；本次繼續做 docs-only 同步，產品程式與 staging runtime 未變。已完成：
+目前工作分支 `codex/todo-hardening` 已將產品 commit `e1ea85c3e941528731c0b34b724296ffd0498946` 推送至 `main` 並完成 staging Go-Live；旗標安全修補 `68b12a56a21e02e08ece4c91644ec74cad9b70f9` 及後續 docs-only commits `802d9130f18591f96ce2bdf67cedea89f396997f`、`8b522a971dbbd3ab48570f01c5cb29b310160212`、`e5b2f51c185d21455e6e9f8228ecea1af81aee7d`、`6c83ad606ef0c08fde61ce3dd16f8a8a8e81162b` 已同步至 `main`；本次仍是 docs-only 同步，產品程式與 staging runtime 未變。已完成：
 
 - webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
 - LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
@@ -28,7 +27,7 @@
 - 修正「尚未加入官方帳號」文案為「尚未與本社 LINE OA 完成配對」，並補相關回歸測試。
 - 修正 staging 管理驗收腳本：活動是管理模式第一層導覽，不是總覽卡片；以執行秘書 hosted acceptance `34577046356` 完成生日、文件、活動與活動封面流程。
 - 修正 LINE OA 自動配對只看 `membership_status` 的缺口：新增日期窗口檢查，active 但尚未開始或已過 `ended_on` 的社籍不會自動配對；新增 migration `20260911000300_line_oa_pairing_membership_window.sql`，並補上對應 verification。
-- 共用旗標評估器已將 `line_oa_auto_pairing_v1` 納入明確開啟清單；缺少設定時維持 fail-closed，補上 `src/lib/product/feature-flags.ts` 與回歸測試（commit `68b12a5`）。這是 main 的安全修補，Staging Release Plan `34584648135` 尚在人工核准，尚未重新部署 staging。
+- 共用旗標評估器已將 `line_oa_auto_pairing_v1` 納入明確開啟清單；缺少設定時維持 fail-closed，補上 `src/lib/product/feature-flags.ts` 與回歸測試（commit `68b12a5`）。這是 main 的安全修補；Staging Release Plan `34586462504` 已對準目前 `main@6c83ad6`，尚在人工核准，尚未重新部署 staging。
 - 本機 `npm test`：122 files／789 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
 待做：先把 scheduler secret 放入獨立的 `birthday-scheduler` GitHub environment，再用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。

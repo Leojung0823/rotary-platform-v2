@@ -40,8 +40,8 @@ Staging Go-Live `34580767172` 均成功完成；Go-Live 的 HTTPS smoke 與 host
 均成功。管理驗收第一次 run `34575792573` 是驗收腳本誤找不存在的活動卡片；修正為點第一層「活動」導覽後重跑成功。
 
 `68b12a5` 的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功（Browser Smoke 完整流程與 rollback 檢查通過）。
-新的 Staging Release Plan `34584648135` 正在等待 staging environment 人工核准，尚未部署這個旗標安全修補。
-該 plan 建立時的 SHA 是 `802d913`；因目前 `main` 後續只有 docs-only commit，不能把它當成目前 `main` exact SHA 的 Go-Live plan。
+舊的 Staging Release Plan `34584648135` 已取消（它只對應舊 SHA `802d913`）；新的 Staging Release Plan `34586462504`
+已對準目前 `main@6c83ad6`，正在等待 staging environment 人工核准，尚未部署這個旗標安全修補。
 
 生日旗標與 Render staging 的 scheduler secret 已由受保護流程設定；GitHub workflow 已改用獨立的
 `birthday-scheduler` environment，但該環境目前尚未放入 scheduler secret。歷史 hosted acceptance
