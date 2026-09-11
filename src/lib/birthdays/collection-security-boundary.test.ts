@@ -67,7 +67,8 @@ describe("birthday collection security boundary", () => {
     expect(schedulerRoute).toContain('new Set(["staging", "production"])');
     expect(schedulerRoute).toContain("hostedEnvironments.has(appEnvironment)");
     expect(schedulerRoute).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
-    expect(schedulerWorkflow).toContain("environment:\n      name: staging");
+    expect(schedulerWorkflow).toContain("environment:\n      name: birthday-scheduler");
+    expect(schedulerWorkflow).not.toContain("name: staging");
     expect(schedulerWorkflow).not.toContain("production");
   });
 

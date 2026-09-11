@@ -17,8 +17,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # This environment is intentionally separate from deployment staging:
+    # scheduled jobs must not wait for a deployment reviewer and receive only
+    # the public staging URL plus the scheduler route secret.
     environment:
-      name: staging
+      name: birthday-scheduler
       url: ${{ vars.STAGING_BASE_URL }}
     env:
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}

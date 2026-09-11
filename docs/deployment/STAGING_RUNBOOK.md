@@ -65,7 +65,7 @@ Environment secrets：
 - `STAGING_DEPLOY_HOOK`：只觸發 staging service 的 HTTPS POST deployment hook。
 - `STAGING_TEST_MEMBER_EMAIL`：staging 專用測試社員帳號。
 - `STAGING_TEST_MEMBER_PASSWORD`：staging 專用測試社員密碼。
-- `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`：至少 32 字元的隨機 secret，僅供 staging environment 的生日徵集排程 workflow 呼叫受保護 route；不得放進前端或一般 log。
+- `BIRTHDAY_COLLECTION_SCHEDULER_SECRET`：生日徵集排程改放在下方獨立的 `birthday-scheduler` environment；不要把它當成 deployment credential。
 - `SUPABASE_SERVICE_ROLE_KEY`：只供明確啟用的第一次 staging test-data provisioning steps 使用；後續一般 Go-Live 不會取得此 secret。
 
 必須設定 production inventory：
@@ -73,6 +73,24 @@ Environment secrets：
 Go-Live project identity 驗證會拒絕缺少 inventory、格式錯誤或任何相符的 project；值可用逗號或空白分隔。
 
 不要把上述 secret 改成 repository variable，也不要把任何 secret 值放入 `.env.example`。
+
+## 3.1 建立 GitHub `birthday-scheduler` environment
+
+生日每日排程不能使用需要人工核准的 `staging` environment，否則 GitHub schedule 會在建立 job
+前停住。請另外建立名稱完全相同的 `birthday-scheduler` environment；`staging` 的部署保護規則
+維持不變。
+
+這個 environment 的規則與內容要保持最小化：
+
+- Deployment branches 只允許 `main`。
+- 不設定 required reviewer；它不是部署 environment，只讓固定的排程 job 自動執行。
+- 只設定 `STAGING_BASE_URL` variable。
+- 只設定 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` secret，值要與 staging 受保護 scheduler route
+  所接受的 secret 相同，至少 32 字元。
+- 不放 `SUPABASE_*`、`STAGING_DEPLOY_HOOK`、測試帳號或其他部署 secrets。
+
+`.github/workflows/birthday-collection-scheduler.yml` 只會使用這個 environment，並且仍只呼叫
+staging 的 protected route；不要把 service-role key 放進 workflow。
 
 ## 4. 部署平台啟動前檢查
 

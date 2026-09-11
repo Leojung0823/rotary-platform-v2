@@ -111,7 +111,7 @@ Phase 2 之後追加並完成的社務功能：
 - staging 目前 runtime 是 `a7b356177400838ee816c8fea4f2bb7032d8b5be`，`/api/health` 的 `issues` 與 `warnings` 都是空的；閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
 - Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
 - 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `a7b356177400838ee816c8fea4f2bb7032d8b5be`；旗標、Render／GitHub scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。歷史成功 run `33361427466` 不代表最新排程仍正常：`34563427385` 目前 `pending`、沒有 jobs，需另查 GitHub Actions／環境佇列。前一個排程 run `34438617117` 已因新排程建立而取消；歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
-- 生日 scheduler 的阻塞原因已查明：`.github/workflows/birthday-collection-scheduler.yml` 把每日 job 綁在有 required reviewer 的 `staging` environment；排程事件會先等待人工核准，因此 `34563427385` 沒有建立 jobs。不可直接移除 `staging` 保護或把部署用 secrets 暴露給無審核 job；安全修法是建立只放 scheduler 所需 secret／變數的獨立 environment，仍待一次性的 GitHub environment 設定與驗證。
+- 生日 scheduler 的阻塞原因已查明：舊版 workflow 把每日 job 綁在有 required reviewer 的 `staging` environment；排程事件會先等待人工核准，因此 `34563427385` 沒有建立 jobs。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，並已設定 staging URL；仍待把 scheduler secret 放入該 environment，再驗證下一次 schedule 真的執行。不可移除 `staging` 保護或把部署用 secrets 暴露給無審核 job。
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
 - PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40 也已關閉，公告通知已在 `main` 實作；保留的舊分支不能直接合併。
@@ -375,7 +375,7 @@ PR-01c 不做：
 ## Current Next Actions
 
 1. **完成本輪生日邀請 LINE 的實際送達驗收。** webhook redelivery 雜湊、OA 環境變數名稱與生日邀請推播已合併並部署；仍要在 scheduler 正常執行後確認已配對且開啟通知的社員收到 LINE，且重跑不重送。
-2. **修復生日祝福每日排程的安全環境配置。** 根因已確認是 scheduler 綁到需要人工核准的 `staging` environment；建立獨立 scheduler environment、放入必要 secret／變數後，再驗證下一次 schedule 真的呼叫 protected staging route。不能用移除 staging 保護的方式處理，也不能用歷史成功 run `33361427466` 代替。
+2. **完成生日祝福每日排程的安全環境配置。** workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，並已設定 staging URL；還要放入 scheduler secret，再驗證下一次 schedule 真的呼叫 protected staging route。不能用移除 staging 保護的方式處理，也不能用歷史成功 run `33361427466` 代替。
 3. **完成 LINE OA onboarding／follow 自動配對的真實身份驗收。** 程式、migration、verification、staging flag 與 webhook 基礎已在主線／staging；仍要用「曾以 LINE Login 登入的社員加入同一社 OA」確認精確配對，並補多社、外社、停權／退社等真實流程證據。
 4. **完成管理模式剩餘驗收。** 生日與文件的執行秘書 hosted acceptance 已完成；活動與活動封面仍待 staging 端到端驗收，管理頁 TTFB 前後比較仍是未量測。
 5. **安排行動裝置與 M1 測試。** 用 iOS Safari、真實 Android Chrome，以及五位社員／幹部做形成性測試；自動化 Chromium 不取代實機與訪談。

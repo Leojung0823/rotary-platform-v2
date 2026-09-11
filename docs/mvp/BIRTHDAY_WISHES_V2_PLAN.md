@@ -29,7 +29,7 @@
 
 本輪 `codex/todo-hardening` 再補上生日徵集邀請的 LINE 推播：protected scheduler 會從 service-role-only projection 取得已配對且開啟通知的收件人，沿用 `line_oa_event_push_v1` 並以既有推播紀錄的 `source_message_id` 防止重送；另補上 webhook redelivery 雜湊穩定化與 OA 管理頁安全顯示環境變數名稱。這些修改已通過本機測試、資料庫驗證、CI／Browser Smoke，並已部署至 staging；仍待下一次 scheduler 實際送達驗收。
 
-最新排程阻塞原因已查明：workflow job 使用需要 required reviewer 的 `staging` environment，GitHub schedule 會在建立 job 前等待人工核准，因此 `34563427385` 沒有 jobs。不能直接移除 staging 部署保護；安全修法是建立只提供 scheduler 所需 secret／變數的獨立 environment，再用一次受保護 route 驗證確認每日執行恢復。
+最新排程阻塞原因已查明：舊 workflow job 使用需要 required reviewer 的 `staging` environment，GitHub schedule 會在建立 job 前等待人工核准，因此 `34563427385` 沒有 jobs。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍要放入 scheduler secret，再用一次受保護 route 驗證確認每日執行恢復。不能直接移除 staging 部署保護。
 
 ---
 

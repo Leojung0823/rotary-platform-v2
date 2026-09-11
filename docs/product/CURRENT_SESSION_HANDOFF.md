@@ -11,7 +11,7 @@
 - `CI` `34571128943`、`Browser Smoke` `34571128881`、Staging Release Plan `34571960542`、Staging Go-Live `34572185592` 均成功完成。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
-- 排程阻塞根因已確認：scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。不要為了自動化移除 staging 部署保護；應建立只放 scheduler 所需 secret／變數的獨立 environment，並做一次受保護 route 驗證。
+- 排程阻塞根因已確認：舊 scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍缺 scheduler secret 與下一次實際執行驗證。不要為了自動化移除 staging 部署保護。
 - production 沒有修改；staging 最新 migration 是 `20260911000200_birthday_collection_line_push.sql`。
 
 ## 本輪已合併並部署的待辦收尾（2026-09-11）
@@ -398,7 +398,7 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
   `34563427385` 是 `pending` 且沒有 jobs，日常自動排程仍是營運待辦，不應寫成全部完成。前一個 run
   `34438617117` 已被新排程取消。歷史失敗 run
   `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
-- 排程不是程式錯誤：目前 workflow 綁定需人工審核的 `staging` environment。安全修法是獨立 scheduler environment，不能直接放寬 staging 的部署審核規則。
+- 排程不是程式錯誤：舊 workflow 綁定需人工審核的 `staging` environment。安全修法已落在 workflow 與獨立 `birthday-scheduler` environment；目前只差放入 scheduler secret 並驗證下一次 schedule，不能直接放寬 staging 的部署審核規則。
 - GPS accuracy 政策已於 2026-08-31 決定：不設門檻，維持 200 公尺距離判定。這一項已結案，不是待辦。
 - recovery 的 Management API token 已修復、redirect 已同步；custom SMTP 與 recovery email 依產品決定暫緩，
   在重新啟動前不要用 recovery 信件當驗收證據。

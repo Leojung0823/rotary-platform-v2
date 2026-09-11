@@ -171,7 +171,7 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 `birthday_wishes_v2`、`birthday_wishes_collection_v1`；Render 與 GitHub staging 的
 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已同步。current-main hosted acceptance `33345182984`
 已驗證生日 V2 與徵集入口，歷史排程 workflow `33361427466` 也曾成功呼叫 protected staging route。
-但最新排程 run `34563427385` 目前為 `pending`、沒有 jobs。已查明原因是 workflow 綁在需要人工核准的 `staging` environment；每日 schedule 會先停在環境審核，不能把 staging 保護直接移除。應改用只放 scheduler secret／變數的獨立 environment，再驗證實際執行。
+但最新排程 run `34563427385` 目前為 `pending`、沒有 jobs。已查明原因是舊 workflow 綁在需要人工核准的 `staging` environment；每日 schedule 會先停在環境審核，不能把 staging 保護直接移除。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍要放入 scheduler secret，再驗證實際執行。
 歷史失敗 run `33121570908`／`33121704322` 保留作為啟用前的追蹤證據；M1 真人使用者測試仍是另一個待辦。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
@@ -357,7 +357,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 下一步順序
 
-1. **先處理生日 scheduler 的營運狀態** `[>]`：根因已確認是 workflow 綁在需要人工核准的 `staging` environment，最新 run `34563427385` 是 `pending` 且沒有 jobs。下一步建立獨立 scheduler environment，僅放必要 secret／變數，再確認下一次真的呼叫 protected staging route；不要移除 staging 部署保護。歷史成功 run `33361427466` 只能證明當時成功。
+1. **先處理生日 scheduler 的營運狀態** `[>]`：workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；目前還缺該 environment 的 scheduler secret。下一步補入必要 secret，再確認下一次真的呼叫 protected staging route；不要移除 staging 部署保護。歷史成功 run `33361427466` 只能證明當時成功。
 2. **完成 LINE OA follow 自動配對真人驗收** `[>]`：程式已在 `main`／staging，仍要由一位曾以 LINE Login 登入的社員加入同一社 OA，確認後台自動顯示正確姓名；另測多社、外社、停權／退社不會誤配。
 3. **完成管理模式剩餘驗收** `[>]`：生日／文件執行秘書 hosted acceptance 已完成；活動與活動封面仍待 staging 端到端驗收，效能 TTFB 尚未量測。
 4. **安排 iOS Safari、Android Chrome 與 M1 五位目標使用者測試** `[ ]`；實機與訪談不由自動化 Chromium 取代。
