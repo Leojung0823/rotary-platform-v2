@@ -17,10 +17,10 @@
 
 截至 2026-09-11 的實際掃描基準：
 
-- 最新 `main` commit 是 `5dcf6f7fd55b298cc4f4b7a2d97a33703d7bb39c`；上一個產品 release `e1ea85c3e941528731c0b34b724296ffd0498946` 新增 LINE OA 自動配對的有效社籍日期窗口防護，`5dcf6f7` 僅同步文件，沒有新增產品程式或 migration。
+- 最新 `main` commit 是 docs-only 的 `b89bafa80ba51cd1c243e658d0b80f2d92303db3`；上一個產品 release `e1ea85c3e941528731c0b34b724296ffd0498946` 新增 LINE OA 自動配對的有效社籍日期窗口防護，`5dcf6f7` 與 `b89bafa` 僅同步文件，沒有新增產品程式或 migration。
 - staging `/api/health` 回報 `status=ok`、`revision=e1ea85c3e941`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34580767172` 已部署 `main@e1ea85c…`；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
-- 本次 `Staging Release Plan` `34580616980`、`Staging Go-Live` `34580767172` 均成功；push 後自動產生的 `CI` `34580607934` 與 `Browser Smoke` `34580600621` 均成功（Browser Smoke 11 分 41 秒）。
+- 本次 `Staging Release Plan` `34580616980`、`Staging Go-Live` `34580767172` 均成功；產品修補 push 後的完整 `CI` `34580607934` 與 `Browser Smoke` `34580600621` 均成功（Browser Smoke 11 分 41 秒）。後續 docs-only push 的 `CI` `34582715731` 與 `Browser Smoke` `34582715793` 只有變更範圍分類器成功，完整 jobs 依 gate 跳過。
 - 管理驗收第一次 run `34575792573` 失敗的原因是驗收腳本誤找不存在的 `management-card-events`；依產品既有設計改點管理模式第一層「活動」導覽後，`34577046356` 已成功通過，沒有放寬產品權限或新增活動卡片。
 - 後續 scheduler workflow 環境隔離修正已在 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這是排程設定修正，沒有重新部署 staging 應用程式，staging runtime 仍是上列產品 release。
 
