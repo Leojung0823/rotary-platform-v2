@@ -2,7 +2,7 @@
 
 狀態：PR-1、PR-2 已完成並部署 staging；PR-3 真實驗收尚未執行
 
-建立日期：2026-09-03（Asia/Taipei）　　更新日期：2026-09-07（Asia/Taipei）
+建立日期：2026-09-03（Asia/Taipei）　　更新日期：2026-09-11（Asia/Taipei）
 
 本文件原為開發前企劃。實作已落地，逐條對照與差異見 §16、§17。
 
@@ -348,7 +348,7 @@ LINE identity 綁定 -> follow -> 配對
 
 ## 13. 驗收條件
 
-（2026-09-07 對照 `f7dc631` 實作結果；證據見 §16）
+（2026-09-11 對照目前 `main`／staging 實作結果；證據見 §16）
 
 - [x] 每社可保存並使用自己的 OA 加入連結。
 - [x] 平台只使用一套 LINE Login channel，不需要每社複製登入系統。
@@ -358,7 +358,7 @@ LINE identity 綁定 -> follow -> 配對
 - [x] follow 先到與 bind 先到都能完成精確配對。
 - [ ] 已配對、外社、停權、退社、Provider 不一致的情況不會錯配。
   - 已有專屬 verification 案例：已配對、外社（`line_oa_pair_after_bind_security.sql`）、停權（`line_oa_member_onboarding_security.sql`）。
-  - 尚無專屬案例：退社（`ended_on` 已過期）——RPC 有判斷但未被 verification 覆蓋；Provider 不一致——靠精確 `provider_subject` 比對隱含成立，沒有明確斷言不會誤配。
+  - 退社（`ended_on` 已過期）已有專屬 verification（`line_oa_follow_event_pairing_security.sql`），會拒絕自動配對；Provider 不一致仍靠精確 `provider_subject` 比對與部署前同一 Provider 前提，尚無可由資料庫自行推導的獨立 Provider ID 斷言。
 - [x] 使用者拒絕加入時仍可正常使用平台。
 - [x] OA 未設定或停用時不顯示無效連結。
 - [x] 不洩漏 LINE userId、subject、token 或其他敏感設定。
@@ -402,7 +402,7 @@ LINE identity 綁定 -> follow -> 配對
 3. follow 與 bind 的先後順序都要能補配；
 4. 每次都由伺服器依有效社籍決定 OA，不能由瀏覽器自行指定。
 
-## 16. 實作對照（2026-09-07，對照 `f7dc631`）
+## 16. 實作對照（2026-09-11，對照目前 `main`／staging）
 
 | 企劃段落 | 實作位置 |
 | --- | --- |
@@ -417,7 +417,7 @@ LINE identity 綁定 -> follow -> 配對
 | §12.1 單元測試 | `oa-onboarding.test.ts`、`oa-onboarding-security-boundary.test.ts`、`oa-onboarding-bind-boundary.test.ts` |
 | §12.2 資料庫 verification | `line_oa_member_onboarding_security.sql`、`line_oa_pair_after_bind_security.sql`（列在 `scripts/database-verification-files.txt`，CI 每次執行） |
 
-部署狀態：PR-1 隨 Go-Live `33704642718` 上 staging，`line_oa_onboarding_v1` 已對 staging 開啟；PR-2 已在 `main` 且 staging 執行版本為 `f7dc631`。詳見 `docs/product/CURRENT_SESSION_HANDOFF.md`。
+部署狀態：PR-1 隨 Go-Live `33704642718` 上 staging，`line_oa_onboarding_v1` 已對 staging 開啟；PR-2 與日期窗口防護已在 `main`，最新 staging runtime 為 `e6ff5b9854ef`，Go-Live `34594381922` 成功。詳見 `docs/product/CURRENT_SESSION_HANDOFF.md`。
 
 ## 17. 實作與企劃書的差異
 
@@ -431,6 +431,6 @@ LINE identity 綁定 -> follow -> 配對
 
 ## 18. 尚未完成
 
-1. **PR-3 staging 真實驗收**（§12.3）尚未執行：需要真實社別 OA 設定 webhook、由測試社員實際加好友與取消好友，並驗證多社隔離與幹部後台顯示。`staging-browser-acceptance.yml` 最後一次成功是 2026-08-31，早於本功能。
+1. **PR-3 staging 真實驗收**（§12.3）尚未執行：需要真實社別 OA 設定 webhook、由測試社員實際加好友與取消好友，並驗證多社隔離與幹部後台顯示。一般 Go-Live `34594381922` 通過的是部署與 hosted member acceptance，不等於真實 LINE follow identity 驗收。
 2. **入口已確認、真實加入流程仍未完成**：已用登入 staging 會員開啟 `/me/line-oa`，確認入口可見；目前社別 `HAPPY` 因 OA 尚未完成安全驗證而沒有加入連結，尚未完成真實 follow／自動配對驗收。`DISABLE_LINE_OA_ONBOARDING` 若在 Render staging 有設定，旗標開啟後功能仍為關閉，仍需由有 Render 權限的人確認。
-3. **退社日期窗口已補強**：`20260911000300_line_oa_pairing_membership_window.sql` 與既有 pairing verification 現在會拒絕「狀態仍為 active、但 `ended_on` 已過期」的社員；Provider 不一致仍缺專屬資料欄位與真人驗收，現行設計只能把「LINE Login channel 與各社 OA 在同一 Provider」當成部署前提，不能由目前資料庫自行推導。
+3. **退社日期窗口已補強**：`20260911000300_line_oa_pairing_membership_window.sql` 與 pairing verification 現在會拒絕「狀態仍為 active、但 `ended_on` 已過期」的社員；這項程式與資料庫驗證已完成。Provider 不一致仍缺專屬資料欄位與真人驗收，現行設計只能把「LINE Login channel 與各社 OA 在同一 Provider」當成部署前提，不能由目前資料庫自行推導。
