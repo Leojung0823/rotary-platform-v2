@@ -2,7 +2,7 @@
 
 > 更新日期：2026-09-11（Asia/Taipei）
 > 狀態：**生日 V2 核心、祝福徵集與生日邀請 LINE 推播已部署並通過 staging Go-Live；最新每日 scheduler 仍卡在 GitHub Actions `pending`，生日邀請實際 LINE 送達與 M1 真人使用者測試待完成**
-> 程式現況基準：目前 `main@a7b356177400838ee816c8fea4f2bb7032d8b5be`；staging runtime 與該 SHA 相符。Staging Release Plan `34571960542`、Go-Live `34572185592` 均成功。
+> 程式現況基準：產品 release `a7b356177400838ee816c8fea4f2bb7032d8b5be` 已部署到 staging；`main` 其後另有文件同步 commit，沒有產品程式差異。Staging Release Plan `34571960542`、Go-Live `34572185592` 均成功。
 > 前一版：[`BIRTHDAY_WISHES_V1_SCOPE.md`](./BIRTHDAY_WISHES_V1_SCOPE.md)（已實作並部署）
 
 這份文件記錄目前產品討論的結論。它取代先前那份「生日祝福與壽星關懷 V2」草稿中

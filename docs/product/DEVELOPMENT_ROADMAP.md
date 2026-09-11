@@ -17,7 +17,7 @@
 
 截至 2026-09-11 的實際掃描基準：
 
-- 本次產品狀態掃描以 `origin/main@a7b356177400838ee816c8fea4f2bb7032d8b5be` 為基準；目前 checkout `codex/todo-hardening` 與 `origin/main` 同一個 commit，工作區乾淨，沒有 open PR。
+- 本次產品狀態掃描以產品 release `a7b356177400838ee816c8fea4f2bb7032d8b5be` 為基準；其後的文件同步 commit 已推到 `main`，目前 checkout `codex/todo-hardening` 與 `origin/main` 同步，工作區乾淨，沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、`revision=a7b356177400`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；完整 revision 與 main SHA 相符。
 - 本輪 LINE webhook／OA／生日推播修補已隨 Staging Go-Live `34572185592` 部署，最新 migration 為 `20260911000200_birthday_collection_line_push.sql`。
 - `CI` run `34571128943` 與 `Browser Smoke` run `34571128881` 以 `a7b3561` 成功完成；Staging Release Plan `34571960542` 與 Staging Go-Live `34572185592` 也成功完成。

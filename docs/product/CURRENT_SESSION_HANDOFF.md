@@ -5,7 +5,7 @@
 
 ## 最新狀態核對（2026-09-11）
 
-- 本次核對的產品基準是 `main@a7b356177400838ee816c8fea4f2bb7032d8b5be`；目前工作分支為 `codex/todo-hardening`，與 `origin/main` 同一個 commit，工作區乾淨，沒有 open PR。
+- 本次核對的產品 release 基準是 `a7b356177400838ee816c8fea4f2bb7032d8b5be`；其後的文件同步 commit 已推到 `main`。目前工作分支為 `codex/todo-hardening`，與 `origin/main` 同步，工作區乾淨，沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、revision `a7b356177400`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；完整 revision 與 main SHA 相符。
 - 本輪產品／資料庫修補已隨 Staging Go-Live `34572185592` 部署 hosted staging；最新 migration 是 `20260911000200_birthday_collection_line_push.sql`。
 - `CI` `34571128943`、`Browser Smoke` `34571128881`、Staging Release Plan `34571960542`、Staging Go-Live `34572185592` 均成功完成。
