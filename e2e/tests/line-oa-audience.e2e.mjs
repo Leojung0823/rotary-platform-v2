@@ -32,7 +32,7 @@ test("the send form reports how many of the audience LINE can actually reach", a
 
   // The two numbers are reported separately: a push reaches only members who
   // have paired their account, and that gap is invisible everywhere else.
-  await expect(send.getByText(/\d+ 位社員，其中 \d+ 位已加入 LINE 官方帳號/u)).toBeVisible();
+  await expect(send.getByText(/\d+ 位社員，其中 \d+ 位已完成 LINE OA 配對、可收到推播/u)).toBeVisible();
 });
 
 test("an audience nobody has paired is refused rather than sent to nobody", async ({ page }, testInfo) => {
@@ -45,8 +45,8 @@ test("an audience nobody has paired is refused rather than sent to nobody", asyn
 
   // None of the browser fixtures have paired an OA identity, so this audience
   // is addressable but unreachable -- the case worth being explicit about.
-  await expect(send.getByText(/其中 0 位已加入/u)).toBeVisible();
-  await expect(send.getByText(/位尚未加入官方帳號，這則訊息不會送達他們/u)).toBeVisible();
+  await expect(send.getByText(/其中 0 位已完成 LINE OA 配對/u)).toBeVisible();
+  await expect(send.getByText(/位尚未與本社 LINE OA 完成配對，這則訊息不會送達他們/u)).toBeVisible();
 
   await send.getByPlaceholder("輸入要發送的訊息").fill("瀏覽器測試訊息");
   await send.getByRole("button", { name: "送出訊息" }).click();
