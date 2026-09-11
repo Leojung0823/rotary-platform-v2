@@ -13,7 +13,7 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；產品 release `a8c1e55` 修正管理模式 hosted 驗收腳本的活動入口，之後的 `main` 變更只有文件同步，沒有產品程式或 migration 變更。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；產品 release `a8c1e55` 修正管理模式 hosted 驗收腳本的活動入口，後續 `e1ea85c` 再補上 LINE OA 自動配對的有效社籍日期窗口防護。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
@@ -23,14 +23,15 @@ LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發�
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
 截至 2026-09-11 的權威基準：本次最新核對的產品／staging runtime revision 是
-`a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；本輪後續文件同步為 docs-only，沒有產品程式或 migration 變更。
-staging `/api/health` 回報 revision `a8c1e55e7f88`、`status=ok`、`issues=[]`、`warnings=[]`。
+`e1ea85c3e941528731c0b34b724296ffd0498946`；本輪新增 LINE OA 自動配對的有效社籍日期窗口防護。
+staging `/api/health` 回報 revision `e1ea85c3e941`、`status=ok`、`issues=[]`、`warnings=[]`。
 最新已部署 migration 是
-`20260911000200_birthday_collection_line_push.sql`。
+`20260911000300_line_oa_pairing_membership_window.sql`。
 
-本輪文件同步後的 `CI` `34578056217`、`Browser Smoke` `34578056287`，以及產品 release 的 Staging Release Plan `34576631319`、
-Staging Go-Live `34576829556` 與 Staging Management Acceptance `34577046356` 均成功完成；Go-Live 的
-HTTPS smoke、hosted member acceptance 與執行秘書管理驗收也通過。
+本輪文件同步後的 `CI` `34578056217`、`Browser Smoke` `34578056287`，以及本次修補的 Staging Release Plan `34580616980`、
+Staging Go-Live `34580767172` 均成功完成；Go-Live 的 HTTPS smoke 與 hosted member acceptance 也通過。
+產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance
+`34577046356` 亦已成功完成；執行秘書管理驗收也通過。
 之後的 scheduler environment 隔離修正已推到 `main` commit
 `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718`
 均成功。管理驗收第一次 run `34575792573` 是驗收腳本誤找不存在的活動卡片；修正為點第一層「活動」導覽後重跑成功。
@@ -327,7 +328,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
 - `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
-- `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag 與 staging 部署已完成；
+- `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
   仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 
 ### 雙重社籍與跨社執行秘書 `[>]`
@@ -388,12 +389,13 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 以上程式與資料庫結果為既有驗證證據；當時的 Staging Go-Live 已完成 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。生日 V2／徵集 hosted acceptance `33345182984` 與 protected scheduler `33361427466` 也是歷史成功證據。
 
-## 最新掃描證據（2026-09-11；文件同步前基準）
+## 最新掃描證據（2026-09-11；本輪部署後基準）
 
-- 產品／staging runtime revision 為 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；其後的 `main` 變更都是文件同步，沒有產品程式或 migration 變更，沒有 open PR。
-- staging health：revision `a8c1e55e7f88`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
-- 文件同步前產品 release 的 `CI` `34576614945`、`Browser Smoke` `34576614934`：以 `a8c1e55` 成功完成；後續文件同步 commit 的 CI／Browser Smoke 亦已成功，最新 run 編號以 GitHub 為準。
-- Staging Release Plan `34576631319`、Staging Go-Live `34576829556`：以 `a8c1e55` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
+- 產品／staging runtime revision 為 `e1ea85c3e941528731c0b34b724296ffd0498946`；沒有 open PR。
+- staging health：revision `e1ea85c3e941`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
+- `20260911000300_line_oa_pairing_membership_window.sql` 已部署；active 但 `ended_on` 已過期的社籍不再可自動配對。
+- 本次修補 push 後的 `CI` `34580607934`、`Browser Smoke` `34580600621`：以 `e1ea85c` 成功完成；先前產品 release 的 CI／Browser Smoke 亦已成功。
+- Staging Release Plan `34580616980`、Staging Go-Live `34580767172`：以 `e1ea85c` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
 - Staging Management Acceptance `34577046356`：以 `a8c1e55` 通過；執行秘書完成生日、文件、活動與活動封面流程。
 - 最新 Birthday Collection Scheduler `34563427385`：`pending`、無 jobs；每日自動排程目前未證明。
 - 目前沒有 open PR；production 沒有修改。

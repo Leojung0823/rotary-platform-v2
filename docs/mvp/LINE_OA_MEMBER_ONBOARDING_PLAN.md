@@ -432,5 +432,5 @@ LINE identity 綁定 -> follow -> 配對
 ## 18. 尚未完成
 
 1. **PR-3 staging 真實驗收**（§12.3）尚未執行：需要真實社別 OA 設定 webhook、由測試社員實際加好友與取消好友，並驗證多社隔離與幹部後台顯示。`staging-browser-acceptance.yml` 最後一次成功是 2026-08-31，早於本功能。
-2. **功能是否真的顯示給社員仍未確認**：`DISABLE_LINE_OA_ONBOARDING` 若在 Render staging 有設定，旗標開啟後功能仍為關閉，需由有 Render 權限的人確認。
-3. **退社（`ended_on` 已過期）與 Provider 不一致缺專屬 verification 案例**（見 §13）。
+2. **入口已確認、真實加入流程仍未完成**：已用登入 staging 會員開啟 `/me/line-oa`，確認入口可見；目前社別 `HAPPY` 因 OA 尚未完成安全驗證而沒有加入連結，尚未完成真實 follow／自動配對驗收。`DISABLE_LINE_OA_ONBOARDING` 若在 Render staging 有設定，旗標開啟後功能仍為關閉，仍需由有 Render 權限的人確認。
+3. **退社日期窗口已補強**：`20260911000300_line_oa_pairing_membership_window.sql` 與既有 pairing verification 現在會拒絕「狀態仍為 active、但 `ended_on` 已過期」的社員；Provider 不一致仍缺專屬資料欄位與真人驗收，現行設計只能把「LINE Login channel 與各社 OA 在同一 Provider」當成部署前提，不能由目前資料庫自行推導。

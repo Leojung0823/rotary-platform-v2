@@ -3,31 +3,38 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 最新狀態核對（2026-09-11；文件同步前基準）
+## 最新狀態核對（2026-09-11；本輪部署後基準）
 
-- 本次最新核對的產品／staging runtime revision 是已驗收的 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；其後的 `main` 變更都是 docs-only 文件同步，沒有產品程式或 migration 變更。沒有 open PR。
-- staging `/api/health` 回報 `status=ok`、revision `a8c1e55e7f88`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
-- 最新 staging Go-Live `34576829556` 已部署 hosted staging；最新 migration 仍是 `20260911000200_birthday_collection_line_push.sql`。
+- 本次最新核對的產品／staging runtime revision 是已驗收的 `e1ea85c3e941528731c0b34b724296ffd0498946`；沒有 open PR。
+- staging `/api/health` 回報 `status=ok`、revision `e1ea85c3e941`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
+- 最新 staging Go-Live `34580767172` 已部署 hosted staging；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
 - 文件同步後的 `CI` `34578056217`、`Browser Smoke` `34578056287`，以及產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance `34577046356` 均成功完成。
 - 管理驗收第一次 run `34575792573` 因腳本誤找不存在的 `management-card-events` 失敗；改點管理模式第一層「活動」導覽後，`34577046356` 成功完成活動建立、封面上傳、發布與取消。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
 - 排程阻塞根因已確認：舊 scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍缺 scheduler secret 與下一次實際執行驗證。不要為了自動化移除 staging 部署保護。
-- production 沒有修改；staging 最新 migration 是 `20260911000200_birthday_collection_line_push.sql`。
+- production 沒有修改；staging 最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 
 ## 本輪已合併並部署的待辦收尾（2026-09-11）
 
-目前工作分支 `codex/todo-hardening` 已推送至 `main`，並以 exact SHA `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7` 完成 staging Go-Live。已完成：
+目前工作分支 `codex/todo-hardening` 已推送至 `main`，並以 exact SHA `e1ea85c3e941528731c0b34b724296ffd0498946` 完成 staging Go-Live。已完成：
 
 - webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
 - LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
 - 生日徵集邀請接上 LINE 推播：新增並部署 `20260911000200_birthday_collection_line_push.sql`，protected scheduler 會把邀請推給已配對且開啟通知的社員；收件人投影與推播紀錄 RPC 只給 service role，沿用 `line_oa_event_push_v1` 並要求明確啟用。
 - 修正「尚未加入官方帳號」文案為「尚未與本社 LINE OA 完成配對」，並補相關回歸測試。
 - 修正 staging 管理驗收腳本：活動是管理模式第一層導覽，不是總覽卡片；以執行秘書 hosted acceptance `34577046356` 完成生日、文件、活動與活動封面流程。
+- 修正 LINE OA 自動配對只看 `membership_status` 的缺口：新增日期窗口檢查，active 但尚未開始或已過 `ended_on` 的社籍不會自動配對；新增 migration `20260911000300_line_oa_pairing_membership_window.sql`，並補上對應 verification。
 - 本機 `npm test`：122 files／788 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
 待做：先把 scheduler secret 放入獨立的 `birthday-scheduler` GitHub environment，再用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
+
+## 本輪新增的 LINE OA 配對防護（2026-09-11）
+
+- 掃描發現 `auto_pair_line_oa_follower` 原本只檢查 `membership_status = 'active'`，沒有檢查 `joined_on`／`ended_on` 日期窗口；若資料狀態仍是 active 但退社日已過，理論上可能被自動配對。
+- 新增 `20260911000300_line_oa_pairing_membership_window.sql`，只允許「已開始且尚未結束」的 active 社籍自動配對；已部署到 staging。
+- `supabase/verification/line_oa_follow_event_pairing_security.sql` 已改成測試 active 但 `ended_on` 已過期的案例；本機完整 `verify:db` 通過。Provider 是否相同仍是外部 LINE 設定前提，現有資料欄位無法自行推導 Provider ID，不能假裝已完成該項真人驗收。
 
 ## LINE OA 社員導引 PR-1 已部署並啟用（2026-09-07）
 
@@ -40,11 +47,11 @@
 （`enabled`、單一環境 `staging`、rollout 100；CLI 會核對 RPC 回傳值相符才回報成功）。
 `line_oa_account_link_v1` 目前在程式與 CLI 中都不存在，未開啟也無從開啟。
 
-**仍未確認**：功能是否真的顯示給社員。`line_oa_onboarding_v1` 有緊急停用開關
-`DISABLE_LINE_OA_ONBOARDING`（見 `emergencyKillSwitches`）；Render staging 若設有這個環境變數，
-旗標開啟後功能仍為關閉。這台開發機沒有任何 Render 存取途徑（無 CLI、無 API key、
-deploy hook 只存在 GitHub secrets），所以無法從這裡查證，需由有 Render 權限的人確認，
-或直接以「會員中心是否出現導引入口」判定。
+**已部分確認**：使用已登入的 staging 會員以目前社別 `HAPPY` 開啟 `/me/line-oa`，頁面本身可見，
+但因該社 OA 尚未完成安全驗證，畫面正確顯示「尚未與本社 LINE OA 完成配對」且沒有加入連結。
+因此已證明入口有顯示，尚未證明真實加入／follow／自動配對流程。`line_oa_onboarding_v1` 仍有
+`DISABLE_LINE_OA_ONBOARDING` 緊急停用開關；這台開發機沒有 Render CLI 或 API key，無法直接讀取該變數，
+仍需由有 Render 權限的人確認它沒有關閉功能。
 
 ## 歷史：LINE OA 推播 staging 上線狀態（2026-09-03）
 
@@ -429,8 +436,8 @@ current management-mode Browser Smoke passed (run 33614549502; exact SHA 3a43068
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
 PR #86 CI database                passed (run 33120346988; 46 verification SQL)
 PR #93 CI／Quality／Browser Smoke passed (runs 33347745255／33347745250／33347745221)
-current main CI                   passed (run 34576614945; exact SHA a8c1e55)
-current main Browser Smoke        passed (run 34576614934; exact SHA a8c1e55)
+current main CI                   passed (run 34580607934; exact SHA e1ea85c)
+current main Browser Smoke        passed (run 34580600621; exact SHA e1ea85c)
 previous management-mode Browser Smoke failed (run 33607348078; 172 passed / 2 failed / 2 flaky / 31 skipped); fixed by 3a43068
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
@@ -441,12 +448,12 @@ staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
 staging Auth fix commits           lint / typecheck / 647 tests passed locally;
                                   CI skipped by instruction ([skip ci])
-staging plan (current round)       passed (run 34576631319; exact SHA a8c1e55)
-staging Go-Live (current round)    passed (run 34576829556; revision a8c1e55,
+staging plan (current round)       passed (run 34580616980; exact SHA e1ea85c)
+staging Go-Live (current round)    passed (run 34580767172; revision e1ea85c,
                                   migration + smoke + hosted member acceptance passed)
 staging management acceptance      passed (run 34577046356; exact SHA a8c1e55,
                                   birthday + archive + event + cover flows passed)
-staging health (current)           status=ok; revision a8c1e55e7f88;
+staging health (current)           status=ok; revision e1ea85c3e941;
                                   issues=[]; warnings=[]
 ```
 

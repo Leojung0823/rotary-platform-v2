@@ -10,7 +10,8 @@
 | 項目 | 結果 |
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
-| 目前 staging runtime | `a8c1e55e7f88` |
+| 目前 staging runtime | `e1ea85c3e941` |
+| 本次 `/login` 量測時 runtime | `a8c1e55e7f88` |
 | 量測頁面 | `/login`（未登入） |
 | 工具 | Chrome DevTools Performance trace + `PerformanceNavigationTiming` |
 | CPU／網路 | CPU 1x；未設定網路限速 |
@@ -21,7 +22,7 @@
 | CLS | 0.00 |
 | CrUX | 無資料 |
 
-本次瀏覽器回報的 navigation timing：`responseStart=449.4 ms`、
+本次瀏覽器回報的 navigation timing（量測時 runtime `a8c1e55e7f88`）：`responseStart=449.4 ms`、
 `responseEnd=552.4 ms`、`DOMContentLoaded=580.2 ms`、`load=584.0 ms`。
 
 這次沒有登入狀態，因此**管理模式、社員首頁與其他登入後頁面的 TTFB／LCP
