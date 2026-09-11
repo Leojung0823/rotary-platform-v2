@@ -329,12 +329,12 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 - `[>]` 事件驅動自動推播的**最後一個來源**：生日祝福徵集邀請。程式已完成
   `20260911000200_birthday_collection_line_push.sql`、scheduler route 串接、service-role-only
   收件人投影／推播紀錄、既有 `line_oa_event_push_v1` 明確啟用閘門與單元測試；migration
-  已部署到 staging，仍待 staging 實際收到邀請 LINE 的驗收。通知目前由
+  已部署到 staging，但最新 scheduler `34595040657` 因兩端 secret 不一致回 `401`，仍待修正後做實際邀請 LINE 送達驗收。通知目前由
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
 - `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
-  共用旗標判斷的 fail-closed 修補已在 main 完成，尚待 staging 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
+  共用旗標判斷的 fail-closed 修補也已隨 Go-Live `34594381922` 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 
 ### 雙重社籍與跨社執行秘書 `[>]`
 
@@ -370,7 +370,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 下一步順序
 
-1. **先處理生日 scheduler 的營運狀態** `[>]`：workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；目前還缺該 environment 的 scheduler secret。下一步補入必要 secret，再確認下一次真的呼叫 protected staging route；不要移除 staging 部署保護。歷史成功 run `33361427466` 只能證明當時成功。
+1. **先處理生日 scheduler 的營運狀態** `[>]`：workflow、`birthday-scheduler` environment 與 staging URL 已設定；兩端 scheduler secret 名稱存在但秘密值不一致，最新 run `34595040657` 回 `401 unauthorized`。取得明確授權後同步秘密值，再確認下一次真的呼叫 protected staging route；不要移除 staging 部署保護。
 2. **完成 LINE OA follow 自動配對真人驗收** `[>]`：程式已在 `main`／staging，仍要由一位曾以 LINE Login 登入的社員加入同一社 OA，確認後台自動顯示正確姓名；另測多社、外社、停權／退社不會誤配。
 3. **完成管理模式 hosted 驗收** `[x]`：執行秘書已從管理總覽完成生日重跑、文件建立／上傳／編輯，以及活動建立、封面上傳、發布與取消（run `34577046356`）。
 4. **補量測管理頁 TTFB** `[>]`：目前只有未登入 `/login` 的 Chrome lab 數字；管理頁需要登入狀態，仍待用受保護測試帳號量測前後差異。
