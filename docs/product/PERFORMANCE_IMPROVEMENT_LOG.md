@@ -67,3 +67,11 @@ TTFB，render-blocking CSS 的工具估算改善為 0 ms；目前優先瓶頸是
 - 重新量測 staging `/login`：LCP 500 ms、FCP 500 ms、TTFB 415 ms、CLS 0.00。
 - 管理模式與登入後首頁仍未量測。
 - 確認登入頁不使用公開快取；本次沒有為了速度放寬身份或權限邊界。
+
+### 2026-09-11 第二次探測
+
+- 測試站仍為 `https://rotary-platform-v2-mrha.onrender.com`、runtime `e1ea85c3e941`；頁面為未登入的 `/login`。
+- Chrome DevTools MCP 的 `PerformanceNavigationTiming` 加上頁面載入前註冊的 LCP observer；CPU 1x、未設定網路限速。
+- `responseStart`／TTFB：410.5 ms；FCP：472 ms；LCP：472 ms（元素為登入頁的 `blockquote`）；CLS：0.00。
+- `responseEnd`：518.7 ms；DOMContentLoaded：520.6 ms；load：520.7 ms。
+- 這仍不是登入後頁面；管理模式、社員首頁與其他受保護頁面的 TTFB／LCP 仍記為**未量測**，不能用這次數字代替。
