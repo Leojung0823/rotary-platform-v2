@@ -17,12 +17,13 @@
 
 截至 2026-09-11 的實際掃描基準：
 
-- 本次文件同步前的 `main` 核對點是 `68b12a56a21e02e08ece4c91644ec74cad9b70f9`；最近一次已部署 staging 的產品 release `e1ea85c3e941528731c0b34b724296ffd0498946` 新增 LINE OA 自動配對的有效社籍日期窗口防護，`68b12a5` 再補上共用旗標判斷的 fail-closed 防護（尚未重新部署 staging）。其後的文件同步 commit 沒有新增產品程式或 migration。
+- 目前 `main` 的核對點是 docs-only commit `802d9130f18591f96ce2bdf67cedea89f396997f`；最近一次已部署 staging 的產品 release `e1ea85c3e941528731c0b34b724296ffd0498946` 新增 LINE OA 自動配對的有效社籍日期窗口防護，`68b12a5` 再補上共用旗標判斷的 fail-closed 防護（尚未重新部署 staging）。`802d913` 沒有新增產品程式或 migration。
 - staging `/api/health` 回報 `status=ok`、`revision=e1ea85c3e941`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34580767172` 已部署 `main@e1ea85c…`；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 本次 `Staging Release Plan` `34580616980`、`Staging Go-Live` `34580767172` 均成功；產品修補 push 後的完整 `CI` `34580607934` 與 `Browser Smoke` `34580600621` 均成功（Browser Smoke 11 分 41 秒）。後續 docs-only push 的 `CI` `34583431760` 與 `Browser Smoke` `34583431873` 只有變更範圍分類器成功，完整 jobs 依 gate 跳過。
 - 管理驗收第一次 run `34575792573` 失敗的原因是驗收腳本誤找不存在的 `management-card-events`；依產品既有設計改點管理模式第一層「活動」導覽後，`34577046356` 已成功通過，沒有放寬產品權限或新增活動卡片。
 - 後續 scheduler workflow 環境隔離修正已在 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這是排程設定修正，沒有重新部署 staging 應用程式，staging runtime 仍是上列產品 release。
+- `68b12a5` push 後的自動 `CI` `34584379642` 已成功；對應 `Browser Smoke` `34584379653` 在本次核對時仍在執行。旗標安全修補的 Staging Release Plan `34584648135` 正等待 staging environment 人工核准，尚未部署。
 
 本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；生日旗標與 Render staging 的 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均成功。但最新排程 run `34563427385` 目前是 `pending` 且沒有 jobs，因此「每日排程能持續自動執行」仍未證明，列為營運待辦。舊 workflow 使用的 GitHub `staging` secret 不會自動出現在新建的 `birthday-scheduler` environment；新環境目前仍待補入同一個 scheduler secret。
 
@@ -33,7 +34,7 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
 已配對且開啟通知的 LINE 社員。資料庫 RPC 僅授予 service role；缺少或未開啟
  `line_oa_event_push_v1` 時不送出。程式與 migration 已在 staging，仍待下一次排程的實際 LINE 送達驗收。
 
-另補上 `line_oa_auto_pairing_v1` 在共用應用程式旗標判斷器中的明確開啟要求；沒有旗標資料列時維持關閉，修補 commit 為 `68b12a5`，待下一次 staging release 一併部署。
+另補上 `line_oa_auto_pairing_v1` 在共用應用程式旗標判斷器中的明確開啟要求；沒有旗標資料列時維持關閉，修補 commit 為 `68b12a5`，待 `34584648135` 核准並完成下一次 staging release。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
