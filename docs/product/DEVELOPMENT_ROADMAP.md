@@ -17,7 +17,7 @@
 
 截至 2026-09-11 的實際掃描基準：
 
-- 本次文件同步前的 `main` 核對點是 docs-only 的 `e26b34dd44c6d2458a08578cc4087da9a4d5cf3d`；最近一次產品 release `e1ea85c3e941528731c0b34b724296ffd0498946` 新增 LINE OA 自動配對的有效社籍日期窗口防護，後續 `5dcf6f7`、`b89bafa`、`e26b34d` 與本次更新都只同步文件，沒有新增產品程式或 migration。
+- 本次文件同步前的 `main` 核對點是 `68b12a56a21e02e08ece4c91644ec74cad9b70f9`；最近一次已部署 staging 的產品 release `e1ea85c3e941528731c0b34b724296ffd0498946` 新增 LINE OA 自動配對的有效社籍日期窗口防護，`68b12a5` 再補上共用旗標判斷的 fail-closed 防護（尚未重新部署 staging）。其後的文件同步 commit 沒有新增產品程式或 migration。
 - staging `/api/health` 回報 `status=ok`、`revision=e1ea85c3e941`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34580767172` 已部署 `main@e1ea85c…`；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 本次 `Staging Release Plan` `34580616980`、`Staging Go-Live` `34580767172` 均成功；產品修補 push 後的完整 `CI` `34580607934` 與 `Browser Smoke` `34580600621` 均成功（Browser Smoke 11 分 41 秒）。後續 docs-only push 的 `CI` `34583431760` 與 `Browser Smoke` `34583431873` 只有變更範圍分類器成功，完整 jobs 依 gate 跳過。
@@ -31,7 +31,9 @@
 本輪已補上並部署三個 LINE 缺口：webhook redelivery 只忽略 `deliveryContext.isRedelivery` 的穩定雜湊、
 OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 protected birthday scheduler 發送生日徵集邀請到
 已配對且開啟通知的 LINE 社員。資料庫 RPC 僅授予 service role；缺少或未開啟
-`line_oa_event_push_v1` 時不送出。程式與 migration 已在 staging，仍待下一次排程的實際 LINE 送達驗收。
+ `line_oa_event_push_v1` 時不送出。程式與 migration 已在 staging，仍待下一次排程的實際 LINE 送達驗收。
+
+另補上 `line_oa_auto_pairing_v1` 在共用應用程式旗標判斷器中的明確開啟要求；沒有旗標資料列時維持關閉，修補 commit 為 `68b12a5`，待下一次 staging release 一併部署。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 

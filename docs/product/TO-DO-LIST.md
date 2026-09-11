@@ -19,6 +19,8 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
 生日邀請的實際送達驗收。
 
+另補上 `line_oa_auto_pairing_v1` 共用旗標判斷的明確開啟要求（`68b12a5`）；main 已修正，尚未隨下一次 release 部署 staging。
+
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
@@ -330,7 +332,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
 - `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
-  仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
+  共用旗標判斷的 fail-closed 修補已在 main 完成，尚待 staging 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 
 ### 雙重社籍與跨社執行秘書 `[>]`
 
@@ -392,7 +394,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-11；本輪部署後基準）
 
-- 產品／staging runtime revision 為 `e1ea85c3e941528731c0b34b724296ffd0498946`；沒有 open PR。
+- staging runtime revision 為 `e1ea85c3e941528731c0b34b724296ffd0498946`；main 另有尚未部署 staging 的旗標安全修補 `68b12a5`；沒有 open PR。
 - staging health：revision `e1ea85c3e941`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - `20260911000300_line_oa_pairing_membership_window.sql` 已部署；active 但 `ended_on` 已過期的社籍不再可自動配對。
 - 本次修補 push 後的 `CI` `34580607934`、`Browser Smoke` `34580600621`：以 `e1ea85c` 成功完成；先前產品 release 的 CI／Browser Smoke 亦已成功。

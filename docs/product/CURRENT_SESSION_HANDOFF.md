@@ -26,7 +26,8 @@
 - 修正「尚未加入官方帳號」文案為「尚未與本社 LINE OA 完成配對」，並補相關回歸測試。
 - 修正 staging 管理驗收腳本：活動是管理模式第一層導覽，不是總覽卡片；以執行秘書 hosted acceptance `34577046356` 完成生日、文件、活動與活動封面流程。
 - 修正 LINE OA 自動配對只看 `membership_status` 的缺口：新增日期窗口檢查，active 但尚未開始或已過 `ended_on` 的社籍不會自動配對；新增 migration `20260911000300_line_oa_pairing_membership_window.sql`，並補上對應 verification。
-- 本機 `npm test`：122 files／788 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
+- 共用旗標評估器已將 `line_oa_auto_pairing_v1` 納入明確開啟清單；缺少設定時維持 fail-closed，補上 `src/lib/product/feature-flags.ts` 與回歸測試（commit `68b12a5`）。這是 main 的安全修補，尚未重新部署 staging。
+- 本機 `npm test`：122 files／789 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
 待做：先把 scheduler secret 放入獨立的 `birthday-scheduler` GitHub environment，再用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
 
@@ -423,7 +424,7 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
 本輪本機結果（2026-09-11）：
 
 ```text
-npm test                         122 files / 788 tests passed
+npm test                         122 files / 789 tests passed
 npm run typecheck                passed
 npm run lint                     passed
 npm run build                    passed
