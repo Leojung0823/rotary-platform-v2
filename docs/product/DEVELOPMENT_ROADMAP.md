@@ -21,8 +21,9 @@
 - staging `/api/health` 回報 `status=ok`、`revision=a7b356177400`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；完整 revision 與 main SHA 相符。
 - 本輪 LINE webhook／OA／生日推播修補已隨 Staging Go-Live `34572185592` 部署，最新 migration 為 `20260911000200_birthday_collection_line_push.sql`。
 - `CI` run `34571128943` 與 `Browser Smoke` run `34571128881` 以 `a7b3561` 成功完成；Staging Release Plan `34571960542` 與 Staging Go-Live `34572185592` 也成功完成。
+- 後續 scheduler workflow 環境隔離修正已在 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這是排程設定修正，沒有重新部署 staging 應用程式，staging runtime 仍是上列產品 release。
 
-本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；staging 旗標與 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均成功。但最新排程 run `34563427385` 目前是 `pending` 且沒有 jobs，因此「每日排程能持續自動執行」仍未證明，列為營運待辦。
+本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；生日旗標與 Render staging 的 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均成功。但最新排程 run `34563427385` 目前是 `pending` 且沒有 jobs，因此「每日排程能持續自動執行」仍未證明，列為營運待辦。舊 workflow 使用的 GitHub `staging` secret 不會自動出現在新建的 `birthday-scheduler` environment；新環境目前仍待補入同一個 scheduler secret。
 
 近期主線也已完成 LINE OA follow 配對、LINE OA onboarding 入口、社員優先與 senior-friendly UX、社團切換隔離，以及「生日任務完成後從首頁通知消失、歷史仍留在訊息中心」的修正。
 
@@ -80,7 +81,7 @@ Phase 2 之後追加並完成的社務功能：
   - 受 `blessing_iou_v1`、`blessing_iou_collections_v1`、`blessing_iou_reporting_v1` 控管。
 - [x] **生日祝福 V1／V2 核心**（`20260820001000_birthday_wishes.sql`、`20260824000400_birthday_wishes_v2_core.sql`）— `/birthdays`
   - V2 已完成新設定預設公開、年齡同意顯示、同一作者同一壽星每日最多 10 則、作者匿名投影。
-- [x] **生日祝福徵集核心**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每月每人一則自動派發、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render／GitHub staging scheduler secret 已同步，hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均通過。最新 scheduler run `34563427385` 目前 `pending` 且無 jobs，因此每日自動執行仍列為營運待辦；本輪生日 LINE 推播已隨 Go-Live `34572185592` 部署，但實際送達與 M1 真人使用者測試仍另列。
+- [x] **生日祝福徵集核心**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每月每人一則自動派發、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render staging scheduler secret 已設定；GitHub workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，但該環境尚未放入 scheduler secret。hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均通過。最新 scheduler run `34563427385` 目前 `pending` 且無 jobs，因此每日自動執行仍列為營運待辦；本輪生日 LINE 推播已隨 Go-Live `34572185592` 部署，但實際送達與 M1 真人使用者測試仍另列。
 - [x] **文件中心與年度交接**（`20260820002000_archive_handover.sql`）— `/archives`
 - [x] **社內留言板** — `/board`
 - [x] **活動封面圖片**（`20260820000100_event_cover_images.sql`）
@@ -110,7 +111,7 @@ Phase 2 之後追加並完成的社務功能：
 - GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見 `TO-DO-LIST.md` 第 1 節。
 - staging 目前 runtime 是 `a7b356177400838ee816c8fea4f2bb7032d8b5be`，`/api/health` 的 `issues` 與 `warnings` 都是空的；閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
 - Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
-- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `a7b356177400838ee816c8fea4f2bb7032d8b5be`；旗標、Render／GitHub scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。歷史成功 run `33361427466` 不代表最新排程仍正常：`34563427385` 目前 `pending`、沒有 jobs，需另查 GitHub Actions／環境佇列。前一個排程 run `34438617117` 已因新排程建立而取消；歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
+- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `a7b356177400838ee816c8fea4f2bb7032d8b5be`；生日旗標、Render scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。GitHub workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，但該環境目前尚未放入 scheduler secret。歷史成功 run `33361427466` 不代表最新排程仍正常：`34563427385` 目前 `pending`、沒有 jobs，需另查 GitHub Actions／環境佇列。前一個排程 run `34438617117` 已因新排程建立而取消；歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
 - 生日 scheduler 的阻塞原因已查明：舊版 workflow 把每日 job 綁在有 required reviewer 的 `staging` environment；排程事件會先等待人工核准，因此 `34563427385` 沒有建立 jobs。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，並已設定 staging URL；仍待把 scheduler secret 放入該 environment，再驗證下一次 schedule 真的執行。不可移除 `staging` 保護或把部署用 secrets 暴露給無審核 job。
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。

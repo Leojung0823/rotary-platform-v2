@@ -8,6 +8,7 @@
 - 本次核對的產品 release 基準是 `a7b356177400838ee816c8fea4f2bb7032d8b5be`；其後的文件同步 commit 已推到 `main`。目前工作分支為 `codex/todo-hardening`，與 `origin/main` 同步，工作區乾淨，沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、revision `a7b356177400`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；完整 revision 與 main SHA 相符。
 - 本輪產品／資料庫修補已隨 Staging Go-Live `34572185592` 部署 hosted staging；最新 migration 是 `20260911000200_birthday_collection_line_push.sql`。
+- 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
 - `CI` `34571128943`、`Browser Smoke` `34571128881`、Staging Release Plan `34571960542`、Staging Go-Live `34572185592` 均成功完成。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
@@ -24,7 +25,7 @@
 - 修正「尚未加入官方帳號」文案為「尚未與本社 LINE OA 完成配對」，並補相關回歸測試。
 - 本機 `npm test`：122 files／788 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
-待做：用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；排程每日 job 目前仍受 `staging` required reviewer 阻擋。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
+待做：先把 scheduler secret 放入獨立的 `birthday-scheduler` GitHub environment，再用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
 
 ## LINE OA 社員導引 PR-1 已部署並啟用（2026-09-07）
 
@@ -342,7 +343,9 @@ production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資�
 
 PR #86 的 application、validate、database 與 Browser Smoke 均通過後以一般 merge 合併。生日專項 hosted acceptance
 `33345182984` 已以程式 SHA `26520424b415` 通過，包含生日 V2 說明與祝福徵集入口。staging 平台管理員已透過受保護 CLI
-開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`；Render staging 與 GitHub staging secret 已同步。
+開啟 `birthday_wishes_v2` 與 `birthday_wishes_collection_v1`；當時 Render staging 與 GitHub `staging`
+environment 的 secret 已同步。後續為避免排程受部署審核阻擋，workflow 已改用獨立的
+`birthday-scheduler` environment；新 environment 的 secret 仍待補入。
 排程 workflow `33361427466` 已成功通過，表示 protected scheduler route 的認證與執行均正常。
 
 Auth 設定同步已修復，workflow `33399486309` 通過。原本 `33348350584` 的失敗是三個疊在一起的問題：舊

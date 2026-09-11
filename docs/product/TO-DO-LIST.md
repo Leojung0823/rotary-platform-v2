@@ -30,9 +30,14 @@ follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精�
 
 本輪 `CI` `34571128943`、`Browser Smoke` `34571128881`、Staging Release Plan `34571960542` 與
 Staging Go-Live `34572185592` 均成功完成；Go-Live 的 HTTPS smoke 與 hosted member acceptance 也通過。
+之後的 scheduler environment 隔離修正已推到 `main` commit
+`6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718`
+均成功，沒有重新部署 staging 應用程式。
 
-生日旗標與 scheduler secret 已由受保護流程設定，歷史 hosted acceptance `33345182984` 與歷史成功排程
-`33361427466` 均通過；但最新排程 run `34563427385` 目前 `pending` 且沒有 jobs，日常自動執行尚未證明。
+生日旗標與 Render staging 的 scheduler secret 已由受保護流程設定；GitHub workflow 已改用獨立的
+`birthday-scheduler` environment，但該環境目前尚未放入 scheduler secret。歷史 hosted acceptance
+`33345182984` 與歷史成功排程 `33361427466` 均通過；但最新排程 run `34563427385` 目前 `pending`
+且沒有 jobs，日常自動執行尚未證明。
 production 沒有修改，目前沒有 open PR。
 
 ## 逐項狀態
@@ -168,10 +173,11 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 - service-role-only scheduler、訊息通知冪等、feature flag EXECUTE 邊界與 verification。
 
 已完成 staging 外部啟用與核心驗收：平台管理員透過受保護 CLI 開啟
-`birthday_wishes_v2`、`birthday_wishes_collection_v1`；Render 與 GitHub staging 的
-`BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已同步。current-main hosted acceptance `33345182984`
+`birthday_wishes_v2`、`birthday_wishes_collection_v1`；Render staging 的
+`BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已設定。GitHub workflow 已改用獨立的
+`birthday-scheduler` environment，但該環境目前尚未放入同名 secret。current-main hosted acceptance `33345182984`
 已驗證生日 V2 與徵集入口，歷史排程 workflow `33361427466` 也曾成功呼叫 protected staging route。
-但最新排程 run `34563427385` 目前為 `pending`、沒有 jobs。已查明原因是舊 workflow 綁在需要人工核准的 `staging` environment；每日 schedule 會先停在環境審核，不能把 staging 保護直接移除。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍要放入 scheduler secret，再驗證實際執行。
+但最新排程 run `34563427385` 目前為 `pending`、沒有 jobs。已查明原因是舊 workflow 綁在需要人工核准的 `staging` environment；每日 schedule 會先停在環境審核，不能把 staging 保護直接移除。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；新 environment 的 scheduler secret 尚未放入，仍要補入後再驗證實際執行。
 歷史失敗 run `33121570908`／`33121704322` 保留作為啟用前的追蹤證據；M1 真人使用者測試仍是另一個待辦。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
