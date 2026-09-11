@@ -1,10 +1,12 @@
 # 改版企劃：幹部功能收斂到管理模式（v2.1）
 
 建立日期：2026-09-01（Asia/Taipei）
-修訂：v2.1.5，2026-09-02（執行秘書 staging 專項驗收完成）
+修訂：v2.1.6，2026-09-11（同步目前 main／staging 狀態）
 狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke、一般 staging Go-Live，以及生日／文件的執行秘書 hosted acceptance 已完成；活動／活動封面仍待專案後續做 staging 端到端驗收
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次已驗收 runtime：`main@9291584016ba0fb091f0115d5022d7bc0855834c`
+目前核對基準：`main@4fb8c189d7496492c55ee5e20eb57a0ab86feeab`；staging runtime `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`
+
+截至 2026-09-11，staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。`main` 比 staging 多出的兩個 commit 只有生日 E2E 測試修正，沒有管理模式產品程式或 migration 差異；活動／活動封面仍不能因 runtime 健康而標成已完成驗收。
 
 > 本版已同步為 repository 內的唯一權威企劃；下載資料夾的原檔僅作為本次規格輸入。
 > 程式搬遷、一般 staging Go-Live 與執行秘書專項 hosted acceptance 已完成。活動／活動封面仍有未完成的 staging 端到端驗收，不能把生日／文件的通過擴大解讀成所有管理領域都已驗收。
@@ -206,10 +208,10 @@ verification 驗證；活動封面由 `event_cover_storage_security.sql` 驗證 
 
 ### 5.3 staging 版本與執行證據（一般發布已完成）
 
-- `[x]` 最新 Staging Release plan `33639237610` 以 exact SHA `9291584016ba0fb091f0115d5022d7bc0855834c` 通過，remote migration dry-run 顯示 up to date。
-- `[x]` 最新 Staging Go-Live `33639395650` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
-- `[x]` staging health：`status=ok`、`environment=staging`、revision `9291584016ba`、`issues=[]`；`DEPLOYMENT_WARNING` 來自 staging 的 mock LINE OA 設定，不能誤報成零 warning。
-- `[x]` 執行秘書專項 hosted acceptance：workflow `33639758501` 以同一個 exact SHA 通過。無社籍、非平台管理員的 staging operator 已從管理總覽完成生日任務重跑，以及文件年度／項目建立、上傳與編輯；沒有執行不可逆交接確認。
+- `[x]` 目前最新 Staging Release `34136105840` 以 exact SHA `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3` 通過，remote migration dry-run 顯示 up to date。
+- `[x]` 目前最新 Staging Go-Live `34136197227` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
+- `[x]` staging health：`status=ok`、`environment=staging`、revision `2f0a9a5bef7e`、`issues=[]`、`warnings=[]`。這只代表服務健康，不代表活動／活動封面已完成該企劃要求的 staging 端到端驗收。
+- `[x]` 執行秘書專項 hosted acceptance：workflow `33639758501` 以當時的 exact SHA `9291584016ba0fb091f0115d5022d7bc0855834c` 通過。無社籍、非平台管理員的 staging operator 已從管理總覽完成生日任務重跑，以及文件年度／項目建立、上傳與編輯；沒有執行不可逆交接確認。這是已完成的歷史專項驗收，不代表活動／活動封面的端到端驗收已完成。
 
 本項的安全驗收流程已寫入 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md) 與
 `.github/workflows/staging-management-acceptance.yml`。它只拿 staging operator 登入帳密，不拿 Supabase access token、資料庫密碼或 service-role；建立的年度、文件與版本是可回收測試資料，不會執行不可逆交接確認。

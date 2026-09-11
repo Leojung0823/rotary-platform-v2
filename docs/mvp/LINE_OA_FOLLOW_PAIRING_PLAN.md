@@ -1,9 +1,19 @@
 # LINE OA follow 事件自動配對社員 企劃書
 
-狀態：`[ ]` 尚未開發　　建立日期：2026-09-02（Asia/Taipei）
+狀態：`[>]` 核心實作、verification、CI 與 staging 部署已完成；真實 identity pairing 驗收待做　　建立日期：2026-09-02（Asia/Taipei）
 預定執行者：**Codex（獨立分支）**　　平行分支：Claude 負責事件驅動自動推播，兩者不共用檔案。
 
 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
+
+## 0. 實作狀態（2026-09-11）
+
+- `[x]` `20260902000200_line_oa_follow_event_pairing.sql` 已進入 `main`，新增的 service-role-only RPC、flag gate、精確 identity 比對、同社有效社籍與不覆寫既有配對規則均已實作。
+- `[x]` webhook follow 路徑已在 follower upsert 成功後呼叫自動配對 RPC；配對失敗不讓 webhook 重試風暴，結果會留在 webhook failure code。
+- `[x]` `supabase/verification/line_oa_follow_event_pairing_security.sql`、route／邊界測試與 manifest 已完成，最新 `CI` 與 `Browser Smoke` 均通過。
+- `[x]` `line_oa_auto_pairing_v1` 已由受保護流程開啟 staging；目前 staging runtime 為 `2f0a9a5bef7e`，`/api/health` 的 `issues` 與 `warnings` 都是空的。
+- `[>]` 尚未完成「曾用 LINE Login 登入的社員加入同一社 OA 後，自動對上正確 person」的真實 identity 驗收；也尚未用真實身份完成多社、外社、停權／退社的全流程證據。
+
+原始開發範圍是不修改 LINE Developers Console 或其他 hosted 設定；後續 staging／真實 webhook rollout 是獨立的發布與驗收工作，不應回頭改動本案的權限邊界。
 
 ## 1. 現況（已經有的，不要重做）
 
@@ -118,8 +128,8 @@ public.auto_pair_line_oa_follower(
 
 ## 7. Migration 與 verification
 
-- Migration 檔名：**`20260902000200_line_oa_follow_event_pairing.sql`**（號碼已保留給本案）。
-  動手前仍要 `ls supabase/migrations/ | tail` 確認沒有人插隊。
+- Migration 檔名：**`20260902000200_line_oa_follow_event_pairing.sql`**，已建立並進入 `main`；已部署的 migration 只能 forward-only，不能修改、改名或刪除。
+- 新增 migration 前仍要先 `ls supabase/migrations/ | tail`，確認新編號沒有與平行工作撞號。
 - 新增 `supabase/verification/line_oa_follow_event_pairing_security.sql`，
   並登記進 `scripts/database-verification-files.txt`。
 
@@ -143,6 +153,8 @@ verification 要測「誰不能做什麼」，不只是成功路徑：
 - 邊界測試：確保 route 不會把 OA userId 寫進 log 或錯誤回應。
 
 ## 9. 驗收條件
+
+目前第 1、5 項與程式／資料庫層驗證已完成；第 2、3、4 項的程式已完成但需要真實 LINE identity 操作；第 6 項需由使用者在 LINE Developers Console 維護設定。
 
 1. flag 關閉時，follow 事件的行為與現在完全一樣（建未配對列）。
 2. flag 開啟且該社員已用 LINE Login 綁定過：follow 之後後台直接顯示已配對，幹部不用做事。

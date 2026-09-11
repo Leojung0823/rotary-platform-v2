@@ -1,6 +1,6 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-08-31
+更新日期：2026-09-11（Asia/Taipei）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
@@ -13,9 +13,19 @@
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
 
-自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威來源是 GitHub `main`；staging `/api/health` 健康檢查通過，但 runtime 仍是 `26520424b415b8f3e446d0ff53312330f30e76af`，尚未追上目前 `main`。以下功能也已合併：扶輪社名稱編輯、祝福 IOU（含募集、本人扶輪年度篩選與年度報表）、生日祝福 V2 核心、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening。
+自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威來源是 GitHub `main`；扶輪社名稱編輯、祝福 IOU、生日祝福 V2、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening 都已進入主線。
 
-本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；staging 旗標與 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與最新排程 `33361427466` 均成功。
+截至 2026-09-11 的實際掃描基準：
+
+- GitHub `main` 與 `origin/main` 都是 `4fb8c189d7496492c55ee5e20eb57a0ab86feeab`。
+- staging `/api/health` 回報 `status=ok`、`revision=2f0a9a5bef7e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
+- `main` 比 staging 多出的 `352ed61` 與 `4fb8c18` 只有生日 E2E 測試修正，沒有產品程式或 migration 差異；所以產品 runtime 已對齊 staging，但最新測試檔尚未部署。
+- 最新 migration 是 `20260907000500_hide_completed_birthday_home_notification.sql`；目前沒有 open PR。
+- `CI` run `34138884800` 與 `Browser Smoke` run `34138884747` 都以 `4fb8c18` 通過；最新 Staging Release `34136105840`、Staging Go-Live `34136197227` 以 `2f0a9a5` 通過。
+
+本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；staging 旗標與 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均成功。但最新排程 run `34438617117` 目前是 `pending` 且沒有 jobs，因此「每日排程能持續自動執行」仍未證明，列為營運待辦。
+
+近期主線也已完成 LINE OA follow 配對、LINE OA onboarding 入口、社員優先與 senior-friendly UX、社團切換隔離，以及「生日任務完成後從首頁通知消失、歷史仍留在訊息中心」的修正。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
@@ -66,7 +76,7 @@ Phase 2 之後追加並完成的社務功能：
   - 受 `blessing_iou_v1`、`blessing_iou_collections_v1`、`blessing_iou_reporting_v1` 控管。
 - [x] **生日祝福 V1／V2 核心**（`20260820001000_birthday_wishes.sql`、`20260824000400_birthday_wishes_v2_core.sql`）— `/birthdays`
   - V2 已完成新設定預設公開、年齡同意顯示、同一作者同一壽星每日最多 10 則、作者匿名投影。
-- [x] **生日祝福徵集**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每日 staging 排程、每月每人一則自動邀約、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render／GitHub staging scheduler secret 已同步，`26520424b415` 已部署；hosted acceptance `33345182984` 與最新 scheduler `33361427466` 均成功。這些成功證據對應 staging 當時的 runtime，不代表目前 `main` 的其他變更已部署。M1 真人使用者測試仍另列。
+- [x] **生日祝福徵集核心**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每月每人一則自動邀約、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render／GitHub staging scheduler secret 已同步，hosted acceptance `33345182984` 與歷史成功 scheduler `33361427466` 均通過。最新 scheduler run `34438617117` 目前 `pending` 且無 jobs，因此每日自動執行仍列為營運待辦；M1 真人使用者測試仍另列。
 - [x] **文件中心與年度交接**（`20260820002000_archive_handover.sql`）— `/archives`
 - [x] **社內留言板** — `/board`
 - [x] **活動封面圖片**（`20260820000100_event_cover_images.sql`）
@@ -84,7 +94,7 @@ Phase 2 之後追加並完成的社務功能：
    `/messages` 訊息中心：幹部依受眾發布、每位收件人各自的已讀狀態、導覽未讀徽章、
    幹部可見的已讀名單與收回。受 `announcements_v09` flag 控管，**預設關閉且必須明確開啟**
    （見 `docs/mvp/MESSAGE_CENTER_MVP_SCOPE.md`）。
-3. ~~**PR-07a — 我的／帳號安全／登入協助**~~ — 核心頁面與 recovery confirmation 已完成；真實 staging email flow 尚待驗收。最新同步 workflow `33348350584` 在 Supabase Management API 第一次請求失敗，需先確認 staging token。
+3. ~~**PR-07a — 我的／帳號安全／登入協助**~~ — 核心頁面、recovery confirmation、staging redirect 同步已完成；真實 recovery email 仍受 custom SMTP 與產品決定限制，暫不列為 release blocker。
 4. ~~**PR-07b — Legacy UI Cleanup / Accessibility Hardening**~~ — 本輪完成 member IA、固定導覽 clearance、巢狀 current state 與名錄 48px／200% 版面；更大範圍 legacy 清理仍可另立切片。
 5. **M1 — 五位目標使用者形成性測試** — 尚未安排。
 
@@ -94,11 +104,12 @@ Phase 2 之後追加並完成的社務功能：
 
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
 - GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見 `TO-DO-LIST.md` 第 1 節。
-- staging runtime 已於 2026-08-31 透過 plan `33403385635`／Go-Live `33403560211` 部署到 `9a0b0fcb959c`，`/api/health` 的 `issues` 為空。此後每有新 commit 進 `main`，runtime 會再度落後；閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
+- staging 目前 runtime 是 `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`，`/api/health` 的 `issues` 與 `warnings` 都是空的；`main` 後續只多了兩個 E2E 測試提交。閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威，不能把尚未部署的測試提交說成 staging 已有。
 - Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
-- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，PR #77 已合併且程式 SHA `26520424b415` 已部署到 staging；旗標、Render／GitHub scheduler secret、hosted acceptance 與 scheduler workflow 均已完成。後續文件 PR 不改 runtime，不能把文件 merge SHA 誤當成 staging runtime。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據，不取代最新成功結果。
+- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `2f0a9a5bef7e`；旗標、Render／GitHub scheduler secret 與 hosted acceptance 均已完成。歷史成功 run `33361427466` 不代表最新排程仍正常：`34438617117` 目前 `pending`、沒有 jobs，需另查 GitHub Actions 排程／環境佇列。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
-- PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40 目前仍是過時 base 上的 draft，公告通知已在 `main` 實作，不能直接合併該 PR。
+- PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40 也已關閉，公告通知已在 `main` 實作；保留的舊分支不能直接合併。
+- `src/lib/product/features.ts` 目前列出 13 個 `available`、6 個 `developing` 功能。仍標示開發中的六項是：社費／收款／核銷、報表與匯出、正式部署完成度、LINE Rich Menu、手機 Web App、社務 AI 助理；LINE OA 推播與 onboarding 已有部分實作，不等於 Rich Menu 或所有正式環境工作已完成。
 
 ---
 
@@ -351,17 +362,18 @@ PR-01c 不做：
 [完成] 祝福 IOU · 生日 V2 核心 · 文件交接 · 留言板 · 活動封面 · 幹部社員模式
 [完成] PR #40 Announcements/Notifications · 首頁通知 projection
 [完成] PR-07a 帳號安全核心 · PR-07b 行動版 IA／accessibility 核心
-[外部驗收] recovery email · GPS policy · 實機 Browser Smoke
-[完成] 生日祝福徵集（排程／題庫／每月一則派發／幹部工作台） ─> M1 使用者測試
+[外部驗收] recovery email（若重新啟動）· iOS／Android 實機 · M1 使用者測試
+[核心完成／營運待查] 生日祝福徵集（排程／題庫／每月一則派發／幹部工作台） ─> M1 使用者測試
 ```
 
 ## Current Next Actions
 
-1. 決定 GPS accuracy／定位 age 政策，才能關閉 GPS hardening blocker。
-2. 以專用 staging 身份完成 recovery 真實 email flow，並做 iOS／Android 實機驗收。
-3. 訊息中心 `announcements_v09` 已於 2026-08-31 對 **staging** 開啟（enabled、rollout 100%、僅 `staging`）。
-   **production 尚未開啟**，要對 production 開啟需另行決定。其他旗標仍依需要以
-   `npm run flags:enable:staging <key>` 個別開啟；預設關閉的行為不變。
-4. 生日徵集 staging 設定、hosted smoke 與排程已完成；下一步進入 M1 使用者測試。
+1. **先查生日祝福每日排程。** run `34438617117` 目前 `pending` 且沒有 jobs；要確認 GitHub Actions 的排程是否被環境佇列卡住、是否能產生下一次實際執行。這是目前最急的營運問題，不能用歷史成功 run `33361427466` 代替。
+2. **完成 LINE OA onboarding／follow 自動配對的真實身份驗收。** 程式、migration、verification、staging flag 與 webhook 基礎已在主線／staging；仍要用「曾以 LINE Login 登入的社員加入同一社 OA」確認精確配對，並補多社、外社、停權／退社等真實流程證據。
+3. **完成管理模式剩餘驗收。** 生日與文件的執行秘書 hosted acceptance 已完成；活動與活動封面仍待 staging 端到端驗收，管理頁 TTFB 前後比較仍是未量測。
+4. **安排行動裝置與 M1 測試。** 用 iOS Safari、真實 Android Chrome，以及五位社員／幹部做形成性測試；自動化 Chromium 不取代實機與訪談。
+5. **整理正式環境準備。** production 生日 scheduler、production LINE 憑證與額度政策、`announcements_v09` 是否對 production 開啟，分開決策與執行；目前 production 沒有修改。
+6. **處理後續 LINE OA 缺口。** webhook redelivery payload hash、生日邀請 LINE 推播、Flex 模板、後台顯示環境變數名稱，依風險另開獨立工作。
+7. **Recovery email 維持暫緩。** 只有在 production 上線或密碼登入比例上升時，才重新處理 custom SMTP 與真實 email 驗收。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。

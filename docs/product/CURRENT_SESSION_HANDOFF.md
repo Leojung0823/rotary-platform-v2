@@ -1,7 +1,17 @@
-# 交接筆記（2026-09-02）
+# 交接筆記（持續更新；最新核對 2026-09-11）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 最新狀態核對（2026-09-11）
+
+- 權威 GitHub `main` 與 `origin/main` 都是 `4fb8c189d7496492c55ee5e20eb57a0ab86feeab`，worktree 乾淨，沒有 open PR。
+- staging `/api/health` 回報 `status=ok`、revision `2f0a9a5bef7e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
+- `main` 比 staging 多出的 `352ed61` 與 `4fb8c18` 只有生日 E2E 測試修正，沒有產品程式或 migration 差異；最新 migration／產品 runtime 已在 staging。
+- `CI` run `34138884800` 與 `Browser Smoke` run `34138884747` 以 `4fb8c18` 通過；Staging Release `34136105840`、Staging Go-Live `34136197227` 以 `2f0a9a5` 通過。
+- 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
+- 最新生日 scheduler run `34438617117` 是 `pending` 且沒有 jobs；歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
+- production 沒有修改；最新 migration 是 `20260907000500_hide_completed_birthday_home_notification.sql`。
 
 ## LINE OA 社員導引 PR-1 已部署並啟用（2026-09-07）
 
@@ -20,7 +30,7 @@
 deploy hook 只存在 GitHub secrets），所以無法從這裡查證，需由有 Render 權限的人確認，
 或直接以「會員中心是否出現導引入口」判定。
 
-## LINE OA 推播 staging 上線狀態（2026-09-03）
+## 歷史：LINE OA 推播 staging 上線狀態（2026-09-03）
 
 staging 執行版本 `67763b1`，`/api/health` 的 `issues` 與 `warnings` 都是空的。
 
@@ -70,7 +80,7 @@ POST：回 `401 invalid_signature` 就代表路由、OA 帳號與 channel secret
    用同一組 `expected_sha` 與 `plan_run_id` 重跑 Go-Live（run `33658883276`）即成功；
    migration 會自動跳過已套用的部分。**這個順序值得記住：migration 先於部署，失敗點在中間時資料庫會領先。**
 
-## LINE OA 訊息推播接上真實 Messaging API（2026-09-02）
+## 歷史：LINE OA 訊息推播接上真實 Messaging API（2026-09-02）
 
 產品決定本輪先把**真實 Messaging API 接通**；事件驅動自動推播、Flex 圖文訊息與 webhook 自動配對
 follower 排在後面。憑證狀態：已有 LINE OA 帳號，**channel access token 與 channel secret 尚未取得**，
@@ -152,7 +162,7 @@ line-oa-audience targeted E2E    2 passed（重新 build 後再跑一次）
 `db reset` 後生日旗標預設關閉，`set_my_birthday_preference_v2` 的 `authenticated` EXECUTE 會被撤掉，
 順序反了 fixture 會失敗。CI 的 browser-smoke workflow 就是這個順序。
 
-## 幹部功能收斂到管理模式（2026-09-02）
+## 歷史：幹部功能收斂到管理模式（2026-09-02）
 
 本輪依 [`MANAGEMENT_MODE_SEPARATION_PLAN.md`](./MANAGEMENT_MODE_SEPARATION_PLAN.md) v2.1.5 實作，管理模式 runtime 已在
 `main@9291584016ba0fb091f0115d5022d7bc0855834c` 部署並完成 staging 驗收；本機與 GitHub 回歸、一般 staging Go-Live，以及執行秘書 staging 專項 hosted acceptance 均已完成。使用者要求
@@ -212,7 +222,7 @@ revision `9291584016ba`、`issues=[]`。執行秘書 hosted acceptance 已驗證
 已新增並部署 `.github/workflows/staging-management-acceptance.yml` 與 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md)。GitHub `staging` environment 的
 `STAGING_TEST_OPERATOR_EMAIL`／`STAGING_TEST_OPERATOR_PASSWORD` 已設定；只確認 secret 名稱存在，不讀取或記錄值。workflow `33639758501` 已通過，因此第 11.2 節的生日／文件執行秘書 hosted acceptance 已完成。
 
-## 生日祝福派發修復（2026-09-01）
+## 歷史：生日祝福派發修復（2026-09-01）
 
 **症狀**：社員看得到本月壽星，卻收不到祝福任務；排程回報 `skipped_count: 1`、其餘為 0。
 
@@ -259,7 +269,7 @@ staging（runtime `2b0f68242f7c`，`/api/health` 的 `issues` 為空）。
 一個 job，只打 `STAGING_BASE_URL`。**production 沒有對應排程**，正式上線後生日徵集不會自動跑，需要另做
 production job、secret 與核准閘門。
 
-## 交接給下一位代理（2026-08-31 staging Auth 修復輪）
+## 歷史：交接給下一位代理（2026-08-31 staging Auth 修復輪）
 
 這一輪只處理 staging Auth 同步失敗，沒有碰任何產品功能。接手前請先讀完這一節。
 
@@ -295,7 +305,7 @@ Smoke**。下次有任何高風險變更進 `main` 時，請讓完整 CI 跑一�
 **接手建議順序**：
 
 1. ~~`Staging Release` → `Staging Go-Live`~~ **已完成**：plan `33403385635`、Go-Live `33403560211`
-   均成功，staging runtime 已是 `9a0b0fcb959c`。下次部署時 `expected_sha` 一定要用
+   均成功，當時 staging runtime 是 `9a0b0fcb959c`。下次部署時 `expected_sha` 一定要用
    `$(git rev-parse HEAD)`，不要手打。
 2. ~~draft PR #40~~ **已於 2026-08-31 關閉**（base 過時、功能已在 `main`）；分支
    `feat/v0.9-announcements-notifications` 保留未刪。
@@ -306,13 +316,13 @@ Smoke**。下次有任何高風險變更進 `main` 時，請讓完整 CI 跑一�
 **不在待辦內**：custom SMTP 與 recovery email 範本同步已由產品決定擱置（見上）。`BLOCKED_BY_PLAN`
 是預期輸出，**不要主動去修**，也不要為了消除它而放寬斷言。
 
-## 本次同步結果
+## 歷史同步結果（2026-08-31）
 
 目前權威 `main` 已合併 PR #77、PR #86、文件 PR #87／#88／#89、PR #91、PR #92 與 PR #93；閱讀時以 GitHub
 `main` 的最新 commit 為準。PR #91 加入 staging Auth 設定同步流程，PR #92
 同步功能目錄，PR #93 加入 CI／Browser Smoke 的變更範圍 gate。PR #86 修正台灣社團時區跨日造成的出席頁日期預設錯誤；
 production 沒有修改。生日祝福 V2 與生日祝福徵集的程式、資料庫 migration、權限驗證、測試與文件均已進入 main。
-staging runtime 已於 2026-08-31 透過 plan `33403385635`／Go-Live `33403560211` 部署到 `9a0b0fcb959c`，
+當時 staging runtime 已於 2026-08-31 透過 plan `33403385635`／Go-Live `33403560211` 部署到 `9a0b0fcb959c`，
 `/api/health` 的 `issues` 為空，`DEPLOYMENT_WARNING` 是 staging 用 `LINE_OA_MODE=mock` 的預期警告。
 該次 Go-Live 的 migration dry-run 回報 `Remote database is up to date.`，沒有待套用的 schema 變更。
 注意此後若有新的文件 commit 進 `main`，runtime 會再次落後一個 commit；後續文件合併不代表 runtime 已部署。並保留原本的 Staging Release plan `33121197083`／Go-Live `33121275958` 證據。
@@ -371,8 +381,9 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
 
 ## 仍未完成／需外部條件
 
-- 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署、hosted acceptance 與排程均已完成；不再有本輪
-  birthday release blocker。歷史失敗 run `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
+- 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署與 hosted acceptance 均已完成；但最新 scheduler run
+  `34438617117` 是 `pending` 且沒有 jobs，日常自動排程仍是營運待辦，不應寫成全部完成。歷史失敗 run
+  `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
 - GPS accuracy 政策已於 2026-08-31 決定：不設門檻，維持 200 公尺距離判定。這一項已結案，不是待辦。
 - recovery 的 Management API token 已修復、redirect 已同步；剩下的外部條件是替 staging 專案設定 custom
   SMTP（Resend 免費額度 3,000 封/月即足夠）。設定後 email 範本同步會自動恢復嚴格驗證，不需要再改程式。
