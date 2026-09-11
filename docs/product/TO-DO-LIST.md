@@ -13,20 +13,23 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復也已部署到 staging；最新兩個 main commit 只是 E2E 測試修正。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 main commit 含測試與產品安全修補。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
-環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改目前在本輪工作分支，尚未部署到
-staging；部署後仍要做一次實際送達驗收。
+環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
+生日邀請的實際送達驗收。
 
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
 截至 2026-09-11 的權威基準：本次產品狀態掃描以
-`origin/main@55dc59d1f6d1c86109aaabacb279f02931d442f8` 為基準；本輪工作分支另有產品程式與 migration 修補，尚未部署到 staging。staging `/api/health` 回報 revision
-`2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`、`issues=[]`、`warnings=[]`。main 比 staging 多出的
-兩個生日 E2E 修正與文件同步提交；本輪工作分支新增的 migration 尚未進入 staging。最新已部署 migration 是
-`20260907000500_hide_completed_birthday_home_notification.sql`。
+`origin/main@a7b356177400838ee816c8fea4f2bb7032d8b5be` 為基準；目前 checkout `codex/todo-hardening` 與
+`origin/main` 同一個 commit，工作區乾淨。staging `/api/health` 回報 revision
+`a7b356177400838ee816c8fea4f2bb7032d8b5be`、`issues=[]`、`warnings=[]`。最新已部署 migration 是
+`20260911000200_birthday_collection_line_push.sql`。
+
+本輪 `CI` `34571128943`、`Browser Smoke` `34571128881`、Staging Release Plan `34571960542` 與
+Staging Go-Live `34572185592` 均成功完成；Go-Live 的 HTTPS smoke 與 hosted member acceptance 也通過。
 
 生日旗標與 scheduler secret 已由受保護流程設定，歷史 hosted acceptance `33345182984` 與歷史成功排程
 `33361427466` 均通過；但最新排程 run `34563427385` 目前 `pending` 且沒有 jobs，日常自動執行尚未證明。
@@ -312,8 +315,8 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 - `[>]` 事件驅動自動推播的**最後一個來源**：生日祝福徵集邀請。程式已完成
   `20260911000200_birthday_collection_line_push.sql`、scheduler route 串接、service-role-only
-  收件人投影／推播紀錄、既有 `line_oa_event_push_v1` 明確啟用閘門與單元測試；因尚未部署本輪
-  migration 到 staging，仍待 staging 實際收到邀請 LINE 的驗收。通知目前由
+  收件人投影／推播紀錄、既有 `line_oa_event_push_v1` 明確啟用閘門與單元測試；migration
+  已部署到 staging，仍待 staging 實際收到邀請 LINE 的驗收。通知目前由
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
 - `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
@@ -359,7 +362,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 3. **完成管理模式剩餘驗收** `[>]`：生日／文件執行秘書 hosted acceptance 已完成；活動與活動封面仍待 staging 端到端驗收，效能 TTFB 尚未量測。
 4. **安排 iOS Safari、Android Chrome 與 M1 五位目標使用者測試** `[ ]`；實機與訪談不由自動化 Chromium 取代。
 5. **準備 production** `[!]`：另做 production 生日 scheduler job／secret／核准閘門，取得 production LINE 憑證並決定額度政策，另行決定是否開啟 production `announcements_v09`。
-6. **後續 LINE OA 缺口**：webhook redelivery payload hash、生日邀請 LINE 推播、後台顯示環境變數名稱的程式修補已完成，待本輪部署與 staging 驗收；仍未完成的是 Flex 模板、推播額度政策，以及 follow 配對真人驗收。
+6. **後續 LINE OA 缺口**：webhook redelivery payload hash、生日邀請 LINE 推播、後台顯示環境變數名稱的程式修補已完成並部署；仍未完成的是生日邀請實際送達、Flex 模板、推播額度政策，以及 follow 配對真人驗收。
 7. **Recovery email 維持暫緩** `[!]`：custom SMTP 與真實 email flow 只有在 production 上線或密碼登入比例上升時重啟。
 
 ## 歷史驗證證據（管理模式輪，2026-09-02）
@@ -379,9 +382,9 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-11）
 
-- `main`／`origin/main`：`55dc59d1f6d1c86109aaabacb279f02931d442f8`；本輪 `codex/todo-hardening` 另有尚未合併的 LINE OA／生日推播修補。
-- staging health：revision `2f0a9a5bef7e`、`status=ok`、`issues=[]`、`warnings=[]`；完整 revision 為 `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。
-- 上一輪文件同步的 `CI` `34561215490`、`Browser Smoke` `34561215495`：以 `17fdbf8` 成功完成；文件變更依範圍規則只執行輕量 gate，完整 job 為 skipped。
-- Staging Release `34136105840`、Staging Go-Live `34136197227`：以 `2f0a9a5` 通過。
+- `main`／`origin/main`：`a7b356177400838ee816c8fea4f2bb7032d8b5be`；目前 checkout `codex/todo-hardening` 與其一致，沒有 open PR。
+- staging health：revision `a7b356177400`、`status=ok`、`issues=[]`、`warnings=[]`；完整 revision 與 main SHA 相符。
+- `CI` `34571128943`、`Browser Smoke` `34571128881`：以 `a7b3561` 成功完成。
+- Staging Release Plan `34571960542`、Staging Go-Live `34572185592`：以 `a7b3561` 通過，兩個本輪 migration 已 apply。
 - 最新 Birthday Collection Scheduler `34563427385`：`pending`、無 jobs；每日自動排程目前未證明。
 - 目前沒有 open PR；production 沒有修改。

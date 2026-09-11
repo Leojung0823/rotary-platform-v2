@@ -5,26 +5,26 @@
 
 ## 最新狀態核對（2026-09-11）
 
-- 本次核對的產品基準是 `main@55dc59d1f6d1c86109aaabacb279f02931d442f8`；目前工作分支為 `codex/todo-hardening`，有尚未提交的 LINE OA／生日推播修補與文件同步，沒有 open PR。
-- staging `/api/health` 回報 `status=ok`、revision `2f0a9a5bef7e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
-- 相對 staging，main 的差異包含兩個生日 E2E 修正與文件同步提交；目前工作分支另有產品程式與 migration 修補，尚未部署 hosted 環境。最新已部署 migration 仍是 `20260907000500_hide_completed_birthday_home_notification.sql`。
-- 上一輪文件同步的 `CI` run `34561215490` 與 `Browser Smoke` run `34561215495` 以 `17fdbf8` 成功完成；本次產品／資料庫修補尚未建立新的 hosted release。Staging Release `34136105840`、Staging Go-Live `34136197227` 以 `2f0a9a5` 通過。
+- 本次核對的產品基準是 `main@a7b356177400838ee816c8fea4f2bb7032d8b5be`；目前工作分支為 `codex/todo-hardening`，與 `origin/main` 同一個 commit，工作區乾淨，沒有 open PR。
+- staging `/api/health` 回報 `status=ok`、revision `a7b356177400`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；完整 revision 與 main SHA 相符。
+- 本輪產品／資料庫修補已隨 Staging Go-Live `34572185592` 部署 hosted staging；最新 migration 是 `20260911000200_birthday_collection_line_push.sql`。
+- `CI` `34571128943`、`Browser Smoke` `34571128881`、Staging Release Plan `34571960542`、Staging Go-Live `34572185592` 均成功完成。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
 - 排程阻塞根因已確認：scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。不要為了自動化移除 staging 部署保護；應建立只放 scheduler 所需 secret／變數的獨立 environment，並做一次受保護 route 驗證。
-- production 沒有修改；最新 migration 是 `20260907000500_hide_completed_birthday_home_notification.sql`。
+- production 沒有修改；staging 最新 migration 是 `20260911000200_birthday_collection_line_push.sql`。
 
-## 本輪待合併的待辦收尾（2026-09-11）
+## 本輪已合併並部署的待辦收尾（2026-09-11）
 
-目前工作分支 `codex/todo-hardening` 由 `main@55dc59d` 建立，尚未部署 hosted 環境。已完成：
+目前工作分支 `codex/todo-hardening` 已推送至 `main`，並以 exact SHA `a7b356177400838ee816c8fea4f2bb7032d8b5be` 完成 staging Go-Live。已完成：
 
 - webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
 - LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
-- 生日徵集邀請接上 LINE 推播：新增 `20260911000200_birthday_collection_line_push.sql`，protected scheduler 會把邀請推給已配對且開啟通知的社員；收件人投影與推播紀錄 RPC 只給 service role，沿用 `line_oa_event_push_v1` 並要求明確啟用。
+- 生日徵集邀請接上 LINE 推播：新增並部署 `20260911000200_birthday_collection_line_push.sql`，protected scheduler 會把邀請推給已配對且開啟通知的社員；收件人投影與推播紀錄 RPC 只給 service role，沿用 `line_oa_event_push_v1` 並要求明確啟用。
 - 修正「尚未加入官方帳號」文案為「尚未與本社 LINE OA 完成配對」，並補相關回歸測試。
 - 本機 `npm test`：122 files／788 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
-待做：合併後依受保護流程部署 staging，確認 `/api/health`、migration、flag 與生日邀請實際 LINE 送達。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
+待做：用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；排程每日 job 目前仍受 `staging` required reviewer 阻擋。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
 
 ## LINE OA 社員導引 PR-1 已部署並啟用（2026-09-07）
 
@@ -400,31 +400,31 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
   `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
 - 排程不是程式錯誤：目前 workflow 綁定需人工審核的 `staging` environment。安全修法是獨立 scheduler environment，不能直接放寬 staging 的部署審核規則。
 - GPS accuracy 政策已於 2026-08-31 決定：不設門檻，維持 200 公尺距離判定。這一項已結案，不是待辦。
-- recovery 的 Management API token 已修復、redirect 已同步；剩下的外部條件是替 staging 專案設定 custom
-  SMTP（Resend 免費額度 3,000 封/月即足夠）。設定後 email 範本同步會自動恢復嚴格驗證，不需要再改程式。
-  在那之前不要用 recovery 信件當驗收證據。
+- recovery 的 Management API token 已修復、redirect 已同步；custom SMTP 與 recovery email 依產品決定暫緩，
+  在重新啟動前不要用 recovery 信件當驗收證據。
 - iOS Safari／真實 Android 裝置驗收尚未做。
 - M1 五位目標使用者形成性測試尚未安排。
 
 ## 驗證結果
 
-本輪本機結果：
+本輪本機結果（2026-09-11）：
 
 ```text
-npm test                         100 files / 631 tests passed
+npm test                         122 files / 788 tests passed
 npm run typecheck                passed
 npm run lint                     passed
 npm run build                    passed
-npm run verify:db                passed (2026-09-02; reset, lint, 47 verification SQL)
+npm run verify:db                passed (reset, lint, 59 verification SQL; 3 existing schema warnings)
 npm run check:migrations         passed
-npm run check:db-verifications   47 files covered
+npm run check:db-verifications   59 files covered
 git diff --check                 passed
-targeted Browser regression       birthday collection passed; executive secretary archive upload passed
+targeted Browser regression      birthday collection passed; LINE audience wording passed
 current management-mode Browser Smoke passed (run 33614549502; exact SHA 3a430687837f)
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
 PR #86 CI database                passed (run 33120346988; 46 verification SQL)
 PR #93 CI／Quality／Browser Smoke passed (runs 33347745255／33347745250／33347745221)
-current main push CI              passed (run 33348357979)
+current main CI                   passed (run 34571128943; exact SHA a7b3561)
+current main Browser Smoke        passed (run 34571128881; exact SHA a7b3561)
 previous management-mode Browser Smoke failed (run 33607348078; 172 passed / 2 failed / 2 flaky / 31 skipped); fixed by 3a43068
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
@@ -435,9 +435,10 @@ staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
 staging Auth fix commits           lint / typecheck / 647 tests passed locally;
                                   CI skipped by instruction ([skip ci])
-staging plan (this round)          passed (run 33403385635; remote database up to date)
-staging Go-Live (this round)       passed (run 33403560211; revision 9a0b0fcb959c,
-                                  smoke + hosted member acceptance passed, issues empty)
+staging plan (current round)       passed (run 34571960542; exact SHA a7b3561)
+staging Go-Live (current round)    passed (run 34572185592; revision a7b3561,
+                                  migration + smoke + hosted member acceptance passed)
+staging health (current)           status=ok; issues=[]; warnings=[]
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
