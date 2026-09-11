@@ -22,7 +22,7 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-11 的權威基準：目前 `main` 是 docs-only commit `b89bafa80ba51cd1c243e658d0b80f2d92303db3`；最新產品／staging runtime revision 是
+截至 2026-09-11 的權威基準：目前 `main` 是 docs-only commit `e26b34dd44c6d2458a08578cc4087da9a4d5cf3d`；最新產品／staging runtime revision 是
 `e1ea85c3e941528731c0b34b724296ffd0498946`；本輪新增 LINE OA 自動配對的有效社籍日期窗口防護。
 staging `/api/health` 回報 revision `e1ea85c3e941`、`status=ok`、`issues=[]`、`warnings=[]`。
 最新已部署 migration 是
@@ -30,7 +30,7 @@ staging `/api/health` 回報 revision `e1ea85c3e941`、`status=ok`、`issues=[]`
 
 本輪產品修補的完整 `CI` `34580607934`、`Browser Smoke` `34580600621`，以及本次修補的 Staging Release Plan `34580616980`、
 Staging Go-Live `34580767172` 均成功完成；Go-Live 的 HTTPS smoke 與 hosted member acceptance 也通過。
-之後 docs-only 文件同步的 `CI` `34582715731`、`Browser Smoke` `34582715793` 僅執行變更範圍分類器，完整 jobs 依 gate 跳過。
+之後 docs-only 文件同步的 `CI` `34583431760`、`Browser Smoke` `34583431873` 僅執行變更範圍分類器，完整 jobs 依 gate 跳過。
 產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance
 `34577046356` 亦已成功完成；執行秘書管理驗收也通過。
 之後的 scheduler environment 隔離修正已推到 `main` commit
