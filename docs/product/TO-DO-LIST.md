@@ -24,7 +24,7 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-11 的權威基準：目前 `main` 核對點是 docs-only commit `802d9130f18591f96ce2bdf67cedea89f396997f`；最新產品／staging runtime revision 是
+截至 2026-09-11 的權威基準：本輪產品程式修補基準是 `68b12a56a21e02e08ece4c91644ec74cad9b70f9`；本次文件同步前的 `main` 文件 commit 是 `8b522a9`；最新產品／staging runtime revision 是
 `e1ea85c3e941528731c0b34b724296ffd0498946`；本輪新增 LINE OA 自動配對的有效社籍日期窗口防護。
 staging `/api/health` 回報 revision `e1ea85c3e941`、`status=ok`、`issues=[]`、`warnings=[]`。
 最新已部署 migration 是
@@ -39,7 +39,7 @@ Staging Go-Live `34580767172` 均成功完成；Go-Live 的 HTTPS smoke 與 host
 `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718`
 均成功。管理驗收第一次 run `34575792573` 是驗收腳本誤找不存在的活動卡片；修正為點第一層「活動」導覽後重跑成功。
 
-`68b12a5` 的自動 `CI` `34584379642` 已成功；對應 `Browser Smoke` `34584379653` 在本次核對時仍在執行。
+`68b12a5` 的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功（Browser Smoke 完整流程與 rollback 檢查通過）。
 新的 Staging Release Plan `34584648135` 正在等待 staging environment 人工核准，尚未部署這個旗標安全修補。
 
 生日旗標與 Render staging 的 scheduler secret 已由受保護流程設定；GitHub workflow 已改用獨立的

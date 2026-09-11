@@ -5,7 +5,7 @@
 
 ## 最新狀態核對（2026-09-11；本輪部署後基準）
 
-- 本次最新核對的 `main` 是 docs-only commit `802d9130f18591f96ce2bdf67cedea89f396997f`；staging runtime 仍是已驗收的 `e1ea85c3e941528731c0b34b724296ffd0498946`；沒有 open PR。
+- 本次最新核對的產品程式基準是 `68b12a56a21e02e08ece4c91644ec74cad9b70f9`；本次文件同步前的 `main` 文件 commit 是 `8b522a9`；staging runtime 仍是已驗收的 `e1ea85c3e941528731c0b34b724296ffd0498946`；沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、revision `e1ea85c3e941`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34580767172` 已部署 hosted staging；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
@@ -15,7 +15,7 @@
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
 - 排程阻塞根因已確認：舊 scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍缺 scheduler secret 與下一次實際執行驗證。不要為了自動化移除 staging 部署保護。
 - production 沒有修改；staging 最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
-- `68b12a5` 的自動 `CI` `34584379642` 已成功；`Browser Smoke` `34584379653` 在本次核對時仍在執行。Staging Release Plan `34584648135` 目前等待 staging environment 人工核准，尚未把旗標安全修補部署到 staging。
+- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查）。Staging Release Plan `34584648135` 目前等待 staging environment 人工核准，尚未把旗標安全修補部署到 staging。
 
 ## 本輪已合併並部署的待辦收尾（2026-09-11）
 
