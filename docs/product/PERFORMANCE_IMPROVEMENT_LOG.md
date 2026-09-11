@@ -10,7 +10,7 @@
 | 項目 | 結果 |
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
-| 目前 staging runtime | `e1ea85c3e941` |
+| 目前 staging runtime | `e6ff5b9854ef` |
 | 本次 `/login` 量測時 runtime | `e1ea85c3e941` |
 | 量測頁面 | `/login`（未登入） |
 | 工具 | Chrome DevTools Performance trace + `PerformanceNavigationTiming` |
