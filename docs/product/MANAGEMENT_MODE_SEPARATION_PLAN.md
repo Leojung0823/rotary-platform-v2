@@ -4,9 +4,9 @@
 修訂：v2.1.6，2026-09-11（同步目前 main／staging 狀態）
 狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke、一般 staging Go-Live，以及生日／文件的執行秘書 hosted acceptance 已完成；活動／活動封面仍待專案後續做 staging 端到端驗收
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-目前核對基準：`main@4fb8c189d7496492c55ee5e20eb57a0ab86feeab`；staging runtime `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`
+本次產品狀態核對基準：`main@17fdbf87b424fd5ae7b5991b87b7c6b576e81558`；staging runtime `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。本輪文件同步不改管理模式產品程式或 migration。
 
-截至 2026-09-11，staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。`main` 比 staging 多出的兩個 commit 只有生日 E2E 測試修正，沒有管理模式產品程式或 migration 差異；活動／活動封面仍不能因 runtime 健康而標成已完成驗收。
+截至 2026-09-11，staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。相對 staging，main 的差異包含兩個生日 E2E 測試修正與文件同步提交，沒有管理模式產品程式或 migration 差異；活動／活動封面仍不能因 runtime 健康而標成已完成驗收。
 
 > 本版已同步為 repository 內的唯一權威企劃；下載資料夾的原檔僅作為本次規格輸入。
 > 程式搬遷、一般 staging Go-Live 與執行秘書專項 hosted acceptance 已完成。活動／活動封面仍有未完成的 staging 端到端驗收，不能把生日／文件的通過擴大解讀成所有管理領域都已驗收。
@@ -218,7 +218,7 @@ verification 驗證；活動封面由 `event_cover_storage_security.sql` 驗證 
 
 ### 5.4 文件一致性
 
-- `[x]` `docs/product/CURRENT_SESSION_HANDOFF.md` 已更新到 2026-09-01，並保留 2026-09-01 的生日修正紀錄。
+- `[x]` `docs/product/CURRENT_SESSION_HANDOFF.md` 已更新到 2026-09-11，並保留歷史生日修正紀錄。
 - `[x]` 本版已取代 repository 內的 v1；`CURRENT_SESSION_HANDOFF.md` 與 `TO-DO-LIST.md` 已指向這一份
   canonical 文件。後續只更新本文件，不再新增第二份管理模式企劃。
 

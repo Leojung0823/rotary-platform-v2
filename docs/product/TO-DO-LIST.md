@@ -18,14 +18,14 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-11 的權威基準：GitHub `main` 與 `origin/main` 都是
-`4fb8c189d7496492c55ee5e20eb57a0ab86feeab`；staging `/api/health` 回報 revision
+截至 2026-09-11 的權威基準：本次產品狀態掃描以
+`main@17fdbf87b424fd5ae7b5991b87b7c6b576e81558` 為基準；本輪文件同步不改產品程式或 migration。staging `/api/health` 回報 revision
 `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`、`issues=[]`、`warnings=[]`。main 比 staging 多出的
-`352ed61`、`4fb8c18` 只有測試檔，沒有產品程式或 migration 差異。最新 migration 是
+兩個生日 E2E 修正與文件同步提交，沒有產品程式或 migration 差異。最新 migration 是
 `20260907000500_hide_completed_birthday_home_notification.sql`。
 
 生日旗標與 scheduler secret 已由受保護流程設定，歷史 hosted acceptance `33345182984` 與歷史成功排程
-`33361427466` 均通過；但最新排程 run `34438617117` 目前 `pending` 且沒有 jobs，日常自動執行尚未證明。
+`33361427466` 均通過；但最新排程 run `34563427385` 目前 `pending` 且沒有 jobs，日常自動執行尚未證明。
 production 沒有修改，目前沒有 open PR。
 
 ## 逐項狀態
@@ -164,7 +164,7 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 `birthday_wishes_v2`、`birthday_wishes_collection_v1`；Render 與 GitHub staging 的
 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已同步。current-main hosted acceptance `33345182984`
 已驗證生日 V2 與徵集入口，歷史排程 workflow `33361427466` 也曾成功呼叫 protected staging route。
-但最新排程 run `34438617117` 目前為 `pending`、沒有 jobs；需要先查清楚 Actions 排程／環境佇列，才能把每日自動執行標成完成。
+但最新排程 run `34563427385` 目前為 `pending`、沒有 jobs。已查明原因是 workflow 綁在需要人工核准的 `staging` environment；每日 schedule 會先停在環境審核，不能把 staging 保護直接移除。應改用只放 scheduler secret／變數的獨立 environment，再驗證實際執行。
 歷史失敗 run `33121570908`／`33121704322` 保留作為啟用前的追蹤證據；M1 真人使用者測試仍是另一個待辦。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
@@ -352,7 +352,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 下一步順序
 
-1. **先處理生日 scheduler 的營運狀態** `[>]`：最新 run `34438617117` 是 `pending` 且沒有 jobs；要查 GitHub Actions 排程／環境佇列，並確認下一次真的呼叫 protected staging route。歷史成功 run `33361427466` 只能證明當時成功。
+1. **先處理生日 scheduler 的營運狀態** `[>]`：根因已確認是 workflow 綁在需要人工核准的 `staging` environment，最新 run `34563427385` 是 `pending` 且沒有 jobs。下一步建立獨立 scheduler environment，僅放必要 secret／變數，再確認下一次真的呼叫 protected staging route；不要移除 staging 部署保護。歷史成功 run `33361427466` 只能證明當時成功。
 2. **完成 LINE OA follow 自動配對真人驗收** `[>]`：程式已在 `main`／staging，仍要由一位曾以 LINE Login 登入的社員加入同一社 OA，確認後台自動顯示正確姓名；另測多社、外社、停權／退社不會誤配。
 3. **完成管理模式剩餘驗收** `[>]`：生日／文件執行秘書 hosted acceptance 已完成；活動與活動封面仍待 staging 端到端驗收，效能 TTFB 尚未量測。
 4. **安排 iOS Safari、Android Chrome 與 M1 五位目標使用者測試** `[ ]`；實機與訪談不由自動化 Chromium 取代。
@@ -377,9 +377,9 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-11）
 
-- `main`／`origin/main`：`4fb8c189d7496492c55ee5e20eb57a0ab86feeab`。
+- `main`／`origin/main`：`17fdbf87b424fd5ae7b5991b87b7c6b576e81558`。
 - staging health：revision `2f0a9a5bef7e`、`status=ok`、`issues=[]`、`warnings=[]`；完整 revision 為 `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。
-- `CI` `34138884800`、`Browser Smoke` `34138884747`：以 `4fb8c18` 通過。
+- 上一輪文件同步的 `CI` `34561215490`、`Browser Smoke` `34561215495`：以 `17fdbf8` 成功完成；文件變更依範圍規則只執行輕量 gate，完整 job 為 skipped。
 - Staging Release `34136105840`、Staging Go-Live `34136197227`：以 `2f0a9a5` 通過。
-- 最新 Birthday Collection Scheduler `34438617117`：`pending`、無 jobs；每日自動排程目前未證明。
+- 最新 Birthday Collection Scheduler `34563427385`：`pending`、無 jobs；每日自動排程目前未證明。
 - 目前沒有 open PR；production 沒有修改。
