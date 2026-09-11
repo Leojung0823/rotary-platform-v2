@@ -188,7 +188,11 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await login(page);
     await openManagementOverview(page);
 
-    await page.getByTestId("management-card-events").click();
+    // Activities are a first-level management destination, not a low-frequency
+    // overview card. Keep this acceptance aligned with the management shell so
+    // the test proves the real operator path instead of requiring a duplicate
+    // entry that the product intentionally does not render.
+    await page.getByRole("link", { name: "活動", exact: true }).click();
     await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]{36}\/events\?mode=management$/u);
     await expect(page.getByTestId("event-management")).toBeVisible();
 
