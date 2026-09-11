@@ -10,7 +10,7 @@
 - `[x]` `20260902000200_line_oa_follow_event_pairing.sql` 已進入 `main`，新增的 service-role-only RPC、flag gate、精確 identity 比對、同社有效社籍與不覆寫既有配對規則均已實作。
 - `[x]` webhook follow 路徑已在 follower upsert 成功後呼叫自動配對 RPC；配對失敗不讓 webhook 重試風暴，結果會留在 webhook failure code。
 - `[x]` `supabase/verification/line_oa_follow_event_pairing_security.sql`、route／邊界測試與 manifest 已完成，最新 `CI` 與 `Browser Smoke` 均通過。
-- `[x]` `line_oa_auto_pairing_v1` 已由受保護流程開啟 staging；目前 staging runtime 為 `2f0a9a5bef7e`，`/api/health` 的 `issues` 與 `warnings` 都是空的。
+- `[x]` `line_oa_auto_pairing_v1` 已由受保護流程開啟 staging；日期窗口防護 migration `20260911000300_line_oa_pairing_membership_window.sql` 已部署，目前 staging runtime 為 `e1ea85c3e941`，`/api/health` 的 `issues` 與 `warnings` 都是空的。
 - `[>]` 尚未完成「曾用 LINE Login 登入的社員加入同一社 OA 後，自動對上正確 person」的真實 identity 驗收；也尚未用真實身份完成多社、外社、停權／退社的全流程證據。
 
 原始開發範圍是不修改 LINE Developers Console 或其他 hosted 設定；後續 staging／真實 webhook rollout 是獨立的發布與驗收工作，不應回頭改動本案的權限邊界。

@@ -17,7 +17,7 @@
 
 截至 2026-09-11 的實際掃描基準：
 
-- 最新 `main` commit 是 `e1ea85c3e941528731c0b34b724296ffd0498946`，新增 LINE OA 自動配對的有效社籍日期窗口防護；產品／staging runtime 已以同一個 exact SHA 完成驗收。
+- 最新 `main` commit 是 `5dcf6f7fd55b298cc4f4b7a2d97a33703d7bb39c`；上一個產品 release `e1ea85c3e941528731c0b34b724296ffd0498946` 新增 LINE OA 自動配對的有效社籍日期窗口防護，`5dcf6f7` 僅同步文件，沒有新增產品程式或 migration。
 - staging `/api/health` 回報 `status=ok`、`revision=e1ea85c3e941`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34580767172` 已部署 `main@e1ea85c…`；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 本次 `Staging Release Plan` `34580616980`、`Staging Go-Live` `34580767172` 均成功；push 後自動產生的 `CI` `34580607934` 與 `Browser Smoke` `34580600621` 均成功（Browser Smoke 11 分 41 秒）。

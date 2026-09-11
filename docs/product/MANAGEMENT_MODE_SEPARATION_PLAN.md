@@ -2,14 +2,14 @@
 
 建立日期：2026-09-01（Asia/Taipei）
 修訂：v2.1.6，2026-09-11（同步目前 main／staging 狀態）
-狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke、一般 staging Go-Live，以及生日／文件的執行秘書 hosted acceptance 已完成；活動／活動封面仍待專案後續做 staging 端到端驗收
+狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke、一般 staging Go-Live，以及執行秘書的生日／文件／活動／活動封面成功流程 hosted acceptance 已完成；不可逆交接確認與上傳失敗清理仍未在 staging 執行
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次產品狀態核對基準：`main@55dc59d1f6d1c86109aaabacb279f02931d442f8`；staging runtime `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。本輪文件同步不改管理模式產品程式或 migration。
+本次產品狀態核對基準：`main@5dcf6f7fd55b298cc4f4b7a2d97a33703d7bb39c`；staging runtime `e1ea85c3e941528731c0b34b724296ffd0498946`。`main` 相對 staging 只有文件同步，沒有管理模式產品程式或 migration 差異。
 
-截至 2026-09-11，staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。相對 staging，main 的差異包含兩個生日 E2E 測試修正與文件同步提交，沒有管理模式產品程式或 migration 差異；活動／活動封面仍不能因 runtime 健康而標成已完成驗收。
+截至 2026-09-11，staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。管理驗收 run `34577046356` 已涵蓋活動建立／發布／取消與活動封面上傳成功流程；不可逆交接與上傳失敗清理仍不能因 runtime 健康而標成已完成。
 
 > 本版已同步為 repository 內的唯一權威企劃；下載資料夾的原檔僅作為本次規格輸入。
-> 程式搬遷、一般 staging Go-Live 與執行秘書專項 hosted acceptance 已完成。活動／活動封面仍有未完成的 staging 端到端驗收，不能把生日／文件的通過擴大解讀成所有管理領域都已驗收。
+> 程式搬遷、一般 staging Go-Live 與執行秘書專項 hosted acceptance 的成功流程已完成。活動／活動封面成功流程已驗收，但不可逆交接與上傳失敗清理仍未在 hosted staging 執行，不能把部分通過擴大解讀成所有驗收條件都已完成。
 >
 > 本次實作分支：`codex/management-mode-separation`；執行秘書測試資料只留在 staging，沒有修改正式環境。
 
@@ -185,8 +185,8 @@ club ID 與 `can_manage`，不能僅依函式名稱推測。
 | 流程 | 實際授權層 | 目前程式判定 | 驗證狀態與關卡 |
 |---|---|---|---|
 | 生日五支管理 action | RPC：`member.manage` | 執秘可管理 | `[x]` 本機 DB、Browser 與 staging 執秘 hosted acceptance 通過（run `33639758501`） |
-| 活動建立／發布／取消 | RPC：`event.manage` | 執秘可管理 | `[>]` 既有 operator E2E、發布 fixture 與取消 fixture 已存在；待本分支 Browser／staging 驗收 |
-| 活動封面上傳 | Storage policy → `event.manage`，再記錄 action | 執秘可管理 | `[>]` 既有 Storage 上傳／跨社拒絕 fixture 已存在；待本分支 Browser／staging 驗收 |
+| 活動建立／發布／取消 | RPC：`event.manage` | 執秘可管理 | `[x]` 既有 operator E2E、發布／取消 fixture 與執秘 staging hosted acceptance `34577046356` 均通過 |
+| 活動封面上傳 | Storage policy → `event.manage`，再記錄 action | 執秘可管理 | `[x]` 既有 Storage 上傳／跨社拒絕 fixture 與執秘 staging hosted acceptance `34577046356` 均通過成功流程 |
 | 封存七支 action | RPC：`member.manage` | 執秘可管理 | `[>]` 建立／編輯／上傳的 staging 成功路徑通過（run `33639758501`）；不可逆交接確認與失敗清理仍只在本機驗證，未納入 hosted 流程 |
 | `POST /api/v1/archive/uploads` | same-origin + auth → begin/complete/fail RPC | 執秘可管理 | `[>]` route 單元測試、執秘 Browser 與 staging 成功上傳通過（run `33639758501`）；失敗清理仍由本機 route 驗證 |
 | 封存檔案寫入 | API route 使用 trusted admin Storage client | 不走終端使用者 Storage policy | `[>]` staging 檔案建立／上傳／編輯通過（run `33639758501`）；失敗清理仍未在 hosted staging 執行 |
@@ -201,17 +201,17 @@ warning 未新增。這證明本機資料庫驗證已完成，但不取代尚未
 verification 驗證；活動封面由 `event_cover_storage_security.sql` 驗證 Storage 的同社成功與跨社拒絕。
 封存上傳 API 的 same-origin、身份、begin／complete／fail 順序、Storage 失敗清理與跨社 RPC 拒絕，
 由 `src/app/api/v1/archive/uploads/route.test.ts` 補上本機 route 測試；該測試已隨本分支單元測試通過，
-但 staging runtime 尚未驗收，仍不得標成完整通過。
+staging 已驗收建立／編輯／上傳成功流程；失敗清理與不可逆交接確認仍只在本機驗證，仍不得標成完整通過。
 
 活動封面的 Storage policy 已存在 migration SQL；封存上傳則是 API route 的 trusted admin 流程。
 兩者不得用同一種「檢查 Storage policy」方法驗收。
 
 ### 5.3 staging 版本與執行證據（一般發布已完成）
 
-- `[x]` 目前最新 Staging Release `34136105840` 以 exact SHA `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3` 通過，remote migration dry-run 顯示 up to date。
-- `[x]` 目前最新 Staging Go-Live `34136197227` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
-- `[x]` staging health：`status=ok`、`environment=staging`、revision `2f0a9a5bef7e`、`issues=[]`、`warnings=[]`。這只代表服務健康，不代表活動／活動封面已完成該企劃要求的 staging 端到端驗收。
-- `[x]` 執行秘書專項 hosted acceptance：workflow `33639758501` 以當時的 exact SHA `9291584016ba0fb091f0115d5022d7bc0855834c` 通過。無社籍、非平台管理員的 staging operator 已從管理總覽完成生日任務重跑，以及文件年度／項目建立、上傳與編輯；沒有執行不可逆交接確認。這是已完成的歷史專項驗收，不代表活動／活動封面的端到端驗收已完成。
+- `[x]` 目前最新 Staging Release `34580616980` 以 exact SHA `e1ea85c3e941528731c0b34b724296ffd0498946` 通過，remote migration dry-run 顯示 up to date。
+- `[x]` 目前最新 Staging Go-Live `34580767172` 以同一個 exact SHA 通過；migration apply、deployment hook、exact revision wait、HTTPS smoke 與 hosted 社員驗收均成功。
+- `[x]` staging health：`status=ok`、`environment=staging`、revision `e1ea85c3e941`、`issues=[]`、`warnings=[]`。這只代表服務健康；活動／活動封面成功流程另由 `34577046356` 驗收。
+- `[x]` 執行秘書專項 hosted acceptance：workflow `34577046356` 以當時的 exact SHA `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7` 通過。無社籍、非平台管理員的 staging operator 已完成生日重跑、文件建立／上傳／編輯，以及活動建立／發布／取消與活動封面上傳；沒有執行不可逆交接確認，亦未把上傳失敗清理當成 hosted 通過。
 
 本項的安全驗收流程已寫入 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md) 與
 `.github/workflows/staging-management-acceptance.yml`。它只拿 staging operator 登入帳密，不拿 Supabase access token、資料庫密碼或 service-role；建立的年度、文件與版本是可回收測試資料，不會執行不可逆交接確認。

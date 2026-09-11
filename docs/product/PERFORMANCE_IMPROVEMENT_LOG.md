@@ -11,26 +11,28 @@
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
 | 目前 staging runtime | `e1ea85c3e941` |
-| 本次 `/login` 量測時 runtime | `a8c1e55e7f88` |
+| 本次 `/login` 量測時 runtime | `e1ea85c3e941` |
 | 量測頁面 | `/login`（未登入） |
 | 工具 | Chrome DevTools Performance trace + `PerformanceNavigationTiming` |
 | CPU／網路 | CPU 1x；未設定網路限速 |
-| LCP | 586 ms |
-| LCP 的 TTFB | 449 ms |
-| LCP render delay | 136 ms |
-| FCP | 588 ms |
+| LCP | 500 ms |
+| LCP 的 TTFB | 415 ms |
+| LCP render delay | 84 ms |
+| FCP | 500 ms |
 | CLS | 0.00 |
 | CrUX | 無資料 |
 
-本次瀏覽器回報的 navigation timing（量測時 runtime `a8c1e55e7f88`）：`responseStart=449.4 ms`、
-`responseEnd=552.4 ms`、`DOMContentLoaded=580.2 ms`、`load=584.0 ms`。
+本次瀏覽器回報的 navigation timing（量測時 runtime `e1ea85c3e941`）：`responseStart=415.5 ms`、
+`responseEnd=521.1 ms`、`DOMContentLoaded=524.7 ms`、`load=525.4 ms`。
 
 這次沒有登入狀態，因此**管理模式、社員首頁與其他登入後頁面的 TTFB／LCP
-仍是未量測**，不能用上面的 `/login` 數字代替。
+仍是未量測**，不能用上面的 `/login` 數字代替。這次 trace 顯示 LCP 的 415 ms（83.0%）花在
+TTFB，render-blocking CSS 的工具估算改善為 0 ms；目前優先瓶頸是 Render 伺服器回應時間，
+不是把登入頁改成公開快取。
 
 ## 目前判斷
 
-- `/login` 的主要等待在伺服器回應前：LCP 586 ms 中有 449 ms 是 TTFB。
+- `/login` 的主要等待在伺服器回應前：LCP 500 ms 中有 415 ms 是 TTFB。
 - Chrome DevTools 沒有發現有明顯可節省的 render-blocking 資源。
 - Trace 提示約 14.4 kB 的 legacy JavaScript 可再檢討，但目前不是已證明的主要瓶頸。
 - 登入頁回應是 `private, no-cache, no-store, max-age=0, must-revalidate`，且
@@ -62,6 +64,6 @@
 
 ### 2026-09-11
 
-- 重新量測 staging `/login`：LCP 586 ms、FCP 588 ms、TTFB 449 ms、CLS 0.00。
+- 重新量測 staging `/login`：LCP 500 ms、FCP 500 ms、TTFB 415 ms、CLS 0.00。
 - 管理模式與登入後首頁仍未量測。
 - 確認登入頁不使用公開快取；本次沒有為了速度放寬身份或權限邊界。
