@@ -5,11 +5,12 @@
 
 ## 最新狀態核對（2026-09-11）
 
-- 本次核對的產品 release 基準是 `a7b356177400838ee816c8fea4f2bb7032d8b5be`；其後的文件同步 commit 已推到 `main`。目前工作分支為 `codex/todo-hardening`，與 `origin/main` 同步，工作區乾淨，沒有 open PR。
-- staging `/api/health` 回報 `status=ok`、revision `a7b356177400`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；完整 revision 與 main SHA 相符。
-- 本輪產品／資料庫修補已隨 Staging Go-Live `34572185592` 部署 hosted staging；最新 migration 是 `20260911000200_birthday_collection_line_push.sql`。
+- 本次最新核對的產品／staging runtime revision 是 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；本輪後續文件同步為 docs-only，沒有產品程式或 migration 變更。沒有 open PR。
+- staging `/api/health` 回報 `status=ok`、revision `a8c1e55e7f88`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
+- 最新 staging Go-Live `34576829556` 已部署 hosted staging；最新 migration 仍是 `20260911000200_birthday_collection_line_push.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
-- `CI` `34571128943`、`Browser Smoke` `34571128881`、Staging Release Plan `34571960542`、Staging Go-Live `34572185592` 均成功完成。
+- `CI` `34576614945`、`Browser Smoke` `34576614934`、Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance `34577046356` 均成功完成。
+- 管理驗收第一次 run `34575792573` 因腳本誤找不存在的 `management-card-events` 失敗；改點管理模式第一層「活動」導覽後，`34577046356` 成功完成活動建立、封面上傳、發布與取消。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
 - 排程阻塞根因已確認：舊 scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍缺 scheduler secret 與下一次實際執行驗證。不要為了自動化移除 staging 部署保護。
@@ -17,15 +18,16 @@
 
 ## 本輪已合併並部署的待辦收尾（2026-09-11）
 
-目前工作分支 `codex/todo-hardening` 已推送至 `main`，並以 exact SHA `a7b356177400838ee816c8fea4f2bb7032d8b5be` 完成 staging Go-Live。已完成：
+目前工作分支 `codex/todo-hardening` 已推送至 `main`，並以 exact SHA `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7` 完成 staging Go-Live。已完成：
 
 - webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
 - LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
 - 生日徵集邀請接上 LINE 推播：新增並部署 `20260911000200_birthday_collection_line_push.sql`，protected scheduler 會把邀請推給已配對且開啟通知的社員；收件人投影與推播紀錄 RPC 只給 service role，沿用 `line_oa_event_push_v1` 並要求明確啟用。
 - 修正「尚未加入官方帳號」文案為「尚未與本社 LINE OA 完成配對」，並補相關回歸測試。
+- 修正 staging 管理驗收腳本：活動是管理模式第一層導覽，不是總覽卡片；以執行秘書 hosted acceptance `34577046356` 完成生日、文件、活動與活動封面流程。
 - 本機 `npm test`：122 files／788 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
-待做：先把 scheduler secret 放入獨立的 `birthday-scheduler` GitHub environment，再用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
+待做：先把 scheduler secret 放入獨立的 `birthday-scheduler` GitHub environment，再用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
 
 ## LINE OA 社員導引 PR-1 已部署並啟用（2026-09-07）
 
@@ -407,6 +409,7 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
   在重新啟動前不要用 recovery 信件當驗收證據。
 - iOS Safari／真實 Android 裝置驗收尚未做。
 - M1 五位目標使用者形成性測試尚未安排。
+- 管理模式活動／活動封面 hosted acceptance 已於 `34577046356` 通過；管理頁 TTFB 前後比較仍未量測。
 
 ## 驗證結果
 
@@ -426,8 +429,8 @@ current management-mode Browser Smoke passed (run 33614549502; exact SHA 3a43068
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
 PR #86 CI database                passed (run 33120346988; 46 verification SQL)
 PR #93 CI／Quality／Browser Smoke passed (runs 33347745255／33347745250／33347745221)
-current main CI                   passed (run 34571128943; exact SHA a7b3561)
-current main Browser Smoke        passed (run 34571128881; exact SHA a7b3561)
+current main CI                   passed (run 34576614945; exact SHA a8c1e55)
+current main Browser Smoke        passed (run 34576614934; exact SHA a8c1e55)
 previous management-mode Browser Smoke failed (run 33607348078; 172 passed / 2 failed / 2 flaky / 31 skipped); fixed by 3a43068
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
@@ -438,12 +441,15 @@ staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
 staging Auth fix commits           lint / typecheck / 647 tests passed locally;
                                   CI skipped by instruction ([skip ci])
-staging plan (current round)       passed (run 34571960542; exact SHA a7b3561)
-staging Go-Live (current round)    passed (run 34572185592; revision a7b3561,
+staging plan (current round)       passed (run 34576631319; exact SHA a8c1e55)
+staging Go-Live (current round)    passed (run 34576829556; revision a8c1e55,
                                   migration + smoke + hosted member acceptance passed)
-staging health (current)           status=ok; issues=[]; warnings=[]
+staging management acceptance      passed (run 34577046356; exact SHA a8c1e55,
+                                  birthday + archive + event + cover flows passed)
+staging health (current)           status=ok; revision a8c1e55e7f88;
+                                  issues=[]; warnings=[]
 ```
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
 的 PL/pgSQL 變數；本輪沒有新增 warning。先前 Browser Smoke 的兩個失敗案例已在本機 Supabase 與
-`localhost:3000` 回歸通過，完整 Browser Smoke `33614549502` 亦已通過；staging acceptance 與 production 不在目前已完成證據內。
+`localhost:3000` 回歸通過，完整 Browser Smoke `33614549502` 亦已通過；本次 staging management acceptance `34577046356` 已通過，production 沒有修改。

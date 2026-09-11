@@ -13,7 +13,7 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 main commit 含測試與產品安全修補。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 `main` commit `a8c1e55` 修正管理模式 hosted 驗收腳本的活動入口，沒有產品程式或 migration 變更。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
@@ -22,17 +22,18 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-11 的權威基準：本次產品狀態掃描以
-產品 release `a7b356177400838ee816c8fea4f2bb7032d8b5be` 為基準；其後的文件同步 commit 已推到 `main`，
-目前 checkout `codex/todo-hardening` 與 `origin/main` 同步，工作區乾淨。staging `/api/health` 回報 revision
-`a7b356177400838ee816c8fea4f2bb7032d8b5be`、`issues=[]`、`warnings=[]`。最新已部署 migration 是
+截至 2026-09-11 的權威基準：本次最新核對的產品／staging runtime revision 是
+`a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；本輪後續文件同步為 docs-only，沒有產品程式或 migration 變更。
+staging `/api/health` 回報 revision `a8c1e55e7f88`、`status=ok`、`issues=[]`、`warnings=[]`。
+最新已部署 migration 是
 `20260911000200_birthday_collection_line_push.sql`。
 
-本輪 `CI` `34571128943`、`Browser Smoke` `34571128881`、Staging Release Plan `34571960542` 與
-Staging Go-Live `34572185592` 均成功完成；Go-Live 的 HTTPS smoke 與 hosted member acceptance 也通過。
+本輪 `CI` `34576614945`、`Browser Smoke` `34576614934`、Staging Release Plan `34576631319`、
+Staging Go-Live `34576829556` 與 Staging Management Acceptance `34577046356` 均成功完成；Go-Live 的
+HTTPS smoke、hosted member acceptance 與執行秘書管理驗收也通過。
 之後的 scheduler environment 隔離修正已推到 `main` commit
 `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718`
-均成功，沒有重新部署 staging 應用程式。
+均成功。管理驗收第一次 run `34575792573` 是驗收腳本誤找不存在的活動卡片；修正為點第一層「活動」導覽後重跑成功。
 
 生日旗標與 Render staging 的 scheduler secret 已由受保護流程設定；GitHub workflow 已改用獨立的
 `birthday-scheduler` environment，但該環境目前尚未放入 scheduler secret。歷史 hosted acceptance
@@ -365,11 +366,12 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 1. **先處理生日 scheduler 的營運狀態** `[>]`：workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；目前還缺該 environment 的 scheduler secret。下一步補入必要 secret，再確認下一次真的呼叫 protected staging route；不要移除 staging 部署保護。歷史成功 run `33361427466` 只能證明當時成功。
 2. **完成 LINE OA follow 自動配對真人驗收** `[>]`：程式已在 `main`／staging，仍要由一位曾以 LINE Login 登入的社員加入同一社 OA，確認後台自動顯示正確姓名；另測多社、外社、停權／退社不會誤配。
-3. **完成管理模式剩餘驗收** `[>]`：生日／文件執行秘書 hosted acceptance 已完成；活動與活動封面仍待 staging 端到端驗收，效能 TTFB 尚未量測。
-4. **安排 iOS Safari、Android Chrome 與 M1 五位目標使用者測試** `[ ]`；實機與訪談不由自動化 Chromium 取代。
-5. **準備 production** `[!]`：另做 production 生日 scheduler job／secret／核准閘門，取得 production LINE 憑證並決定額度政策，另行決定是否開啟 production `announcements_v09`。
-6. **後續 LINE OA 缺口**：webhook redelivery payload hash、生日邀請 LINE 推播、後台顯示環境變數名稱的程式修補已完成並部署；仍未完成的是生日邀請實際送達、Flex 模板、推播額度政策，以及 follow 配對真人驗收。
-7. **Recovery email 維持暫緩** `[!]`：custom SMTP 與真實 email flow 只有在 production 上線或密碼登入比例上升時重啟。
+3. **完成管理模式 hosted 驗收** `[x]`：執行秘書已從管理總覽完成生日重跑、文件建立／上傳／編輯，以及活動建立、封面上傳、發布與取消（run `34577046356`）。
+4. **補量測管理頁 TTFB** `[>]`：目前只有未登入 `/login` 的 Chrome lab 數字；管理頁需要登入狀態，仍待用受保護測試帳號量測前後差異。
+5. **安排 iOS Safari、Android Chrome 與 M1 五位目標使用者測試** `[ ]`；實機與訪談不由自動化 Chromium 取代。
+6. **準備 production** `[!]`：另做 production 生日 scheduler job／secret／核准閘門，取得 production LINE 憑證並決定額度政策，另行決定是否開啟 production `announcements_v09`。
+7. **後續 LINE OA 缺口**：webhook redelivery payload hash、生日邀請 LINE 推播、後台顯示環境變數名稱的程式修補已完成並部署；仍未完成的是生日邀請實際送達、Flex 模板、推播額度政策，以及 follow 配對真人驗收。
+8. **Recovery email 維持暫緩** `[!]`：custom SMTP 與真實 email flow 只有在 production 上線或密碼登入比例上升時重啟。
 
 ## 歷史驗證證據（管理模式輪，2026-09-02）
 
@@ -388,9 +390,10 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-11）
 
-- `main`／`origin/main`：已包含產品 release `a7b356177400838ee816c8fea4f2bb7032d8b5be` 與其後的文件同步 commit；目前 checkout `codex/todo-hardening` 與其一致，沒有 open PR。
-- staging health：revision `a7b356177400`、`status=ok`、`issues=[]`、`warnings=[]`；完整 revision 與 main SHA 相符。
-- `CI` `34571128943`、`Browser Smoke` `34571128881`：以 `a7b3561` 成功完成。
-- Staging Release Plan `34571960542`、Staging Go-Live `34572185592`：以 `a7b3561` 通過，兩個本輪 migration 已 apply。
+- `main` 已包含產品 revision `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；本次後續文件同步為 docs-only，沒有 open PR。
+- staging health：revision `a8c1e55e7f88`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
+- `CI` `34576614945`、`Browser Smoke` `34576614934`：以 `a8c1e55` 成功完成。
+- Staging Release Plan `34576631319`、Staging Go-Live `34576829556`：以 `a8c1e55` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
+- Staging Management Acceptance `34577046356`：以 `a8c1e55` 通過；執行秘書完成生日、文件、活動與活動封面流程。
 - 最新 Birthday Collection Scheduler `34563427385`：`pending`、無 jobs；每日自動排程目前未證明。
 - 目前沒有 open PR；production 沒有修改。
