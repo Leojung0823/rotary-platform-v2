@@ -9,7 +9,7 @@
 - staging `/api/health` 回報 `status=ok`、revision `e1ea85c3e941`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34580767172` 已部署 hosted staging；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
-- 最新文件同步 commit `e26b34d` push 後自動觸發的 `CI` `34583431760`、`Browser Smoke` `34583431873` 的變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；產品 release 的 Staging Release Plan `34580616980`、Staging Go-Live `34580767172` 與 Staging Management Acceptance `34577046356` 亦均成功完成。
+- 本次文件同步前的 commit `e26b34d` push 後自動觸發的 `CI` `34583431760`、`Browser Smoke` `34583431873` 的變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；本次仍是 docs-only 同步，產品 release 的 Staging Release Plan `34580616980`、Staging Go-Live `34580767172` 與 Staging Management Acceptance `34577046356` 亦均成功完成。
 - 管理驗收第一次 run `34575792573` 因腳本誤找不存在的 `management-card-events` 失敗；改點管理模式第一層「活動」導覽後，`34577046356` 成功完成活動建立、封面上傳、發布與取消。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
@@ -18,7 +18,7 @@
 
 ## 本輪已合併並部署的待辦收尾（2026-09-11）
 
-目前工作分支 `codex/todo-hardening` 已將產品 commit `e1ea85c3e941528731c0b34b724296ffd0498946` 推送至 `main` 並完成 staging Go-Live，之後以 docs-only commits `5dcf6f7fd55b298cc4f4b7a2d97a33703d7bb39c`、`b89bafa80ba51cd1c243e658d0b80f2d92303db3`、`e26b34dd44c6d2458a08578cc4087da9a4d5cf3d` 連續同步文件；目前 `main` 是後者。已完成：
+目前工作分支 `codex/todo-hardening` 已將產品 commit `e1ea85c3e941528731c0b34b724296ffd0498946` 推送至 `main` 並完成 staging Go-Live，之後以 docs-only commits `5dcf6f7fd55b298cc4f4b7a2d97a33703d7bb39c`、`b89bafa80ba51cd1c243e658d0b80f2d92303db3`、`e26b34dd44c6d2458a08578cc4087da9a4d5cf3d` 連續同步文件；本次繼續做 docs-only 同步，產品程式與 staging runtime 未變。已完成：
 
 - webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
 - LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
@@ -436,8 +436,8 @@ current management-mode Browser Smoke passed (run 33614549502; exact SHA 3a43068
 PR #86 Browser Smoke             passed (run 33120346924, 11m03s)
 PR #86 CI database                passed (run 33120346988; 46 verification SQL)
 PR #93 CI／Quality／Browser Smoke passed (runs 33347745255／33347745250／33347745221)
-current main CI                   classifier passed; full jobs skipped (run 34583431760; docs-only e26b34d)
-current main Browser Smoke        classifier passed; full job skipped (run 34583431873; docs-only e26b34d)
+previous docs-only main CI         classifier passed; full jobs skipped (run 34583431760; docs-only e26b34d)
+previous docs-only Browser Smoke   classifier passed; full job skipped (run 34583431873; docs-only e26b34d)
 previous management-mode Browser Smoke failed (run 33607348078; 172 passed / 2 failed / 2 flaky / 31 skipped); fixed by 3a43068
 staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
