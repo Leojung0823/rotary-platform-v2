@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const page = readFileSync("src/app/(authenticated)/clubs/[clubId]/line-oa/page.tsx", "utf8");
+const audiencePicker = readFileSync("src/components/audience/audience-picker.tsx", "utf8");
 
 describe("LINE OA follower pairing controls", () => {
   it("offers pairing on the rows that arrived unpaired", () => {
@@ -52,5 +53,20 @@ describe("LINE OA account retirement", () => {
 
   it("only offers retirement once an account exists", () => {
     expect(page).toMatch(/\{oa\.account && \(\s*<form action=\{disableLineOaAction\}/u);
+  });
+
+  it("shows environment variable names without credential values", () => {
+    expect(page).toContain("access_token_env_key");
+    expect(page).toContain("webhook_secret_env_key");
+    expect(page).toContain("只顯示名稱，不顯示 secret");
+    expect(page).not.toContain("channel_access_token");
+    expect(page).not.toContain("channel_secret");
+  });
+});
+
+describe("LINE OA delivery wording", () => {
+  it("distinguishes an unpaired member from a person who has not followed the OA", () => {
+    expect(audiencePicker).toContain("尚未與本社 LINE OA 完成配對");
+    expect(audiencePicker).not.toContain("尚未加入官方帳號");
   });
 });

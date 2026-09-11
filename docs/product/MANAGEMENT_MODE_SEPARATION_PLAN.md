@@ -4,7 +4,7 @@
 修訂：v2.1.6，2026-09-11（同步目前 main／staging 狀態）
 狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke、一般 staging Go-Live，以及生日／文件的執行秘書 hosted acceptance 已完成；活動／活動封面仍待專案後續做 staging 端到端驗收
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次產品狀態核對基準：`main@17fdbf87b424fd5ae7b5991b87b7c6b576e81558`；staging runtime `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。本輪文件同步不改管理模式產品程式或 migration。
+本次產品狀態核對基準：`main@55dc59d1f6d1c86109aaabacb279f02931d442f8`；staging runtime `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。本輪文件同步不改管理模式產品程式或 migration。
 
 截至 2026-09-11，staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。相對 staging，main 的差異包含兩個生日 E2E 測試修正與文件同步提交，沒有管理模式產品程式或 migration 差異；活動／活動封面仍不能因 runtime 健康而標成已完成驗收。
 

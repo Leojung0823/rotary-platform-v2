@@ -13,9 +13,27 @@ type LineEvent = {
   webhookEventId?: string;
   source?: { userId?: string };
   timestamp?: number;
+  deliveryContext?: unknown;
 };
 
 type WebhookClaim = { log_id: number; should_process: boolean };
+
+function stableWebhookPayload(payload: { events?: LineEvent[] }) {
+  return JSON.stringify({
+    ...payload,
+    events: (payload.events ?? []).map((event) => {
+      const stableEvent = { ...event };
+      if (stableEvent.deliveryContext && typeof stableEvent.deliveryContext === "object"
+        && !Array.isArray(stableEvent.deliveryContext)) {
+        const stableDeliveryContext = { ...stableEvent.deliveryContext } as Record<string, unknown>;
+        delete stableDeliveryContext.isRedelivery;
+        if (Object.keys(stableDeliveryContext).length === 0) delete stableEvent.deliveryContext;
+        else stableEvent.deliveryContext = stableDeliveryContext;
+      }
+      return stableEvent;
+    }),
+  });
+}
 
 async function readLimitedBody(request: NextRequest) {
   const declaredLength = Number(request.headers.get("content-length") ?? "0");
@@ -116,7 +134,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "too_many_events" }, { status: 413 });
   }
 
-  const payloadHash = createHash("sha256").update(rawBody).digest("hex");
+  // LINE changes deliveryContext.isRedelivery when it retries the same event.
+  // Keep the provider's raw body for HMAC verification, but hash only the
+  // event content that is stable across an otherwise identical redelivery.
+  const payloadHash = createHash("sha256").update(stableWebhookPayload(payload)).digest("hex");
   for (const event of events) {
     const claim = await admin.rpc("claim_line_webhook_event", {
       p_line_oa_account_id: account.data.id,

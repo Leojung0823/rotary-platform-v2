@@ -15,13 +15,17 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
 生日首頁通知修復也已部署到 staging；最新兩個 main commit 只是 E2E 測試修正。
 
+本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
+環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改目前在本輪工作分支，尚未部署到
+staging；部署後仍要做一次實際送達驗收。
+
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
 截至 2026-09-11 的權威基準：本次產品狀態掃描以
-`main@17fdbf87b424fd5ae7b5991b87b7c6b576e81558` 為基準；本輪文件同步不改產品程式或 migration。staging `/api/health` 回報 revision
+`origin/main@55dc59d1f6d1c86109aaabacb279f02931d442f8` 為基準；本輪工作分支另有產品程式與 migration 修補，尚未部署到 staging。staging `/api/health` 回報 revision
 `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`、`issues=[]`、`warnings=[]`。main 比 staging 多出的
-兩個生日 E2E 修正與文件同步提交，沒有產品程式或 migration 差異。最新 migration 是
+兩個生日 E2E 修正與文件同步提交；本輪工作分支新增的 migration 尚未進入 staging。最新已部署 migration 是
 `20260907000500_hide_completed_birthday_home_notification.sql`。
 
 生日旗標與 scheduler secret 已由受保護流程設定，歷史 hosted acceptance `33345182984` 與歷史成功排程
@@ -242,27 +246,25 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 完整本機 Playwright 170 passed、33 刻意 skip、0 failed，`line-oa-audience` 在重新 build 後再跑 2 passed。
 第一輪的 6 個失敗是啟動時缺 `E2E_ADMIN_EMAIL`／`E2E_ADMIN_PASSWORD`，補上後 8 passed、2 skipped。
 
-#### 設定時發現的缺口 `[ ]`
+#### 設定時發現的缺口
 
-- `[ ]` **webhook 冪等的 payload hash 會把合法重送誤判成竄改**。
+- `[x]` **webhook 冪等的 payload hash 會把合法重送誤判成竄改**（本輪已修）。
   `claim_line_webhook_event` 比對的 `payload_hash` 是**整個 request body** 的 SHA-256，
   但 LINE 重送同一個事件時會帶 `deliveryContext.isRedelivery: true`（原本是 `false`），
   body 因此不同、hash 也不同，同一個 `webhookEventId` 會撞上
   `webhook_event_payload_mismatch` 並回 409。
 
-  影響範圍有限：事件完全沒送達時（Render 冷啟動逾時）重送仍會成功，那是重送的主要價值；
-  只有「送達但處理失敗」的事件救不回來，而那種情況不開重送也一樣救不回來。
-  所以 staging 已開啟 LINE 的 webhook 重送。
-
-  正確做法是 hash 時排除 `deliveryContext`，或改成只比對事件本身的內容，
-  讓「同一事件的重送」與「同一 event id 但內容被竄改」能分辨開來。
+  現在 HMAC 仍驗證原始 body，但雜湊只忽略 `deliveryContext.isRedelivery`，其他事件內容與其他
+  delivery metadata 仍會改變雜湊；因此合法重送不會誤判，內容被改寫仍會被拒絕。這只對修正後
+  新收到的 webhook 生效；舊資料只保存舊版 raw hash，無法在不放寬竄改檢查的前提下回算，
+  舊事件的失敗重送仍需人工處理。
 
 - `[x]` **Follower 表格沒有配對控制項**（2026-09-03 已修）。webhook 送進來的 follower 是未配對的，
   但那一列只有「解除 OA 配對」，而表格把 OA userId 截斷顯示，所以幹部得回 LINE Console 抄完整
   ID 才配得了。現在未配對的列可以直接下拉選社員完成配對；完整 ID 本來就在伺服器端，不用新增 migration。
 
-- `[ ]` **「尚未加入官方帳號」文案誤導**。畫面說的是「平台沒有配對紀錄」，不是「這個人沒加好友」。
-  已經加了好友但還沒配對的人看到這句，只會以為自己加錯了。應改成「尚未與平台配對」之類的說法。
+- `[x]` **「尚未加入官方帳號」文案誤導**（本輪已修）。現在寫成「尚未與本社 LINE OA 完成配對」，
+  對應實際的資料狀態，不把「已加好友但尚未配對」說成「沒加好友」。
 
 - `[x]` **設錯社的 OA 帳號無法從畫面移除**（2026-09-03 已修）。OA 設定卡片加了「停用這個 OA 帳號」，
   呼叫既有的 `configure_line_oa` 傳 `disabled`（不用新 migration，資料庫本來就支援）。
@@ -277,12 +279,10 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   測試會確認 `BULK_ENABLE` 是 `TOGGLEABLE` 的子集、三個 rollback key 在前者不在後者，
   以及 CLI 認得程式宣告的每一個 key。
 
-- `[ ]` **後台沒有顯示該社要設定的環境變數名稱**。`/clubs/{clubId}/line-oa` 只說「由各社專屬的
-  server environment key 讀取」，但沒有顯示是哪一個 key，設定的人得自己從 club code 推算
-  （`LINE_OA_<CLUB_CODE 大寫、非英數字換底線>_CHANNEL_ACCESS_TOKEN` 與 `_CHANNEL_SECRET`）。
-  `line_oa_accounts.access_token_env_key`／`webhook_secret_env_key` 存的是**變數名稱不是 secret**，
-  可以安全地投影給有 `oa.manage` 的幹部看。需要改 `get_line_oa_admin` 的投影並補 verification，
-  所以會有一個新的 migration，不併進本輪。
+- `[x]` **後台沒有顯示該社要設定的環境變數名稱**（本輪已修）。新增
+  `20260911000100_line_oa_admin_env_keys.sql`，`/clubs/{clubId}/line-oa` 只投影
+  `access_token_env_key`／`webhook_secret_env_key` 的名稱，不投影任何 token／secret 值；並以
+  `line_oa_admin_env_keys_security.sql` 驗證同社權限、跨社隔離、一般社員拒絕與瀏覽器不能直讀資料表。
 
 #### 本輪明確不做（已排序在後）
 
@@ -310,10 +310,12 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   推播文字帶標題、時間（Asia/Taipei、24 小時制、含星期）與地點；推播失敗只改成另一個成功代碼，
   不會讓發布變成失敗。**2026-09-03 已在 staging 端對端驗收：發布活動後推播實際送達手機。**
 
-- `[ ]` 事件驅動自動推播的**最後一個來源**：生日祝福徵集邀請。
-  訊息中心與活動這兩條已經把資料庫權限、冪等與偏好的模式建立起來，照同一套接即可。
-  注意生日徵集的通知目前走 `ensure_birthday_wish_collection_notification`（service-role scheduler），
-  沒有登入使用者，所以推播紀錄需要一個 service-role 版本，跟前兩條的 `member.manage`／`event.manage` 不同。
+- `[>]` 事件驅動自動推播的**最後一個來源**：生日祝福徵集邀請。程式已完成
+  `20260911000200_birthday_collection_line_push.sql`、scheduler route 串接、service-role-only
+  收件人投影／推播紀錄、既有 `line_oa_event_push_v1` 明確啟用閘門與單元測試；因尚未部署本輪
+  migration 到 staging，仍待 staging 實際收到邀請 LINE 的驗收。通知目前由
+  `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
+  所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
 - `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag 與 staging 部署已完成；
   仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
@@ -357,7 +359,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 3. **完成管理模式剩餘驗收** `[>]`：生日／文件執行秘書 hosted acceptance 已完成；活動與活動封面仍待 staging 端到端驗收，效能 TTFB 尚未量測。
 4. **安排 iOS Safari、Android Chrome 與 M1 五位目標使用者測試** `[ ]`；實機與訪談不由自動化 Chromium 取代。
 5. **準備 production** `[!]`：另做 production 生日 scheduler job／secret／核准閘門，取得 production LINE 憑證並決定額度政策，另行決定是否開啟 production `announcements_v09`。
-6. **後續 LINE OA 缺口** `[ ]`：webhook redelivery payload hash、生日邀請 LINE 推播、Flex 模板、後台顯示環境變數名稱。
+6. **後續 LINE OA 缺口**：webhook redelivery payload hash、生日邀請 LINE 推播、後台顯示環境變數名稱的程式修補已完成，待本輪部署與 staging 驗收；仍未完成的是 Flex 模板、推播額度政策，以及 follow 配對真人驗收。
 7. **Recovery email 維持暫緩** `[!]`：custom SMTP 與真實 email flow 只有在 production 上線或密碼登入比例上升時重啟。
 
 ## 歷史驗證證據（管理模式輪，2026-09-02）
@@ -377,7 +379,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-11）
 
-- `main`／`origin/main`：`17fdbf87b424fd5ae7b5991b87b7c6b576e81558`。
+- `main`／`origin/main`：`55dc59d1f6d1c86109aaabacb279f02931d442f8`；本輪 `codex/todo-hardening` 另有尚未合併的 LINE OA／生日推播修補。
 - staging health：revision `2f0a9a5bef7e`、`status=ok`、`issues=[]`、`warnings=[]`；完整 revision 為 `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。
 - 上一輪文件同步的 `CI` `34561215490`、`Browser Smoke` `34561215495`：以 `17fdbf8` 成功完成；文件變更依範圍規則只執行輕量 gate，完整 job 為 skipped。
 - Staging Release `34136105840`、Staging Go-Live `34136197227`：以 `2f0a9a5` 通過。

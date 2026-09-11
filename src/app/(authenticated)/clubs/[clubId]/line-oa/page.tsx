@@ -27,6 +27,8 @@ type OaAdmin = {
     basic_id: string | null;
     channel_id: string | null;
     rich_menu_id: string | null;
+    access_token_env_key: string;
+    webhook_secret_env_key: string;
     status: string;
   } | null;
   followers: {
@@ -157,6 +159,19 @@ export default async function LineOaPage({
               Channel secret 與 access token 只由各社專屬的 server environment
               key 讀取，不儲存在瀏覽器或資料表。
             </Notice>
+            {oa.account && (
+              <div className="form-stack">
+                <p className="subtle">
+                  Render／server 要設定的環境變數名稱（只顯示名稱，不顯示 secret）：
+                </p>
+                <div className="token-value">
+                  {oa.account.access_token_env_key}（channel access token）
+                </div>
+                <div className="token-value">
+                  {oa.account.webhook_secret_env_key}（webhook／channel secret）
+                </div>
+              </div>
+            )}
             <Button type="submit">儲存 OA 設定</Button>
           </form>
           {oa.account && (

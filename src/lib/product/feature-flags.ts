@@ -65,6 +65,7 @@ export const flagsRequiringExplicitEnable: readonly FeatureFlagKey[] = [
   "announcements_v09",
   "birthday_wishes_v2",
   "birthday_wishes_collection_v1",
+  "line_oa_event_push_v1",
   "line_oa_onboarding_v1",
 ];
 

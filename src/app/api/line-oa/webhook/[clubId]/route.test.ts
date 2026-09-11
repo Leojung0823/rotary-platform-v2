@@ -26,6 +26,14 @@ const clubId = "42000000-0000-4000-8000-000000000001";
 const accountId = "52000000-0000-4000-8000-000000000001";
 const oaUserId = "Uwebhook-pairing-test";
 
+type TestEvent = {
+  type: string;
+  webhookEventId: string;
+  source: { userId: string };
+  timestamp: number;
+  deliveryContext?: { isRedelivery: boolean; [key: string]: unknown };
+};
+
 function query(result: unknown) {
   const chain = {
     select: vi.fn(),
@@ -43,7 +51,7 @@ function query(result: unknown) {
   return chain;
 }
 
-function request(events = [{
+function request(events: TestEvent[] = [{
   type: "follow",
   webhookEventId: "evt-follow-pairing-1",
   source: { userId: oaUserId },
@@ -186,5 +194,74 @@ describe("POST /api/line-oa/webhook/[clubId]", () => {
       processing_status: "processed",
       failure_code: "auto_pairing_failed",
     });
+  });
+
+  it("keeps the idempotency hash stable when LINE marks a redelivery", async () => {
+    const event = {
+      type: "follow",
+      webhookEventId: "evt-follow-redelivery-1",
+      source: { userId: oaUserId },
+      timestamp: 1_756_800_000_000,
+    };
+
+    const firstResponse = await route.POST(
+      request([{ ...event, deliveryContext: { isRedelivery: false } }]),
+      params(),
+    );
+    expect(firstResponse.status).toBe(200);
+    const firstClaim = mocks.adminRpc.mock.calls.find(([name]) => name === "claim_line_webhook_event");
+    const firstHash = (firstClaim?.[1] as { p_payload_hash: string }).p_payload_hash;
+
+    mocks.adminRpc.mockClear();
+    const secondResponse = await route.POST(
+      request([{ ...event, deliveryContext: { isRedelivery: true } }]),
+      params(),
+    );
+    expect(secondResponse.status).toBe(200);
+    const secondClaim = mocks.adminRpc.mock.calls.find(([name]) => name === "claim_line_webhook_event");
+    const secondHash = (secondClaim?.[1] as { p_payload_hash: string }).p_payload_hash;
+
+    expect(firstHash).toBeTruthy();
+    expect(secondHash).toBe(firstHash);
+  });
+
+  it("changes the idempotency hash when event content changes", async () => {
+    const baseEvent: TestEvent = {
+      type: "follow",
+      webhookEventId: "evt-follow-content-change-1",
+      source: { userId: oaUserId },
+      timestamp: 1_756_800_000_000,
+    };
+
+    await route.POST(request([baseEvent]), params());
+    const firstClaim = mocks.adminRpc.mock.calls.find(([name]) => name === "claim_line_webhook_event");
+    const firstHash = (firstClaim?.[1] as { p_payload_hash: string }).p_payload_hash;
+
+    mocks.adminRpc.mockClear();
+    await route.POST(request([{ ...baseEvent, source: { userId: "Uchanged-content" } }]), params());
+    const secondClaim = mocks.adminRpc.mock.calls.find(([name]) => name === "claim_line_webhook_event");
+    const secondHash = (secondClaim?.[1] as { p_payload_hash: string }).p_payload_hash;
+
+    expect(secondHash).not.toBe(firstHash);
+  });
+
+  it("keeps other delivery metadata in the idempotency hash", async () => {
+    const event: TestEvent = {
+      type: "follow",
+      webhookEventId: "evt-follow-delivery-metadata-1",
+      source: { userId: oaUserId },
+      timestamp: 1_756_800_000_000,
+    };
+
+    await route.POST(request([{ ...event, deliveryContext: { isRedelivery: false, attempt: 1 } }]), params());
+    const firstClaim = mocks.adminRpc.mock.calls.find(([name]) => name === "claim_line_webhook_event");
+    const firstHash = (firstClaim?.[1] as { p_payload_hash: string }).p_payload_hash;
+
+    mocks.adminRpc.mockClear();
+    await route.POST(request([{ ...event, deliveryContext: { isRedelivery: true, attempt: 2 } }]), params());
+    const secondClaim = mocks.adminRpc.mock.calls.find(([name]) => name === "claim_line_webhook_event");
+    const secondHash = (secondClaim?.[1] as { p_payload_hash: string }).p_payload_hash;
+
+    expect(secondHash).not.toBe(firstHash);
   });
 });

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
 import { hasValidBirthdayCollectionSchedulerSecret } from "@/lib/birthday-collection/scheduler-auth";
+import { pushBirthdayCollectionNotifications } from "@/lib/line/birthday-collection-push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,7 +51,8 @@ export async function POST(request: NextRequest) {
     });
     if (result.error) return responseBody({ ok: false, reason: "scheduler_failed" }, 503);
 
-    return responseBody({ ok: true, status: "completed", result: result.data });
+    const linePush = await pushBirthdayCollectionNotifications(admin);
+    return responseBody({ ok: true, status: "completed", result: result.data, line_push: linePush });
   } catch {
     return responseBody({ ok: false, reason: "scheduler_unavailable" }, 503);
   }

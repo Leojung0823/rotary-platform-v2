@@ -326,6 +326,15 @@ describe("features that must be turned on deliberately", () => {
       pepper,
     })).toMatchObject({ enabled: false, reason: "missing_configuration" });
   });
+
+  it("keeps LINE event push off until its flag is explicitly enabled", () => {
+    expect(evaluateFeatureFlag({
+      key: "line_oa_event_push_v1",
+      record: null,
+      environment: "staging",
+      pepper,
+    })).toMatchObject({ enabled: false, reason: "missing_configuration" });
+  });
 });
 
 describe("rollback flags for already-shipped domains", () => {

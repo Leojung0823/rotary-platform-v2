@@ -5,14 +5,26 @@
 
 ## 最新狀態核對（2026-09-11）
 
-- 本次核對的產品基準是 `main@17fdbf87b424fd5ae7b5991b87b7c6b576e81558`；文件編輯前 worktree 乾淨，沒有 open PR；本輪同步只改文件。
+- 本次核對的產品基準是 `main@55dc59d1f6d1c86109aaabacb279f02931d442f8`；目前工作分支為 `codex/todo-hardening`，有尚未提交的 LINE OA／生日推播修補與文件同步，沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、revision `2f0a9a5bef7e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
-- 相對 staging，main 的差異包含兩個生日 E2E 修正與文件同步提交，沒有產品程式或 migration 差異；最新 migration／產品 runtime 已在 staging。
-- 上一輪文件同步的 `CI` run `34561215490` 與 `Browser Smoke` run `34561215495` 以 `17fdbf8` 成功完成；本次文件變更依範圍規則只執行輕量 gate，完整 job 為 skipped。Staging Release `34136105840`、Staging Go-Live `34136197227` 以 `2f0a9a5` 通過。
+- 相對 staging，main 的差異包含兩個生日 E2E 修正與文件同步提交；目前工作分支另有產品程式與 migration 修補，尚未部署 hosted 環境。最新已部署 migration 仍是 `20260907000500_hide_completed_birthday_home_notification.sql`。
+- 上一輪文件同步的 `CI` run `34561215490` 與 `Browser Smoke` run `34561215495` 以 `17fdbf8` 成功完成；本次產品／資料庫修補尚未建立新的 hosted release。Staging Release `34136105840`、Staging Go-Live `34136197227` 以 `2f0a9a5` 通過。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
 - 排程阻塞根因已確認：scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。不要為了自動化移除 staging 部署保護；應建立只放 scheduler 所需 secret／變數的獨立 environment，並做一次受保護 route 驗證。
 - production 沒有修改；最新 migration 是 `20260907000500_hide_completed_birthday_home_notification.sql`。
+
+## 本輪待合併的待辦收尾（2026-09-11）
+
+目前工作分支 `codex/todo-hardening` 由 `main@55dc59d` 建立，尚未部署 hosted 環境。已完成：
+
+- webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
+- LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
+- 生日徵集邀請接上 LINE 推播：新增 `20260911000200_birthday_collection_line_push.sql`，protected scheduler 會把邀請推給已配對且開啟通知的社員；收件人投影與推播紀錄 RPC 只給 service role，沿用 `line_oa_event_push_v1` 並要求明確啟用。
+- 修正「尚未加入官方帳號」文案為「尚未與本社 LINE OA 完成配對」，並補相關回歸測試。
+- 本機 `npm test`：122 files／788 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
+
+待做：合併後依受保護流程部署 staging，確認 `/api/health`、migration、flag 與生日邀請實際 LINE 送達。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
 
 ## LINE OA 社員導引 PR-1 已部署並啟用（2026-09-07）
 

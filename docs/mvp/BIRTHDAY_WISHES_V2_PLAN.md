@@ -1,8 +1,8 @@
 # 生日祝福 V2 與祝福徵集：企劃書
 
 > 更新日期：2026-09-11（Asia/Taipei）
-> 狀態：**生日 V2 核心與祝福徵集第一至三階段已完成程式實作；PR #77 已合併，生日功能已完成 staging flag、scheduler secret、專項 hosted 驗收；最新每日 scheduler 仍卡在 GitHub Actions `pending`，M1 真人使用者測試待完成**
-> 程式現況基準：本次產品狀態掃描以 `main@17fdbf87b424fd5ae7b5991b87b7c6b576e81558` 為基準；staging runtime `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。相對 staging 的差異只有兩個 E2E 測試提交與文件同步提交，沒有產品程式／migration 差異；本輪文件同步不改產品程式，尚未部署的內容不得寫成 staging 已有
+> 狀態：**生日 V2 核心與祝福徵集第一至三階段已完成並在 staging 驗收；本輪分支另補上生日邀請 LINE 推播與兩項 LINE OA 安全／可用性修補，尚未部署；最新每日 scheduler 仍卡在 GitHub Actions `pending`，M1 真人使用者測試待完成**
+> 程式現況基準：目前 `main@55dc59d1f6d1c86109aaabacb279f02931d442f8`；staging runtime `2f0a9a5bef7e60d4e395b94f4f30ac02ec0c47e3`。本輪 `codex/todo-hardening` 另有尚未部署的產品程式與 migration，不能把它們寫成 staging 已有。
 > 前一版：[`BIRTHDAY_WISHES_V1_SCOPE.md`](./BIRTHDAY_WISHES_V1_SCOPE.md)（已實作並部署）
 
 這份文件記錄目前產品討論的結論。它取代先前那份「生日祝福與壽星關懷 V2」草稿中
@@ -25,7 +25,9 @@
 本文件第 2–7 節是徵集領域的完整目標規格；目前已完成資料底座、手動月批派發、
 幹部發布、匿名公開牆、排程、訊息邀約、題庫 CRUD、隱藏後重送、逐筆完成狀態和處理紀錄的本機實作。
 
-徵集依賴 V2 核心、已存在但預設關閉的**站內訊息中心**，以及 staging-only 的 GitHub Actions 排程入口；程式與本機資料庫驗證已完成，一般 staging Go-Live 已完成。staging 的兩個生日旗標已由受保護 CLI 開啟，Render 與 GitHub 的 scheduler secret 已同步；hosted acceptance `33345182984` 與歷史成功 scheduler workflow `33361427466` 均成功，但最新 scheduler `34563427385` 仍為 `pending` 且沒有 jobs。M1 真人社員／幹部測試仍未完成。
+徵集依賴 V2 核心、已存在但預設關閉的**站內訊息中心**，以及 staging-only 的 GitHub Actions 排程入口；第一至三階段程式與本機資料庫驗證已完成，一般 staging Go-Live 已完成。staging 的兩個生日旗標已由受保護 CLI 開啟，Render 與 GitHub 的 scheduler secret 已同步；hosted acceptance `33345182984` 與歷史成功 scheduler workflow `33361427466` 均成功，但最新 scheduler `34563427385` 仍為 `pending` 且沒有 jobs。M1 真人社員／幹部測試仍未完成。
+
+本輪 `codex/todo-hardening` 再補上生日徵集邀請的 LINE 推播：protected scheduler 會從 service-role-only projection 取得已配對且開啟通知的收件人，沿用 `line_oa_event_push_v1` 並以既有推播紀錄的 `source_message_id` 防止重送；另補上 webhook redelivery 雜湊穩定化與 OA 管理頁安全顯示環境變數名稱。這些修改已通過本機測試與資料庫驗證，但尚未合併或部署 staging。
 
 最新排程阻塞原因已查明：workflow job 使用需要 required reviewer 的 `staging` environment，GitHub schedule 會在建立 job 前等待人工核准，因此 `34563427385` 沒有 jobs。不能直接移除 staging 部署保護；安全修法是建立只提供 scheduler 所需 secret／變數的獨立 environment，再用一次受保護 route 驗證確認每日執行恢復。
 
@@ -302,9 +304,10 @@ V1 的「沒有 `birthday_visibility_preferences` 列」目前實際效果是**�
 - `e2e/tests/birthday-v2.e2e.mjs` 已補 local targeted browser acceptance：同一作者同一天送出兩則、生日年齡顯示、作者匿名與 412px 無水平溢位；結果為 2 passed、2 個刻意 skip。測試 fixture 明確設定 `show_birthday_year=true`，這只代表測試同意，不代表替社員預設公開年齡。V2 使用獨立測試社與每次 bootstrap 的新壽星，避免 append-only 歷史污染重跑，也不繞過每日 10 則上限。
 - `.github/workflows/birthday-collection-scheduler.yml` 與 `/api/internal/birthday-collection/scheduler` 已推送並只接 staging；歷史 scheduler workflow `33361427466` 曾成功，最新 run `34563427385` 目前 `pending` 且沒有 jobs，原因是 staging environment 的 required reviewer；舊 run `33117785366` 因 GitHub 與 Render 端 scheduler secret 尚未同步而回傳 `401 unauthorized`，僅保留作為歷史追蹤。不能用移除 staging 保護的方式修復。
 - `get_my_birthday_wish_collection_page` 與 `list_published_birthday_wish_submissions` 在頁面端並行查詢；資料庫仍是權限與匿名規則的最後守門。
+- 本輪分支新增 `20260911000200_birthday_collection_line_push.sql` 與 server-side 推播 helper：只有 scheduler 的 service role 能讀取收件人 projection／寫入推播紀錄；`line_oa_event_push_v1` 缺少或關閉時完全不送出。這部分待合併、staging migration／flag／實際 LINE 送達驗收。
 - `e2e/tests/birthday-collection.e2e.mjs` 已在 local Chromium 覆蓋桌面題庫新增／修改／停用、社員婉拒與幹部婉拒紀錄、建立／送出／發布／匿名公開牆、幹部隱藏／社員重送／再次發布／處理紀錄，以及 412px 任務入口與水平溢位；不代表 staging 或真人驗收。
 
-第一至三階段的程式開發與本機安全驗證已完成；PR #77 已完成 main 整合與 staging 發布，兩個生日 flag、scheduler secret、徵集專項 hosted workflow 均已完成。尚未完成的是 M1 真人社員／幹部使用者測試。
+第一至三階段的程式開發與本機安全驗證已完成；PR #77 已完成 main 整合與 staging 發布，兩個生日 flag、scheduler secret、徵集專項 hosted workflow 均已完成。本輪 LINE 邀請推播屬後續待合併修補，尚未完成 staging 送達驗收；另外尚未完成的是 scheduler 營運修復與 M1 真人社員／幹部使用者測試。
 
 ### 6.3 會影響 V2 實作的具體事實
 

@@ -3,11 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
+  from: vi.fn(),
   createTrustedAdminClient: vi.fn(),
+  pushBirthdayCollectionNotifications: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
   createTrustedAdminClient: mocks.createTrustedAdminClient,
+}));
+vi.mock("@/lib/line/birthday-collection-push", () => ({
+  pushBirthdayCollectionNotifications: mocks.pushBirthdayCollectionNotifications,
 }));
 
 import * as route from "./route";
@@ -27,7 +32,10 @@ describe("POST /api/internal/birthday-collection/scheduler", () => {
     vi.stubEnv("BIRTHDAY_COLLECTION_SCHEDULER_SECRET", secret);
     vi.stubEnv("DISABLE_BIRTHDAY_WISHES_COLLECTION_V1", "false");
     mocks.rpc.mockReset();
-    mocks.createTrustedAdminClient.mockReset().mockReturnValue({ rpc: mocks.rpc });
+    mocks.pushBirthdayCollectionNotifications.mockReset().mockResolvedValue({
+      status: "skipped", jobCount: 0, sentCount: 0, failedCount: 0,
+    });
+    mocks.createTrustedAdminClient.mockReset().mockReturnValue({ rpc: mocks.rpc, from: mocks.from });
   });
 
   afterEach(() => vi.unstubAllEnvs());
@@ -68,7 +76,11 @@ describe("POST /api/internal/birthday-collection/scheduler", () => {
       ok: true,
       status: "completed",
       result: { generated_count: 1 },
+      line_push: { status: "skipped", jobCount: 0, sentCount: 0, failedCount: 0 },
     });
+    expect(mocks.pushBirthdayCollectionNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({ rpc: mocks.rpc }),
+    );
     expect(mocks.rpc).toHaveBeenNthCalledWith(2, "run_birthday_wish_collection_scheduler", {
       p_as_of: expect.any(String),
     });

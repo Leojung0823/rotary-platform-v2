@@ -123,11 +123,11 @@ export function AudiencePicker({
         : counts === null
           ? "計算對象人數…"
           : showReach
-            ? `${counts.member_count} 位社員，其中 ${counts.reachable_count} 位已加入 LINE 官方帳號、可收到推播。`
+            ? `${counts.member_count} 位社員，其中 ${counts.reachable_count} 位已完成 LINE OA 配對、可收到推播。`
             : `${counts.member_count} 位社員`}
     </p>
     {showReach && counts !== null && counts.member_count > counts.reachable_count && <p className={styles.warning}>
-      有 {counts.member_count - counts.reachable_count} 位尚未加入官方帳號，這則訊息不會送達他們。
+      有 {counts.member_count - counts.reachable_count} 位尚未與本社 LINE OA 完成配對，這則訊息不會送達他們。
     </p>}
     {addressesWholeClub(selection) && selection.mode !== "everyone" && <p className={styles.hint}>
       尚未選擇任何對象，目前等同於發給全社。

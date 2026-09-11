@@ -3,8 +3,8 @@
 這份檢查表只涵蓋 **LINE Official Account 的訊息推播**。LINE Login 是另一個 channel、另一組憑證，
 見 [`LINE_LOGIN_DEPLOYMENT_CHECKLIST.md`](./LINE_LOGIN_DEPLOYMENT_CHECKLIST.md)。兩者不共用 secret。
 
-目前狀態：程式已可接上真實 Messaging API，但**尚未取得 channel access token 與 channel secret**，
-staging 仍是 `LINE_OA_MODE=mock`。本文件描述的是憑證到位後要走的步驟，不代表已經完成。
+目前狀態：真實 Messaging API、訊息中心公告、活動發布與 webhook follow 基礎已在 staging 完成驗收。
+生日徵集邀請的 LINE 推播程式已完成，待本輪 migration 部署後驗收；production 仍未修改。
 
 ## 憑證與環境變數
 
@@ -18,10 +18,10 @@ LINE_OA_<CLUB_CODE>_CHANNEL_SECRET
 `<CLUB_CODE>` 是 `club_code` 轉大寫、非英數字換成底線。實際值以資料庫
 `line_oa_accounts.access_token_env_key` 與 `webhook_secret_env_key` 為準，不要憑印象拼。
 
-- [ ] channel access token 與 channel secret 取自**同一個 Messaging API channel**。
+- [x] channel access token 與 channel secret 取自**同一個 Messaging API channel**（staging 已設定）。
 - [ ] 兩者都只放在 server 的 secret store，**沒有** `NEXT_PUBLIC_` 前綴。
 - [ ] 沒有寫進 repo、build args、PR 說明或訊息紀錄。
-- [ ] `LINE_OA_MODE=line`。設為 `line` 時 `inspectDeploymentEnvironment` 會要求上述兩個變數成對存在
+- [x] `LINE_OA_MODE=line`。設為 `line` 時 `inspectDeploymentEnvironment` 會要求上述兩個變數成對存在
       且長度合理，缺一個就會讓 `/api/health` 的 `checks.configuration` 變成 false。
 - [ ] `NEXT_PUBLIC_SITE_URL` 是公開的 HTTPS origin。真實模式**拒絕**從 `localhost`／`127.0.0.1` 送出，
       避免開發機把真實訊息送給真實社員。
@@ -30,21 +30,22 @@ LINE_OA_<CLUB_CODE>_CHANNEL_SECRET
 
 依 `AGENTS.md` 第 2 節，**更動 LINE channel 設定需要事先取得使用者同意**，代理不可自行操作。
 
-- [ ] Webhook URL 設為 `<NEXT_PUBLIC_SITE_URL>/api/line-oa/webhook/<clubId>`（`clubId` 是該社的 UUID）。
-- [ ] Use webhook 開啟。
+- [x] Webhook URL 設為 `<NEXT_PUBLIC_SITE_URL>/api/line-oa/webhook/<clubId>`（staging 已設定）。
+- [x] Use webhook 開啟（staging 已 Verify）。
 - [ ] 「自動回覆訊息」與「加入好友的歡迎訊息」依產品決定開關；平台本身不依賴它們。
-- [ ] Console 上的 webhook verify 通過（server 會用該社 secret 對原始 request body 驗 HMAC-SHA256）。
+- [x] Console 上的 webhook verify 通過（server 會用該社 secret 對原始 request body 驗 HMAC-SHA256）。
 
 ## 上線前的行為確認
 
-- [ ] `/clubs/<clubId>/line-oa` 的模式徽章顯示「LINE Messaging API」而不是「Local Mock」。
-- [ ] `/api/health` 的 `issues` 為空，且 `warnings` 不再包含由 `STAGING_LINE_OA_IS_MOCK` 產生的
+- [x] `/clubs/<clubId>/line-oa` 的模式徽章顯示「LINE Messaging API」而不是「Local Mock」（staging 已驗證）。
+- [x] `/api/health` 的 `issues` 為空，且 `warnings` 不再包含由 `STAGING_LINE_OA_IS_MOCK` 產生的
       `DEPLOYMENT_WARNING`（staging 用 mock 時它是預期警告）。
 - [ ] 用測試 follower 送一則訊息：實際收到、推播紀錄狀態為 `sent`、有 provider request id。
 - [ ] 指定標籤或社員送出時，只有該對象中**已加入官方帳號**的人收到；對象中沒有人配對時
       畫面回報「指定的對象中沒有人加入官方帳號」，不會誤記成送出 0 人。
 - [ ] 故意用錯誤的 access token 送一次：畫面顯示憑證被拒絕，推播紀錄的 `failure_code` 是
       `credentials_rejected`，而不是籠統的 `provider_error`。
+- [>] 生日徵集邀請：程式已完成，待本輪 migration 部署到 staging 後驗證已配對且開啟通知的社員收到 LINE；未配對、停追蹤或關閉通知者不收到，且重跑不重送。
 
 ## 已知的限制與行為
 
@@ -59,6 +60,7 @@ LINE_OA_<CLUB_CODE>_CHANNEL_SECRET
   重送前要先看推播紀錄。
 - **每月推播額度依方案而定。** 達到上限時 LINE 回 429，平台記為 `rate_limited`。
   平台目前不會預先擋下超額的送出，這需要產品決定。
+- **Webhook redelivery hash** 只忽略 `deliveryContext.isRedelivery`，仍保留 HMAC 原始 body 驗證與其他內容差異檢查；舊版已保存的 raw hash 無法安全回算，不能為了相容而放寬竄改檢查。
 
 ## 回復程序
 
