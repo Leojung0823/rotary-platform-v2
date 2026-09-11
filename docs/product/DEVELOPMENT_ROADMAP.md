@@ -49,6 +49,7 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
 - 所有高頻 mobile flow 都必須考慮 320px、200% text zoom、keyboard、weak network 與 safe retry。
 - **Recoverable form error 不得造成使用者已輸入資料遺失；成功才清空。**
 - 小型文件修改只經過 CI／Browser Smoke 的輕量範圍 gate；涉及程式、資料庫、建置、部署或 workflow 的高風險修改仍跑完整檢查，分類失敗時採 fail-open。詳見 `docs/development/CI_EXECUTION_POLICY.md`。
+- 效能量測、快取安全界線與後續量測方法集中記錄在 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)；效能修改前必須先讀取。
 
 ## 路線圖
 
