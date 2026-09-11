@@ -2,7 +2,7 @@
 
 > 更新日期：2026-09-11（Asia/Taipei）
 > 狀態：**生日 V2 核心、祝福徵集與生日邀請 LINE 推播已部署並通過 staging Go-Live；最新每日 scheduler 仍卡在 GitHub Actions `pending`，生日邀請實際 LINE 送達與 M1 真人使用者測試待完成**
-> 程式現況基準：產品 release `a7b356177400838ee816c8fea4f2bb7032d8b5be` 已部署到 staging；`main` 其後另有文件同步 commit，沒有產品程式差異。Staging Release Plan `34571960542`、Go-Live `34572185592` 均成功。
+> 程式現況基準：產品 release `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7` 已部署到 staging；`main` 其後的 `f106c1a` 是文件同步 commit，沒有產品程式差異。Staging Release Plan `34576631319`、Go-Live `34576829556` 均成功。
 > 前一版：[`BIRTHDAY_WISHES_V1_SCOPE.md`](./BIRTHDAY_WISHES_V1_SCOPE.md)（已實作並部署）
 
 這份文件記錄目前產品討論的結論。它取代先前那份「生日祝福與壽星關懷 V2」草稿中
@@ -25,7 +25,7 @@
 本文件第 2–7 節是徵集領域的完整目標規格；目前已完成資料底座、手動月批派發、
 幹部發布、匿名公開牆、排程、訊息邀約、題庫 CRUD、隱藏後重送、逐筆完成狀態和處理紀錄的本機實作。
 
-徵集依賴 V2 核心、已存在但預設關閉的**站內訊息中心**，以及 staging-only 的 GitHub Actions 排程入口；第一至三階段程式、migration、staging Go-Live 與 hosted acceptance 已完成。staging 的兩個生日旗標已由受保護 CLI 開啟，Render 與 GitHub 的 scheduler secret 已同步；但最新 scheduler `34563427385` 仍為 `pending` 且沒有 jobs，因此每日排程與本輪生日邀請 LINE 實際送達仍未證明。M1 真人社員／幹部測試仍未完成。
+徵集依賴 V2 核心、已存在但預設關閉的**站內訊息中心**，以及 staging-only 的 GitHub Actions 排程入口；第一至三階段程式、migration、staging Go-Live 與 hosted acceptance 已完成。staging 的兩個生日旗標與 Render scheduler secret 已由受保護流程設定；GitHub 的 `birthday-scheduler` environment 仍缺同名 scheduler secret。最新 scheduler `34563427385` 仍為 `pending` 且沒有 jobs，因此每日排程與本輪生日邀請 LINE 實際送達仍未證明。M1 真人社員／幹部測試仍未完成。
 
 本輪 `codex/todo-hardening` 再補上生日徵集邀請的 LINE 推播：protected scheduler 會從 service-role-only projection 取得已配對且開啟通知的收件人，沿用 `line_oa_event_push_v1` 並以既有推播紀錄的 `source_message_id` 防止重送；另補上 webhook redelivery 雜湊穩定化與 OA 管理頁安全顯示環境變數名稱。這些修改已通過本機測試、資料庫驗證、CI／Browser Smoke，並已部署至 staging；仍待下一次 scheduler 實際送達驗收。
 

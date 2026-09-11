@@ -13,7 +13,7 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 `main` commit `a8c1e55` 修正管理模式 hosted 驗收腳本的活動入口，沒有產品程式或 migration 變更。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；產品 release `a8c1e55` 修正管理模式 hosted 驗收腳本的活動入口，之後的最新 `main` HEAD `f106c1a` 只是文件同步，沒有產品程式或 migration 變更。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
@@ -28,7 +28,7 @@ staging `/api/health` 回報 revision `a8c1e55e7f88`、`status=ok`、`issues=[]`
 最新已部署 migration 是
 `20260911000200_birthday_collection_line_push.sql`。
 
-本輪 `CI` `34576614945`、`Browser Smoke` `34576614934`、Staging Release Plan `34576631319`、
+本輪文件同步後的 `CI` `34578056217`、`Browser Smoke` `34578056287`，以及產品 release 的 Staging Release Plan `34576631319`、
 Staging Go-Live `34576829556` 與 Staging Management Acceptance `34577046356` 均成功完成；Go-Live 的
 HTTPS smoke、hosted member acceptance 與執行秘書管理驗收也通過。
 之後的 scheduler environment 隔離修正已推到 `main` commit

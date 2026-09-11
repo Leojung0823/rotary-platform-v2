@@ -5,11 +5,11 @@
 
 ## 最新狀態核對（2026-09-11）
 
-- 本次最新核對的產品／staging runtime revision 是 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；本輪後續文件同步為 docs-only，沒有產品程式或 migration 變更。沒有 open PR。
+- `main` 最新 HEAD 是 `f106c1aa436a35c55cff7554e5eace95f209825e`；它是 docs-only 文件同步，沒有產品程式或 migration 變更。本次最新核對的產品／staging runtime revision 仍是已驗收的 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`。沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、revision `a8c1e55e7f88`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34576829556` 已部署 hosted staging；最新 migration 仍是 `20260911000200_birthday_collection_line_push.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
-- `CI` `34576614945`、`Browser Smoke` `34576614934`、Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance `34577046356` 均成功完成。
+- 文件同步後的 `CI` `34578056217`、`Browser Smoke` `34578056287`，以及產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance `34577046356` 均成功完成。
 - 管理驗收第一次 run `34575792573` 因腳本誤找不存在的 `management-card-events` 失敗；改點管理模式第一層「活動」導覽後，`34577046356` 成功完成活動建立、封面上傳、發布與取消。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。

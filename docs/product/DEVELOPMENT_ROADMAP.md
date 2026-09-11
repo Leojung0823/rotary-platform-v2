@@ -17,10 +17,10 @@
 
 截至 2026-09-11 的實際掃描基準：
 
-- 本次最新核對的產品／staging runtime revision 是 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；本輪文件同步只更新開發文件，沒有產品程式或 migration 變更。
+- `main` 最新 HEAD 是 `f106c1aa436a35c55cff7554e5eace95f209825e`；它是文件同步 commit，沒有產品程式或 migration 變更。本次最新核對的產品／staging runtime revision 仍是已驗收的 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`。
 - staging `/api/health` 回報 `status=ok`、`revision=a8c1e55e7f88`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34576829556` 已部署 `main@a8c1e55…`；最新 migration 仍是 `20260911000200_birthday_collection_line_push.sql`。
-- `CI` run `34576614945` 與 `Browser Smoke` run `34576614934` 以 `a8c1e55` 成功完成；Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance `34577046356` 也成功完成。
+- 文件同步後的 `CI` run `34578056217` 與 `Browser Smoke` run `34578056287` 以 `f106c1a` 成功完成；產品 release 的 `Staging Release Plan` `34576631319`、`Staging Go-Live` `34576829556` 與 `Staging Management Acceptance` `34577046356` 也成功完成。
 - 管理驗收第一次 run `34575792573` 失敗的原因是驗收腳本誤找不存在的 `management-card-events`；依產品既有設計改點管理模式第一層「活動」導覽後，`34577046356` 已成功通過，沒有放寬產品權限或新增活動卡片。
 - 後續 scheduler workflow 環境隔離修正已在 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這是排程設定修正，沒有重新部署 staging 應用程式，staging runtime 仍是上列產品 release。
 
