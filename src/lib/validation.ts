@@ -137,6 +137,10 @@ export function safeMessage(code?: string): string | null {
     password_signin_failed: "平台帳號已建立，但登入未完成。請使用忘記密碼重新設定後登入。",
     member_exists: "這位社員已存在於扶輪社。",
     oa_not_configured: "請先完成 LINE Official Account 設定。",
+    oa_live_mode_required: "目前環境未開啟 LINE 真實模式，不能完成 OA 驗證。",
+    oa_identity_mismatch:
+      "LINE 回傳的 OA 與這個扶輪社填入的 Basic ID 不一致，請確認使用同一個 Messaging API channel。",
+    oa_verification_failed: "LINE OA 身份驗證未完成，請確認伺服器憑證與 Basic ID 後再試。",
     oa_or_member_not_found:
       "本社尚未儲存 LINE OA 設定，或這位社員不在本社。請先在上方「OA 設定」儲存後再配對。",
     unexpected: "操作未完成，請稍後再試。",

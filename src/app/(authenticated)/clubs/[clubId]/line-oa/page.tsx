@@ -5,6 +5,7 @@ import {
   unpairLineOaAction,
 } from "@/app/actions";
 import { sendLineOaAction } from "@/app/line-oa-actions";
+import { verifyLineOaAction } from "@/app/line-oa-verification-actions";
 import { AudiencePicker } from "@/components/audience/audience-picker";
 import { createClient } from "@/lib/supabase/server";
 import { ClubAdminNav } from "@/components/club-admin-nav";
@@ -106,6 +107,12 @@ export default async function LineOaPage({
     provider_timeout:
       "送往 LINE 逾時，部分收件人可能已收到；請先查看下方推播紀錄再決定是否重送。",
     provider_error: "訊息送出失敗，請查看下方推播紀錄。",
+    oa_live_mode_required:
+      "目前環境未開啟 LINE 真實模式，不能完成 OA 驗證。",
+    oa_identity_mismatch:
+      "LINE 回傳的 OA 與這個扶輪社填入的 Basic ID 不一致，請確認使用同一個 Messaging API channel。",
+    oa_verification_failed:
+      "LINE OA 身份驗證未完成，請確認伺服器憑證與 Basic ID 後再試。",
   };
   const success: Record<string, string> = {
     configured: "LINE OA 設定已儲存。",
@@ -113,6 +120,7 @@ export default async function LineOaPage({
     unpaired: "OA 配對已解除，LINE Login 不受影響。",
     message_sent: "訊息已送出或由 local mock 完成。",
     disabled: "這個 LINE OA 帳號已停用；重新儲存設定即可再次啟用。",
+    verified: "LINE OA 身份驗證成功。社員加入引導功能開啟後，即可顯示加入連結；Webhook 仍需另行設定與驗收。",
   };
   return (
     <div className="page-stack">
@@ -175,31 +183,43 @@ export default async function LineOaPage({
             <Button type="submit">儲存 OA 設定</Button>
           </form>
           {oa.account && (
-            <form action={disableLineOaAction} className="form-stack">
-              <input type="hidden" name="clubId" value={clubId} />
-              <input
-                type="hidden"
-                name="displayName"
-                value={oa.account.display_name}
-              />
-              <input
-                type="hidden"
-                name="basicId"
-                value={oa.account.basic_id ?? ""}
-              />
-              <input
-                type="hidden"
-                name="channelId"
-                value={oa.account.channel_id ?? ""}
-              />
-              <p className="subtle">
-                設錯扶輪社或不再使用時可以停用。停用後這一頁會回到未設定狀態，推播與
-                webhook 都會停止；重新儲存設定即可再次啟用。
-              </p>
-              <Button type="submit" className="button-secondary">
-                停用這個 OA 帳號
-              </Button>
-            </form>
+              <form action={verifyLineOaAction} className="form-stack">
+                <input type="hidden" name="clubId" value={clubId} />
+                <p className="subtle">
+                  按下後由伺服器讀取本社的 channel access token，向 LINE 核對
+                  Basic ID；憑證不會送到瀏覽器，也不會顯示在畫面上。
+                </p>
+                <Button type="submit" className="button-secondary">
+                  驗證 LINE OA
+                </Button>
+              </form>
+          )}
+          {oa.account && (
+              <form action={disableLineOaAction} className="form-stack">
+                <input type="hidden" name="clubId" value={clubId} />
+                <input
+                  type="hidden"
+                  name="displayName"
+                  value={oa.account.display_name}
+                />
+                <input
+                  type="hidden"
+                  name="basicId"
+                  value={oa.account.basic_id ?? ""}
+                />
+                <input
+                  type="hidden"
+                  name="channelId"
+                  value={oa.account.channel_id ?? ""}
+                />
+                <p className="subtle">
+                  設錯扶輪社或不再使用時可以停用。停用後這一頁會回到未設定狀態，推播與
+                  webhook 都會停止；重新儲存設定即可再次啟用。
+                </p>
+                <Button type="submit" className="button-secondary">
+                  停用這個 OA 帳號
+                </Button>
+              </form>
           )}
         </Card>
         <Card>

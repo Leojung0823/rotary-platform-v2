@@ -24,6 +24,13 @@ async function openLineOa(page) {
   await expect(page.getByRole("heading", { name: "LINE Official Account" })).toBeVisible();
 }
 
+test("OA verification is available and fails closed in local mock mode", async ({ page }) => {
+  await openLineOa(page);
+  await page.getByRole("button", { name: "驗證 LINE OA", exact: true }).click();
+  await expect(page.getByText("目前環境未開啟 LINE 真實模式，不能完成 OA 驗證。")).toBeVisible();
+  await expect(page).toHaveURL(/error=oa_live_mode_required/u);
+});
+
 test("the send form reports how many of the audience LINE can actually reach", async ({ page }) => {
   await openLineOa(page);
 
