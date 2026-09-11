@@ -23,7 +23,7 @@
 - 本次 `Staging Release Plan` `34580616980`、`Staging Go-Live` `34580767172` 均成功；產品修補 push 後的完整 `CI` `34580607934` 與 `Browser Smoke` `34580600621` 均成功（Browser Smoke 11 分 41 秒）。後續 docs-only push 的 `CI` `34583431760` 與 `Browser Smoke` `34583431873` 只有變更範圍分類器成功，完整 jobs 依 gate 跳過。
 - 管理驗收第一次 run `34575792573` 失敗的原因是驗收腳本誤找不存在的 `management-card-events`；依產品既有設計改點管理模式第一層「活動」導覽後，`34577046356` 已成功通過，沒有放寬產品權限或新增活動卡片。
 - 後續 scheduler workflow 環境隔離修正已在 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這是排程設定修正，沒有重新部署 staging 應用程式，staging runtime 仍是上列產品 release。
-- `68b12a5` push 後的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查）。舊的旗標安全修補 plan `34584648135` 已因 SHA 過時取消；新的 Staging Release Plan `34586462504` 已對準目前 `main@6c83ad6`，正等待 staging environment 人工核准，尚未部署。
+- `68b12a5` push 後的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查）。過時的旗標安全修補 plan 已取消；目前已重新建立對準 `main` 的 Staging Release Plan，正等待 staging environment 人工核准，尚未部署。執行 Go-Live 前，必須確認 plan 的 `headSha` 與當下 `git rev-parse origin/main` 完全相同。
 
 本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；生日旗標與 Render staging 的 scheduler secret 已完成受保護設定，hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均成功。但最新排程 run `34563427385` 目前是 `pending` 且沒有 jobs，因此「每日排程能持續自動執行」仍未證明，列為營運待辦。舊 workflow 使用的 GitHub `staging` secret 不會自動出現在新建的 `birthday-scheduler` environment；新環境目前仍待補入同一個 scheduler secret。
 
@@ -34,7 +34,7 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
 已配對且開啟通知的 LINE 社員。資料庫 RPC 僅授予 service role；缺少或未開啟
  `line_oa_event_push_v1` 時不送出。程式與 migration 已在 staging，仍待下一次排程的實際 LINE 送達驗收。
 
-另補上 `line_oa_auto_pairing_v1` 在共用應用程式旗標判斷器中的明確開啟要求；沒有旗標資料列時維持關閉，修補 commit 為 `68b12a5`，待 `34586462504` 核准並完成下一次 staging release。
+另補上 `line_oa_auto_pairing_v1` 在共用應用程式旗標判斷器中的明確開啟要求；沒有旗標資料列時維持關閉，修補 commit 為 `68b12a5`，待 exact-SHA 相符的 plan 核准並完成下一次 staging release。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
