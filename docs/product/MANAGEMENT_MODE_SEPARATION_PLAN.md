@@ -4,7 +4,7 @@
 修訂：v2.1.6，2026-09-11（同步目前 main／staging 狀態）
 狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke、一般 staging Go-Live，以及執行秘書的生日／文件／活動／活動封面成功流程 hosted acceptance 已完成；不可逆交接確認與上傳失敗清理仍未在 staging 執行
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次產品狀態核對基準：`main@5c879a9b81073c2815e89938ff30992e772fb11e`；staging runtime `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`。`main` 相對 staging 只有文件同步，沒有管理模式產品程式或 migration 差異。
+本次產品狀態核對基準：`main@a3fb6d4bca2b8a16e8def8f718f7e4c3a626b149`；staging runtime `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`。`main` 相對 staging 只有文件同步，沒有管理模式產品程式或 migration 差異。
 
 截至 2026-09-11，staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。管理驗收 run `34577046356` 已涵蓋活動建立／發布／取消與活動封面上傳成功流程；不可逆交接與上傳失敗清理仍不能因 runtime 健康而標成已完成。
 
