@@ -2,7 +2,7 @@
 
 > 更新日期：2026-09-11（Asia/Taipei）
 > 狀態：**生日 V2 核心、祝福徵集與生日邀請 LINE 推播已部署並通過 staging Go-Live；最新每日 scheduler 仍卡在 GitHub Actions `pending`，生日邀請實際 LINE 送達與 M1 真人使用者測試待完成**
-> 程式現況基準：產品 release `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7` 已部署到 staging；`main` 其後的 `f106c1a` 是文件同步 commit，沒有產品程式差異。Staging Release Plan `34576631319`、Go-Live `34576829556` 均成功。
+> 程式現況基準：產品 release `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7` 已部署到 staging；其後的 `main` 變更只有文件同步，沒有產品程式差異。Staging Release Plan `34576631319`、Go-Live `34576829556` 均成功。
 > 前一版：[`BIRTHDAY_WISHES_V1_SCOPE.md`](./BIRTHDAY_WISHES_V1_SCOPE.md)（已實作並部署）
 
 這份文件記錄目前產品討論的結論。它取代先前那份「生日祝福與壽星關懷 V2」草稿中
@@ -304,10 +304,10 @@ V1 的「沒有 `birthday_visibility_preferences` 列」目前實際效果是**�
 - `e2e/tests/birthday-v2.e2e.mjs` 已補 local targeted browser acceptance：同一作者同一天送出兩則、生日年齡顯示、作者匿名與 412px 無水平溢位；結果為 2 passed、2 個刻意 skip。測試 fixture 明確設定 `show_birthday_year=true`，這只代表測試同意，不代表替社員預設公開年齡。V2 使用獨立測試社與每次 bootstrap 的新壽星，避免 append-only 歷史污染重跑，也不繞過每日 10 則上限。
 - `.github/workflows/birthday-collection-scheduler.yml` 與 `/api/internal/birthday-collection/scheduler` 已推送並只接 staging；歷史 scheduler workflow `33361427466` 曾成功，最新 run `34563427385` 目前 `pending` 且沒有 jobs，原因是 staging environment 的 required reviewer；舊 run `33117785366` 因 GitHub 與 Render 端 scheduler secret 尚未同步而回傳 `401 unauthorized`，僅保留作為歷史追蹤。不能用移除 staging 保護的方式修復。
 - `get_my_birthday_wish_collection_page` 與 `list_published_birthday_wish_submissions` 在頁面端並行查詢；資料庫仍是權限與匿名規則的最後守門。
-- 本輪分支新增 `20260911000200_birthday_collection_line_push.sql` 與 server-side 推播 helper：只有 scheduler 的 service role 能讀取收件人 projection／寫入推播紀錄；`line_oa_event_push_v1` 缺少或關閉時完全不送出。這部分待合併、staging migration／flag／實際 LINE 送達驗收。
+- 本輪已合併並部署 `20260911000200_birthday_collection_line_push.sql` 與 server-side 推播 helper：只有 scheduler 的 service role 能讀取收件人 projection／寫入推播紀錄；`line_oa_event_push_v1` 缺少或關閉時完全不送出。程式、migration 與 flag 已完成，仍待 scheduler 實際執行後驗收 LINE 送達與重跑不重送。
 - `e2e/tests/birthday-collection.e2e.mjs` 已在 local Chromium 覆蓋桌面題庫新增／修改／停用、社員婉拒與幹部婉拒紀錄、建立／送出／發布／匿名公開牆、幹部隱藏／社員重送／再次發布／處理紀錄，以及 412px 任務入口與水平溢位；不代表 staging 或真人驗收。
 
-第一至三階段的程式開發與本機安全驗證已完成；PR #77 已完成 main 整合與 staging 發布，兩個生日 flag、scheduler secret、徵集專項 hosted workflow 均已完成。本輪 LINE 邀請推播屬後續待合併修補，尚未完成 staging 送達驗收；另外尚未完成的是 scheduler 營運修復與 M1 真人社員／幹部使用者測試。
+第一至三階段的程式開發與本機安全驗證已完成；PR #77 已完成 main 整合與 staging 發布，兩個生日 flag 已開啟，Render scheduler secret 已設定，GitHub scheduler workflow 已改用獨立 environment。本輪 LINE 邀請推播也已合併並部署，尚未完成的是 GitHub environment secret、scheduler 營運實跑、LINE 實際送達驗收與 M1 真人社員／幹部使用者測試。
 
 ### 6.3 會影響 V2 實作的具體事實
 

@@ -17,7 +17,7 @@
 
 截至 2026-09-11 的實際掃描基準：
 
-- `main` 最新 HEAD 是 `f106c1aa436a35c55cff7554e5eace95f209825e`；它是文件同步 commit，沒有產品程式或 migration 變更。本次最新核對的產品／staging runtime revision 仍是已驗收的 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`。
+- 目前 `main` 在產品 release 之後只有文件同步 commit，沒有產品程式或 migration 變更；本次最新核對的產品／staging runtime revision 仍是已驗收的 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`。
 - staging `/api/health` 回報 `status=ok`、`revision=a8c1e55e7f88`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34576829556` 已部署 `main@a8c1e55…`；最新 migration 仍是 `20260911000200_birthday_collection_line_push.sql`。
 - 文件同步後的 `CI` run `34578056217` 與 `Browser Smoke` run `34578056287` 以 `f106c1a` 成功完成；產品 release 的 `Staging Release Plan` `34576631319`、`Staging Go-Live` `34576829556` 與 `Staging Management Acceptance` `34577046356` 也成功完成。
@@ -82,7 +82,7 @@ Phase 2 之後追加並完成的社務功能：
   - 受 `blessing_iou_v1`、`blessing_iou_collections_v1`、`blessing_iou_reporting_v1` 控管。
 - [x] **生日祝福 V1／V2 核心**（`20260820001000_birthday_wishes.sql`、`20260824000400_birthday_wishes_v2_core.sql`）— `/birthdays`
   - V2 已完成新設定預設公開、年齡同意顯示、同一作者同一壽星每日最多 10 則、作者匿名投影。
-- [x] **生日祝福徵集核心**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每月每人一則自動派發、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render staging scheduler secret 已設定；GitHub workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，但該環境尚未放入 scheduler secret。hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均通過。最新 scheduler run `34563427385` 目前 `pending` 且無 jobs，因此每日自動執行仍列為營運待辦；本輪生日 LINE 推播已隨 Go-Live `34572185592` 部署，但實際送達與 M1 真人使用者測試仍另列。
+- [x] **生日祝福徵集核心**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每月每人一則自動派發、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render staging scheduler secret 已設定；GitHub workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，但該環境尚未放入 scheduler secret。hosted acceptance `33345182984` 與歷史成功排程 `33361427466` 均通過。最新 scheduler run `34563427385` 目前 `pending` 且無 jobs，因此每日自動執行仍列為營運待辦；本輪生日 LINE 推播已隨 Go-Live `34576829556` 部署，但實際送達與 M1 真人使用者測試仍另列。
 - [x] **文件中心與年度交接**（`20260820002000_archive_handover.sql`）— `/archives`
 - [x] **社內留言板** — `/board`
 - [x] **活動封面圖片**（`20260820000100_event_cover_images.sql`）

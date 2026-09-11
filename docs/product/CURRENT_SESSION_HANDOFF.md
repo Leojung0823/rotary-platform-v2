@@ -3,9 +3,9 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 最新狀態核對（2026-09-11）
+## 最新狀態核對（2026-09-11；文件同步前基準）
 
-- `main` 最新 HEAD 是 `f106c1aa436a35c55cff7554e5eace95f209825e`；它是 docs-only 文件同步，沒有產品程式或 migration 變更。本次最新核對的產品／staging runtime revision 仍是已驗收的 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`。沒有 open PR。
+- 本次最新核對的產品／staging runtime revision 是已驗收的 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；其後的 `main` 變更都是 docs-only 文件同步，沒有產品程式或 migration 變更。沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、revision `a8c1e55e7f88`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - 最新 staging Go-Live `34576829556` 已部署 hosted staging；最新 migration 仍是 `20260911000200_birthday_collection_line_push.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。

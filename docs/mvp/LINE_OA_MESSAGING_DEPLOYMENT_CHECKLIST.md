@@ -45,7 +45,7 @@ LINE_OA_<CLUB_CODE>_CHANNEL_SECRET
       畫面回報「指定的對象中沒有人加入官方帳號」，不會誤記成送出 0 人。
 - [ ] 故意用錯誤的 access token 送一次：畫面顯示憑證被拒絕，推播紀錄的 `failure_code` 是
       `credentials_rejected`，而不是籠統的 `provider_error`。
-- [>] 生日徵集邀請：程式與 migration 已部署到 staging（Go-Live `34572185592`），待下一次 scheduler 驗證已配對且開啟通知的社員收到 LINE；未配對、停追蹤或關閉通知者不收到，且重跑不重送。
+- [>] 生日徵集邀請：程式與 migration 已部署到 staging（Go-Live `34576829556`），待 GitHub scheduler environment 補入 secret 後，驗證已配對且開啟通知的社員收到 LINE；未配對、停追蹤或關閉通知者不收到，且重跑不重送。
 
 ## 已知的限制與行為
 

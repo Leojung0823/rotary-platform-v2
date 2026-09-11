@@ -13,7 +13,7 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；產品 release `a8c1e55` 修正管理模式 hosted 驗收腳本的活動入口，之後的最新 `main` HEAD `f106c1a` 只是文件同步，沒有產品程式或 migration 變更。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；產品 release `a8c1e55` 修正管理模式 hosted 驗收腳本的活動入口，之後的 `main` 變更只有文件同步，沒有產品程式或 migration 變更。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
@@ -388,11 +388,11 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 以上程式與資料庫結果為既有驗證證據；當時的 Staging Go-Live 已完成 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。生日 V2／徵集 hosted acceptance `33345182984` 與 protected scheduler `33361427466` 也是歷史成功證據。
 
-## 最新掃描證據（2026-09-11）
+## 最新掃描證據（2026-09-11；文件同步前基準）
 
-- `main` 已包含產品 revision `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；本次後續文件同步為 docs-only，沒有 open PR。
+- 產品／staging runtime revision 為 `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7`；其後的 `main` 變更都是文件同步，沒有產品程式或 migration 變更，沒有 open PR。
 - staging health：revision `a8c1e55e7f88`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
-- `CI` `34576614945`、`Browser Smoke` `34576614934`：以 `a8c1e55` 成功完成。
+- 文件同步前產品 release 的 `CI` `34576614945`、`Browser Smoke` `34576614934`：以 `a8c1e55` 成功完成；後續文件同步 commit 的 CI／Browser Smoke 亦已成功，最新 run 編號以 GitHub 為準。
 - Staging Release Plan `34576631319`、Staging Go-Live `34576829556`：以 `a8c1e55` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
 - Staging Management Acceptance `34577046356`：以 `a8c1e55` 通過；執行秘書完成生日、文件、活動與活動封面流程。
 - 最新 Birthday Collection Scheduler `34563427385`：`pending`、無 jobs；每日自動排程目前未證明。
