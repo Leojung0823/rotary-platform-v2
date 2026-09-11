@@ -374,13 +374,13 @@ PR-01c 不做：
 
 ## Current Next Actions
 
-1. **先合併並部署本輪 LINE 修補到 staging。** 包含 webhook redelivery 雜湊、OA 環境變數名稱與生日邀請推播；完成 `/api/health`、migration、flag 與實際 LINE 送達驗收。未部署前不能把這三項寫成 staging 已完成。
+1. **完成本輪生日邀請 LINE 的實際送達驗收。** webhook redelivery 雜湊、OA 環境變數名稱與生日邀請推播已合併並部署；仍要在 scheduler 正常執行後確認已配對且開啟通知的社員收到 LINE，且重跑不重送。
 2. **修復生日祝福每日排程的安全環境配置。** 根因已確認是 scheduler 綁到需要人工核准的 `staging` environment；建立獨立 scheduler environment、放入必要 secret／變數後，再驗證下一次 schedule 真的呼叫 protected staging route。不能用移除 staging 保護的方式處理，也不能用歷史成功 run `33361427466` 代替。
 3. **完成 LINE OA onboarding／follow 自動配對的真實身份驗收。** 程式、migration、verification、staging flag 與 webhook 基礎已在主線／staging；仍要用「曾以 LINE Login 登入的社員加入同一社 OA」確認精確配對，並補多社、外社、停權／退社等真實流程證據。
 4. **完成管理模式剩餘驗收。** 生日與文件的執行秘書 hosted acceptance 已完成；活動與活動封面仍待 staging 端到端驗收，管理頁 TTFB 前後比較仍是未量測。
 5. **安排行動裝置與 M1 測試。** 用 iOS Safari、真實 Android Chrome，以及五位社員／幹部做形成性測試；自動化 Chromium 不取代實機與訪談。
 6. **整理正式環境準備。** production 生日 scheduler、production LINE 憑證與額度政策、`announcements_v09` 是否對 production 開啟，分開決策與執行；目前 production 沒有修改。
-7. **處理仍未完成的 LINE OA 功能。** Flex 模板、推播額度政策，以及 follow 配對真人驗收；webhook redelivery、生日邀請推播與環境變數名稱已完成程式，待 staging 驗收。
+7. **處理仍未完成的 LINE OA 功能。** Flex 模板、推播額度政策，以及 follow 配對真人驗收；生日邀請推播已完成程式並部署，待 scheduler 與實際送達驗收。
 8. **Recovery email 維持暫緩。** 只有在 production 上線或密碼登入比例上升時，才重新處理 custom SMTP 與真實 email 驗收。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。
