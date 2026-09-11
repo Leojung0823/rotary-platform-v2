@@ -5,21 +5,21 @@
 
 ## 最新狀態核對（2026-09-11；本輪部署後基準）
 
-- 本次最新核對的產品程式基準是 `68b12a56a21e02e08ece4c91644ec74cad9b70f9`；本次文件同步前的 `main` 文件 commit 是 `e5b2f51`；staging runtime 仍是已驗收的 `e1ea85c3e941528731c0b34b724296ffd0498946`；沒有 open PR。
-- staging `/api/health` 回報 `status=ok`、revision `e1ea85c3e941`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
-- 最新 staging Go-Live `34580767172` 已部署 hosted staging；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
+- 本次最新核對的產品程式與 staging runtime 都對準 `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`；沒有 open PR。本次文件同步只會新增文件 commit，不會改變 staging runtime。
+- staging `/api/health` 回報 `status=ok`、revision `e6ff5b9854ef`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
+- 最新 staging Go-Live `34594381922` 已部署 hosted staging；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
-- 本次文件同步前的 commit `e26b34d` push 後自動觸發的 `CI` `34583431760`、`Browser Smoke` `34583431873` 的變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；本次仍是 docs-only 同步，產品 release 的 Staging Release Plan `34580616980`、Staging Go-Live `34580767172` 與 Staging Management Acceptance `34577046356` 亦均成功完成。
+- 前一輪 docs-only commit 的 `CI` `34583431760`、`Browser Smoke` `34583431873` 變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；本輪產品 release 的 Staging Release Plan `34586642034`、Staging Go-Live `34594381922` 均成功完成，管理驗收 `34577046356` 亦已成功。
 - 管理驗收第一次 run `34575792573` 因腳本誤找不存在的 `management-card-events` 失敗；改點管理模式第一層「活動」導覽後，`34577046356` 成功完成活動建立、封面上傳、發布與取消。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
-- 最新生日 scheduler run `34563427385` 是 `pending` 且沒有 jobs；前一個 run `34438617117` 已被新排程取消。歷史成功 run `33361427466` 不足以證明現在的每日排程正常，這是目前優先營運待辦。
-- 排程阻塞根因已確認：舊 scheduler workflow 使用需要 required reviewer 的 `staging` environment，schedule event 會在建立 jobs 前等待人工核准。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；仍缺 scheduler secret 與下一次實際執行驗證。不要為了自動化移除 staging 部署保護。
+- 最新生日 scheduler run `34595040657` 已完成但回 `401 unauthorized`；`34595311338` 因同一 concurrency queue 被取消。GitHub `birthday-scheduler` environment 的 secret 名稱已存在，正確 Render staging service 也有同名變數，但兩邊秘密值不一致，這是目前優先營運待辦。
+- 排程環境隔離的程式修法已完成：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護。現在只需在取得明確授權後同步兩端秘密值，再重跑 scheduler 驗證；不要把秘密寫入 repo，也不要移除 staging 部署保護。
 - production 沒有修改；staging 最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
-- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查）。過時的 Staging Release Plan 已取消；目前已重新建立對準 `main` 的 plan，等待 staging environment 人工核准，尚未把旗標安全修補部署到 staging。執行 Go-Live 前，必須確認 plan 的 `headSha` 與當下 `git rev-parse origin/main` 完全相同。
+- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由 Go-Live `34594381922` 部署到 staging。
 
 ## 本輪已合併並部署的待辦收尾（2026-09-11）
 
-目前工作分支 `codex/todo-hardening` 已將產品 commit `e1ea85c3e941528731c0b34b724296ffd0498946` 推送至 `main` 並完成 staging Go-Live；旗標安全修補 `68b12a56a21e02e08ece4c91644ec74cad9b70f9` 及後續 docs-only commits `802d9130f18591f96ce2bdf67cedea89f396997f`、`8b522a971dbbd3ab48570f01c5cb29b310160212`、`e5b2f51c185d21455e6e9f8228ecea1af81aee7d`、`6c83ad606ef0c08fde61ce3dd16f8a8a8e81162b` 已同步至 `main`；本次仍是 docs-only 同步，產品程式與 staging runtime 未變。已完成：
+目前工作分支 `codex/todo-hardening` 已將產品 commit `e6ff5b9854ef9fa502f468f23efec6fa62241ac3` 推送至 `main` 並完成 staging Go-Live；旗標安全修補 `68b12a56a21e02e08ece4c91644ec74cad9b70f9` 及後續 docs-only commits 已同步至 `main`；本次仍是 docs-only 同步，產品程式與 staging runtime 未變。已完成：
 
 - webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
 - LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
@@ -27,10 +27,10 @@
 - 修正「尚未加入官方帳號」文案為「尚未與本社 LINE OA 完成配對」，並補相關回歸測試。
 - 修正 staging 管理驗收腳本：活動是管理模式第一層導覽，不是總覽卡片；以執行秘書 hosted acceptance `34577046356` 完成生日、文件、活動與活動封面流程。
 - 修正 LINE OA 自動配對只看 `membership_status` 的缺口：新增日期窗口檢查，active 但尚未開始或已過 `ended_on` 的社籍不會自動配對；新增 migration `20260911000300_line_oa_pairing_membership_window.sql`，並補上對應 verification。
-- 共用旗標評估器已將 `line_oa_auto_pairing_v1` 納入明確開啟清單；缺少設定時維持 fail-closed，補上 `src/lib/product/feature-flags.ts` 與回歸測試（commit `68b12a5`）。這是 main 的安全修補；exact-SHA 相符的 Staging Release Plan 尚在人工核准，尚未重新部署 staging。
+- 共用旗標評估器已將 `line_oa_auto_pairing_v1` 納入明確開啟清單；缺少設定時維持 fail-closed，補上 `src/lib/product/feature-flags.ts` 與回歸測試（commit `68b12a5`），並已由 Go-Live `34594381922` 部署 staging。
 - 本機 `npm test`：122 files／789 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
-待做：先把 scheduler secret 放入獨立的 `birthday-scheduler` GitHub environment，再用下一次生日 scheduler 實際驗證 LINE 邀請送達與重跑不重送；管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
+待做：在明確授權後同步 `birthday-scheduler` GitHub environment 與正確 Render staging service 的秘密值，再用下一次 birthday scheduler 實際驗證 LINE 邀請送達與重跑不重送；管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
 
 ## 本輪新增的 LINE OA 配對防護（2026-09-11）
 
@@ -409,10 +409,8 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
 ## 仍未完成／需外部條件
 
 - 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署與 hosted acceptance 均已完成；但最新 scheduler run
-  `34563427385` 是 `pending` 且沒有 jobs，日常自動排程仍是營運待辦，不應寫成全部完成。前一個 run
-  `34438617117` 已被新排程取消。歷史失敗 run
-  `33121570908`／`33121704322` 保留作為設定前的追蹤證據。
-- 排程不是程式錯誤：舊 workflow 綁定需人工審核的 `staging` environment。安全修法已落在 workflow 與獨立 `birthday-scheduler` environment；目前只差放入 scheduler secret 並驗證下一次 schedule，不能直接放寬 staging 的部署審核規則。
+  `34595040657` 已到達 protected staging route 但回 `401 unauthorized`；`34595311338` 因同一 concurrency queue 被取消。日常自動排程仍是營運待辦，不應寫成全部完成。
+- 排程不是程式錯誤：舊 workflow 綁定需人工審核的 `staging` environment 的問題已修正，現在使用獨立的 `birthday-scheduler` environment；GitHub 與正確 Render staging service 的 scheduler secret 名稱都存在，但秘密值不一致。取得明確授權後同步兩端秘密值，再驗證下一次 schedule，不能直接放寬 staging 的部署審核規則。
 - GPS accuracy 政策已於 2026-08-31 決定：不設門檻，維持 200 公尺距離判定。這一項已結案，不是待辦。
 - recovery 的 Management API token 已修復、redirect 已同步；custom SMTP 與 recovery email 依產品決定暫緩，
   在重新啟動前不要用 recovery 信件當驗收證據。
@@ -445,17 +443,17 @@ staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
 staging birthday scheduler        historical passed (run 33361427466; protected staging route)
-latest birthday scheduler         pending (run 34563427385; no jobs)
+latest birthday scheduler         failed (run 34595040657; route returned 401)
 staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
 staging Auth fix commits           lint / typecheck / 647 tests passed locally;
                                   CI skipped by instruction ([skip ci])
-staging plan (current round)       passed (run 34580616980; exact SHA e1ea85c)
-staging Go-Live (current round)    passed (run 34580767172; revision e1ea85c,
+staging plan (current round)       passed (run 34586642034; exact SHA e6ff5b)
+staging Go-Live (current round)    passed (run 34594381922; revision e6ff5b,
                                   migration + smoke + hosted member acceptance passed)
 staging management acceptance      passed (run 34577046356; exact SHA a8c1e55,
                                   birthday + archive + event + cover flows passed)
-staging health (current)           status=ok; revision e1ea85c3e941;
+staging health (current)           status=ok; revision e6ff5b9854ef;
                                   issues=[]; warnings=[]
 ```
 

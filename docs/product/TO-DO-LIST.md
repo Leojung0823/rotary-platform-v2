@@ -13,25 +13,25 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；產品 release `a8c1e55` 修正管理模式 hosted 驗收腳本的活動入口，後續 `e1ea85c` 再補上 LINE OA 自動配對的有效社籍日期窗口防護。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `e6ff5b9854ef`，Go-Live run 是 `34594381922`。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
 生日邀請的實際送達驗收。
 
-另補上 `line_oa_auto_pairing_v1` 共用旗標判斷的明確開啟要求（`68b12a5`）；main 已修正，尚未隨下一次 release 部署 staging。
+另補上 `line_oa_auto_pairing_v1` 共用旗標判斷的明確開啟要求（`68b12a5`）；已隨 Go-Live `34594381922` 部署 staging。
 
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-11 的權威基準：本輪產品程式修補基準是 `68b12a56a21e02e08ece4c91644ec74cad9b70f9`；本次文件同步前的 `main` 文件 commit 是 `e5b2f51`；最新產品／staging runtime revision 是
-`e1ea85c3e941528731c0b34b724296ffd0498946`；本輪新增 LINE OA 自動配對的有效社籍日期窗口防護。
-staging `/api/health` 回報 revision `e1ea85c3e941`、`status=ok`、`issues=[]`、`warnings=[]`。
+截至 2026-09-11 的權威基準：`main` 與最新 staging runtime 都對準
+`e6ff5b9854ef9fa502f468f23efec6fa62241ac3`；staging `/api/health` 回報
+`revision=e6ff5b9854ef`、`status=ok`、`issues=[]`、`warnings=[]`。本次文件同步只會新增文件 commit，不會改變 runtime。
 最新已部署 migration 是
 `20260911000300_line_oa_pairing_membership_window.sql`。
 
-本輪產品修補的完整 `CI` `34580607934`、`Browser Smoke` `34580600621`，以及本次修補的 Staging Release Plan `34580616980`、
-Staging Go-Live `34580767172` 均成功完成；Go-Live 的 HTTPS smoke 與 hosted member acceptance 也通過。
+本輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
+Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS smoke 與 hosted member acceptance 均通過。
 之後 docs-only 文件同步的 `CI` `34583431760`、`Browser Smoke` `34583431873` 僅執行變更範圍分類器，完整 jobs 依 gate 跳過。
 產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance
 `34577046356` 亦已成功完成；執行秘書管理驗收也通過。
@@ -39,15 +39,12 @@ Staging Go-Live `34580767172` 均成功完成；Go-Live 的 HTTPS smoke 與 host
 `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718`
 均成功。管理驗收第一次 run `34575792573` 是驗收腳本誤找不存在的活動卡片；修正為點第一層「活動」導覽後重跑成功。
 
-`68b12a5` 的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功（Browser Smoke 完整流程與 rollback 檢查通過）。
-過時的 Staging Release Plan 已取消；目前已重新建立對準 `main` 的 Staging Release Plan，正在等待 staging environment
-人工核准，尚未部署這個旗標安全修補。執行 Go-Live 前，必須再次確認 plan 的 `headSha` 與當下
-`git rev-parse origin/main` 完全相同。
+`68b12a5` 的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功，並已由 `34594381922` 部署到 staging；沒有待核准的同一輪 Go-Live。
 
-生日旗標與 Render staging 的 scheduler secret 已由受保護流程設定；GitHub workflow 已改用獨立的
-`birthday-scheduler` environment，但該環境目前尚未放入 scheduler secret。歷史 hosted acceptance
-`33345182984` 與歷史成功排程 `33361427466` 均通過；但最新排程 run `34563427385` 目前 `pending`
-且沒有 jobs，日常自動執行尚未證明。
+生日旗標與正確 Render staging service 的 scheduler secret 名稱均已設定；GitHub workflow 已改用獨立的
+`birthday-scheduler` environment，且 secret 名稱已存在，但兩邊的秘密值目前不一致。最新排程
+`34595040657` 已打到 staging route 後回 `401 unauthorized`；`34595311338` 因同一 concurrency queue 被取消，
+所以日常自動執行與 LINE 邀請送達仍尚未證明。
 production 沒有修改，目前沒有 open PR。
 
 ## 逐項狀態
@@ -183,11 +180,11 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 - service-role-only scheduler、訊息通知冪等、feature flag EXECUTE 邊界與 verification。
 
 已完成 staging 外部啟用與核心驗收：平台管理員透過受保護 CLI 開啟
-`birthday_wishes_v2`、`birthday_wishes_collection_v1`；Render staging 的
-`BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已設定。GitHub workflow 已改用獨立的
-`birthday-scheduler` environment，但該環境目前尚未放入同名 secret。current-main hosted acceptance `33345182984`
-已驗證生日 V2 與徵集入口，歷史排程 workflow `33361427466` 也曾成功呼叫 protected staging route。
-但最新排程 run `34563427385` 目前為 `pending`、沒有 jobs。已查明原因是舊 workflow 綁在需要人工核准的 `staging` environment；每日 schedule 會先停在環境審核，不能把 staging 保護直接移除。現在 workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，staging URL 已設定；新 environment 的 scheduler secret 尚未放入，仍要補入後再驗證實際執行。
+`birthday_wishes_v2`、`birthday_wishes_collection_v1`；正確 Render staging service 的
+`BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 名稱已設定。GitHub workflow 已改用獨立的
+`birthday-scheduler` environment，secret 名稱也已存在；但兩端秘密值目前不一致。最新 scheduler
+`34595040657` 已呼叫 protected staging route 後回 `401 unauthorized`，`34595311338` 因 concurrency queue 被取消。
+環境隔離問題已修正，不能把 staging 保護直接移除；同步兩端秘密值後仍要再驗證實際執行。
 歷史失敗 run `33121570908`／`33121704322` 保留作為啟用前的追蹤證據；M1 真人使用者測試仍是另一個待辦。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
@@ -399,11 +396,11 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-11；本輪部署後基準）
 
-- staging runtime revision 為 `e1ea85c3e941528731c0b34b724296ffd0498946`；main 另有尚未部署 staging 的旗標安全修補 `68b12a5`；沒有 open PR。
-- staging health：revision `e1ea85c3e941`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
+- staging runtime revision 為 `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`；`68b12a5` 的旗標安全修補已部署；沒有 open PR。
+- staging health：revision `e6ff5b9854ef`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - `20260911000300_line_oa_pairing_membership_window.sql` 已部署；active 但 `ended_on` 已過期的社籍不再可自動配對。
-- 本次修補 push 後的 `CI` `34580607934`、`Browser Smoke` `34580600621`：以 `e1ea85c` 成功完成；先前產品 release 的 CI／Browser Smoke 亦已成功。
-- Staging Release Plan `34580616980`、Staging Go-Live `34580767172`：以 `e1ea85c` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
+- 本次修補 push 後的 `CI` `34584379642`、`Browser Smoke` `34584379653`：以 `68b12a5` 成功完成；先前產品 release 的 CI／Browser Smoke 亦已成功。
+- Staging Release Plan `34586642034`、Staging Go-Live `34594381922`：以 `e6ff5b` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
 - Staging Management Acceptance `34577046356`：以 `a8c1e55` 通過；執行秘書完成生日、文件、活動與活動封面流程。
-- 最新 Birthday Collection Scheduler `34563427385`：`pending`、無 jobs；每日自動排程目前未證明。
+- 最新 Birthday Collection Scheduler `34595040657`：`failure`、route 回 `401 unauthorized`；兩端 scheduler secret 尚未同步，每日自動排程目前未證明。
 - 目前沒有 open PR；production 沒有修改。
