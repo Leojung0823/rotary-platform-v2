@@ -59,6 +59,7 @@
 ### E-06 登入後管理頁效能量測 `[>]`
 
 - **外部條件**：需要已登入的 staging 管理帳號與 Chrome DevTools 效能工具；目前只有未登入 `/login` 的 lab 數字，管理頁 TTFB／LCP／FCP 尚未量測。
+- **最新工具狀態（2026-09-12）**：Chrome DevTools MCP 目前只連到未登入的 `/login`；已登入管理頁在另一個瀏覽器 session，尚未取得同一 session 的 trace，因此管理頁數字維持「未量測」。
 - **完成證據**：同一帳號、同一社、同一網路條件，取得改版前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。
 
 ### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`

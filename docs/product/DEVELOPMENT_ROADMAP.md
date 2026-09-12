@@ -41,6 +41,7 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
 
 2026-09-12 登入 staging 管理頁核對 `PANCHIAO-ELITE`：3 筆 follower 仍在追蹤且已配對，既有推播紀錄可見；
 Flex 操作區因 `line_oa_flex_templates_v1` 尚未開啟而不顯示。此為 OA 基礎狀態證據，不等於 Flex 真人收訊已完成。
+同日 Chrome DevTools MCP 只有未登入 `/login` 頁面，尚未取得已登入管理頁的 trace；管理頁 TTFB／LCP／FCP 維持未量測。
 
 2026-09-12 新增管理模式的「驗證 LINE OA」按鈕。伺服器會重新檢查 `oa.manage`，從該社環境變數讀取
 channel access token，呼叫 LINE `/v2/bot/info` 並核對 Basic ID，再透過既有 service-only RPC 記錄結果。
