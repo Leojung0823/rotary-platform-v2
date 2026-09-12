@@ -498,8 +498,8 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-12；本輪部署後基準）
 
-- `origin/main` 為 `fbdc061dd702f453ab340bd595279223487d0838`；PR #98 merge commit 為
-  `55047dd1f2d936a5147458fd16faa5038b068c3d`；目前沒有 open PR。
+- 本輪 staging release 採用的 `main` exact SHA 為 `fbdc061dd702f453ab340bd595279223487d0838`；PR #98 merge commit 為
+  `55047dd1f2d936a5147458fd16faa5038b068c3d`；目前沒有 open PR，後續 `main` 文件同步 commit 不改產品部署內容。
 - staging runtime revision 為 `fbdc061dd702`，已包含 Flex migration，但 `line_oa_flex_templates_v1` 尚未開啟。
 - Flex Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，核對同一個 exact SHA `fbdc061`。
 - staging `/api/health`：`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。

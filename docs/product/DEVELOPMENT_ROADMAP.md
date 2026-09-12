@@ -17,7 +17,7 @@
 
 截至 2026-09-12 的實際掃描基準：
 
-- `main` HEAD 為 `fbdc061dd702f453ab340bd595279223487d0838`；staging 產品 runtime 已部署到 `fbdc061dd702`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
+- 本輪 staging release 採用的 `main` exact SHA 為 `fbdc061dd702f453ab340bd595279223487d0838`；staging 產品 runtime 已部署到 `fbdc061dd702`。其後只同步文件，沒有改產品程式或資料庫。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
 - staging `/api/health` 回報 `status=ok`、`revision=fbdc061dd702`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
 - 最新 staging Go-Live 是 `34686702234`，以 exact SHA `fbdc061dd702f453ab340bd595279223487d0838` 成功完成 migration、部署、HTTPS smoke 與 hosted member acceptance；最新 migration 是 `20260912000200_line_oa_flex_templates_flag.sql`。
 - 本輪 Flex 的 Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均以同一個 `main` exact SHA `fbdc061dd702f453ab340bd595279223487d0838` 成功完成；migration 已套用到 staging，但 `line_oa_flex_templates_v1` 尚未開啟，真人收訊仍待驗收。
@@ -130,7 +130,7 @@ Phase 2 之後追加並完成的社務功能：
 
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
 - GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見 `TO-DO-LIST.md` 第 1 節。
-- staging 目前 runtime 是 `fbdc061dd702`，`/api/health` 的 `issues` 與 `warnings` 都是空的；`main` 已前進至 `fbdc061dd702f453ab340bd595279223487d0838`，Flex migration 已部署但旗標尚未開啟。閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
+- staging 目前 runtime 是 `fbdc061dd702`，`/api/health` 的 `issues` 與 `warnings` 都是空的；本輪 staging release 採用的 `main` exact SHA 是 `fbdc061dd702f453ab340bd595279223487d0838`，Flex migration 已部署但旗標尚未開啟。閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威，並把後續純文件 commit 與產品部署 SHA 分開看。
 - Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
 - 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `fbdc061dd702`；生日旗標、Render scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。最新 scheduler `34673612440` 成功，但沒有符合條件的 LINE 收件人（`jobCount=0`、`sentCount=0`），每日實際送達仍需外部驗收。
 - 生日 scheduler 的環境隔離問題已修正：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護；secret 已同步。不可移除 staging 保護或把部署用 secrets 暴露給無審核 job。
