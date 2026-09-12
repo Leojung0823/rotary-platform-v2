@@ -16,10 +16,11 @@
 ### E-01 Flex 卡片 staging 發布與真人收訊 `[>]`
 
 - **目前證據**：程式、migration、旗標、權限邊界與本機 E2E 已完成；PR #98 已合併至 `main` merge commit
-  `55047dd1f2d936a5147458fd16faa5038b068c3d`。Staging Release Plan `34686141978` 已以
-  `main` exact SHA `62af8a6dd82ebf81214b4fbbf5a3b69c6a7adccb` 成功完成 dry-run；staging 仍是上一個已部署版本，最新 migration 是
-  `20260912000100_line_oa_unpair_rebind.sql`，`20260912000200_line_oa_flex_templates_flag.sql` 尚未部署。
-- **外部動作**：依受保護流程先做 Staging Release Plan，再做 Staging Go-Live；確認 migration 成功後，平台管理員才執行
+  `55047dd1f2d936a5147458fd16faa5038b068c3d`。Staging Release Plan `34686603765` 與 Go-Live
+  `34686702234` 已以同一個 `main` exact SHA `fbdc061dd702f453ab340bd595279223487d0838` 成功完成；staging
+  `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`，最新 migration 已是
+  `20260912000200_line_oa_flex_templates_flag.sql`，但旗標尚未開啟。
+- **外部動作**：平台管理員先執行
   `npm run flags:enable:staging -- line_oa_flex_templates_v1`。
 - **完成證據**：staging `/api/health` 的 revision 與 Go-Live exact SHA 相符、`issues=[]`；管理頁可預覽並指定測試 follower
   發送；`line_push_logs` 為 `sent` 且有 provider request id；旗標關閉時沒有 LINE API 請求。
@@ -100,7 +101,7 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置；自動化檢查不取代
 E-06／E-07 的登入後效能量測與實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `3e883228e58e`，Go-Live run 是 `34668149625`。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `fbdc061dd702`，Flex Go-Live run 是 `34686702234`。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
@@ -111,9 +112,9 @@ E-06／E-07 的登入後效能量測與實機驗收。生日 V2 核心、生日�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-12 的權威基準：`main` HEAD 為 `62af8a6dd82ebf81214b4fbbf5a3b69c6a7adccb`，
-staging 最新產品 runtime 為 `3e883228e58e`；staging `/api/health` 回報
-`revision=3e883228e58e`、`status=ok`、`issues=[]`、`warnings=[]`。Flex 第一版已進入 main，Plan `34686141978` 已成功，但尚未部署 staging。
+截至 2026-09-12 的權威基準：本輪 staging release 採用的 `main` exact SHA 為 `fbdc061dd702f453ab340bd595279223487d0838`，
+staging 最新產品 runtime 為 `fbdc061dd702`；staging `/api/health` 回報
+`revision=fbdc061dd702`、`status=ok`、`issues=[]`、`warnings=[]`。Flex 第一版已進入 main，Plan `34686603765` 與 Go-Live `34686702234` 均成功，已部署 staging，但旗標尚未開啟。
 最新已部署 migration 是
 `20260912000100_line_oa_unpair_rebind.sql`；下一個待部署的是 `20260912000200_line_oa_flex_templates_flag.sql`。
 
@@ -123,8 +124,8 @@ Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS sm
 產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance
  `34577046356` 亦已成功完成；執行秘書管理驗收也通過。
 
-PR #98 合併後的 `CI` `34685398379` 已成功；本次 docs-only 同步後的 `CI` `34686088187` 與
-`Browser Smoke` `34686088202` 均成功，變更範圍分類器判定為文件變更，完整 database／member-browser jobs 依規則跳過。
+PR #98 合併後的 `CI` `34685398379` 已成功；本輪文件同步前後的 `CI` `34686598214` 與
+`Browser Smoke` `34686598210` 均成功，文件變更的完整 database／member-browser jobs 依規則跳過。
 
 先前新增的「管理模式 → LINE OA → 驗證 LINE OA」：伺服器會先檢查 `oa.manage`，再依路由上的該社 `clubId`
 讀取該社 server environment
@@ -497,13 +498,13 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-12；本輪部署後基準）
 
-- `origin/main` 為 `62af8a6dd82ebf81214b4fbbf5a3b69c6a7adccb`；PR #98 merge commit 為
+- `origin/main` 為 `fbdc061dd702f453ab340bd595279223487d0838`；PR #98 merge commit 為
   `55047dd1f2d936a5147458fd16faa5038b068c3d`；目前沒有 open PR。
-- staging runtime revision 為 `3e883228e58e`，尚未包含 `62af8a6`；因此 Flex migration 尚未部署，旗標也尚未開啟。
-- Flex Staging Release Plan `34686141978` 已成功完成 dry-run，核對 exact SHA `62af8a6`；尚未執行 Go-Live。
+- staging runtime revision 為 `fbdc061dd702`，已包含 Flex migration，但 `line_oa_flex_templates_v1` 尚未開啟。
+- Flex Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，核對同一個 exact SHA `fbdc061`。
 - staging `/api/health`：`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
-- staging Go-Live `34668149625` 以 exact SHA `3e883228e58e…` 成功；最新已部署 migration 是
-  `20260912000100_line_oa_unpair_rebind.sql`。
-- docs-only 同步後的 `CI` `34686088187` 與 `Browser Smoke` `34686088202` 均成功；完整 database／member-browser jobs 依變更範圍 gate 跳過。
+- staging Go-Live `34686702234` 以 exact SHA `fbdc061…` 成功；最新已部署 migration 是
+  `20260912000200_line_oa_flex_templates_flag.sql`。
+- 本輪文件同步後的 `CI` `34686598214` 與 `Browser Smoke` `34686598210` 均成功；完整 database／member-browser jobs 依變更範圍 gate 跳過。
 - 最新 Birthday Collection Scheduler `34673612440` 成功，但 `line_push.jobCount=0`、`sentCount=0`；生日邀請實際送達仍是 E-02。
 - production 沒有修改；所有需要外部平台、真人或產品決定的項目均已集中列在 E-01–E-11。

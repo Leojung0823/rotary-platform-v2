@@ -14,34 +14,34 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 本機已通過 126 個測試檔／828 個測試、typecheck、lint、build、migration guard、verification manifest、
 `npm run verify:db` 與 `git diff --check`；資料庫驗證包含新 Flex 旗標的預設關閉與權限邊界。新增的 line OA
 瀏覽器驗收 4/4 通過。PR #98 已合併至 `main`，merge commit 是
-`55047dd1f2d936a5147458fd16faa5038b068c3d`；本輪 migration 尚未部署，
-`line_oa_flex_templates_v1` 尚未在 staging 開啟。
+`55047dd1f2d936a5147458fd16faa5038b068c3d`；本輪 migration 已由 Go-Live `34686702234` 部署，
+`line_oa_flex_templates_v1` 尚未在 staging 開啟，真人收訊仍待驗收。
 
 ## 最新狀態核對（2026-09-12；本輪部署後基準）
 
-- 本次最新核對的 `main` HEAD 為 `62af8a6dd82ebf81214b4fbbf5a3b69c6a7adccb`；staging 產品 runtime 仍為
-  `3e883228e58e`，尚未包含 Flex；目前沒有 open PR，PR #98 已合併。
-- staging `/api/health` 回報 `status=ok`、revision `3e883228e58e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與上一個 Go-Live 的 exact SHA 相符。
-- Flex 本輪的 Staging Release Plan `34686141978` 已成功完成 dry-run，核對 exact SHA
-  `62af8a6dd82ebf81214b4fbbf5a3b69c6a7adccb`；尚未執行 Go-Live，staging migration 與 runtime 尚未更新。
+- 本次最新核對的 `main` HEAD 為 `fbdc061dd702f453ab340bd595279223487d0838`；staging 產品 runtime 已為
+  `fbdc061dd702`，已包含 Flex migration；目前沒有 open PR，PR #98 已合併。
+- staging `/api/health` 回報 `status=ok`、revision `fbdc061dd702`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
+- Flex 本輪的 Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，且使用同一個 exact SHA
+  `fbdc061dd702f453ab340bd595279223487d0838`；migration 已部署，旗標尚未開啟。
 - 上一個版本的 Staging Release Plan `34668072136` 與 Staging Go-Live `34668149625` 均成功；`3e88322` 的 CI 與 Browser Smoke 也已成功。
-- 本次 docs-only 同步後的 CI `34686088187` 與 Browser Smoke `34686088202` 均成功；變更範圍分類器判定為文件變更，完整 database／member-browser jobs 依規則跳過。
+- 本輪文件同步前後的 CI `34686598214` 與 Browser Smoke `34686598210` 均成功；變更範圍分類器判定為文件變更，完整 database／member-browser jobs 依規則跳過。
 - 管理模式 → LINE OA 已有「驗證 LINE OA」按鈕；伺服器會檢查 `oa.manage`、依該社 `clubId` 讀取該社 server token、呼叫 LINE `/v2/bot/info`、核對 Basic ID，再使用既有 service-only RPC 記錄結果。已由具有 `PANCHIAO-ELITE` 社 `oa.manage` 的帳號在正確管理路由驗證成功；使用的是正確的 `LINE_OA_PANCHIAO_ELITE_*` namespace，Webhook 卡片也顯示最近簽章有效。社員端切換到板橋群英扶輪社後，`/me/line-oa` 已顯示加入連結；`HAPPY` 必須另用自己的 `LINE_OA_HAPPY_*`，不可跨社 fallback。下一步是 follow 事件自動配對真人驗收。
-- 最新 staging Go-Live `34668149625` 已以 exact SHA `3e883228e58e` 部署；最新 migration 是 `20260912000100_line_oa_unpair_rebind.sql`。
+- 最新 staging Go-Live `34686702234` 已以 exact SHA `fbdc061dd702f453ab340bd595279223487d0838` 部署；最新 migration 是 `20260912000200_line_oa_flex_templates_flag.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
 - 前一輪 docs-only commit 的 `CI` `34583431760`、`Browser Smoke` `34583431873` 變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；前一輪產品 release 的 Staging Release Plan `34586642034`、Staging Go-Live `34594381922` 均成功完成，管理驗收 `34577046356` 亦已成功。
 - 管理驗收第一次 run `34575792573` 因腳本誤找不存在的 `management-card-events` 失敗；改點管理模式第一層「活動」導覽後，`34577046356` 成功完成活動建立、封面上傳、發布與取消。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34673612440` 已成功；但 `line_push.jobCount=0`、`sentCount=0`，代表尚未證明生日邀請實際送到 LINE。GitHub `birthday-scheduler` environment 與正確 Render staging service 的 secret 已同步，目前不是 secret 不一致問題。
 - 排程環境隔離的程式修法已完成：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護。下一步是準備符合條件的測試收件人，重跑 scheduler 驗證實際收件與冪等；不要把秘密寫入 repo，也不要移除 staging 部署保護。
-- production 沒有修改；staging 最新 migration 是 `20260912000100_line_oa_unpair_rebind.sql`；PR #98 的 `20260912000200_line_oa_flex_templates_flag.sql` 尚未部署。Plan `34686141978` 已成功，下一步是受保護 Go-Live。
-- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由前一輪 Go-Live `34594381922` 部署到 staging；本輪合併後的 Flex migration 尚未部署。
+- production 沒有修改；staging 最新 migration 是 `20260912000200_line_oa_flex_templates_flag.sql`；Flex Go-Live `34686702234` 已成功，下一步是開啟 staging 旗標並做真人收訊。
+- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由前一輪 Go-Live `34594381922` 部署到 staging；本輪 Flex migration 已由 Go-Live `34686702234` 部署。
 
 外部處理的唯一清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-11，涵蓋 Flex staging、生日邀請送達、follow 配對、各社 OA、額度政策、效能量測、實機／M1、雙重社籍、production 準備、暫緩的 recovery email 與 Rich Menu。
 
 ## 前一輪已合併並部署的待辦收尾（2026-09-12）
 
-目前上一個已部署產品 commit `3e883228e58e` 已完成 staging Go-Live；PR #98 的 Flex 程式已合併至 `main`，但尚未部署 staging。產品與驗證文件已同步。已完成：
+本輪已部署產品 commit `fbdc061dd702` 已完成 staging Go-Live；PR #98 的 Flex 程式與 migration 已部署到 staging，旗標仍關閉，真人收訊尚待驗收。產品與驗證文件已同步。已完成：
 
 - webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
 - LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
@@ -475,15 +475,17 @@ staging Auth fix commits           lint / typecheck / 647 tests passed locally;
 staging plan (previous deployed)   passed (run 34668072136; exact SHA 3e88322)
 staging Go-Live (latest round)     passed (run 34668149625; revision 3e88322,
                                   migration + smoke + hosted member acceptance passed)
-staging plan (Flex current)        passed (run 34686141978; exact SHA 62af8a6,
-                                  dry-run only; Go-Live not run)
-CI (docs-only sync)                passed (run 34686088187; classifier passed,
+staging plan (Flex current)        passed (run 34686603765; exact SHA fbdc061,
+                                  dry-run completed)
+staging Go-Live (Flex current)     passed (run 34686702234; revision fbdc061,
+                                  migration + smoke + hosted member acceptance passed)
+CI (docs-only sync)                passed (run 34686598214; classifier passed,
                                   full database/member-browser jobs skipped)
-Browser Smoke (docs-only sync)     passed (run 34686088202; classifier passed,
+Browser Smoke (docs-only sync)     passed (run 34686598210; classifier passed,
                                   member-browser job skipped)
 staging management acceptance      passed (run 34577046356; exact SHA a8c1e55,
                                   birthday + archive + event + cover flows passed)
-staging health (current)           status=ok; revision 3e883228e58e;
+staging health (current)           status=ok; revision fbdc061dd702;
                                   issues=[]; warnings=[]
 ```
 
