@@ -9,7 +9,7 @@ vi.mock("./oa-dispatch", () => ({
   deliverClubOaText,
 }));
 
-const { pushBirthdayCollectionNotifications } = await import("./birthday-collection-push");
+const { pushBirthdayCollectionNotifications, resolveInvitationLink, composeBirthdayInvitationText } = await import("./birthday-collection-push");
 
 const clubId = "11111111-1111-4111-8111-111111111111";
 const messageId = "22222222-2222-4222-8222-222222222222";
@@ -115,5 +115,39 @@ describe("birthday collection LINE push", () => {
     const outcome = await pushBirthdayCollectionNotifications(supabase);
 
     expect(outcome).toEqual({ status: "failed", jobCount: 1, sentCount: 0, failedCount: 1 });
+  });
+});
+
+describe("birthday invitation link", () => {
+  const hosted = { APP_ENV: "staging", NEXT_PUBLIC_SITE_URL: "https://club.example.com" };
+
+  it("builds an absolute link from the in-app action path", () => {
+    expect(resolveInvitationLink("/birthday-collection?clubId=abc", hosted))
+      .toBe("https://club.example.com/birthday-collection?clubId=abc");
+  });
+
+  it("refuses a protocol-relative path that would resolve to another site", () => {
+    expect(resolveInvitationLink("//evil.example.net/steal", hosted)).toBeNull();
+  });
+
+  it("refuses an absolute external URL", () => {
+    expect(resolveInvitationLink("https://evil.example.net/steal", hosted)).toBeNull();
+  });
+
+  it("drops the link rather than throwing when the site origin is unusable", () => {
+    expect(resolveInvitationLink("/birthday-collection", { APP_ENV: "staging" })).toBeNull();
+  });
+
+  it("drops the link when there is no action path", () => {
+    expect(resolveInvitationLink(null, hosted)).toBeNull();
+  });
+
+  it("appends the link below the message text", () => {
+    expect(composeBirthdayInvitationText("標題", "內文", "https://club.example.com/x"))
+      .toBe("標題\n\n內文\n\nhttps://club.example.com/x");
+  });
+
+  it("sends the message unchanged when there is no link", () => {
+    expect(composeBirthdayInvitationText("標題", "內文", null)).toBe("標題\n\n內文");
   });
 });
