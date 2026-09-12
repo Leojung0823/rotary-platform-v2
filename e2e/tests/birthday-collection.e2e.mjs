@@ -188,7 +188,7 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
       await birthdayClubChoice.click();
       await expect(memberPage).toHaveURL(/\/dashboard(?:\?mode=member)?$/u);
       await expect(memberPage.getByRole("heading", { name: "最新通知" })).toBeVisible();
-      await expect(memberPage.getByText("本月生日祝福任務", { exact: true })).toBeVisible();
+      await expect(memberPage.getByText("有位社友的生日快到了", { exact: true })).toBeVisible();
       await memberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
       const content = `瀏覽器生日徵集驗收 ${Date.now()}`;
       await assignment.fill(content);
@@ -197,7 +197,7 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
       await expect(assignment).toHaveValue(content);
 
       await memberPage.goto(new URL("/dashboard", baseURL).toString());
-      await expect(memberPage.getByText("本月生日祝福任務", { exact: true })).toHaveCount(0);
+      await expect(memberPage.getByText("有位社友的生日快到了", { exact: true })).toHaveCount(0);
       await memberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
 
       await page.reload();
