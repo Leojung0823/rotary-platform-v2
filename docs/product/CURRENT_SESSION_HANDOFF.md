@@ -27,6 +27,7 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 - 2026-09-12 登入 staging 管理頁核對 `PANCHIAO-ELITE`：3 筆 follower 仍在追蹤且已配對，既有推播紀錄可見；
   Flex 操作區因 `line_oa_flex_templates_v1` 尚未開啟而不顯示。這只證明 OA 基礎狀態，不等於 Flex 真人收訊完成。
 - Chrome DevTools MCP 目前只有未登入 `/login` 頁面；已登入管理頁的 TTFB／LCP／FCP 尚未量測，不能把 `/login` 數字當成管理頁結果。
+- 目前登入帳號開啟 `/platform/clubs` 會被 staging 後端導向 `/access-denied`，確認它是社務管理員而非平台管理員；開旗標要改用 `platform_admin`／`superadmin` 帳號執行受保護 CLI。
 - 上一個版本的 Staging Release Plan `34668072136` 與 Staging Go-Live `34668149625` 均成功；`3e88322` 的 CI 與 Browser Smoke 也已成功。
 - 本輪文件同步前後的 CI `34686598214` 與 Browser Smoke `34686598210` 均成功；變更範圍分類器判定為文件變更，完整 database／member-browser jobs 依規則跳過。
 - 管理模式 → LINE OA 已有「驗證 LINE OA」按鈕；伺服器會檢查 `oa.manage`、依該社 `clubId` 讀取該社 server token、呼叫 LINE `/v2/bot/info`、核對 Basic ID，再使用既有 service-only RPC 記錄結果。已由具有 `PANCHIAO-ELITE` 社 `oa.manage` 的帳號在正確管理路由驗證成功；使用的是正確的 `LINE_OA_PANCHIAO_ELITE_*` namespace，Webhook 卡片也顯示最近簽章有效。社員端切換到板橋群英扶輪社後，`/me/line-oa` 已顯示加入連結；`HAPPY` 必須另用自己的 `LINE_OA_HAPPY_*`，不可跨社 fallback。下一步是 follow 事件自動配對真人驗收。
