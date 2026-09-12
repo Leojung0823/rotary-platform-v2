@@ -27,10 +27,10 @@
   不是 production 的 `xglsrxfnxsmiwtfhbdqg`。密碼由終端機隱藏輸入，沒有進 `.env.staging`、
   shell history 或 process list。
 - **真人收訊已通過（2026-09-12）**：旗標開啟後管理頁出現卡片格式選擇與卡片預覽；以 AudiencePicker
-  指定單一測試社員、用 `multicast` 傳送，真人手機**實際收到 Flex 卡片**。第一次測試沒有使用全社
-  broadcast，符合安全界線。
-- **仍缺**：`line_push_logs` 該列是否為 `sent` 且帶 provider request id 尚未回頭核對；三種模板
-  （社務公告／活動提醒／生日祝福）是否都各送過一次也尚未逐一記錄。補上這兩項才能改成 `[x]`。
+  指定單一測試社員、用 `multicast` 傳送，**三種模板（社務公告、活動提醒、生日祝福）各送出一次，
+  真人手機三張 Flex 卡片全部實際收到**。第一次測試沒有使用全社 broadcast，符合安全界線。
+- **仍缺**：`line_push_logs` 這三列是否為 `sent` 且帶 provider request id 尚未回頭核對。
+  補上這一項才能改成 `[x]`。
 - **旗標開啟前的核對（2026-09-12）**：已登入的 staging 管理頁可正確切到 `PANCHIAO-ELITE`，可看到
   3 筆仍在追蹤且已配對的 follower 與既有推播紀錄；當時旗標關閉，管理頁不顯示 Flex 模板操作區，
   這是「旗標關閉時不會送出 LINE 請求」的畫面層證據。
@@ -446,7 +446,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   已部署到 staging；最新 scheduler `34673612440` 成功但 `jobCount=0`、`sentCount=0`，仍待有收件人的實際邀請 LINE 送達驗收。通知目前由
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
-- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`，migration 已部署到 staging；staging 旗標已於 2026-09-12 開啟，指定對象的 Flex 卡片已實際送達真人手機，剩餘核對見 E-01。
+- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`，migration 已部署到 staging；staging 旗標已於 2026-09-12 開啟，三種卡片模板均已對指定對象實際送達真人手機，剩餘核對見 E-01。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
   共用旗標判斷的 fail-closed 修補也已隨 Go-Live `34594381922` 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 
@@ -486,7 +486,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 唯一的外部待辦清單是本文件前面的 E-01–E-11；執行順序如下：
 
-1. **E-01：Flex staging 發布與真人收訊** `[>]`：Plan、Go-Live、staging 旗標啟用與指定測試社員的真人收訊都已通過；只剩回頭核對 `line_push_logs` 的 `sent` 與 provider request id，並補測另外兩種卡片模板。
+1. **E-01：Flex staging 發布與真人收訊** `[>]`：Plan、Go-Live、staging 旗標啟用與三種卡片模板的真人收訊都已通過；只剩回頭核對 `line_push_logs` 的 `sent` 與 provider request id。
 2. **E-02：生日邀請 LINE 實際送達** `[>]`：準備有配對且開啟通知的測試社員，確認第一次收件與第二次不重送。
 3. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
