@@ -116,7 +116,7 @@ follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精�
 staging 最新產品 runtime 為 `fbdc061dd702`；staging `/api/health` 回報
 `revision=fbdc061dd702`、`status=ok`、`issues=[]`、`warnings=[]`。Flex 第一版已進入 main，Plan `34686603765` 與 Go-Live `34686702234` 均成功，已部署 staging，但旗標尚未開啟。
 最新已部署 migration 是
-`20260912000100_line_oa_unpair_rebind.sql`；下一個待部署的是 `20260912000200_line_oa_flex_templates_flag.sql`。
+`20260912000200_line_oa_flex_templates_flag.sql`；Flex 旗標尚未開啟。
 
 前一輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
 Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS smoke 與 hosted member acceptance 均通過。
@@ -430,7 +430,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   已部署到 staging；最新 scheduler `34673612440` 成功但 `jobCount=0`、`sentCount=0`，仍待有收件人的實際邀請 LINE 送達驗收。通知目前由
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
-- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`；尚待 migration 部署、staging 旗標啟用與 LINE 實際送達驗收，見 E-01。
+- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`，migration 已部署到 staging；尚待 staging 旗標啟用與 LINE 實際送達驗收，見 E-01。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
   共用旗標判斷的 fail-closed 修補也已隨 Go-Live `34594381922` 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 
@@ -470,7 +470,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 唯一的外部待辦清單是本文件前面的 E-01–E-11；執行順序如下：
 
-1. **E-01：Flex staging 發布與真人收訊** `[>]`：先走受保護 Staging Release／Go-Live，migration 成功後才開旗標。
+1. **E-01：Flex staging 發布與真人收訊** `[>]`：Plan 與 Go-Live 已通過；下一步是開啟 staging 旗標並用指定測試 follower 完成真人收訊。
 2. **E-02：生日邀請 LINE 實際送達** `[>]`：準備有配對且開啟通知的測試社員，確認第一次收件與第二次不重送。
 3. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
