@@ -28,8 +28,15 @@
   shell history 或 process list。
 - **真人收訊已通過（2026-09-12）**：旗標開啟後管理頁出現卡片格式選擇與卡片預覽；以 AudiencePicker
   指定單一測試社員、用 `multicast` 傳送，**三種模板（社務公告、活動提醒、生日祝福）各送出一次，
-  真人手機三張 Flex 卡片全部實際收到**。第一次測試沒有使用全社 broadcast，符合安全界線。
-- **仍缺**：`line_push_logs` 這三列是否為 `sent` 且帶 provider request id 尚未回頭核對。
+  真人手機三張 Flex 卡片全部實際收到**。管理頁推播紀錄顯示 12:31–12:35 之間的測試列狀態全為 `sent`。
+- **本輪確有一筆全社 broadcast**：推播紀錄 12:32 有一列 `broadcast`、`recipient_count=3`、狀態 `sent`，
+  不是指定對象。安全界線寫的是「不用全社廣播做第一次測試」，這筆與該界線不符；staging 該社只有
+  3 個測試 follower，影響有限，但不應在 production 重複，紀錄於此以免日後誤以為從未發生。
+- **仍缺**：provider request id 尚未核對，而且**無法從管理頁核對**。值有寫入資料庫
+  （`messaging.ts` 取 `x-line-request-id` → `oa-dispatch.ts` 寫入
+  `line_push_logs.provider_request_id`），但 `get_line_oa_admin` 只投影
+  `id／kind／recipient_count／status／created_at`，沒有 request id。要核對只能用具備資料庫權限的
+  管道查 `line_push_logs`；本機 `.env.staging` 沒有 service role key，做不到。
   補上這一項才能改成 `[x]`。
 - **旗標開啟前的核對（2026-09-12）**：已登入的 staging 管理頁可正確切到 `PANCHIAO-ELITE`，可看到
   3 筆仍在追蹤且已配對的 follower 與既有推播紀錄；當時旗標關閉，管理頁不顯示 Flex 模板操作區，
