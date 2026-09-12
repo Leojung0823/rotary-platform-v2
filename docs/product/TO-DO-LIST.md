@@ -8,11 +8,97 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 外部處理待辦（唯一清單）
+
+以下項目不能只用本機測試或 GitHub CI 宣稱完成，必須有 LINE、Render、手機、真人或產品決策的證據。
+後續更新請先改這一節，再同步開發地圖與交接文件。
+
+### E-01 Flex 卡片 staging 發布與真人收訊 `[>]`
+
+- **目前證據**：程式、migration、旗標、權限邊界與本機 E2E 已完成；PR #98 已合併至 `main` merge commit
+  `55047dd1f2d936a5147458fd16faa5038b068c3d`。staging 仍是上一個已部署版本，最新 migration 是
+  `20260912000100_line_oa_unpair_rebind.sql`，`20260912000200_line_oa_flex_templates_flag.sql` 尚未部署。
+- **外部動作**：依受保護流程先做 Staging Release Plan，再做 Staging Go-Live；確認 migration 成功後，平台管理員才執行
+  `npm run flags:enable:staging -- line_oa_flex_templates_v1`。
+- **完成證據**：staging `/api/health` 的 revision 與 Go-Live exact SHA 相符、`issues=[]`；管理頁可預覽並指定測試 follower
+  發送；`line_push_logs` 為 `sent` 且有 provider request id；旗標關閉時沒有 LINE API 請求。
+- **安全界線**：不開 production、不把 token 放進 repo、不用全社廣播做第一次測試。
+
+### E-02 生日邀請 LINE 實際送達 `[>]`
+
+- **目前證據**：scheduler protected route 已成功執行；最新 run `34673612440` 回報成功，但
+  `generated_count=1`、`notified_count=1`、`line_push.jobCount=0`、`sentCount=0`，所以只證明排程路徑，不證明社員收到 LINE。
+- **外部動作**：準備一位已配對、仍追蹤本社 OA 且開啟通知的 staging 測試社員，建立當月可派發任務，執行一次 scheduler，確認手機收到邀請；再重跑一次。
+- **完成證據**：第一次有實際 LINE 收件、推播紀錄為 `sent` 且有 provider request id；未配對、取消追蹤、關閉通知者不收件；第二次不重送。
+- **目前不需再做**：GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步，不能再把「secret 不一致」當成目前原因。
+
+### E-03 LINE Login 身份的 follow 自動配對真人驗收 `[>]`
+
+- **外部動作**：找一位已用同一個 staging LINE Login channel 登入過的社員，切到該社員所屬社，加入同一社 OA；記錄加入前後 follower 狀態，不手動下拉配對。
+- **完成證據**：follow webhook 成功、`person_id` 自動指向正確社員；再驗證多社、外社、停權與已過 `ended_on` 的社員不會誤配。
+- **必要條件**：LINE Developers Console webhook／Use webhook 維持開啟，測試者必須使用真實 LINE 帳號與正確社別 OA。
+
+### E-04 每社 LINE OA 與 channel 設定 `[!]`
+
+- **已完成**：`PANCHIAO-ELITE` 使用 `LINE_OA_PANCHIAO_ELITE_*`，staging 的管理頁身份驗證已成功。
+- **待產品決定**：若 `HAPPY` 也要使用 OA，必須建立 HAPPY 自己的 OA／Messaging API channel、自己的 webhook 與
+  `LINE_OA_HAPPY_*` server secrets；不能把 PANCHIAO 的 key 改名或跨社 fallback。
+- **完成證據**：每個要上線的社都通過 LINE `/v2/bot/info` Basic ID 核對、webhook Verify、follow 與指定對象推播驗收。
+
+### E-05 LINE 推播額度與超額政策 `[!]`
+
+- **外部動作**：由產品／平台管理員確認目前 LINE 方案、每月額度與 429 行為，決定超額時「停止並提示」或「照送並記錄」。
+- **完成證據**：決策寫入產品文件；必要時用受控測試驗證 500 人分批、429、重試與部分送達紀錄，不拿真實社員做壓力測試。
+
+### E-06 登入後管理頁效能量測 `[>]`
+
+- **外部條件**：需要已登入的 staging 管理帳號與 Chrome DevTools 效能工具；目前只有未登入 `/login` 的 lab 數字，管理頁 TTFB／LCP／FCP 尚未量測。
+- **完成證據**：同一帳號、同一社、同一網路條件，取得改版前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。
+
+### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
+
+- **外部動作**：用 iOS Safari、真實 Android Chrome，以及至少五位社員／幹部測試登入、導覽、簽到、生日祝福、LINE OA 導引與管理流程。
+- **完成證據**：逐項記錄裝置、瀏覽器、網路、結果與問題；自動化 Chromium 不能取代實機與訪談。
+
+### E-08 production 上線準備 `[!]`
+
+- **待產品／平台決定**：production 是否開啟各功能旗標、production LINE OA／Login channel、生日 scheduler、額度與維運責任。
+- **必要動作**：確認 production 備份／還原點、HTTPS 網域、server secrets、migration plan、人工核准閘門與回復步驟。
+- **安全界線**：本清單更新前 production 沒有修改；任何 production 操作要另開明確 release 任務。
+
+### E-09 Recovery email 與 custom SMTP `[!]`（暫緩）
+
+- **目前決策**：登入以 LINE 為主，recovery email 暫不重啟，不列為目前 release blocker。
+- **重啟條件**：production 上線前，或密碼登入比例上升／社員回報重設失敗。
+- **重啟後驗收**：設定 custom SMTP，完成「收到新信 → 點信 → 確認 → 更新密碼 → 重新登入」真人流程；不可用 Mailpit 代替。
+
+### E-10 雙重社籍／跨社執行秘書真人驗收 `[>]`
+
+- **目前證據**：程式與資料庫規則已在 `main`／staging；同一個人可有多社有效社籍，也可同時擔任執行秘書，且社籍本身不會自動變成管理權限。
+- **外部動作**：準備一個同時具兩社有效社籍、其中一社另有執行秘書權限的 staging 測試帳號，實際切換社別與模式；再測外社執行秘書、停權／退社帳號。
+- **完成證據**：每個社只看到自己的資料；社員模式與管理模式能正確切換；沒有管理權的有效社員不能進管理頁；停權／退社不能取得原有權限。
+
+### E-11 LINE Rich Menu／完整 OA 整合 `[ ]`
+
+- **目前證據**：目前只有 LINE OA 設定、follow、手動推播、事件推播與 Flex 第一版；Rich Menu 尚未開發，不是本輪 staging blocker。
+- **外部動作**：產品先決定各社 Rich Menu 的入口與文案；開發完成後，由各社在自己的 LINE OA／Messaging API channel 設定並驗證 menu、URI 與權限邊界，不共用其他社的 OA。
+- **完成證據**：每個啟用的社都能在自己的 OA 看到正確 Rich Menu；登入／社別切換不會把 A 社入口導到 B 社；停用旗標或未設定 OA 時不會送出錯誤連結。
+
+## 非外部開發待辦
+
+這些是需要另外開發與驗證的產品功能，不應誤寫成「等外部設定」：
+
+- `[ ]` 社費、收款與核銷（應收、部分收款、代墊、核銷）。
+- `[ ]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）。
+- `[ ]` LINE Rich Menu 與完整 OA 整合（開發與外部設定見 E-11）。
+- `[ ]` 手機 Web App（安裝、離線提示與推播準備）。
+- `[ ]` 社務 AI 助理（摘要、公告草稿、會議紀錄與授權查詢）。
+
 ## 本輪結論
 
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
-GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
-只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
+GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置；自動化檢查不取代
+E-06／E-07 的登入後效能量測與實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
 生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `3e883228e58e`，Go-Live run 是 `34668149625`。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
@@ -24,19 +110,22 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-12 的權威基準：`main` HEAD 為 `3e883228e58e7a7073ee2307d76ca7fcdc19d44e`，
-staging 最新產品 runtime 同為 `3e883228e58e`；staging `/api/health` 回報
-`revision=3e883228e58e`、`status=ok`、`issues=[]`、`warnings=[]`。Flex 第一版在 PR #98，尚未進入 main 或 staging。
+截至 2026-09-12 的權威基準：`main` HEAD 為 `55047dd1f2d936a5147458fd16faa5038b068c3d`，
+staging 最新產品 runtime 為 `3e883228e58e`；staging `/api/health` 回報
+`revision=3e883228e58e`、`status=ok`、`issues=[]`、`warnings=[]`。Flex 第一版已進入 main，但尚未部署 staging。
 最新已部署 migration 是
-`20260911000300_line_oa_pairing_membership_window.sql`。
+`20260912000100_line_oa_unpair_rebind.sql`；下一個待部署的是 `20260912000200_line_oa_flex_templates_flag.sql`。
 
-本輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
+前一輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
 Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS smoke 與 hosted member acceptance 均通過。
 之後 docs-only 文件同步的 `CI` `34583431760`、`Browser Smoke` `34583431873` 僅執行變更範圍分類器，完整 jobs 依 gate 跳過。
 產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance
-`34577046356` 亦已成功完成；執行秘書管理驗收也通過。
+ `34577046356` 亦已成功完成；執行秘書管理驗收也通過。
 
-本輪新增「管理模式 → LINE OA → 驗證 LINE OA」：伺服器會先檢查 `oa.manage`，再依路由上的該社 `clubId`
+PR #98 合併後的 `CI` `34685398379` 已成功；`Browser Smoke` `34685398459` 在本次文件更新時仍在執行，
+因此不把它寫成已通過，也不把它當成 staging 部署證據。
+
+先前新增的「管理模式 → LINE OA → 驗證 LINE OA」：伺服器會先檢查 `oa.manage`，再依路由上的該社 `clubId`
 讀取該社 server environment
 的 access token，呼叫 LINE `/v2/bot/info`，核對 Basic ID 後寫入既有 service-only verification RPC；不把 token
 或 LINE 回應交給瀏覽器。Staging Go-Live `34604266568`、CI `34604026419`、Browser Smoke `34604026408` 均成功。
@@ -50,11 +139,9 @@ fallback 給 HAPPY。剩下的是 follow 事件自動配對真人驗收，不是
 
 `68b12a5` 的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功，並已由 `34594381922` 部署到 staging；沒有待核准的同一輪 Go-Live。
 
-生日旗標與正確 Render staging service 的 scheduler secret 名稱均已設定；GitHub workflow 已改用獨立的
-`birthday-scheduler` environment，且 secret 名稱已存在，但兩邊的秘密值目前不一致。最新排程
-`34595040657` 已打到 staging route 後回 `401 unauthorized`；`34595311338` 因同一 concurrency queue 被取消，
-所以日常自動執行與 LINE 邀請送達仍尚未證明。
-production 沒有修改；PR #98 `codex/line-oa-flex-templates` 已開啟，等待檢查與審查。
+生日旗標與正確 Render staging service 的 scheduler secret 已同步；最新排程 `34673612440` 成功，
+但 `line_push.jobCount=0`、`sentCount=0`，所以 LINE 邀請實際送達仍尚未證明；這不是目前的 secret 不一致問題。
+production 沒有修改；目前沒有 open PR，PR #98 已合併至 `main`。
 
 ## 逐項狀態
 
@@ -190,19 +277,18 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
 已完成 staging 外部啟用與核心驗收：平台管理員透過受保護 CLI 開啟
 `birthday_wishes_v2`、`birthday_wishes_collection_v1`；正確 Render staging service 的
-`BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 名稱已設定。GitHub workflow 已改用獨立的
-`birthday-scheduler` environment，secret 名稱也已存在；但兩端秘密值目前不一致。最新 scheduler
-`34595040657` 已呼叫 protected staging route 後回 `401 unauthorized`，`34595311338` 因 concurrency queue 被取消。
-環境隔離問題已修正，不能把 staging 保護直接移除；同步兩端秘密值後仍要再驗證實際執行。
+`BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已同步至 GitHub `birthday-scheduler` environment。
+最新 scheduler `34673612440` 已成功呼叫 protected staging route，但因本輪沒有符合條件的收件人，
+`line_push.jobCount=0`、`sentCount=0`；仍要依 E-02 做有收件人的真人送達與冪等重跑驗收。不能移除 staging 保護。
 歷史失敗 run `33121570908`／`33121704322` 保留作為啟用前的追蹤證據；M1 真人使用者測試仍是另一個待辦。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
 
 ### LINE OA 訊息推播（真實 Messaging API）`[>]`
 
-產品決定（2026-09-02）：本輪先把**真實 Messaging API 接通**，事件驅動推播、Flex 圖文與 webhook
-自動配對排在後面。現在 channel access token／secret 已設入 staging，真實 Messaging API、訊息中心公告、
-活動發布與 webhook 基礎均已完成 staging 真人驗收；剩下的是 production 準備、額度政策與後續功能缺口。
+產品決定（2026-09-02）：本輪先把**真實 Messaging API 接通**。現在 channel access token／secret 已設入
+staging，真實 Messaging API、訊息中心公告、活動發布與 webhook 基礎均已完成 staging 真人驗收；生日邀請的
+實際送達、follow identity pairing、Flex staging 發布、production 準備、額度政策與 Rich Menu 外部設定仍列在上方 E-01–E-11。
 
 #### 現況（已在 `main`，不是待辦）
 
@@ -247,7 +333,7 @@ staging 目前為 `LINE_OA_MODE=line`，`/api/health` 的 `warnings=[]`；真實
    `deployment-env.test.ts` 補憑證成對檢查與不洩漏社代碼。文件新增
    [`LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md`](../mvp/LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md)。
 
-#### 需要外部條件，本輪不能做
+#### 外部條件摘要（完整清單以 E-01–E-11 為準）
 
 - `[x]` 取得該社的 **channel access token 與 channel secret**（LINE Developers Console → Messaging API channel）。**已完成（2026-09-02）**。
 - `[x]` 在 **LINE Developers Console 設定 webhook URL** 為
@@ -260,9 +346,10 @@ staging 目前為 `LINE_OA_MODE=line`，`/api/health` 的 `warnings=[]`；真實
   出現在後台、訊息中心公告實際送達真人的 LINE。`/api/health` 的 `warnings` 已為空。
   卡關原因是 LINE Official Account Manager「回應設定」裡的 Webhook 開關預設關閉，
   而 Developers Console 的 Verify 在它關著時仍會成功。
-- `[ ]` 確認你所在區域與方案的**每月推播額度**與超額行為，決定超額時要擋下還是照送。
-- `[ ]` **production 憑證**：`deployment-env.mjs` 已強制 production 必須是 `LINE_OA_MODE=line`，
-  沒有 production 憑證就無法部署 production。
+- `[>]` 生日邀請的實際 LINE 送達與重跑不重送，見 E-02；follow identity pairing 的真人驗收，見 E-03。
+- `[!]` 每月推播額度與超額行為，見 E-05；各社各自的 OA／channel／webhook，見 E-04。
+- `[!]` production 憑證、scheduler、旗標、備份與回復流程，見 E-08；`deployment-env.mjs` 已要求
+  production 使用 `LINE_OA_MODE=line`。
 
 #### 本輪驗證
 
@@ -338,10 +425,10 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 - `[>]` 事件驅動自動推播的**最後一個來源**：生日祝福徵集邀請。程式已完成
   `20260911000200_birthday_collection_line_push.sql`、scheduler route 串接、service-role-only
   收件人投影／推播紀錄、既有 `line_oa_event_push_v1` 明確啟用閘門與單元測試；migration
-  已部署到 staging，但最新 scheduler `34595040657` 因兩端 secret 不一致回 `401`，仍待修正後做實際邀請 LINE 送達驗收。通知目前由
+  已部署到 staging；最新 scheduler `34673612440` 成功但 `jobCount=0`、`sentCount=0`，仍待有收件人的實際邀請 LINE 送達驗收。通知目前由
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
-- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。尚待 migration 部署、staging 旗標啟用與 LINE 實際送達驗收。
+- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`；尚待 migration 部署、staging 旗標啟用與 LINE 實際送達驗收，見 E-01。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
   共用旗標判斷的 fail-closed 修補也已隨 Go-Live `34594381922` 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 
@@ -379,14 +466,18 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 下一步順序
 
-1. **先處理生日 scheduler 的營運狀態** `[>]`：workflow、`birthday-scheduler` environment 與 staging URL 已設定；兩端 scheduler secret 名稱存在但秘密值不一致，最新 run `34595040657` 回 `401 unauthorized`。取得明確授權後同步秘密值，再確認下一次真的呼叫 protected staging route；不要移除 staging 部署保護。
-2. **完成 LINE OA follow 自動配對真人驗收** `[>]`：程式已在 `main`／staging，仍要由一位曾以 LINE Login 登入的社員加入同一社 OA，確認後台自動顯示正確姓名；另測多社、外社、停權／退社不會誤配。
-3. **完成管理模式 hosted 驗收** `[x]`：執行秘書已從管理總覽完成生日重跑、文件建立／上傳／編輯，以及活動建立、封面上傳、發布與取消（run `34577046356`）。
-4. **補量測管理頁 TTFB** `[>]`：目前只有未登入 `/login` 的 Chrome lab 數字；管理頁需要登入狀態，仍待用受保護測試帳號量測前後差異。
-5. **安排 iOS Safari、Android Chrome 與 M1 五位目標使用者測試** `[ ]`；實機與訪談不由自動化 Chromium 取代。
-6. **準備 production** `[!]`：另做 production 生日 scheduler job／secret／核准閘門，取得 production LINE 憑證並決定額度政策，另行決定是否開啟 production `announcements_v09`。
-7. **後續 LINE OA 缺口**：webhook redelivery payload hash、生日邀請 LINE 推播、後台顯示環境變數名稱的程式修補已完成並部署；仍未完成的是生日邀請實際送達、Flex 模板、推播額度政策，以及 follow 配對真人驗收。
-8. **Recovery email 維持暫緩** `[!]`：custom SMTP 與真實 email flow 只有在 production 上線或密碼登入比例上升時重啟。
+唯一的外部待辦清單是本文件前面的 E-01–E-11；執行順序如下：
+
+1. **E-01：Flex staging 發布與真人收訊** `[>]`：先走受保護 Staging Release／Go-Live，migration 成功後才開旗標。
+2. **E-02：生日邀請 LINE 實際送達** `[>]`：準備有配對且開啟通知的測試社員，確認第一次收件與第二次不重送。
+3. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
+4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
+5. **E-06：登入後管理頁效能量測** `[>]`：使用已登入 staging 帳號量測 TTFB、LCP、FCP；沒有數字就寫未量測。
+6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
+7. **E-04／E-05：各社 OA 設定與額度政策** `[!]`：逐社確認 channel 與憑證；產品決定超額行為。
+8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
+9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
+10. **E-11：LINE Rich Menu／完整 OA 整合** `[ ]`：先完成產品入口設計，再另立開發與各社 OA 設定驗收。
 
 ## 歷史驗證證據（管理模式輪，2026-09-02）
 
@@ -405,12 +496,11 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-12；本輪部署後基準）
 
-- staging runtime revision 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；`68b12a5` 的旗標安全修補與 LINE OA 驗證按鈕已部署；沒有 open PR。
-- staging health：revision `6fa0c496345b`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
-- `20260911000300_line_oa_pairing_membership_window.sql` 已部署；active 但 `ended_on` 已過期的社籍不再可自動配對。
-- 本次修補 push 後的 `CI` `34584379642`、`Browser Smoke` `34584379653`：以 `68b12a5` 成功完成；先前產品 release 的 CI／Browser Smoke 亦已成功。
-- Staging Release Plan `34604034989`、Staging Go-Live `34604266568`：以 `6fa0c4` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
-- CI `34604026419` 與 Browser Smoke `34604026408`：以 `6fa0c4` 完整通過。
-- Staging Management Acceptance `34577046356`：以 `a8c1e55` 通過；執行秘書完成生日、文件、活動與活動封面流程。
-- 最新 Birthday Collection Scheduler `34595040657`：`failure`、route 回 `401 unauthorized`；兩端 scheduler secret 尚未同步，每日自動排程目前未證明。
-- 目前沒有 open PR；production 沒有修改。
+- `origin/main`／PR #98 merge commit 為 `55047dd1f2d936a5147458fd16faa5038b068c3d`；目前沒有 open PR。
+- staging runtime revision 為 `3e883228e58e`，尚未包含 `55047dd`；因此 Flex migration 尚未部署，旗標也尚未開啟。
+- staging `/api/health`：`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
+- staging Go-Live `34668149625` 以 exact SHA `3e883228e58e…` 成功；最新已部署 migration 是
+  `20260912000100_line_oa_unpair_rebind.sql`。
+- 合併後 `CI` `34685398379` 已成功；`Browser Smoke` `34685398459` 在本文件更新時仍為 `in_progress`，不提前宣稱通過。
+- 最新 Birthday Collection Scheduler `34673612440` 成功，但 `line_push.jobCount=0`、`sentCount=0`；生日邀請實際送達仍是 E-02。
+- production 沒有修改；所有需要外部平台、真人或產品決定的項目均已集中列在 E-01–E-11。

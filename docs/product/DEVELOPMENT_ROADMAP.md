@@ -17,7 +17,7 @@
 
 截至 2026-09-12 的實際掃描基準：
 
-- `main` HEAD 為 `3e883228e58e7a7073ee2307d76ca7fcdc19d44e`；staging 產品 runtime 同為 `3e883228e58e`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
+- `main` HEAD 為 `55047dd1f2d936a5147458fd16faa5038b068c3d`；staging 產品 runtime 仍為 `3e883228e58e`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
 - staging `/api/health` 回報 `status=ok`、`revision=3e883228e58e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
 - 最新 staging Go-Live 是 `34668149625`，以 exact SHA `3e883228e58e…` 成功完成 migration、部署、HTTPS smoke 與 hosted member acceptance；最新 migration 是 `20260912000100_line_oa_unpair_rebind.sql`。
 - 對應的 Staging Release Plan `34586642034` 成功；Go-Live 第一次 hosted acceptance 的短暫失敗在重跑後由同一個 run `34594381922` 全部通過。
@@ -25,7 +25,7 @@
 - 後續 scheduler workflow 環境隔離修正已在 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這是排程設定修正，沒有重新部署 staging 應用程式，staging runtime 仍是上列產品 release。
 - `68b12a5` push 後的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由 Go-Live `34594381922` 部署到 staging。
 
-本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；生日旗標與 Render staging 的 scheduler secret 名稱均已設定，hosted acceptance 已通過。但最新 scheduler run `34595040657` 已實際打到 staging route 後回 `401 unauthorized`；`34595311338` 因同一 concurrency queue 被取消。GitHub `birthday-scheduler` environment 的 secret 名稱存在，但目前和正確 Render staging service 的秘密值不一致，因此「每日排程能持續自動執行」與生日邀請實際 LINE 送達仍未證明，列為營運待辦。
+本輪另完成生日祝福徵集領域的程式切片：每月批次與排程、每位社員每月最多一則自動派發、壽星排除、100 題平台題庫、社團題庫管理、題目快照與同批次文字去重、幹部發布／隱藏／重送、匿名公開牆、站內通知與安全驗證。PR #77 已合併至 `main`；生日旗標與 Render staging 的 scheduler secret 已同步，hosted acceptance 已通過。最新 scheduler run `34673612440` 成功，但 `line_push.jobCount=0`、`sentCount=0`，所以生日邀請實際 LINE 送達仍未證明，列為外部驗收待辦。
 
 近期主線也已完成 LINE OA follow 配對、LINE OA onboarding 入口、社員優先與 senior-friendly UX、社團切換隔離，以及「生日任務完成後從首頁通知消失、歷史仍留在訊息中心」的修正。
 
@@ -36,7 +36,7 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
 
 另補上 `line_oa_auto_pairing_v1` 在共用應用程式旗標判斷器中的明確開啟要求；沒有旗標資料列時維持關閉，修補 commit 為 `68b12a5`，已隨 `34594381922` 部署到 staging。
 
-2026-09-12 新增 LINE OA Flex 卡片模板第一版，放在獨立分支 `codex/line-oa-flex-templates`、PR #98：管理頁提供社務公告、活動提醒、生日祝福三種固定版型與預覽；伺服器端重新檢查社別、`oa.manage`、旗標與 OA 憑證，沿用既有對象解析與批次推播。新增 migration `20260912000200_line_oa_flex_templates_flag.sql`，預設關閉；本機資料庫驗證、828 個測試與 LINE OA E2E 4/4 均通過，尚未部署 staging。
+2026-09-12 新增 LINE OA Flex 卡片模板第一版，PR #98 已合併至 `main` merge commit `55047dd1f2d936a5147458fd16faa5038b068c3d`：管理頁提供社務公告、活動提醒、生日祝福三種固定版型與預覽；伺服器端重新檢查社別、`oa.manage`、旗標與 OA 憑證，沿用既有對象解析與批次推播。新增 migration `20260912000200_line_oa_flex_templates_flag.sql`，預設關閉；本機資料庫驗證、828 個測試與 LINE OA E2E 4/4 均通過。它尚未部署 staging，外部步驟集中記在 `TO-DO-LIST.md` 的 E-01。
 
 2026-09-12 新增管理模式的「驗證 LINE OA」按鈕。伺服器會重新檢查 `oa.manage`，從該社環境變數讀取
 channel access token，呼叫 LINE `/v2/bot/info` 並核對 Basic ID，再透過既有 service-only RPC 記錄結果。
@@ -51,6 +51,9 @@ follow 事件自動配對真人驗收。
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
 出席 UI 整合已完成，並且如原本要求的那樣繼續使用 PR #61 的 canonical Attendance RPC，未另建 authority。
+
+所有需要 LINE Developers Console、Render／GitHub secret、staging 發布、Chrome DevTools、實機／真人驗收或產品決策的項目，
+統一記在 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-11；本文件只保留路線與依賴，不另維護第二份外部待辦。
 
 ## 開發原則
 
@@ -98,7 +101,7 @@ Phase 2 之後追加並完成的社務功能：
   - 受 `blessing_iou_v1`、`blessing_iou_collections_v1`、`blessing_iou_reporting_v1` 控管。
 - [x] **生日祝福 V1／V2 核心**（`20260820001000_birthday_wishes.sql`、`20260824000400_birthday_wishes_v2_core.sql`）— `/birthdays`
   - V2 已完成新設定預設公開、年齡同意顯示、同一作者同一壽星每日最多 10 則、作者匿名投影。
-- [x] **生日祝福徵集核心**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每月每人一則自動派發、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render staging scheduler secret 名稱已設定；GitHub workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，secret 名稱也已存在，但兩端秘密值不一致。最新 scheduler `34595040657` 回 `401 unauthorized`，`34595311338` 因 concurrency queue 被取消，因此每日自動執行仍列為營運待辦；本輪生日 LINE 推播已隨 Go-Live `34594381922` 部署，但實際送達與 M1 真人使用者測試仍另列。
+- [x] **生日祝福徵集核心**已完成程式與 staging 驗證：`20260824000600`–`20260824001700`、每月每人一則自動派發、100 題平台題庫／社團題庫 CRUD、幹部發布與隱藏重送、匿名投影及 verification；PR #77 已合併。旗標已由受保護 CLI 開啟，Render staging scheduler secret 已同步；GitHub workflow 使用只允許 `main` 的 `birthday-scheduler` environment。最新 scheduler `34673612440` 成功，但 `line_push.jobCount=0`、`sentCount=0`，因此生日邀請實際送達與 M1 真人使用者測試仍另列外部待辦。
 - [x] **文件中心與年度交接**（`20260820002000_archive_handover.sql`）— `/archives`
 - [x] **社內留言板** — `/board`
 - [x] **活動封面圖片**（`20260820000100_event_cover_images.sql`）
@@ -126,10 +129,10 @@ Phase 2 之後追加並完成的社務功能：
 
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
 - GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見 `TO-DO-LIST.md` 第 1 節。
-- staging 目前 runtime 是 `6fa0c496345bfacf306633e68cb19e7e687eabf6`，`/api/health` 的 `issues` 與 `warnings` 都是空的；閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
+- staging 目前 runtime 是 `3e883228e58e`，`/api/health` 的 `issues` 與 `warnings` 都是空的；`main` 已前進至 `55047dd1f2d936a5147458fd16faa5038b068c3d`，Flex 尚未部署 staging。閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
 - Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
-- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `6fa0c496345bfacf306633e68cb19e7e687eabf6`；生日旗標、Render scheduler secret 名稱、migration、HTTPS smoke 與 hosted acceptance 均已完成。GitHub workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，secret 名稱也已存在，但兩端秘密值目前不一致：`34595040657` 回 `401 unauthorized`，`34595311338` 因 concurrency queue 被取消。每日排程仍需修復後再驗證。
-- 生日 scheduler 的環境隔離問題已修正：workflow 不再使用需要人工審核的 `staging` environment，而是使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護。現在只差在明確授權後同步兩端 scheduler secret，再驗證下一次 schedule 真的執行；不可移除 `staging` 保護或把部署用 secrets 暴露給無審核 job。
+- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `3e883228e58e`；生日旗標、Render scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。最新 scheduler `34673612440` 成功，但沒有符合條件的 LINE 收件人（`jobCount=0`、`sentCount=0`），每日實際送達仍需外部驗收。
+- 生日 scheduler 的環境隔離問題已修正：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護；secret 已同步。不可移除 staging 保護或把部署用 secrets 暴露給無審核 job。
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
 - PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40 也已關閉，公告通知已在 `main` 實作；保留的舊分支不能直接合併。
@@ -386,20 +389,28 @@ PR-01c 不做：
 [完成] 祝福 IOU · 生日 V2 核心 · 文件交接 · 留言板 · 活動封面 · 幹部社員模式
 [完成] PR #40 Announcements/Notifications · 首頁通知 projection
 [完成] PR-07a 帳號安全核心 · PR-07b 行動版 IA／accessibility 核心
-[外部驗收] recovery email（若重新啟動）· iOS／Android 實機 · M1 使用者測試
-[核心完成／營運待查] 生日祝福徵集（排程／題庫／每月一則派發／幹部工作台／LINE 邀請推播） ─> staging 送達驗收 ─> M1 使用者測試
+[外部待辦 E-01] Flex staging 發布／旗標／真人收訊
+[外部待辦 E-02] 生日邀請實際送達／冪等重跑
+[外部待辦 E-03] LINE Login identity follow 自動配對真人驗收
+[外部待辦 E-04／E-05] 各社 OA 設定／推播額度政策
+[外部待辦 E-06／E-07／E-10] 效能量測／實機與 M1／雙重社籍驗收
+[產品決策 E-08／E-09] production 準備／Recovery email（若重啟）
+[後續開發／外部待辦 E-11] LINE Rich Menu／完整 OA 整合
 ```
 
 ## Current Next Actions
 
-1. **完成生日祝福每日排程的安全環境配置。** workflow 與 staging URL 已正確設定；目前 GitHub `birthday-scheduler` 和正確 Render staging service 的 secret 名稱都存在，但秘密值不一致，最新 run `34595040657` 回 `401 unauthorized`。取得明確授權後同步兩端秘密值，再驗證下一次 schedule。
-2. **完成本輪生日邀請 LINE 的實際送達驗收。** scheduler 恢復後確認已配對且開啟通知的社員收到 LINE，且重跑不重送。
-3. **完成 LINE OA onboarding／follow 自動配對的真實身份驗收。** 程式、日期窗口防護、migration、verification、staging flag 與 webhook 基礎已在主線／staging；仍要用「曾以 LINE Login 登入的社員加入同一社 OA」確認精確配對，並補多社、外社、停權／退社等真實流程證據。
-4. **管理模式 hosted 驗收** `[x]`：執行秘書已從管理總覽完成生日重跑、文件建立／上傳／編輯，以及活動建立、封面上傳、發布與取消（run `34577046356`）。管理頁 TTFB 前後比較仍是未量測，不把未量測寫成效能通過。
-5. **補量測管理頁 TTFB** `[>]`：目前只有未登入 `/login` 的 Chrome lab 數字；管理頁需要登入狀態，仍待用受保護測試帳號量測前後差異。
-6. **安排行動裝置與 M1 測試。** 用 iOS Safari、真實 Android Chrome，以及五位社員／幹部做形成性測試；自動化 Chromium 不取代實機與訪談。
-7. **整理正式環境準備。** production 生日 scheduler、production LINE 憑證與額度政策、`announcements_v09` 是否對 production 開啟，分開決策與執行；目前 production 沒有修改。
-8. **處理仍未完成的 LINE OA 功能。** Flex 模板第一版已在 PR #98 完成並等待檢查／審查，之後才做 migration 部署、staging 旗標與 LINE 送達驗收；推播額度政策與 follow 配對真人驗收仍待處理；生日邀請推播已完成程式並部署，待 scheduler 與實際送達驗收。
-9. **Recovery email 維持暫緩。** 只有在 production 上線或密碼登入比例上升時，才重新處理 custom SMTP 與真實 email 驗收。
+唯一的外部待辦清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-11；執行順序如下：
+
+1. **E-01：Flex staging 發布與真人收訊** `[>]`：先走受保護 Staging Release／Go-Live，migration 成功後才開旗標。
+2. **E-02：生日邀請 LINE 實際送達** `[>]`：準備有配對且開啟通知的測試社員，確認第一次收件與第二次不重送。
+3. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
+4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
+5. **E-06：登入後管理頁效能量測** `[>]`：使用已登入 staging 帳號量測 TTFB、LCP、FCP；沒有數字就寫未量測。
+6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
+7. **E-04／E-05：各社 OA 設定與額度政策** `[!]`：逐社確認 channel 與憑證；產品決定超額行為。
+8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
+9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
+10. **E-11：LINE Rich Menu／完整 OA 整合** `[ ]`：先完成產品入口設計，再另立開發與各社 OA 設定驗收。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。
