@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Badge, Card, Notice } from "@/components/ui";
@@ -15,6 +16,7 @@ import {
   type MemberHomeNotification,
   type MemberHomeRegistrationState,
 } from "@/lib/member-home";
+import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { resolveMemberHomeProjection } from "@/lib/member-home.server";
 import styles from "./member-home.module.css";
 
@@ -48,9 +50,26 @@ function formatDateTime(value: string) {
   return memberHomeDateTimeFormatter.format(new Date(value));
 }
 
-function EventSummary({ event, primary = false }: { event: MemberHomeEvent; primary?: boolean }) {
+function EventSummary({
+  event,
+  coverUrl,
+  primary = false,
+}: {
+  event: MemberHomeEvent;
+  coverUrl?: string;
+  primary?: boolean;
+}) {
   const action = memberHomePrimaryAction(event);
   return <Card className={primary ? styles.primaryCard : styles.nextCard}>
+    {coverUrl && <Image
+      className={styles.eventCover}
+      src={coverUrl}
+      alt=""
+      width={960}
+      height={360}
+      sizes="(max-width: 720px) 100vw, 720px"
+      unoptimized
+    />}
     <div className={styles.eventHeading}>
       <div>
         <p className="eyebrow">{primary ? "優先處理" : "接下來"}</p>
@@ -136,6 +155,14 @@ async function MemberHomeContent({
   }
 
   const { projection } = resolution;
+
+  // One signing round trip for both cards. The bucket is private, so the page
+  // hands the browser a short-lived URL rather than a path it could not fetch.
+  const coverUrls = await signCoverImageUrls([
+    projection.primaryEvent?.coverImagePath,
+    projection.nextEvent?.coverImagePath,
+  ]);
+
   return <>
     {messageCenterEnabled && (projection.notifications.unreadCount > 0 || projection.notifications.items.length > 0) && <section aria-labelledby="member-home-notifications">
       <div className="section-heading">
@@ -157,7 +184,11 @@ async function MemberHomeContent({
       </div>
     </section>}
 
-    {projection.primaryEvent ? <EventSummary event={projection.primaryEvent} primary /> : <Card className={styles.emptyCard}>
+    {projection.primaryEvent ? <EventSummary
+      event={projection.primaryEvent}
+      coverUrl={coverUrls.get(projection.primaryEvent.coverImagePath ?? "")}
+      primary
+    /> : <Card className={styles.emptyCard}>
       <p className="eyebrow">今天</p>
       <h2>目前沒有需要處理的活動</h2>
       <p>新的已發布活動會在這裡顯示。</p>

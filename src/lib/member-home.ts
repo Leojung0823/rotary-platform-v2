@@ -18,6 +18,7 @@ export type MemberHomeCheckinState = (typeof memberHomeCheckinStates)[number];
 
 export type MemberHomeEvent = Readonly<{
   eventType: string;
+  coverImagePath: string | null;
   title: string;
   location: string;
   startsAt: string;
@@ -88,7 +89,8 @@ function hasExactKeys(value: Record<string, unknown>, expected: readonly string[
 function parseEvent(value: unknown): MemberHomeEvent | null {
   if (!isRecord(value)
     || !hasExactKeys(value, [
-      "event_type", "title", "location", "starts_at", "ends_at", "registration_state", "checkin_state",
+      "event_type", "title", "location", "cover_image_path",
+      "starts_at", "ends_at", "registration_state", "checkin_state",
     ])
     || typeof value.event_type !== "string"
     || typeof value.title !== "string"
@@ -98,6 +100,14 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
     || value.title.length === 0
     || value.title.length > 160
     || value.location.length > maximumEventTextLength
+    // A storage path, never a URL: the page mints a signed URL from it. Anything
+    // that is not a plain relative path is dropped rather than rendered.
+    || !(value.cover_image_path === null
+      || (typeof value.cover_image_path === "string"
+        && value.cover_image_path.length > 0
+        && value.cover_image_path.length <= 512
+        && !value.cover_image_path.includes("..")
+        && !/^[a-z][a-z0-9+.-]*:/iu.test(value.cover_image_path)))
     || !isIsoDateTime(value.starts_at)
     || !isIsoDateTime(value.ends_at)
     || !includes(memberHomeRegistrationStates, value.registration_state)
@@ -107,6 +117,7 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
     eventType: value.event_type,
     title: value.title,
     location: value.location,
+    coverImagePath: (value.cover_image_path as string | null) ?? null,
     startsAt: value.starts_at,
     endsAt: value.ends_at,
     registrationState: value.registration_state,

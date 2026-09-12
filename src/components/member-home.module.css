@@ -10,6 +10,17 @@
 .secondaryAction small { color: var(--muted); line-height: 1.45; }
 .secondaryAction b { color: var(--blue); font-size: 20px; }
 .primaryCard, .nextCard, .emptyCard { display: grid; gap: 18px; }
+/* The cover sits flush inside the card. A fixed aspect ratio keeps the card
+   height stable whatever the uploader's image proportions are, so the layout
+   does not shift once the signed URL loads. */
+.eventCover {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #eef2f0;
+}
 .primaryCard { border-color: #9ec5b0; background: linear-gradient(145deg, #f8fffb 0%, #f2f8f4 100%); }
 .eventHeading { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
 .eventHeading h2 { margin: 4px 0 0; overflow-wrap: anywhere; }
