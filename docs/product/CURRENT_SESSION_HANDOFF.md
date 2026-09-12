@@ -8,7 +8,7 @@
 - 本次最新核對的 `main` 最新文件 commit 為 `71a0cf2f6544841c321a30ca12d8dbf9b524fa7e`；staging 產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、revision `6fa0c496345b`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - Staging Release Plan `34604034989`、CI `34604026419`、Browser Smoke `34604026408` 與 Staging Go-Live `34604266568` 均成功。
-- 管理模式 → LINE OA 已有「驗證 LINE OA」按鈕；伺服器會檢查 `oa.manage`、依該社 `clubId` 讀取該社 server token、呼叫 LINE `/v2/bot/info`、核對 Basic ID，再使用既有 service-only RPC 記錄結果。實際點擊的是 `HAPPY` 管理頁，因此該頁期待 `LINE_OA_HAPPY_*`；Render 的 `LINE_OA_PANCHIAO_ELITE_*` 是 `PANCHIAO-ELITE` 社的正確 namespace。這不是同一 OA 的名稱待確認，也不能用跨社 fallback 解決；目前是測試社別／管理權限與實際 OA 憑證未對齊。社員頁的社別切換已依目前 `clubId` 切換，PANCHIAO 真人驗證需由具有該社 `oa.manage` 的帳號進入該社管理路由。
+- 管理模式 → LINE OA 已有「驗證 LINE OA」按鈕；伺服器會檢查 `oa.manage`、依該社 `clubId` 讀取該社 server token、呼叫 LINE `/v2/bot/info`、核對 Basic ID，再使用既有 service-only RPC 記錄結果。已由具有 `PANCHIAO-ELITE` 社 `oa.manage` 的帳號在正確管理路由驗證成功；使用的是正確的 `LINE_OA_PANCHIAO_ELITE_*` namespace，Webhook 卡片也顯示最近簽章有效。社員端切換到板橋群英扶輪社後，`/me/line-oa` 已顯示加入連結；`HAPPY` 必須另用自己的 `LINE_OA_HAPPY_*`，不可跨社 fallback。下一步是 follow 事件自動配對真人驗收。
 - 前一輪 staging Go-Live `34594381922` 已部署 hosted staging；本輪 `34604266568` 已以 `6fa0c4` 重新部署；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
 - 前一輪 docs-only commit 的 `CI` `34583431760`、`Browser Smoke` `34583431873` 變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；前一輪產品 release 的 Staging Release Plan `34586642034`、Staging Go-Live `34594381922` 均成功完成，管理驗收 `34577046356` 亦已成功。
@@ -33,7 +33,7 @@
 - 管理模式 → LINE OA 的「驗證 LINE OA」按鈕已部署；伺服器只使用登入者的 `oa.manage` 權限與該社環境變數，向 LINE `/v2/bot/info` 核對 Basic ID 後記錄驗證結果；action、錯誤分類、憑證不外流與 mock fail-closed 測試均已加入。
 - 本機 `npm test`：122 files／789 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
-待做：以具有 `PANCHIAO-ELITE` 社 `oa.manage` 的帳號進入正確管理路由，確認資料庫該社 OA row 的 Basic ID 與 `LINE_OA_PANCHIAO_ELITE_*` 對應後完成真人驗證；若 HAPPY 也要有 OA，必須另設 HAPPY 自己的 LINE channel 與 `LINE_OA_HAPPY_*`，不可跨社共用。另在明確授權後同步 `birthday-scheduler` GitHub environment 與正確 Render staging service 的秘密值，再用下一次 scheduler 實際驗證 LINE 邀請送達與重跑不重送。管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
+待做：完成一位曾以 LINE Login 登入的社員加入 PANCHIAO OA，確認 follow 事件自動配對到正確姓名，並補測多社、外社、停權／退社不誤配；若 HAPPY 也要有 OA，必須另設 HAPPY 自己的 LINE channel 與 `LINE_OA_HAPPY_*`，不可跨社共用。另在明確授權後同步 `birthday-scheduler` GitHub environment 與正確 Render staging service 的秘密值，再用下一次 scheduler 實際驗證 LINE 邀請送達與重跑不重送。管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
 
 ## 本輪新增的 LINE OA 配對防護（2026-09-11）
 
@@ -52,9 +52,9 @@
 （`enabled`、單一環境 `staging`、rollout 100；CLI 會核對 RPC 回傳值相符才回報成功）。
 `line_oa_account_link_v1` 目前在程式與 CLI 中都不存在，未開啟也無從開啟。
 
-**已部分確認**：使用已登入的 staging 會員以目前社別 `HAPPY` 開啟 `/me/line-oa`，頁面本身可見，
-但因該社 OA 尚未完成安全驗證，畫面正確顯示「尚未與本社 LINE OA 完成配對」且沒有加入連結。
-因此已證明入口有顯示，尚未證明真實加入／follow／自動配對流程。`line_oa_onboarding_v1` 仍有
+**已確認**：使用已登入的 staging 會員切換到 `PANCHIAO-ELITE` 開啟 `/me/line-oa`，頁面已顯示
+「加入本社 LINE」連結，且管理頁的 OA 身份驗證與最近 Webhook 簽章均成功。尚未證明真實加入／follow／
+自動配對流程。`line_oa_onboarding_v1` 仍有
 `DISABLE_LINE_OA_ONBOARDING` 緊急停用開關；這台開發機沒有 Render CLI 或 API key，無法直接讀取該變數，
 仍需由有 Render 權限的人確認它沒有關閉功能。
 

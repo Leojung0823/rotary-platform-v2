@@ -40,10 +40,10 @@ Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS sm
 讀取該社 server environment
 的 access token，呼叫 LINE `/v2/bot/info`，核對 Basic ID 後寫入既有 service-only verification RPC；不把 token
 或 LINE 回應交給瀏覽器。Staging Go-Live `34604266568`、CI `34604026419`、Browser Smoke `34604026408` 均成功。
-實際按鈕已在 staging 出現；這次點擊的是 `HAPPY` 管理頁，所以資料庫依該社讀取 `LINE_OA_HAPPY_*`。
-Render 的 `LINE_OA_PANCHIAO_ELITE_*` 是 `PANCHIAO-ELITE` 社的正確 namespace，不應改名或 fallback 給 HAPPY。
-社員頁的社別切換已依 `clubId` 正確切換；目前只是 staging 測試社別／管理權限與實際 OA 憑證未對齊，
-PANCHIAO 真人身份驗證仍需由具有該社 `oa.manage` 的帳號，從該社管理路由執行。
+實際按鈕已在 staging 由具有 `PANCHIAO-ELITE` 社 `oa.manage` 的帳號驗證成功；伺服器讀取正確的
+`LINE_OA_PANCHIAO_ELITE_*`，LINE Basic ID 核對成功，Webhook 卡片顯示最近簽章有效。社員端切換到
+板橋群英扶輪社後，`/me/line-oa` 已顯示加入連結；`HAPPY` 必須另用自己的 `LINE_OA_HAPPY_*`，不應改名或
+fallback 給 HAPPY。剩下的是 follow 事件自動配對真人驗收，不是環境變數名稱問題。
 之後的 scheduler environment 隔離修正已推到 `main` commit
 `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718`
 均成功。管理驗收第一次 run `34575792573` 是驗收腳本誤找不存在的活動卡片；修正為點第一層「活動」導覽後重跑成功。

@@ -39,12 +39,12 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
 2026-09-12 新增管理模式的「驗證 LINE OA」按鈕。伺服器會重新檢查 `oa.manage`，從該社環境變數讀取
 channel access token，呼叫 LINE `/v2/bot/info` 並核對 Basic ID，再透過既有 service-only RPC 記錄結果。
 這版已由 Staging Go-Live `34604266568` 部署，CI `34604026419` 與 Browser Smoke `34604026408` 均通過。
-線上按鈕已實際點擊；這次實際進入的是 `HAPPY` 的管理頁，因此頁面依該社資料讀取
-`LINE_OA_HAPPY_*`。Render 上的 `LINE_OA_PANCHIAO_ELITE_*` 則是 `PANCHIAO-ELITE` 社的正確
-namespace，不能改名給 HAPPY，也不能讓 HAPPY fallback 到 PANCHIAO。社員頁的社別切換會依目前
-`clubId` 讀取對應社的 OA；管理頁也必須由具有該社 `oa.manage` 的帳號進入。這次 `oa_not_configured`
-是 staging 測試社別／管理權限與實際 OA 憑證未對齊，不是跨社共用憑證的理由；PANCHIAO 的真人驗證仍待
-以具有該社管理權限的帳號，在該社路由完成。
+線上按鈕已由具有 `PANCHIAO-ELITE` 社 `oa.manage` 的帳號在正確社別路由完成驗證；伺服器讀取
+`LINE_OA_PANCHIAO_ELITE_*`，LINE `/v2/bot/info` 回傳的 Basic ID 與資料庫設定相符，頁面顯示身份驗證成功。
+Webhook 卡片也顯示最近簽章有效；切回社員模式並選擇板橋群英扶輪社後，`/me/line-oa` 已顯示該社加入連結。
+`HAPPY` 仍須使用自己的 `LINE_OA_HAPPY_*`，不能改名給 HAPPY，也不能讓 HAPPY fallback 到 PANCHIAO。
+社員頁與管理頁都依目前的 `clubId` 讀取對應社的 OA；下一個待辦是使用曾以 LINE Login 登入的社員完成
+follow 事件自動配對真人驗收。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
