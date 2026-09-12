@@ -42,6 +42,22 @@ test("the send form reports how many of the audience LINE can actually reach", a
   await expect(send.getByText(/\d+ 位社員，其中 \d+ 位已完成 LINE OA 配對、可收到推播/u)).toBeVisible();
 });
 
+test("an enabled Flex template shows a safe card preview", async ({ page }) => {
+  await openLineOa(page);
+
+  const send = page.locator("form").filter({ has: page.getByPlaceholder("輸入要發送的訊息") });
+  await expect(send.getByLabel("訊息樣式")).toBeVisible();
+  await send.getByLabel("訊息樣式").selectOption("event");
+  await send.getByPlaceholder("例如：九月份例會提醒").fill("本週例會");
+  await send.getByPlaceholder("輸入要發送的訊息").fill("星期五晚上見！");
+
+  const preview = send.getByRole("region", { name: "訊息卡片預覽" });
+  await expect(preview).toBeVisible();
+  await expect(preview).toContainText("活動提醒");
+  await expect(preview).toContainText("本週例會");
+  await expect(preview).toContainText("星期五晚上見！");
+});
+
 test("an audience nobody has paired is refused rather than sent to nobody", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "line-oa-audience-1440", "Sending writes a push log entry.");
   await openLineOa(page);

@@ -33,6 +33,7 @@ const TOGGLEABLE = [
   "line_oa_event_push_v1",
   "line_oa_auto_pairing_v1",
   "line_oa_onboarding_v1",
+  "line_oa_flex_templates_v1",
 ];
 
 // What `--all-implemented` turns on. Deliberately narrower than TOGGLEABLE:

@@ -397,7 +397,7 @@ PR-01c 不做：
 5. **補量測管理頁 TTFB** `[>]`：目前只有未登入 `/login` 的 Chrome lab 數字；管理頁需要登入狀態，仍待用受保護測試帳號量測前後差異。
 6. **安排行動裝置與 M1 測試。** 用 iOS Safari、真實 Android Chrome，以及五位社員／幹部做形成性測試；自動化 Chromium 不取代實機與訪談。
 7. **整理正式環境準備。** production 生日 scheduler、production LINE 憑證與額度政策、`announcements_v09` 是否對 production 開啟，分開決策與執行；目前 production 沒有修改。
-8. **處理仍未完成的 LINE OA 功能。** Flex 模板、推播額度政策，以及 follow 配對真人驗收；生日邀請推播已完成程式並部署，待 scheduler 與實際送達驗收。
+8. **處理仍未完成的 LINE OA 功能。** Flex 模板已在獨立分支完成第一版，待 migration 部署、staging 旗標與 LINE 送達驗收；推播額度政策與 follow 配對真人驗收仍待處理；生日邀請推播已完成程式並部署，待 scheduler 與實際送達驗收。
 9. **Recovery email 維持暫緩。** 只有在 production 上線或密碼登入比例上升時，才重新處理 custom SMTP 與真實 email 驗收。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。

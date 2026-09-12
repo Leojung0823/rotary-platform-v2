@@ -23,7 +23,7 @@ insert into public.app_accounts (
 insert into public.platform_roles (app_account_id, role_key)
 values ('ec000000-0000-4000-8000-000000000001', 'platform_admin');
 
--- Both constraints and the telemetry validator have to know the two reserved
+-- Both constraints and the telemetry validator have to know the three reserved
 -- keys. A parallel branch that redeclares the constraint without them would
 -- drop them here rather than in its own tests.
 do $$
@@ -42,7 +42,9 @@ begin
   where conrelid = 'public.platform_feature_flag_audit'::regclass
     and conname = 'platform_feature_flag_audit_feature_key_check';
 
-  foreach reserved_key in array array['line_oa_auto_pairing_v1', 'line_oa_event_push_v1'] loop
+  foreach reserved_key in array array[
+    'line_oa_auto_pairing_v1', 'line_oa_event_push_v1', 'line_oa_flex_templates_v1'
+  ] loop
     if flag_constraint is null or position(reserved_key in flag_constraint) = 0 then
       raise exception 'flag constraint is missing %', reserved_key;
     end if;
@@ -72,31 +74,39 @@ begin
 end;
 $$;
 
--- Reserving a key must not turn the feature on. Both stay unconfigured, and a
+-- Reserving a key must not turn the feature on. All stay unconfigured, and a
 -- missing row is what the server evaluator reads as disabled.
 do $$
 begin
   if exists (
     select 1 from public.platform_feature_flags
-    where feature_key in ('line_oa_auto_pairing_v1', 'line_oa_event_push_v1')
+    where feature_key in (
+      'line_oa_auto_pairing_v1', 'line_oa_event_push_v1', 'line_oa_flex_templates_v1'
+    )
   ) then
     raise exception 'reserved LINE OA keys must start with no row at all';
   end if;
 end;
 $$;
 
--- An ordinary member cannot set either reserved flag.
+-- An ordinary member cannot set any reserved flag.
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "ea000000-0000-4000-8000-000000000002", "role": "authenticated"}';
 
 do $$
+declare
+  reserved_key text;
 begin
-  begin
-    perform public.set_platform_feature_flag('line_oa_auto_pairing_v1', true, array['staging'], 100);
-    raise exception 'a plain member must not set a platform feature flag';
-  exception
-    when insufficient_privilege then null;
-  end;
+  foreach reserved_key in array array[
+    'line_oa_auto_pairing_v1', 'line_oa_event_push_v1', 'line_oa_flex_templates_v1'
+  ] loop
+    begin
+      perform public.set_platform_feature_flag(reserved_key, true, array['staging'], 100);
+      raise exception 'a plain member must not set a platform feature flag';
+    exception
+      when insufficient_privilege then null;
+    end;
+  end loop;
 end;
 $$;
 
@@ -109,13 +119,18 @@ set local request.jwt.claims = '{"sub": "ea000000-0000-4000-8000-000000000001", 
 
 do $$
 declare
+  reserved_key text;
   resulting_enabled boolean;
 begin
-  select enabled into resulting_enabled
-  from public.set_platform_feature_flag('line_oa_event_push_v1', true, array['staging'], 100);
-  if resulting_enabled is not true then
-    raise exception 'platform admin could not set the reserved key';
-  end if;
+  foreach reserved_key in array array[
+    'line_oa_auto_pairing_v1', 'line_oa_event_push_v1', 'line_oa_flex_templates_v1'
+  ] loop
+    select enabled into resulting_enabled
+    from public.set_platform_feature_flag(reserved_key, true, array['staging'], 100);
+    if resulting_enabled is not true then
+      raise exception 'platform admin could not set the reserved key %', reserved_key;
+    end if;
+  end loop;
 
   begin
     perform public.set_platform_feature_flag('line_oa_not_a_real_key', true, array['staging'], 100);

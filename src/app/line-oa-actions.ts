@@ -3,6 +3,9 @@
 import { redirect } from "next/navigation";
 import { buildPushLogArgs, deliverClubOaText, loadClubOaDispatchContext } from "@/lib/line/oa-dispatch";
 import { createClient } from "@/lib/supabase/server";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
+import { FLEX_TEMPLATES, buildClubFlexMessage, type FlexTemplate } from "@/lib/line/flex-templates";
+import { buildFlexPushLogArgs, deliverClubOaFlex } from "@/lib/line/flex-dispatch";
 
 function errorPath(clubId: string, code: string) {
   return `/clubs/${clubId}/line-oa?error=${encodeURIComponent(code)}`;
@@ -17,7 +20,14 @@ function readUuidList(formData: FormData, name: string) {
 
 export async function sendLineOaAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
+  if (!uuidPattern.test(clubId)) redirect("/dashboard?error=invalid_input");
   const text = String(formData.get("message") ?? "").trim();
+  const format = String(formData.get("messageFormat") ?? "text");
+  const title = String(formData.get("messageTitle") ?? "").trim();
+  if (format !== "text" && !Object.hasOwn(FLEX_TEMPLATES, format)) {
+    redirect(errorPath(clubId, "invalid_flex_message"));
+  }
+  const template = format === "text" ? null : format as FlexTemplate;
   const requestedKind = String(formData.get("kind") ?? "broadcast");
   const audienceTagIds = readUuidList(formData, "audienceTagIds");
   const audienceMembershipIds = readUuidList(formData, "audienceMembershipIds");
@@ -38,6 +48,22 @@ export async function sendLineOaAction(formData: FormData) {
     )
   ) {
     redirect(errorPath(clubId, "forbidden"));
+  }
+
+  let senderName = "";
+  if (template) {
+    const [flag, account] = await Promise.all([
+      evaluateCurrentFeatureFlag({ key: "line_oa_flex_templates_v1", subjectUuid: clubId }),
+      supabase.rpc("get_line_oa_admin", { p_club_id: clubId }),
+    ]);
+    if (!flag.enabled) redirect(errorPath(clubId, "flex_templates_disabled"));
+    if (account.error || !account.data?.account) redirect(errorPath(clubId, "oa_not_configured"));
+    senderName = account.data.account.display_name;
+    try {
+      buildClubFlexMessage({ template, clubName: senderName, title, message: text });
+    } catch {
+      redirect(errorPath(clubId, "invalid_flex_message"));
+    }
   }
 
   const dispatch = await loadClubOaDispatchContext(clubId);
@@ -64,10 +90,14 @@ export async function sendLineOaAction(formData: FormData) {
     recipients = ids;
   }
 
-  const delivery = await deliverClubOaText(kind, recipients, text, dispatch.context);
+  const delivery = template
+    ? await deliverClubOaFlex({ kind, recipients, context: dispatch.context, template, senderName, title, message: text })
+    : await deliverClubOaText(kind, recipients, text, dispatch.context);
   const logged = await supabase.rpc(
     "record_line_push",
-    buildPushLogArgs(clubId, kind, recipients.length, text, delivery),
+    template
+      ? buildFlexPushLogArgs({ clubId, kind, recipientCount: recipients.length, template, message: text, title, delivery })
+      : buildPushLogArgs(clubId, kind, recipients.length, text, delivery),
   );
 
   if (logged.error || delivery.status === "failed") {

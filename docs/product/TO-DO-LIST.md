@@ -341,7 +341,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   已部署到 staging，但最新 scheduler `34595040657` 因兩端 secret 不一致回 `401`，仍待修正後做實際邀請 LINE 送達驗收。通知目前由
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
-- `[ ]` Flex 圖文訊息與訊息模板（`messaging.ts` 已支援 flex payload，後台只送純文字）。
+- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。尚待 migration 部署、staging 旗標啟用與 LINE 實際送達驗收。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
   共用旗標判斷的 fail-closed 修補也已隨 Go-Live `34594381922` 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 

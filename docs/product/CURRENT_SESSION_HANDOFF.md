@@ -3,6 +3,18 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 本輪進度（2026-09-12；Flex 卡片模板）
+
+分支 `codex/line-oa-flex-templates` 已完成第一版 Flex 卡片訊息：管理模式的 LINE OA 頁提供社務公告、
+活動提醒、生日祝福三種固定版型與即時預覽；伺服器端會重新檢查 `oa.manage`、
+`line_oa_flex_templates_v1` 與該社的 OA 憑證，再沿用既有分批推播與紀錄流程。瀏覽器不能傳入任意 Flex
+JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_flex_templates_flag.sql`，
+旗標預設關閉並有 `DISABLE_LINE_OA_FLEX_TEMPLATES` 緊急開關。
+
+本機已通過 126 個測試檔／828 個測試、typecheck、lint、build、migration guard、verification manifest
+與 `git diff --check`；新增的 line OA 瀏覽器測試可被 Playwright 列出。`npm run verify:db` 尚未完成，
+因本機 Docker API 無回應而停在 `supabase db reset --local`；尚未提交、部署或開啟 staging 旗標。
+
 ## 最新狀態核對（2026-09-12；本輪部署後基準）
 
 - 本次最新核對的 `main` 最新文件 commit 為 `71a0cf2f6544841c321a30ca12d8dbf9b524fa7e`；staging 產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；沒有 open PR。
