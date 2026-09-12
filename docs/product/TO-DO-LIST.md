@@ -13,7 +13,7 @@
 以下項目不能只用本機測試或 GitHub CI 宣稱完成，必須有 LINE、Render、手機、真人或產品決策的證據。
 後續更新請先改這一節，再同步開發地圖與交接文件。
 
-### E-01 Flex 卡片 staging 發布與真人收訊 `[>]`
+### E-01 Flex 卡片 staging 發布與真人收訊 `[x]`
 
 - **目前證據**：程式、migration、旗標、權限邊界與本機 E2E 已完成；PR #98 已合併至 `main` merge commit
   `55047dd1f2d936a5147458fd16faa5038b068c3d`。Staging Release Plan `34686603765` 與 Go-Live
@@ -32,12 +32,16 @@
 - **本輪確有一筆全社 broadcast**：推播紀錄 12:32 有一列 `broadcast`、`recipient_count=3`、狀態 `sent`，
   不是指定對象。安全界線寫的是「不用全社廣播做第一次測試」，這筆與該界線不符；staging 該社只有
   3 個測試 follower，影響有限，但不應在 production 重複，紀錄於此以免日後誤以為從未發生。
-- **仍缺**：provider request id 尚未核對，而且**無法從管理頁核對**。值有寫入資料庫
-  （`messaging.ts` 取 `x-line-request-id` → `oa-dispatch.ts` 寫入
-  `line_push_logs.provider_request_id`），但 `get_line_oa_admin` 只投影
-  `id／kind／recipient_count／status／created_at`，沒有 request id。要核對只能用具備資料庫權限的
-  管道查 `line_push_logs`；本機 `.env.staging` 沒有 service role key，做不到。
-  補上這一項才能改成 `[x]`。
+- **provider request id 已核對（2026-09-12）**：以 Supabase SQL editor 直接查 `line_push_logs`，
+  三筆 Flex 測試列都是 `delivery_status=sent` 且帶 LINE 回應的 request id：
+  `12:34:21` → `fa3d57e5-fa59-4b1e-9842-2f569162f07a`、
+  `12:34:29` → `4c9fefab-b79a-481d-8b91-beb19baaf07a`、
+  `12:35:18` → `bd1d5962-5f7b-47cc-afaa-9ae41024ad17`。
+  這證明 LINE 端確實受理了這三則訊息，不只是本地寫了一列紀錄。
+- **已知限制（不是本項的 blocker）**：request id 與 `failure_code` 只存在資料庫，
+  `get_line_oa_admin` 只投影 `id／kind／recipient_count／status／created_at`，所以管理頁查不到。
+  幹部遇到推播異常時，畫面只有 `sent`／`failed`，要對照 LINE 端得另外查資料庫。
+  要補進畫面需要新的 migration 擴充投影，尚未決定是否要做。
 - **旗標開啟前的核對（2026-09-12）**：已登入的 staging 管理頁可正確切到 `PANCHIAO-ELITE`，可看到
   3 筆仍在追蹤且已配對的 follower 與既有推播紀錄；當時旗標關閉，管理頁不顯示 Flex 模板操作區，
   這是「旗標關閉時不會送出 LINE 請求」的畫面層證據。
@@ -453,7 +457,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   已部署到 staging；最新 scheduler `34673612440` 成功但 `jobCount=0`、`sentCount=0`，仍待有收件人的實際邀請 LINE 送達驗收。通知目前由
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
-- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`，migration 已部署到 staging；staging 旗標已於 2026-09-12 開啟，三種卡片模板均已對指定對象實際送達真人手機，剩餘核對見 E-01。
+- `[x]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`，migration 已部署到 staging；staging 旗標已於 2026-09-12 開啟，三種卡片模板均已對指定對象實際送達真人手機，推播紀錄為 `sent` 且帶 provider request id，E-01 已結案。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
   共用旗標判斷的 fail-closed 修補也已隨 Go-Live `34594381922` 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 
@@ -493,7 +497,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 唯一的外部待辦清單是本文件前面的 E-01–E-11；執行順序如下：
 
-1. **E-01：Flex staging 發布與真人收訊** `[>]`：Plan、Go-Live、staging 旗標啟用與三種卡片模板的真人收訊都已通過；只剩回頭核對 `line_push_logs` 的 `sent` 與 provider request id。
+1. **E-01：Flex staging 發布與真人收訊** `[x]`：Plan、Go-Live、staging 旗標啟用、三種卡片模板真人收訊與 `line_push_logs` 的 `sent`／provider request id 均已完成，2026-09-12 結案。
 2. **E-02：生日邀請 LINE 實際送達** `[>]`：準備有配對且開啟通知的測試社員，確認第一次收件與第二次不重送。
 3. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
