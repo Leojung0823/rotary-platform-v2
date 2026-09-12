@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
 export const LINE_OAUTH_TTL_SECONDS = 10 * 60;
-export type LineOAuthFlow = "login" | "invitation" | "bind";
+export type LineOAuthFlow = "login" | "invitation" | "join_link" | "bind";
 
 export const LINE_OAUTH_COOKIE_NAMES = [
   "line_oauth_state",

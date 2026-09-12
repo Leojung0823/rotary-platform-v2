@@ -111,7 +111,10 @@ export async function GET(request: NextRequest) {
       || !nonce || nonce.length > 512 || !constantTimeEqual(state, expectedState)) {
       throw new Error("LINE Login authorization response is invalid.");
     }
-    if ((flow === "invitation") !== Boolean(invitationToken)) {
+    // Both token-carrying flows must present exactly the token their cookie
+    // claims; a flow without one must present none.
+    const flowCarriesToken = flow === "invitation" || flow === "join_link";
+    if (flowCarriesToken !== Boolean(invitationToken)) {
       throw new Error("LINE Login flow does not match invitation state.");
     }
 
@@ -188,6 +191,74 @@ export async function GET(request: NextRequest) {
     let account: Account | null = null;
     let invitationKind: string | null = null;
     let invitationPersonId: string | null = null;
+
+    if (flow === "join_link") {
+      // A join link has no pre-created person to look up, so the LINE subject is
+      // the only identity in hand. A subject that already holds an active
+      // identity is a repeat visit: sign that account in instead of minting a
+      // second person for the same human.
+      const knownIdentity = await admin
+        .from("line_identities")
+        .select("app_account_id")
+        .eq("provider_subject", profile.subject)
+        .eq("identity_status", "active")
+        .maybeSingle();
+      if (knownIdentity.error) throw new Error("LINE Login identity lookup failed.");
+
+      if (knownIdentity.data) {
+        const knownAccount = await admin
+          .from("app_accounts")
+          .select("id, person_id, auth_user_id, login_email, account_status")
+          .eq("id", knownIdentity.data.app_account_id)
+          .maybeSingle();
+        if (knownAccount.error || !knownAccount.data) {
+          throw new Error("LINE Login account lookup failed.");
+        }
+        if (knownAccount.data.account_status !== "active") {
+          throw new Error("LINE Login account is not active.");
+        }
+        account = knownAccount.data;
+      } else {
+        const createdUser = await admin.auth.admin.createUser({
+          email: `${profile.subject.toLowerCase()}@line.local`,
+          email_confirm: true,
+          user_metadata: { line_display_name: profile.displayName },
+        });
+        // No recovery branch here on purpose. An existing Auth user for this
+        // subject with no active identity means a previously unbound account,
+        // and silently re-attaching it to a club through an open link is the
+        // one thing this flow must not do. Fail closed and let an officer use
+        // the per-person invitation instead.
+        if (createdUser.error || !createdUser.data.user) {
+          throw new Error("LINE Login Auth user creation failed.");
+        }
+
+        const redeemed = await admin.rpc("redeem_club_join_link_trusted", {
+          p_token: invitationToken,
+          p_auth_user_id: createdUser.data.user.id,
+          p_provider_subject: profile.subject,
+          p_display_name: profile.displayName,
+          p_picture_url: profile.pictureUrl ?? null,
+          p_email: profile.email ?? null,
+        });
+        if (redeemed.error) throw new Error("LINE Login join link redemption failed.");
+        const outcome = (redeemed.data ?? {}) as { app_account_id?: unknown };
+        if (typeof outcome.app_account_id !== "string") {
+          throw new Error("LINE Login join link redemption returned no account.");
+        }
+
+        const joinedAccount = await admin
+          .from("app_accounts")
+          .select("id, person_id, auth_user_id, login_email, account_status")
+          .eq("id", outcome.app_account_id)
+          .maybeSingle();
+        if (joinedAccount.error || !joinedAccount.data) {
+          throw new Error("LINE Login account lookup failed.");
+        }
+        account = joinedAccount.data;
+        trustedBindingCompleted = true;
+      }
+    }
 
     if (flow === "invitation") {
       const invitation = await admin
