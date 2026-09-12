@@ -7,6 +7,8 @@ import {
 import { sendLineOaAction } from "@/app/line-oa-actions";
 import { verifyLineOaAction } from "@/app/line-oa-verification-actions";
 import { AudiencePicker } from "@/components/audience/audience-picker";
+import { LineOaMessageComposer } from "@/components/line-oa-message-composer";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import { ClubAdminNav } from "@/components/club-admin-nav";
 import {
@@ -66,7 +68,7 @@ export default async function LineOaPage({
   const { clubId } = await params;
   const query = await searchParams;
   const supabase = await createClient();
-  const [oaResult, membersResult, tagsResult] = await Promise.all([
+  const [oaResult, membersResult, tagsResult, flexFlag] = await Promise.all([
     supabase.rpc("get_line_oa_admin", { p_club_id: clubId }),
     supabase.rpc("list_club_members", {
       p_club_id: clubId,
@@ -74,6 +76,7 @@ export default async function LineOaPage({
       p_status: "active",
     }),
     supabase.rpc("list_club_member_tags", { p_club_id: clubId }),
+    evaluateCurrentFeatureFlag({ key: "line_oa_flex_templates_v1", subjectUuid: clubId }),
   ]);
   if (oaResult.error)
     return <Notice tone="error">您沒有查看 LINE OA 的權限。</Notice>;
@@ -94,6 +97,8 @@ export default async function LineOaPage({
     display_name: member.display_name,
   }));
   const errors: Record<string, string> = {
+    flex_templates_disabled: "本環境尚未開啟卡片訊息，請改用純文字。",
+    invalid_flex_message: "請檢查卡片樣式、標題與訊息長度，訊息尚未送出。",
     audience_unreachable: "指定的對象中沒有人加入官方帳號，訊息沒有送出。",
     oa_not_configured:
       "本社的 LINE OA 尚未設定完成，或伺服器缺少該社的 channel access token。",
@@ -275,14 +280,7 @@ export default async function LineOaPage({
                 </Select>
               </Field>
             )}
-            <Field label="訊息">
-              <Input
-                name="message"
-                required
-                maxLength={2000}
-                placeholder="輸入要發送的訊息"
-              />
-            </Field>
+            <LineOaMessageComposer senderName={oa.account.display_name} templatesEnabled={flexFlag.enabled} />
             <div className="form-actions">
               <Button type="submit">送出訊息</Button>
             </div>

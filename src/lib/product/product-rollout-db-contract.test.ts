@@ -15,7 +15,7 @@ function assertExactSet(actual: readonly string[], expected: readonly string[]) 
 const featureFlagMigration = readFileSync(
   // Keep this pointed at the newest forward-only migration that redeclares
   // the feature-key constraint and mutation allow-list.
-  resolve(process.cwd(), "supabase/migrations/20260902000500_line_oa_member_onboarding.sql"),
+  resolve(process.cwd(), "supabase/migrations/20260912000200_line_oa_flex_templates_flag.sql"),
   "utf8",
 );
 const telemetryMigration = readFileSync(

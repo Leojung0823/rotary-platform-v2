@@ -4,6 +4,7 @@
 見 [`LINE_LOGIN_DEPLOYMENT_CHECKLIST.md`](./LINE_LOGIN_DEPLOYMENT_CHECKLIST.md)。兩者不共用 secret。
 
 目前狀態：真實 Messaging API、訊息中心公告、活動發布與 webhook follow 基礎已在 staging 完成驗收。
+Flex 卡片模板已在 `codex/line-oa-flex-templates` 完成程式與本機測試，尚未部署或開啟旗標。
 生日徵集邀請的 LINE 推播程式與 migration 已部署到 staging；最新 scheduler run `34595040657` 已到達 protected route 但回 `401 unauthorized`，原因是 GitHub 與 Render 的 scheduler secret 不一致；production 仍未修改。
 
 ## 憑證與環境變數
@@ -25,6 +26,19 @@ LINE_OA_<CLUB_CODE>_CHANNEL_SECRET
       且長度合理，缺一個就會讓 `/api/health` 的 `checks.configuration` 變成 false。
 - [ ] `NEXT_PUBLIC_SITE_URL` 是公開的 HTTPS origin。真實模式**拒絕**從 `localhost`／`127.0.0.1` 送出，
       避免開發機把真實訊息送給真實社員。
+
+## Flex 卡片模板
+
+Flex 功能使用獨立旗標 `line_oa_flex_templates_v1`，預設關閉；伺服器每次送出卡片時仍會重新檢查
+旗標與 `oa.manage` 權限。管理頁目前提供「社務公告」、「活動提醒」與「生日祝福」三種固定版型，
+不接受瀏覽器自行傳入 Flex JSON、按鈕 action 或遠端圖片。
+
+- [ ] migration `20260912000200_line_oa_flex_templates_flag.sql` 已部署到 staging。
+- [ ] migration 部署完成後，由平台管理員透過受保護 CLI 只開啟 `line_oa_flex_templates_v1`：
+      `npm run flags:enable:staging -- line_oa_flex_templates_v1`
+- [ ] 管理頁可預覽卡片，並以指定對象發送一則測試訊息。
+- [ ] 真人收到卡片，推播紀錄為 `sent` 且保留 provider request id。
+- [ ] 旗標關閉或一般社員送出偽造的卡片欄位時，沒有 LINE API 請求。
 
 ## LINE Developers Console
 
