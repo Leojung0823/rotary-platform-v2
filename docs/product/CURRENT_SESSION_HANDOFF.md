@@ -5,7 +5,7 @@
 
 ## 最新狀態核對（2026-09-12；本輪部署後基準）
 
-- 本次最新核對的產品程式與 staging runtime 都對準 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；沒有 open PR。
+- 本次最新核對的 `main` 最新文件 commit 為 `39211a9af0a8b1eb52a0cf6fa8666341b0731637`；staging 產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；沒有 open PR。
 - staging `/api/health` 回報 `status=ok`、revision `6fa0c496345b`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - Staging Release Plan `34604034989`、CI `34604026419`、Browser Smoke `34604026408` 與 Staging Go-Live `34604266568` 均成功。
 - 管理模式 → LINE OA 已有「驗證 LINE OA」按鈕；伺服器會檢查 `oa.manage`、讀取每社 server token、呼叫 LINE `/v2/bot/info`、核對 Basic ID，再使用既有 service-only RPC 記錄結果。實際點擊回報 `oa_not_configured`，因資料庫期待 `LINE_OA_HAPPY_*`，Render 現有該社環境變數名稱為 `LINE_OA_PANCHIAO_ELITE_*`；兩組名稱的歸屬尚未確認。

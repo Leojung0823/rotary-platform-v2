@@ -24,8 +24,8 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-12 的權威基準：`main` 與最新 staging runtime 都對準
-`6fa0c496345bfacf306633e68cb19e7e687eabf6`；staging `/api/health` 回報
+截至 2026-09-12 的權威基準：`main` 最新文件 commit 為 `39211a9af0a8b1eb52a0cf6fa8666341b0731637`，
+staging 最新產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；staging `/api/health` 回報
 `revision=6fa0c496345b`、`status=ok`、`issues=[]`、`warnings=[]`。
 最新已部署 migration 是
 `20260911000300_line_oa_pairing_membership_window.sql`。

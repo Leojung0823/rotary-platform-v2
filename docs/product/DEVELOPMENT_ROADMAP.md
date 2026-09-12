@@ -17,7 +17,7 @@
 
 截至 2026-09-12 的實際掃描基準：
 
-- `main` 與 staging 產品 runtime 目前都對準 `6fa0c496345bfacf306633e68cb19e7e687eabf6`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在這次 staging release，不再是「尚未部署」。
+- `main` 最新文件 commit 為 `39211a9af0a8b1eb52a0cf6fa8666341b0731637`；staging 產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
 - staging `/api/health` 回報 `status=ok`、`revision=6fa0c496345b`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
 - 最新 staging Go-Live 是 `34604266568`，以 exact SHA `6fa0c496345b…` 成功完成 migration、部署、HTTPS smoke 與 hosted member acceptance；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 對應的 Staging Release Plan `34586642034` 成功；Go-Live 第一次 hosted acceptance 的短暫失敗在重跑後由同一個 run `34594381922` 全部通過。
