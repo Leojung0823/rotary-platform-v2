@@ -52,7 +52,7 @@
   發送；`line_push_logs` 為 `sent` 且有 provider request id；旗標關閉時沒有 LINE API 請求。
 - **安全界線**：不開 production、不把 token 放進 repo、不用全社廣播做第一次測試。
 
-### E-02 生日邀請 LINE 實際送達 `[>]`
+### E-02 生日邀請 LINE 實際送達 `[x]`
 
 - **目前證據**：scheduler protected route 已成功執行；最新 run `34673612440` 回報成功，但
   `generated_count=1`、`notified_count=1`、`line_push.jobCount=0`、`sentCount=0`，所以只證明排程路徑，不證明社員收到 LINE。
@@ -89,7 +89,31 @@
   然後重跑一次確認不重送。
 - **這也解釋了既有的 HAPPY 通知**：它建立於 2026-09-01，對應的是 10 月生日批次；9/12 那次
   `generated_count=1`、`notified_count=1` 是對同一個批次冪等重算，沒有新建通知。
+- **已完成（2026-09-12）**：卡關的兩個成因都排除後完成驗收。
+
+  1. 生日徵集任務原本只存在於 `HAPPY`，該社沒有已配對 follower。改在 `PANCHIAO-ELITE` 測試。
+  2. 壽星 `LEO` 雖同時具兩社社籍且生日在 10 月，但在 `PANCHIAO-ELITE` **沒有**
+     `birthday_visibility_preferences` 列，而排程對該表是 inner join，缺列即整個排除。
+     由該社員自己在 `/birthdays`（社別切到板橋群英扶輪社）勾選「在同社生日名單顯示我的月、日」
+     與「允許同社社員寫生日祝福」後，排程才看得到他。
+
+  驗收證據：
+
+  - Scheduler run `34695450977`：`generated_count=2`、`notified_count=2`、
+    `line_push.status="sent"`、`jobCount=1`、`sentCount=1`、`failedCount=0`。
+  - `line_push_logs` 對應列：`recipient_count=2`、`delivery_status=sent`、
+    `provider_request_id=08cd7796-f03d-4e33-83cc-8c1c2ec77de5`。
+  - 收件人是 `TEST`（`U9e384ed2…`）與 `Michael`（`Ud0f5fa44…`）；**壽星 `LEO` 不在收件人內**，
+    符合「不會被指派替自己寫祝福」。
+  - **真人收訊**：`Michael` 的 LINE 實際收到「本月生日祝福任務／您有一則生日祝福任務，
+    請打開生日祝福徵集完成它。」
+  - **重跑不重送**：run `34695655038` 的 `generated_count`／`notified_count` 維持 2，但
+    `jobCount=0`、`sentCount=0`。冪等閘門（`push.id is null` 加
+    `line_push_logs.source_message_id` 的 partial unique index）正確擋下第二次推播。
 - **完成證據**：第一次有實際 LINE 收件、推播紀錄為 `sent` 且有 provider request id；未配對、取消追蹤、關閉通知者不收件；第二次不重送。
+- **未逐項驗證的部分**：「取消追蹤」與「關閉通知」兩種情形沒有另做對照測試。僅間接觀察到 `HAPPY`
+  那列 `person_id` 為 null、狀態 `unpaired` 的 follower 全程沒有收到任何訊息。要正式主張這兩條規則，
+  需要各自建一個對照案例；本項以「實際送達與不重送」結案，不宣稱已涵蓋全部負向情境。
 - **目前不需再做**：GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步，不能再把「secret 不一致」當成目前原因。
 
 ### E-03 LINE Login 身份的 follow 自動配對真人驗收 `[>]`
@@ -425,7 +449,7 @@ staging 目前為 `LINE_OA_MODE=line`，`/api/health` 的 `warnings=[]`；真實
   出現在後台、訊息中心公告實際送達真人的 LINE。`/api/health` 的 `warnings` 已為空。
   卡關原因是 LINE Official Account Manager「回應設定」裡的 Webhook 開關預設關閉，
   而 Developers Console 的 Verify 在它關著時仍會成功。
-- `[>]` 生日邀請的實際 LINE 送達與重跑不重送，見 E-02；follow identity pairing 的真人驗收，見 E-03。
+- `[x]` 生日邀請的實際 LINE 送達與重跑不重送已於 2026-09-12 完成，見 E-02；follow identity pairing 的真人驗收，見 E-03。
 - `[!]` 每月推播額度與超額行為，見 E-05；各社各自的 OA／channel／webhook，見 E-04。
 - `[!]` production 憑證、scheduler、旗標、備份與回復流程，見 E-08；`deployment-env.mjs` 已要求
   production 使用 `LINE_OA_MODE=line`。
@@ -548,7 +572,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 唯一的外部待辦清單是本文件前面的 E-01–E-11；執行順序如下：
 
 1. **E-01：Flex staging 發布與真人收訊** `[x]`：Plan、Go-Live、staging 旗標啟用、三種卡片模板真人收訊與 `line_push_logs` 的 `sent`／provider request id 均已完成，2026-09-12 結案。
-2. **E-02：生日邀請 LINE 實際送達** `[>]`：準備有配對且開啟通知的測試社員，確認第一次收件與第二次不重送。
+2. **E-02：生日邀請 LINE 實際送達** `[x]`：2026-09-12 完成。`PANCHIAO-ELITE` 的邀請實際送達 `Michael` 的 LINE，重跑 `jobCount=0` 不重送；負向情境（取消追蹤、關閉通知）未另做對照測試。
 3. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
 5. **E-06：登入後管理頁效能量測** `[>]`：使用已登入 staging 帳號量測 TTFB、LCP、FCP；沒有數字就寫未量測。
