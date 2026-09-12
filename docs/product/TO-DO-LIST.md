@@ -22,6 +22,10 @@
   `20260912000200_line_oa_flex_templates_flag.sql`，但旗標尚未開啟。
 - **外部動作**：平台管理員先執行
   `npm run flags:enable:staging -- line_oa_flex_templates_v1`。
+- **最新外部核對（2026-09-12）**：已登入的 staging 管理頁可正確切到
+  `PANCHIAO-ELITE`，可看到 3 筆仍在追蹤且已配對的 follower，以及既有推播紀錄；
+  但旗標關閉時不顯示 Flex 模板操作區。這只證明社別／OA 基礎連線可用，不能代替
+  Flex 旗標開啟後的指定對象真人收訊。
 - **完成證據**：staging `/api/health` 的 revision 與 Go-Live exact SHA 相符、`issues=[]`；管理頁可預覽並指定測試 follower
   發送；`line_push_logs` 為 `sent` 且有 provider request id；旗標關閉時沒有 LINE API 請求。
 - **安全界線**：不開 production、不把 token 放進 repo、不用全社廣播做第一次測試。

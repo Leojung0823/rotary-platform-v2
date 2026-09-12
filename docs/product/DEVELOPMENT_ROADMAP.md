@@ -39,6 +39,9 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
 
 2026-09-12 新增 LINE OA Flex 卡片模板第一版，PR #98 已合併至 `main` merge commit `55047dd1f2d936a5147458fd16faa5038b068c3d`：管理頁提供社務公告、活動提醒、生日祝福三種固定版型與預覽；伺服器端重新檢查社別、`oa.manage`、旗標與 OA 憑證，沿用既有對象解析與批次推播。新增 migration `20260912000200_line_oa_flex_templates_flag.sql`，預設關閉；本機資料庫驗證、828 個測試與 LINE OA E2E 4/4 均通過。Staging Release Plan `34686603765` 與 Go-Live `34686702234` 已成功；目前只剩 staging 旗標開啟與 LINE 真人收訊，外部步驟集中記在 `TO-DO-LIST.md` 的 E-01。
 
+2026-09-12 登入 staging 管理頁核對 `PANCHIAO-ELITE`：3 筆 follower 仍在追蹤且已配對，既有推播紀錄可見；
+Flex 操作區因 `line_oa_flex_templates_v1` 尚未開啟而不顯示。此為 OA 基礎狀態證據，不等於 Flex 真人收訊已完成。
+
 2026-09-12 新增管理模式的「驗證 LINE OA」按鈕。伺服器會重新檢查 `oa.manage`，從該社環境變數讀取
 channel access token，呼叫 LINE `/v2/bot/info` 並核對 Basic ID，再透過既有 service-only RPC 記錄結果。
 這版已由 Staging Go-Live `34604266568` 部署，CI `34604026419` 與 Browser Smoke `34604026408` 均通過。
