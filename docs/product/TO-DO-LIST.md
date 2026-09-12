@@ -13,7 +13,7 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `6fa0c496345b`，Go-Live run 是 `34604266568`。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `3e883228e58e`，Go-Live run 是 `34668149625`。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
@@ -24,9 +24,9 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-12 的權威基準：`main` 最新文件 commit 為 `71a0cf2f6544841c321a30ca12d8dbf9b524fa7e`，
-staging 最新產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；staging `/api/health` 回報
-`revision=6fa0c496345b`、`status=ok`、`issues=[]`、`warnings=[]`。
+截至 2026-09-12 的權威基準：`main` HEAD 為 `3e883228e58e7a7073ee2307d76ca7fcdc19d44e`，
+staging 最新產品 runtime 同為 `3e883228e58e`；staging `/api/health` 回報
+`revision=3e883228e58e`、`status=ok`、`issues=[]`、`warnings=[]`。Flex 第一版在 PR #98，尚未進入 main 或 staging。
 最新已部署 migration 是
 `20260911000300_line_oa_pairing_membership_window.sql`。
 
@@ -54,7 +54,7 @@ fallback 給 HAPPY。剩下的是 follow 事件自動配對真人驗收，不是
 `birthday-scheduler` environment，且 secret 名稱已存在，但兩邊的秘密值目前不一致。最新排程
 `34595040657` 已打到 staging route 後回 `401 unauthorized`；`34595311338` 因同一 concurrency queue 被取消，
 所以日常自動執行與 LINE 邀請送達仍尚未證明。
-production 沒有修改，目前沒有 open PR。
+production 沒有修改；PR #98 `codex/line-oa-flex-templates` 已開啟，等待檢查與審查。
 
 ## 逐項狀態
 

@@ -11,15 +11,17 @@
 JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_flex_templates_flag.sql`，
 旗標預設關閉並有 `DISABLE_LINE_OA_FLEX_TEMPLATES` 緊急開關。
 
-本機已通過 126 個測試檔／828 個測試、typecheck、lint、build、migration guard、verification manifest
-與 `git diff --check`；新增的 line OA 瀏覽器測試可被 Playwright 列出。`npm run verify:db` 尚未完成，
-因本機 Docker API 無回應而停在 `supabase db reset --local`；尚未提交、部署或開啟 staging 旗標。
+本機已通過 126 個測試檔／828 個測試、typecheck、lint、build、migration guard、verification manifest、
+`npm run verify:db` 與 `git diff --check`；資料庫驗證包含新 Flex 旗標的預設關閉與權限邊界。新增的 line OA
+瀏覽器驗收 4/4 通過。commit 是 `02d88ec373e6d437661e84ef2b2c1361920c7de4`，已推送並建立 PR #98；
+本輪 migration 尚未部署，`line_oa_flex_templates_v1` 尚未在 staging 開啟。
 
 ## 最新狀態核對（2026-09-12；本輪部署後基準）
 
-- 本次最新核對的 `main` 最新文件 commit 為 `71a0cf2f6544841c321a30ca12d8dbf9b524fa7e`；staging 產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；沒有 open PR。
-- staging `/api/health` 回報 `status=ok`、revision `6fa0c496345b`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
-- Staging Release Plan `34604034989`、CI `34604026419`、Browser Smoke `34604026408` 與 Staging Go-Live `34604266568` 均成功。
+- 本次最新核對的 `main` HEAD 為 `3e883228e58e7a7073ee2307d76ca7fcdc19d44e`；staging 產品 runtime 同為 `3e883228e58e7a7073ee2307d76ca7fcdc19d44e`；PR #98 目前開啟中。
+- staging `/api/health` 回報 `status=ok`、revision `3e883228e58e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與上一個 Go-Live 的 exact SHA 相符。
+- 上一個版本的 Staging Release Plan `34668072136` 與 Staging Go-Live `34668149625` 均成功；`3e88322` 的 CI 與 Browser Smoke 也已成功。
+- PR #98 的 CI、Quality 與 Browser Smoke 正由 GitHub 依變更範圍自動檢查，尚未把 pending 當成通過。
 - 管理模式 → LINE OA 已有「驗證 LINE OA」按鈕；伺服器會檢查 `oa.manage`、依該社 `clubId` 讀取該社 server token、呼叫 LINE `/v2/bot/info`、核對 Basic ID，再使用既有 service-only RPC 記錄結果。已由具有 `PANCHIAO-ELITE` 社 `oa.manage` 的帳號在正確管理路由驗證成功；使用的是正確的 `LINE_OA_PANCHIAO_ELITE_*` namespace，Webhook 卡片也顯示最近簽章有效。社員端切換到板橋群英扶輪社後，`/me/line-oa` 已顯示加入連結；`HAPPY` 必須另用自己的 `LINE_OA_HAPPY_*`，不可跨社 fallback。下一步是 follow 事件自動配對真人驗收。
 - 前一輪 staging Go-Live `34594381922` 已部署 hosted staging；本輪 `34604266568` 已以 `6fa0c4` 重新部署；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
@@ -28,7 +30,7 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34595040657` 已完成但回 `401 unauthorized`；`34595311338` 因同一 concurrency queue 被取消。GitHub `birthday-scheduler` environment 的 secret 名稱已存在，正確 Render staging service 也有同名變數，但兩邊秘密值不一致，這是目前優先營運待辦。
 - 排程環境隔離的程式修法已完成：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護。現在只需在取得明確授權後同步兩端秘密值，再重跑 scheduler 驗證；不要把秘密寫入 repo，也不要移除 staging 部署保護。
-- production 沒有修改；staging 最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
+- production 沒有修改；staging 最新 migration 是 `20260912000100_line_oa_unpair_rebind.sql`；PR #98 的 `20260912000200_line_oa_flex_templates_flag.sql` 尚未部署。
 - `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由前一輪 Go-Live `34594381922` 部署到 staging；本輪 `6fa0c4` 的完整檢查與 Go-Live 另見上列 run。
 
 ## 本輪已合併並部署的待辦收尾（2026-09-12）

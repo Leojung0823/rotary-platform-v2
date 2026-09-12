@@ -17,9 +17,9 @@
 
 截至 2026-09-12 的實際掃描基準：
 
-- `main` 最新文件 commit 為 `71a0cf2f6544841c321a30ca12d8dbf9b524fa7e`；staging 產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
-- staging `/api/health` 回報 `status=ok`、`revision=6fa0c496345b`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
-- 最新 staging Go-Live 是 `34604266568`，以 exact SHA `6fa0c496345b…` 成功完成 migration、部署、HTTPS smoke 與 hosted member acceptance；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
+- `main` HEAD 為 `3e883228e58e7a7073ee2307d76ca7fcdc19d44e`；staging 產品 runtime 同為 `3e883228e58e`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
+- staging `/api/health` 回報 `status=ok`、`revision=3e883228e58e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
+- 最新 staging Go-Live 是 `34668149625`，以 exact SHA `3e883228e58e…` 成功完成 migration、部署、HTTPS smoke 與 hosted member acceptance；最新 migration 是 `20260912000100_line_oa_unpair_rebind.sql`。
 - 對應的 Staging Release Plan `34586642034` 成功；Go-Live 第一次 hosted acceptance 的短暫失敗在重跑後由同一個 run `34594381922` 全部通過。
 - 管理驗收第一次 run `34575792573` 失敗的原因是驗收腳本誤找不存在的 `management-card-events`；依產品既有設計改點管理模式第一層「活動」導覽後，`34577046356` 已成功通過，沒有放寬產品權限或新增活動卡片。
 - 後續 scheduler workflow 環境隔離修正已在 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這是排程設定修正，沒有重新部署 staging 應用程式，staging runtime 仍是上列產品 release。
@@ -35,6 +35,8 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
  `line_oa_event_push_v1` 時不送出。程式與 migration 已在 staging，仍待下一次排程的實際 LINE 送達驗收。
 
 另補上 `line_oa_auto_pairing_v1` 在共用應用程式旗標判斷器中的明確開啟要求；沒有旗標資料列時維持關閉，修補 commit 為 `68b12a5`，已隨 `34594381922` 部署到 staging。
+
+2026-09-12 新增 LINE OA Flex 卡片模板第一版，放在獨立分支 `codex/line-oa-flex-templates`、PR #98：管理頁提供社務公告、活動提醒、生日祝福三種固定版型與預覽；伺服器端重新檢查社別、`oa.manage`、旗標與 OA 憑證，沿用既有對象解析與批次推播。新增 migration `20260912000200_line_oa_flex_templates_flag.sql`，預設關閉；本機資料庫驗證、828 個測試與 LINE OA E2E 4/4 均通過，尚未部署 staging。
 
 2026-09-12 新增管理模式的「驗證 LINE OA」按鈕。伺服器會重新檢查 `oa.manage`，從該社環境變數讀取
 channel access token，呼叫 LINE `/v2/bot/info` 並核對 Basic ID，再透過既有 service-only RPC 記錄結果。
@@ -397,7 +399,7 @@ PR-01c 不做：
 5. **補量測管理頁 TTFB** `[>]`：目前只有未登入 `/login` 的 Chrome lab 數字；管理頁需要登入狀態，仍待用受保護測試帳號量測前後差異。
 6. **安排行動裝置與 M1 測試。** 用 iOS Safari、真實 Android Chrome，以及五位社員／幹部做形成性測試；自動化 Chromium 不取代實機與訪談。
 7. **整理正式環境準備。** production 生日 scheduler、production LINE 憑證與額度政策、`announcements_v09` 是否對 production 開啟，分開決策與執行；目前 production 沒有修改。
-8. **處理仍未完成的 LINE OA 功能。** Flex 模板已在獨立分支完成第一版，待 migration 部署、staging 旗標與 LINE 送達驗收；推播額度政策與 follow 配對真人驗收仍待處理；生日邀請推播已完成程式並部署，待 scheduler 與實際送達驗收。
+8. **處理仍未完成的 LINE OA 功能。** Flex 模板第一版已在 PR #98 完成並等待檢查／審查，之後才做 migration 部署、staging 旗標與 LINE 送達驗收；推播額度政策與 follow 配對真人驗收仍待處理；生日邀請推播已完成程式並部署，待 scheduler 與實際送達驗收。
 9. **Recovery email 維持暫緩。** 只有在 production 上線或密碼登入比例上升時，才重新處理 custom SMTP 與真實 email 驗收。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。
