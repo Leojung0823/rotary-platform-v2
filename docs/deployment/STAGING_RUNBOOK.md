@@ -139,6 +139,10 @@ Plan 不會套用 migration、不會 reset remote database，也不會載入 see
 3. `plan_run_id` 輸入剛完成的 Staging Release plan run id。
 4. `confirmation` 輸入 `LAUNCH-STAGING`。
 5. `backup_confirmation` 只有在可用 staging 備份或 rollback point 已確認後才能輸入 `BACKUP-READY`。
+   **目前的 staging 專案在 Supabase Free 方案上，沒有排程備份也沒有 point-in-time recovery**
+   （Dashboard → Database → Backups 顯示「Free Plan does not include project backups」），
+   所以這一格**不可能以「有資料庫備份」為依據**。實務依據只能是第 9 節的 forward-fix 路徑，
+   而且只有在該次變更確實可以 forward-fix 時才成立——見下一段的判斷準則。
 6. 核對等待核准的是 GitHub `staging` environment、Hosted Supabase staging project 與 staging deployment service。
 7. 核准後，workflow 先驗證 plan API metadata、repository checks 與 Supabase Management API project identity，再依序 link、dry-run、單次 apply、可選的第一次純測試資料 provisioning、POST deployment hook、等待 exact revision、smoke、Hosted browser acceptance。
 
@@ -312,8 +316,24 @@ npm run smoke:staging
 - staging project reference
 - 目前 commit SHA
 - 待套用 migration 清單
-- 最近一次可用備份時間
+- 最近一次可用備份時間（**Free 方案沒有備份，這一項記為「無備份」而不是留白**）
+- 這次採用的 rollback 依據：備份還原或 forward-fix
 - 執行人與核准人
+
+### 沒有備份時，什麼變更才可以用 forward-fix 當依據
+
+staging 在 Free 方案下沒有任何可還原的備份，所以 `BACKUP-READY` 實際上是在聲明
+「這次變更出錯時可以只靠再寫一支 migration 修回去」。可以這樣主張的條件：
+
+- 變更**只動 schema 物件的定義**（函式、view、投影、grant），前一版定義完整留在 git 裡；
+- **不刪除資料表、不刪欄位、不改寫既有資料列**；
+- 沒有破壞性的型別轉換或不可逆的 backfill。
+
+任一條不成立——例如要 drop column、改資料型別、或做資料遷移——**forward-fix 就不是有效依據**，
+不得以此輸入 `BACKUP-READY`。那種變更必須先取得真正的備份能力（升級方案或自行匯出），
+否則一旦出錯，staging 資料就是回不來的。
+
+production 不適用本節的權宜做法：E-08 明列 production 上線前必須確認備份／還原點。
 
 Migration 失敗時：
 

@@ -151,6 +151,22 @@
 - **必要動作**：確認 production 備份／還原點、HTTPS 網域、server secrets、migration plan、人工核准閘門與回復步驟。
 - **安全界線**：本清單更新前 production 沒有修改；任何 production 操作要另開明確 release 任務。
 
+### E-12 staging 沒有資料庫備份 `[!]`
+
+- **事實（2026-09-12 核對）**：staging 專案 `rotary-platform-v2-staging` 在 Supabase **Free 方案**，
+  Dashboard → Database → Backups 顯示「Free Plan does not include project backups」，
+  也沒有 point-in-time recovery。**這個專案目前沒有任何可還原的備份。**
+- **影響**：Go-Live 表單的 `backup_confirmation=BACKUP-READY` 在此專案上**不可能**以「有備份」為依據。
+  在此之前的每一次 Go-Live 都輸入過這個值，所以這是既存落差，不是本次才出現的。
+- **目前做法**：改以 `STAGING_RUNBOOK.md` 第 9 節的 **forward-fix** 為依據，並在該節寫明可用 forward-fix
+  主張的條件（只改 schema 物件定義、不刪表/欄位、不改寫資料、無不可逆轉換）。
+  2026-09-12 的 Go-Live `34707246035` 即依此進行——該版本只做函式 `create or replace`
+  與一次投影 drop/recreate，不觸及任何資料列。
+- **待產品決定**：是否升級 Supabase 方案以取得排程備份，或改為定期自行匯出 staging 資料。
+  在此之前，**任何具破壞性的 migration（drop column、型別轉換、資料遷移）都不得部署到 staging**，
+  因為出錯將無法還原。
+- **與 E-08 的關係**：production 不得沿用此權宜做法；E-08 已列明 production 上線前必須確認備份／還原點。
+
 ### E-09 Recovery email 與 custom SMTP `[!]`（暫緩）
 
 - **目前決策**：登入以 LINE 為主，recovery email 暫不重啟，不列為目前 release blocker。
@@ -581,6 +597,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
 10. **E-11：LINE Rich Menu／完整 OA 整合** `[ ]`：先完成產品入口設計，再另立開發與各社 OA 設定驗收。
+11. **E-12：staging 備份能力** `[!]`：決定升級方案或自行匯出；在此之前不部署破壞性 migration 到 staging。
 
 ## 歷史驗證證據（管理模式輪，2026-09-02）
 
