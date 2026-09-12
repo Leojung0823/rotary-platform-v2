@@ -78,11 +78,17 @@
   在 PANCHIAO-ELITE 是 `following`。研判是先前 OA 設錯社留下的，與本項驗收無關，但不應誤認為
   HAPPY 已有可用 follower。
 - **外部動作（已依根因修正）**：本項要在 **PANCHIAO-ELITE** 做，不是 HAPPY。排程挑選條件是：該社有
-  active `club_manager`，且有社員生日落在今天起 7 天內（社的時區），且該社員
-  `birthday_visibility_preferences` 為 `is_listed=true` 且 `allow_wishes=true`
-  （`20260824000900_birthday_wish_collection_scheduler.sql:461-489`）。因此要準備一位
-  PANCHIAO-ELITE 的測試社員，同時滿足「生日在 7 天窗口內」與「已配對且仍追蹤 OA」，
-  再執行一次 scheduler，確認手機收到邀請；然後重跑一次確認不重送。
+  active `club_manager`，且有社員的生日落在**下一個日曆月**（以社的時區計算），且該社員
+  `birthday_visibility_preferences` 為 `is_listed=true` 且 `allow_wishes=true`。
+  權威來源是 `20260901000200_birthday_collection_dispatch_lead_month.sql:131-132`
+  （`birthday_date >= date_trunc('month', local_today) + 1 month` 且
+  `< + 2 months`），**不是**已被它取代的 `20260824000900` 的
+  `local_today + 7`；`dispatch-lead-month-boundary.test.ts:19` 明文斷言新 migration
+  不得再出現那個 7 天窗口。因此在 2026-09 執行排程時，要準備的是一位**生日在 2026 年 10 月**、
+  且已配對並仍追蹤 PANCHIAO-ELITE OA 的測試社員，再執行一次 scheduler，確認手機收到邀請；
+  然後重跑一次確認不重送。
+- **這也解釋了既有的 HAPPY 通知**：它建立於 2026-09-01，對應的是 10 月生日批次；9/12 那次
+  `generated_count=1`、`notified_count=1` 是對同一個批次冪等重算，沒有新建通知。
 - **完成證據**：第一次有實際 LINE 收件、推播紀錄為 `sent` 且有 provider request id；未配對、取消追蹤、關閉通知者不收件；第二次不重送。
 - **目前不需再做**：GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步，不能再把「secret 不一致」當成目前原因。
 
