@@ -56,7 +56,33 @@
 
 - **目前證據**：scheduler protected route 已成功執行；最新 run `34673612440` 回報成功，但
   `generated_count=1`、`notified_count=1`、`line_push.jobCount=0`、`sentCount=0`，所以只證明排程路徑，不證明社員收到 LINE。
-- **外部動作**：準備一位已配對、仍追蹤本社 OA 且開啟通知的 staging 測試社員，建立當月可派發任務，執行一次 scheduler，確認手機收到邀請；再重跑一次。
+- **`jobCount=0` 的根因已查明（2026-09-12）——不是 bug**：該次 run log 顯示
+  `line_push.status="sent"`，代表 `line_oa_event_push_v1` 是開著的，是
+  `list_birthday_collection_line_push_jobs` 真的回傳 0 列。以 staging 資料庫逐環比對
+  （`20260911000200_birthday_collection_line_push.sql:27-51` 的 inner join 鏈）：
+
+  - 整張 `birthday_wish_collection_notifications` 只有一列，建立於 **2026-09-01**，
+    `notification_status='sent'`；9/12 那次的 `notified_count=1` 是冪等沿用這筆舊通知，沒有新建。
+  - 這筆通知屬於 **`HAPPY`** 社（`4ae968fc-80c2-49b4-ae5c-49ea4721e012`），訊息 `status=active`，
+    收件人 3 位（`birthday_participant_id` 非空），**沒有**既有 push log。
+  - 斷點在 follower 那一環：HAPPY 的 `line_oa_followers` 只有一列，`person_id` 為 `null`、
+    狀態 `unpaired`，所以該社已配對且仍追蹤的 follower 數是 **0**。
+  - 三位已配對的 follower 全部屬於 **`PANCHIAO-ELITE`**（`3df4b471-40e1-494e-a3ce-9f7285500eb0`），
+    與這筆生日通知不是同一個社。
+
+  收件人在該社沒有配對的 LINE 身分，投影取不到人，`jobCount=0` 是正確行為。**不要為了讓數字變好看
+  而放寬這條 join**——那會把訊息送給沒有配對關係的 OA 使用者。
+- **還有第二層阻擋**：即使 HAPPY 有配對 follower，`loadClubOaDispatchContext` 仍會失敗，因為依 E-04
+  HAPPY 必須有自己的 `LINE_OA_HAPPY_*` 憑證而目前沒有。流程在第六環就斷了，還走不到這一層。
+- **殘留資料**：`U888f7e17b71176bbec3c662ab24d4e33` 同時出現在兩社——在 HAPPY 是 `unpaired`、
+  在 PANCHIAO-ELITE 是 `following`。研判是先前 OA 設錯社留下的，與本項驗收無關，但不應誤認為
+  HAPPY 已有可用 follower。
+- **外部動作（已依根因修正）**：本項要在 **PANCHIAO-ELITE** 做，不是 HAPPY。排程挑選條件是：該社有
+  active `club_manager`，且有社員生日落在今天起 7 天內（社的時區），且該社員
+  `birthday_visibility_preferences` 為 `is_listed=true` 且 `allow_wishes=true`
+  （`20260824000900_birthday_wish_collection_scheduler.sql:461-489`）。因此要準備一位
+  PANCHIAO-ELITE 的測試社員，同時滿足「生日在 7 天窗口內」與「已配對且仍追蹤 OA」，
+  再執行一次 scheduler，確認手機收到邀請；然後重跑一次確認不重送。
 - **完成證據**：第一次有實際 LINE 收件、推播紀錄為 `sent` 且有 provider request id；未配對、取消追蹤、關閉通知者不收件；第二次不重送。
 - **目前不需再做**：GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步，不能再把「secret 不一致」當成目前原因。
 
