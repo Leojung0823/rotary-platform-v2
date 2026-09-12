@@ -1,7 +1,12 @@
 import { timingSafeEqual } from "node:crypto";
 
 export const LINE_OAUTH_TTL_SECONDS = 10 * 60;
-export type LineOAuthFlow = "login" | "invitation" | "join_link" | "bind";
+// The single source of truth for which OAuth round trips exist. The type is
+// derived from it so a new flow cannot be added to one and forgotten in the
+// other -- which is exactly how join_link shipped able to start but not to
+// come back.
+export const lineOAuthFlows = ["login", "invitation", "join_link", "bind"] as const;
+export type LineOAuthFlow = (typeof lineOAuthFlows)[number];
 
 export const LINE_OAUTH_COOKIE_NAMES = [
   "line_oauth_state",
