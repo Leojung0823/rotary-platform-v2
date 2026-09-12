@@ -18,17 +18,25 @@
 - **目前證據**：程式、migration、旗標、權限邊界與本機 E2E 已完成；PR #98 已合併至 `main` merge commit
   `55047dd1f2d936a5147458fd16faa5038b068c3d`。Staging Release Plan `34686603765` 與 Go-Live
   `34686702234` 已以同一個 `main` exact SHA `fbdc061dd702f453ab340bd595279223487d0838` 成功完成；staging
-  `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`，最新 migration 已是
-  `20260912000200_line_oa_flex_templates_flag.sql`，但旗標尚未開啟。
-- **外部動作**：平台管理員先執行
-  `npm run flags:enable:staging -- line_oa_flex_templates_v1`。
-- **最新外部核對（2026-09-12）**：已登入的 staging 管理頁可正確切到
-  `PANCHIAO-ELITE`，可看到 3 筆仍在追蹤且已配對的 follower，以及既有推播紀錄；
-  但旗標關閉時不顯示 Flex 模板操作區。這只證明社別／OA 基礎連線可用，不能代替
-  Flex 旗標開啟後的指定對象真人收訊。
-- **權限限制（2026-09-12）**：目前登入的帳號是社務管理員；開啟 `/platform/clubs`
-  會被後端拒絕並導向 `/access-denied`，不能用這個帳號設定平台旗標。必須改用具有
-  `platform_admin` 或 `superadmin` 的平台帳號，在有 `.env.staging` 的本機 checkout 執行上方 CLI。
+  `/api/health` 為 `revision=fbdc061dd702`、`status=ok`、`issues=[]`、`warnings=[]`，最新 migration 已是
+  `20260912000200_line_oa_flex_templates_flag.sql`。
+- **旗標已開啟（2026-09-12）**：平台管理帳號在本機 checkout 執行
+  `npm run flags:enable:staging -- line_oa_flex_templates_v1`，CLI 回報
+  `1 flag(s) enabled for staging: line_oa_flex_templates_v1`。執行前 `inspectBootstrapTarget`
+  已確認 `target=staging`、`errors=(none)`，連線的是 staging 專案 `vmmzdautcsgknhyqrsto`，
+  不是 production 的 `xglsrxfnxsmiwtfhbdqg`。密碼由終端機隱藏輸入，沒有進 `.env.staging`、
+  shell history 或 process list。
+- **真人收訊已通過（2026-09-12）**：旗標開啟後管理頁出現卡片格式選擇與卡片預覽；以 AudiencePicker
+  指定單一測試社員、用 `multicast` 傳送，真人手機**實際收到 Flex 卡片**。第一次測試沒有使用全社
+  broadcast，符合安全界線。
+- **仍缺**：`line_push_logs` 該列是否為 `sent` 且帶 provider request id 尚未回頭核對；三種模板
+  （社務公告／活動提醒／生日祝福）是否都各送過一次也尚未逐一記錄。補上這兩項才能改成 `[x]`。
+- **旗標開啟前的核對（2026-09-12）**：已登入的 staging 管理頁可正確切到 `PANCHIAO-ELITE`，可看到
+  3 筆仍在追蹤且已配對的 follower 與既有推播紀錄；當時旗標關閉，管理頁不顯示 Flex 模板操作區，
+  這是「旗標關閉時不會送出 LINE 請求」的畫面層證據。
+- **權限說明**：瀏覽器裡登入的社務管理員帳號開啟 `/platform/clubs` 仍會被後端拒絕並導向
+  `/access-denied`；平台旗標只能由具 `platform_admin` 或 `superadmin` 的帳號，在有 `.env.staging`
+  的本機 checkout 用上方 CLI 設定。這條限制沒有放寬。
 - **完成證據**：staging `/api/health` 的 revision 與 Go-Live exact SHA 相符、`issues=[]`；管理頁可預覽並指定測試 follower
   發送；`line_push_logs` 為 `sent` 且有 provider request id；旗標關閉時沒有 LINE API 請求。
 - **安全界線**：不開 production、不把 token 放進 repo、不用全社廣播做第一次測試。
@@ -438,7 +446,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   已部署到 staging；最新 scheduler `34673612440` 成功但 `jobCount=0`、`sentCount=0`，仍待有收件人的實際邀請 LINE 送達驗收。通知目前由
   `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
   所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
-- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`，migration 已部署到 staging；尚待 staging 旗標啟用與 LINE 實際送達驗收，見 E-01。
+- `[>]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`，migration 已部署到 staging；staging 旗標已於 2026-09-12 開啟，指定對象的 Flex 卡片已實際送達真人手機，剩餘核對見 E-01。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
   共用旗標判斷的 fail-closed 修補也已隨 Go-Live `34594381922` 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
 
@@ -478,7 +486,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 唯一的外部待辦清單是本文件前面的 E-01–E-11；執行順序如下：
 
-1. **E-01：Flex staging 發布與真人收訊** `[>]`：Plan 與 Go-Live 已通過；下一步是開啟 staging 旗標並用指定測試 follower 完成真人收訊。
+1. **E-01：Flex staging 發布與真人收訊** `[>]`：Plan、Go-Live、staging 旗標啟用與指定測試社員的真人收訊都已通過；只剩回頭核對 `line_push_logs` 的 `sent` 與 provider request id，並補測另外兩種卡片模板。
 2. **E-02：生日邀請 LINE 實際送達** `[>]`：準備有配對且開啟通知的測試社員，確認第一次收件與第二次不重送。
 3. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
