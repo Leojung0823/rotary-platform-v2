@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { evaluateFeatureFlag, parseFeatureFlagRecord, resolveRuntimeAppEnvironment } from "@/lib/product/feature-flags";
+import { trustedSiteUrl } from "@/lib/site-url";
 import { composeMessagePushText } from "./message-center-push";
 import { deliverClubOaText, loadClubOaDispatchContext } from "./oa-dispatch";
 
@@ -10,6 +11,7 @@ type BirthdayPushJob = {
   message_id?: unknown;
   title?: unknown;
   body?: unknown;
+  action_path?: unknown;
   oa_user_ids?: unknown;
 };
 
@@ -18,6 +20,7 @@ type ReadBirthdayPushJob = {
   message_id: string;
   title: string;
   body: string;
+  action_path: string | null;
   oa_user_ids: string[];
 };
 
@@ -46,8 +49,36 @@ function readJob(value: unknown): ReadBirthdayPushJob | null {
     message_id: job.message_id,
     title: job.title,
     body: job.body,
+    action_path: typeof job.action_path === "string" ? job.action_path : null,
     oa_user_ids: recipients,
   };
+}
+
+/**
+ * Turns the message's in-app destination into a link a member can tap from
+ * LINE. `action_path` is stored as a relative path, but it arrives here from
+ * the database, so the resolved origin is checked rather than trusted:
+ * "//example.com" is a valid relative reference that resolves to a different
+ * site entirely. A missing or unusable site origin drops the link instead of
+ * failing the push -- an invitation without a link still reaches the member.
+ */
+export function resolveInvitationLink(
+  actionPath: string | null,
+  environment: Readonly<Record<string, string | undefined>> = process.env,
+) {
+  if (!actionPath || !actionPath.startsWith("/") || actionPath.startsWith("//")) return null;
+  try {
+    const site = trustedSiteUrl(environment);
+    const target = new URL(actionPath, site);
+    return target.origin === site.origin ? target.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function composeBirthdayInvitationText(title: string, body: string, link: string | null) {
+  const text = composeMessagePushText(title, body);
+  return link ? `${text}\n\n${link}` : text;
 }
 
 async function linePushEnabled(supabase: SupabaseClient) {
@@ -107,7 +138,11 @@ export async function pushBirthdayCollectionNotifications(
       continue;
     }
 
-    const text = composeMessagePushText(job.title, job.body);
+    const text = composeBirthdayInvitationText(
+      job.title,
+      job.body,
+      resolveInvitationLink(job.action_path),
+    );
     const delivery = await deliverClubOaText(
       "multicast",
       job.oa_user_ids,

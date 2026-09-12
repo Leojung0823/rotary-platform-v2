@@ -36,6 +36,7 @@ begin
 
   if position('birthday_wish_collection_notifications' in target_definition) = 0
      or position('birthday_participant_id' in target_definition) = 0
+     or position('action_path' in target_definition) = 0
      or position('line_enabled' in target_definition) = 0
      or position('club_announcements' in target_definition) = 0
      or position('follower_status' in target_definition) = 0
