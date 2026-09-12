@@ -236,6 +236,30 @@ export async function cancelMemberInvitationAction(formData: FormData) {
   redirect(`/clubs/${clubId}/invitations?success=cancelled`);
 }
 
+export async function createClubJoinLinkAction(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_club_join_link", { p_club_id: clubId });
+  if (error) redirect(errorPath(`/clubs/${clubId}/invitations`, mapDatabaseError(error.message)));
+  // The raw token exists only in this response. It rides back in the query so
+  // the page can render it once; it is never stored anywhere readable.
+  const token = (data as { token?: unknown } | null)?.token;
+  if (typeof token !== "string") {
+    redirect(errorPath(`/clubs/${clubId}/invitations`, "unexpected"));
+  }
+  redirect(`/clubs/${clubId}/invitations?joinToken=${encodeURIComponent(token)}`);
+}
+
+export async function disableClubJoinLinkAction(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("disable_club_join_link", {
+    p_link_id: String(formData.get("linkId") ?? ""),
+  });
+  if (error) redirect(errorPath(`/clubs/${clubId}/invitations`, mapDatabaseError(error.message)));
+  redirect(`/clubs/${clubId}/invitations?success=join_link_disabled`);
+}
+
 export async function completeMemberJoinAction(formData: FormData) {
   const token = String(formData.get("token") ?? "");
   let input;

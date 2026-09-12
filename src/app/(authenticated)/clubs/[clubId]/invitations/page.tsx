@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import QRCode from "qrcode";
 import Link from "next/link";
 import Image from "next/image";
-import { cancelMemberInvitationAction, resendMemberInvitationAction } from "@/app/actions";
+import {
+  cancelMemberInvitationAction,
+  createClubJoinLinkAction,
+  disableClubJoinLinkAction,
+  resendMemberInvitationAction,
+} from "@/app/actions";
 import { ClubAdminNav } from "@/components/club-admin-nav";
 import { CopyLink } from "@/components/copy-link";
 import { Badge, Button, Card, Field, Input, Notice, Select } from "@/components/ui";
@@ -43,17 +48,40 @@ function statusTone(status: string): "success" | "warning" | "neutral" {
   return "neutral";
 }
 
+type JoinLinksProjection = {
+  feature_enabled: boolean;
+  links: Array<{
+    id: string;
+    token_prefix: string;
+    link_status: "active" | "disabled";
+    join_count: number;
+    created_at: string;
+    disabled_at: string | null;
+  }>;
+};
+
 export default async function InvitationsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ clubId: string }>;
-  searchParams: Promise<{ error?: string; success?: string; token?: string; invitation?: string }>;
+  searchParams: Promise<{
+    error?: string; success?: string; token?: string; invitation?: string; joinToken?: string;
+  }>;
 }) {
   const { clubId } = await params;
   const query = await searchParams;
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("list_member_invitations", { p_club_id: clubId });
+  const [{ data, error }, joinLinksResult] = await Promise.all([
+    supabase.rpc("list_member_invitations", { p_club_id: clubId }),
+    supabase.rpc("get_club_join_links_admin", { p_club_id: clubId }),
+  ]);
+  const joinLinks = (joinLinksResult.data ?? null) as JoinLinksProjection | null;
+  const activeJoinLink = joinLinks?.links.find((link) => link.link_status === "active") ?? null;
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const newJoinUrl = query.joinToken
+    ? `${siteOrigin}/join-club?token=${encodeURIComponent(query.joinToken)}`
+    : null;
 
   if (error) return <Notice tone="error">您沒有管理邀請的權限。</Notice>;
   const invitations = (data ?? []) as Invitation[];
@@ -78,6 +106,7 @@ export default async function InvitationsPage({
 
     {query.error && <Notice tone="error">{safeMessage(query.error)}</Notice>}
     {query.success === "cancelled" && <Notice tone="success">邀請已取消。</Notice>}
+    {query.success === "join_link_disabled" && <Notice tone="success">加入連結已關閉，舊連結立即失效。</Notice>}
 
     {inviteUrl && qr && <Card>
       <h2>{query.success === "resent" ? "新的邀請連結" : "邀請已建立"}</h2>
@@ -98,6 +127,43 @@ export default async function InvitationsPage({
           </div>
         </div>
       </div>
+    </Card>}
+
+    {joinLinks?.feature_enabled && <Card>
+      <h2>公開加入連結</h2>
+      <p>任何拿到這條連結的人，都可以用 LINE 登入直接成為本社正式社友，姓名帶入其 LINE 顯示名稱。</p>
+      <Notice tone="error">
+        這條連結沒有使用次數上限，也不會自動過期，唯一的控制是下方的「關閉連結」。
+        社友可以看到社員名錄，包含其他社員願意公開的 Email 與手機，
+        所以連結流出等同把社內資料交出去。用完請立刻關閉。
+      </Notice>
+
+      {newJoinUrl && <>
+        <Notice>連結只會在這裡顯示一次，離開頁面後無法再取得，需要時請重新建立。</Notice>
+        <div className="token-panel">
+          <div>
+            <div className="token-value">{newJoinUrl}</div>
+            <div className="form-actions"><CopyLink value={newJoinUrl} /></div>
+          </div>
+        </div>
+      </>}
+
+      {activeJoinLink
+        ? <div className="form-actions">
+          <Badge tone="success">啟用中</Badge>
+          <span>識別碼 {activeJoinLink.token_prefix}，已有 {activeJoinLink.join_count} 人加入</span>
+          <form action={disableClubJoinLinkAction}>
+            <input type="hidden" name="clubId" value={clubId} />
+            <input type="hidden" name="linkId" value={activeJoinLink.id} />
+            <Button type="submit" className="button-secondary">關閉連結</Button>
+          </form>
+        </div>
+        : <p className="muted">目前沒有啟用中的加入連結。</p>}
+
+      <form action={createClubJoinLinkAction}>
+        <input type="hidden" name="clubId" value={clubId} />
+        <Button type="submit">{activeJoinLink ? "重新建立（舊連結立即失效）" : "建立加入連結"}</Button>
+      </form>
     </Card>}
 
     <div className="table-wrap">

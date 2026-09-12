@@ -57,3 +57,4 @@ supabase/verification/invitation_transfer_to_known_identity_security.sql
 supabase/verification/club_profile_president_security.sql
 supabase/verification/line_oa_admin_env_keys_security.sql
 supabase/verification/birthday_collection_line_push_security.sql
+supabase/verification/club_join_link_security.sql
