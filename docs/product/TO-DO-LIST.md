@@ -24,7 +24,7 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-12 的權威基準：`main` 最新文件 commit 為 `39211a9af0a8b1eb52a0cf6fa8666341b0731637`，
+截至 2026-09-12 的權威基準：`main` 最新文件 commit 為 `71a0cf2f6544841c321a30ca12d8dbf9b524fa7e`，
 staging 最新產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；staging `/api/health` 回報
 `revision=6fa0c496345b`、`status=ok`、`issues=[]`、`warnings=[]`。
 最新已部署 migration 是
@@ -36,11 +36,14 @@ Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS sm
 產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance
 `34577046356` 亦已成功完成；執行秘書管理驗收也通過。
 
-本輪新增「管理模式 → LINE OA → 驗證 LINE OA」：伺服器會先檢查 `oa.manage`，再讀取該社 server environment
+本輪新增「管理模式 → LINE OA → 驗證 LINE OA」：伺服器會先檢查 `oa.manage`，再依路由上的該社 `clubId`
+讀取該社 server environment
 的 access token，呼叫 LINE `/v2/bot/info`，核對 Basic ID 後寫入既有 service-only verification RPC；不把 token
 或 LINE 回應交給瀏覽器。Staging Go-Live `34604266568`、CI `34604026419`、Browser Smoke `34604026408` 均成功。
-實際按鈕已在 staging 出現，但目前回報 `oa_not_configured`：資料庫為本社讀取 `LINE_OA_HAPPY_*`，Render 目前可見的
-該社憑證名稱是 `LINE_OA_PANCHIAO_ELITE_*`。兩者歸屬尚未取得明確確認，真實 OA 身份驗證尚未完成。
+實際按鈕已在 staging 出現；這次點擊的是 `HAPPY` 管理頁，所以資料庫依該社讀取 `LINE_OA_HAPPY_*`。
+Render 的 `LINE_OA_PANCHIAO_ELITE_*` 是 `PANCHIAO-ELITE` 社的正確 namespace，不應改名或 fallback 給 HAPPY。
+社員頁的社別切換已依 `clubId` 正確切換；目前只是 staging 測試社別／管理權限與實際 OA 憑證未對齊，
+PANCHIAO 真人身份驗證仍需由具有該社 `oa.manage` 的帳號，從該社管理路由執行。
 之後的 scheduler environment 隔離修正已推到 `main` commit
 `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718`
 均成功。管理驗收第一次 run `34575792573` 是驗收腳本誤找不存在的活動卡片；修正為點第一層「活動」導覽後重跑成功。

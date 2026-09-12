@@ -17,7 +17,7 @@
 
 截至 2026-09-12 的實際掃描基準：
 
-- `main` 最新文件 commit 為 `39211a9af0a8b1eb52a0cf6fa8666341b0731637`；staging 產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
+- `main` 最新文件 commit 為 `71a0cf2f6544841c321a30ca12d8dbf9b524fa7e`；staging 產品 runtime 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在 staging release，不再是「尚未部署」。
 - staging `/api/health` 回報 `status=ok`、`revision=6fa0c496345b`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
 - 最新 staging Go-Live 是 `34604266568`，以 exact SHA `6fa0c496345b…` 成功完成 migration、部署、HTTPS smoke 與 hosted member acceptance；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 對應的 Staging Release Plan `34586642034` 成功；Go-Live 第一次 hosted acceptance 的短暫失敗在重跑後由同一個 run `34594381922` 全部通過。
@@ -39,8 +39,12 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
 2026-09-12 新增管理模式的「驗證 LINE OA」按鈕。伺服器會重新檢查 `oa.manage`，從該社環境變數讀取
 channel access token，呼叫 LINE `/v2/bot/info` 並核對 Basic ID，再透過既有 service-only RPC 記錄結果。
 這版已由 Staging Go-Live `34604266568` 部署，CI `34604026419` 與 Browser Smoke `34604026408` 均通過。
-線上按鈕已實際點擊；因 staging 資料庫期待 `LINE_OA_HAPPY_*`、Render 現有該社憑證名稱為
-`LINE_OA_PANCHIAO_ELITE_*`，目前回報 `oa_not_configured`，待確認兩組名稱是否同一 OA 後再完成真人驗證。
+線上按鈕已實際點擊；這次實際進入的是 `HAPPY` 的管理頁，因此頁面依該社資料讀取
+`LINE_OA_HAPPY_*`。Render 上的 `LINE_OA_PANCHIAO_ELITE_*` 則是 `PANCHIAO-ELITE` 社的正確
+namespace，不能改名給 HAPPY，也不能讓 HAPPY fallback 到 PANCHIAO。社員頁的社別切換會依目前
+`clubId` 讀取對應社的 OA；管理頁也必須由具有該社 `oa.manage` 的帳號進入。這次 `oa_not_configured`
+是 staging 測試社別／管理權限與實際 OA 憑證未對齊，不是跨社共用憑證的理由；PANCHIAO 的真人驗證仍待
+以具有該社管理權限的帳號，在該社路由完成。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
