@@ -19,12 +19,13 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 
 ## 最新狀態核對（2026-09-12；本輪部署後基準）
 
-- 本次最新核對的 `main` HEAD 為 `55047dd1f2d936a5147458fd16faa5038b068c3d`；staging 產品 runtime 仍為
+- 本次最新核對的 `main` HEAD 為 `62af8a6dd82ebf81214b4fbbf5a3b69c6a7adccb`；staging 產品 runtime 仍為
   `3e883228e58e`，尚未包含 Flex；目前沒有 open PR，PR #98 已合併。
 - staging `/api/health` 回報 `status=ok`、revision `3e883228e58e`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與上一個 Go-Live 的 exact SHA 相符。
+- Flex 本輪的 Staging Release Plan `34686141978` 已成功完成 dry-run，核對 exact SHA
+  `62af8a6dd82ebf81214b4fbbf5a3b69c6a7adccb`；尚未執行 Go-Live，staging migration 與 runtime 尚未更新。
 - 上一個版本的 Staging Release Plan `34668072136` 與 Staging Go-Live `34668149625` 均成功；`3e88322` 的 CI 與 Browser Smoke 也已成功。
-- PR #98 合併後的 CI `34685398379` 已成功；Browser Smoke `34685398459` 在本次核對時仍在執行，
-  不提前當成通過，也不把它當成 staging 部署證據。
+- 本次 docs-only 同步後的 CI `34686088187` 與 Browser Smoke `34686088202` 均成功；變更範圍分類器判定為文件變更，完整 database／member-browser jobs 依規則跳過。
 - 管理模式 → LINE OA 已有「驗證 LINE OA」按鈕；伺服器會檢查 `oa.manage`、依該社 `clubId` 讀取該社 server token、呼叫 LINE `/v2/bot/info`、核對 Basic ID，再使用既有 service-only RPC 記錄結果。已由具有 `PANCHIAO-ELITE` 社 `oa.manage` 的帳號在正確管理路由驗證成功；使用的是正確的 `LINE_OA_PANCHIAO_ELITE_*` namespace，Webhook 卡片也顯示最近簽章有效。社員端切換到板橋群英扶輪社後，`/me/line-oa` 已顯示加入連結；`HAPPY` 必須另用自己的 `LINE_OA_HAPPY_*`，不可跨社 fallback。下一步是 follow 事件自動配對真人驗收。
 - 最新 staging Go-Live `34668149625` 已以 exact SHA `3e883228e58e` 部署；最新 migration 是 `20260912000100_line_oa_unpair_rebind.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
@@ -33,7 +34,7 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34673612440` 已成功；但 `line_push.jobCount=0`、`sentCount=0`，代表尚未證明生日邀請實際送到 LINE。GitHub `birthday-scheduler` environment 與正確 Render staging service 的 secret 已同步，目前不是 secret 不一致問題。
 - 排程環境隔離的程式修法已完成：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護。下一步是準備符合條件的測試收件人，重跑 scheduler 驗證實際收件與冪等；不要把秘密寫入 repo，也不要移除 staging 部署保護。
-- production 沒有修改；staging 最新 migration 是 `20260912000100_line_oa_unpair_rebind.sql`；PR #98 的 `20260912000200_line_oa_flex_templates_flag.sql` 尚未部署。
+- production 沒有修改；staging 最新 migration 是 `20260912000100_line_oa_unpair_rebind.sql`；PR #98 的 `20260912000200_line_oa_flex_templates_flag.sql` 尚未部署。Plan `34686141978` 已成功，下一步是受保護 Go-Live。
 - `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由前一輪 Go-Live `34594381922` 部署到 staging；本輪合併後的 Flex migration 尚未部署。
 
 外部處理的唯一清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-11，涵蓋 Flex staging、生日邀請送達、follow 配對、各社 OA、額度政策、效能量測、實機／M1、雙重社籍、production 準備、暫緩的 recovery email 與 Rich Menu。
@@ -471,11 +472,15 @@ staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
 staging Auth fix commits           lint / typecheck / 647 tests passed locally;
                                   CI skipped by instruction ([skip ci])
-staging plan (latest round)        passed (run 34668072136; exact SHA 3e88322)
+staging plan (previous deployed)   passed (run 34668072136; exact SHA 3e88322)
 staging Go-Live (latest round)     passed (run 34668149625; revision 3e88322,
                                   migration + smoke + hosted member acceptance passed)
-CI (merge #98)                     passed (run 34685398379; exact SHA 55047dd)
-Browser Smoke (merge #98)          in progress at scan (run 34685398459)
+staging plan (Flex current)        passed (run 34686141978; exact SHA 62af8a6,
+                                  dry-run only; Go-Live not run)
+CI (docs-only sync)                passed (run 34686088187; classifier passed,
+                                  full database/member-browser jobs skipped)
+Browser Smoke (docs-only sync)     passed (run 34686088202; classifier passed,
+                                  member-browser job skipped)
 staging management acceptance      passed (run 34577046356; exact SHA a8c1e55,
                                   birthday + archive + event + cover flows passed)
 staging health (current)           status=ok; revision 3e883228e58e;
