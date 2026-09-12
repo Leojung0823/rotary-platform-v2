@@ -41,6 +41,7 @@ function query(result: unknown) {
     neq: vi.fn(),
     maybeSingle: vi.fn(async () => result),
     update: vi.fn(),
+    upsert: vi.fn(),
     then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
       Promise.resolve(result).then(resolve, reject),
   };
@@ -75,6 +76,7 @@ describe("POST /api/line-oa/webhook/[clubId]", () => {
   let followerResult: { data: unknown; error: unknown };
   let pairingResult: { data: unknown; error: unknown };
   let pairingThrows: boolean;
+  let followerUpdate: Record<string, unknown> | null;
   let webhookUpdate: Record<string, unknown> | null;
 
   beforeEach(() => {
@@ -82,6 +84,7 @@ describe("POST /api/line-oa/webhook/[clubId]", () => {
     followerResult = { data: [], error: null };
     pairingResult = { data: "paired", error: null };
     pairingThrows = false;
+    followerUpdate = null;
     webhookUpdate = null;
 
     for (const mock of Object.values(mocks)) mock.mockReset();
@@ -107,7 +110,15 @@ describe("POST /api/line-oa/webhook/[clubId]", () => {
           error: null,
         });
       }
-      if (table === "line_oa_followers") return { upsert: mocks.followerUpsert };
+      if (table === "line_oa_followers") {
+        const chain = query({ data: null, error: null });
+        chain.upsert = mocks.followerUpsert;
+        chain.update.mockImplementation((values: Record<string, unknown>) => {
+          followerUpdate = values;
+          return chain;
+        });
+        return chain;
+      }
       if (table === "line_webhooks") {
         const chain = query({ data: null, error: null });
         chain.update.mockImplementation((values: Record<string, unknown>) => {
@@ -194,6 +205,26 @@ describe("POST /api/line-oa/webhook/[clubId]", () => {
       processing_status: "processed",
       failure_code: "auto_pairing_failed",
     });
+  });
+
+  it("clears the identity projection when LINE reports an unfollow", async () => {
+    const response = await route.POST(request([{
+      type: "unfollow",
+      webhookEventId: "evt-unfollow-pairing-1",
+      source: { userId: oaUserId },
+      timestamp: 1_756_800_000_000,
+    }]), params());
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(followerUpdate).toMatchObject({
+      person_id: null,
+      app_account_id: null,
+      paired_at: null,
+      follower_status: "unpaired",
+    });
+    expect(followerUpdate?.unpaired_at).toEqual(expect.any(String));
+    expect(mocks.adminRpc).not.toHaveBeenCalledWith("auto_pair_line_oa_follower", expect.anything());
   });
 
   it("keeps the idempotency hash stable when LINE marks a redelivery", async () => {

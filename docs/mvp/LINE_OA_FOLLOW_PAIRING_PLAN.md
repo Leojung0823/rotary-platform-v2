@@ -1,6 +1,6 @@
 # LINE OA follow 事件自動配對社員 企劃書
 
-狀態：`[>]` 核心實作、verification、CI 與 staging 部署已完成；真實 identity pairing 驗收待做　　建立日期：2026-09-02（Asia/Taipei）
+狀態：`[>]` 核心實作、verification、CI 與 staging 部署已完成；真實 identity pairing 驗收待做；2026-09-12 補上解除配對後重新配對修正　　建立日期：2026-09-02（Asia/Taipei）
 預定執行者：**Codex（獨立分支）**　　平行分支：Claude 負責事件驅動自動推播，兩者不共用檔案。
 
 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
@@ -11,6 +11,7 @@
 - `[x]` webhook follow 路徑已在 follower upsert 成功後呼叫自動配對 RPC；配對失敗不讓 webhook 重試風暴，結果會留在 webhook failure code。
 - `[x]` `supabase/verification/line_oa_follow_event_pairing_security.sql`、route／邊界測試與 manifest 已完成，最新 `CI` 與 `Browser Smoke` 均通過。
 - `[x]` `line_oa_auto_pairing_v1` 已由受保護流程開啟 staging；日期窗口防護 migration `20260911000300_line_oa_pairing_membership_window.sql` 已部署，目前 staging runtime 為 `e6ff5b9854ef`，`/api/health` 的 `issues` 與 `warnings` 都是空的。Go-Live run 為 `34594381922`。
+- `[x]` 2026-09-12 修正解除配對後仍綁回舊社員的問題：手動解除會清除 `person_id`／`app_account_id`／`paired_at` 但保留實際 following 狀態；LINE `unfollow` 也會清除身份投影；migration 另修復舊的 `unpaired` stale projection。
 - `[>]` 尚未完成「曾用 LINE Login 登入的社員加入同一社 OA 後，自動對上正確 person」的真實 identity 驗收；也尚未用真實身份完成多社、外社、停權／退社的全流程證據。
 
 原始開發範圍是不修改 LINE Developers Console 或其他 hosted 設定；後續 staging／真實 webhook rollout 是獨立的發布與驗收工作，不應回頭改動本案的權限邊界。
@@ -62,8 +63,9 @@ line_oa_followers.oa_user_id  ==  line_identities.provider_subject
   那是平行分支的工作區。
 - 不做事件驅動自動推播。
 - 不做 Flex 圖文訊息。
-- 不改 `record_line_push`、`resolve_club_audience`、`pair_line_oa_follower`、`unpair_line_oa_follower`
-  的簽章與行為。手動配對必須維持現狀可用。
+- 不改 `record_line_push`、`resolve_club_audience`、`pair_line_oa_follower` 的簽章與行為。
+  `unpair_line_oa_follower` 維持簽章與權限檢查，但解除時必須清除 follower 的 person/account 投影，
+  手動配對仍維持現狀可用。
 - 不動 LINE Developers Console 或任何 hosted 環境。
 
 ## 5. 資料與權限設計
@@ -142,6 +144,7 @@ verification 要測「誰不能做什麼」，不只是成功路徑：
 - `identity_status` 不是 `active` 的 identity 不會被採用。
 - flag 關閉時不配對。
 - 同一事件重跑不會產生第二筆 audit。
+- 手動解除配對不會把仍在追蹤 OA 的人誤當成退追蹤；重新登入／follow 後可依 exact identity 配回目前帳號。
 
 ## 8. TypeScript 與測試
 

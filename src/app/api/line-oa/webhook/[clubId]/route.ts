@@ -195,8 +195,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (event.type === "unfollow" && userId) {
       const follower = await admin
         .from("line_oa_followers")
-        .update({ follower_status: "unpaired", unpaired_at: new Date().toISOString() })
+        .update({
+          person_id: null,
+          app_account_id: null,
+          paired_at: null,
+          follower_status: "unpaired",
+          unpaired_at: new Date().toISOString(),
+        })
         .eq("line_oa_account_id", account.data.id)
+        .eq("club_id", clubId)
         .eq("oa_user_id", userId);
       if (follower.error) failureCode = "follower_update_failed";
     }

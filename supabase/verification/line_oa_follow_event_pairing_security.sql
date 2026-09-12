@@ -276,6 +276,79 @@ begin
 end;
 $$;
 
+-- Manual unpairing must clear the old account projection while preserving the
+-- still-following relationship. A later bind/follow for the same exact LINE
+-- subject can then pair to the current member instead of the old one.
+set local role authenticated;
+do $$
+begin
+  perform public.unpair_line_oa_follower(
+    'a4000000-0000-4000-8000-000000000001',
+    'a8000000-0000-4000-8000-000000000005',
+    'rebind regression'
+  );
+end;
+$$;
+reset role;
+
+do $$
+declare
+  manual_follower public.line_oa_followers;
+begin
+  select * into manual_follower
+  from public.line_oa_followers
+  where id = 'a8000000-0000-4000-8000-000000000005';
+  if manual_follower.person_id is not null
+     or manual_follower.app_account_id is not null
+     or manual_follower.paired_at is not null
+     or manual_follower.follower_status <> 'following'
+     or manual_follower.unpaired_at is not null then
+    raise exception 'manual unpair left a stale follower projection';
+  end if;
+  if not exists (
+    select 1
+    from public.audit_logs
+    where subject_id = manual_follower.id
+      and action_key = 'line_oa.unpaired'
+      and metadata->>'follower_projection_cleared' = 'true'
+      and metadata::text not like '%Uline-pair%'
+  ) then
+    raise exception 'manual unpair audit did not record the projection cleanup safely';
+  end if;
+end;
+$$;
+
+set local role service_role;
+do $$
+declare result text;
+begin
+  result := public.auto_pair_line_oa_follower(
+    'a7000000-0000-4000-8000-000000000001',
+    'a4000000-0000-4000-8000-000000000001',
+    'Uline-pair-manual'
+  );
+  if result <> 'paired' then
+    raise exception 'cleared follower did not become eligible for exact re-pairing: %', result;
+  end if;
+end;
+$$;
+reset role;
+
+do $$
+declare
+  rebound_follower public.line_oa_followers;
+begin
+  select * into rebound_follower
+  from public.line_oa_followers
+  where id = 'a8000000-0000-4000-8000-000000000005';
+  if rebound_follower.person_id <> 'a2000000-0000-4000-8000-000000000008'
+     or rebound_follower.app_account_id <> 'a3000000-0000-4000-8000-000000000008'
+     or rebound_follower.follower_status <> 'following' then
+    raise exception 're-follow paired to the stale person instead of the exact LINE identity';
+  end if;
+end;
+$$;
+
 -- Turning the flag off closes a newly received follow without changing the
 -- follower row that the webhook already created.
 select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000001', true);
