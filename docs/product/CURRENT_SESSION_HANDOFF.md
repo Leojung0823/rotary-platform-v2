@@ -1,25 +1,27 @@
-# 交接筆記（持續更新；最新核對 2026-09-11）
+# 交接筆記（持續更新；最新核對 2026-09-12）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 最新狀態核對（2026-09-11；本輪部署後基準）
+## 最新狀態核對（2026-09-12；本輪部署後基準）
 
-- 本次最新核對的產品程式與 staging runtime 都對準 `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`；沒有 open PR。本次文件同步只會新增文件 commit，不會改變 staging runtime。
-- staging `/api/health` 回報 `status=ok`、revision `e6ff5b9854ef`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
-- 最新 staging Go-Live `34594381922` 已部署 hosted staging；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
+- 本次最新核對的產品程式與 staging runtime 都對準 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；沒有 open PR。
+- staging `/api/health` 回報 `status=ok`、revision `6fa0c496345b`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
+- Staging Release Plan `34604034989`、CI `34604026419`、Browser Smoke `34604026408` 與 Staging Go-Live `34604266568` 均成功。
+- 管理模式 → LINE OA 已有「驗證 LINE OA」按鈕；伺服器會檢查 `oa.manage`、讀取每社 server token、呼叫 LINE `/v2/bot/info`、核對 Basic ID，再使用既有 service-only RPC 記錄結果。實際點擊回報 `oa_not_configured`，因資料庫期待 `LINE_OA_HAPPY_*`，Render 現有該社環境變數名稱為 `LINE_OA_PANCHIAO_ELITE_*`；兩組名稱的歸屬尚未確認。
+- 前一輪 staging Go-Live `34594381922` 已部署 hosted staging；本輪 `34604266568` 已以 `6fa0c4` 重新部署；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 後續 scheduler workflow 環境隔離修正已推到 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這次只改 GitHub workflow／環境配置，沒有重新部署 staging runtime。
-- 前一輪 docs-only commit 的 `CI` `34583431760`、`Browser Smoke` `34583431873` 變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；本輪產品 release 的 Staging Release Plan `34586642034`、Staging Go-Live `34594381922` 均成功完成，管理驗收 `34577046356` 亦已成功。
+- 前一輪 docs-only commit 的 `CI` `34583431760`、`Browser Smoke` `34583431873` 變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；前一輪產品 release 的 Staging Release Plan `34586642034`、Staging Go-Live `34594381922` 均成功完成，管理驗收 `34577046356` 亦已成功。
 - 管理驗收第一次 run `34575792573` 因腳本誤找不存在的 `management-card-events` 失敗；改點管理模式第一層「活動」導覽後，`34577046356` 成功完成活動建立、封面上傳、發布與取消。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
 - 最新生日 scheduler run `34595040657` 已完成但回 `401 unauthorized`；`34595311338` 因同一 concurrency queue 被取消。GitHub `birthday-scheduler` environment 的 secret 名稱已存在，正確 Render staging service 也有同名變數，但兩邊秘密值不一致，這是目前優先營運待辦。
 - 排程環境隔離的程式修法已完成：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護。現在只需在取得明確授權後同步兩端秘密值，再重跑 scheduler 驗證；不要把秘密寫入 repo，也不要移除 staging 部署保護。
 - production 沒有修改；staging 最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
-- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由 Go-Live `34594381922` 部署到 staging。
+- `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由前一輪 Go-Live `34594381922` 部署到 staging；本輪 `6fa0c4` 的完整檢查與 Go-Live 另見上列 run。
 
-## 本輪已合併並部署的待辦收尾（2026-09-11）
+## 本輪已合併並部署的待辦收尾（2026-09-12）
 
-目前工作分支 `codex/todo-hardening` 已將產品 commit `e6ff5b9854ef9fa502f468f23efec6fa62241ac3` 推送至 `main` 並完成 staging Go-Live；旗標安全修補 `68b12a56a21e02e08ece4c91644ec74cad9b70f9` 及後續 docs-only commits 已同步至 `main`；本次仍是 docs-only 同步，產品程式與 staging runtime 未變。已完成：
+目前產品 commit `6fa0c496345bfacf306633e68cb19e7e687eabf6` 已推送至 `main` 並完成 staging Go-Live；產品與驗證文件已同步。已完成：
 
 - webhook redelivery 雜湊只忽略 `deliveryContext.isRedelivery`；HMAC 仍驗證原始 body，其他內容變更仍會被拒絕。
 - LINE OA 管理頁顯示 `access_token_env_key`／`webhook_secret_env_key` 名稱，不顯示 token 或 secret；新增 migration `20260911000100_line_oa_admin_env_keys.sql` 與權限 verification。
@@ -28,9 +30,10 @@
 - 修正 staging 管理驗收腳本：活動是管理模式第一層導覽，不是總覽卡片；以執行秘書 hosted acceptance `34577046356` 完成生日、文件、活動與活動封面流程。
 - 修正 LINE OA 自動配對只看 `membership_status` 的缺口：新增日期窗口檢查，active 但尚未開始或已過 `ended_on` 的社籍不會自動配對；新增 migration `20260911000300_line_oa_pairing_membership_window.sql`，並補上對應 verification。
 - 共用旗標評估器已將 `line_oa_auto_pairing_v1` 納入明確開啟清單；缺少設定時維持 fail-closed，補上 `src/lib/product/feature-flags.ts` 與回歸測試（commit `68b12a5`），並已由 Go-Live `34594381922` 部署 staging。
+- 管理模式 → LINE OA 的「驗證 LINE OA」按鈕已部署；伺服器只使用登入者的 `oa.manage` 權限與該社環境變數，向 LINE `/v2/bot/info` 核對 Basic ID 後記錄驗證結果；action、錯誤分類、憑證不外流與 mock fail-closed 測試均已加入。
 - 本機 `npm test`：122 files／789 tests passed；`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `npm run verify:db` 均通過；schema lint 僅有既有 3 個 warning。
 
-待做：在明確授權後同步 `birthday-scheduler` GitHub environment 與正確 Render staging service 的秘密值，再用下一次 birthday scheduler 實際驗證 LINE 邀請送達與重跑不重送；管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
+待做：確認 `LINE_OA_HAPPY_*` 與 Render 現有 `LINE_OA_PANCHIAO_ELITE_*` 是否屬於同一 OA，再補一個 matching environment key 並重新按鈕驗證；另在明確授權後同步 `birthday-scheduler` GitHub environment 與正確 Render staging service 的秘密值，再用下一次 scheduler 實際驗證 LINE 邀請送達與重跑不重送。管理模式生日／文件／活動／封面 hosted acceptance 已完成。舊 workflow 受 `staging` required reviewer 阻擋的問題已由環境隔離修正。舊 webhook row 只保存舊版 raw hash，無法安全回算；不要放寬 payload mismatch 來相容舊資料。
 
 ## 本輪新增的 LINE OA 配對防護（2026-09-11）
 
@@ -448,12 +451,14 @@ staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
 staging Auth fix commits           lint / typecheck / 647 tests passed locally;
                                   CI skipped by instruction ([skip ci])
-staging plan (current round)       passed (run 34586642034; exact SHA e6ff5b)
-staging Go-Live (current round)    passed (run 34594381922; revision e6ff5b,
+staging plan (latest round)        passed (run 34604034989; exact SHA 6fa0c4)
+staging Go-Live (latest round)     passed (run 34604266568; revision 6fa0c4,
                                   migration + smoke + hosted member acceptance passed)
+CI (latest product round)          passed (run 34604026419; exact SHA 6fa0c4)
+Browser Smoke (latest product round) passed (run 34604026408; exact SHA 6fa0c4)
 staging management acceptance      passed (run 34577046356; exact SHA a8c1e55,
                                   birthday + archive + event + cover flows passed)
-staging health (current)           status=ok; revision e6ff5b9854ef;
+staging health (current)           status=ok; revision 6fa0c496345b;
                                   issues=[]; warnings=[]
 ```
 

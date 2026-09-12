@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-11（Asia/Taipei）
+更新日期：2026-09-12（Asia/Taipei）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
@@ -13,7 +13,7 @@
 原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
 GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置，Browser Smoke
 只剩實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `e6ff5b9854ef`，Go-Live run 是 `34594381922`。
+生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `6fa0c496345b`，Go-Live run 是 `34604266568`。
 
 本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
 環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
@@ -24,9 +24,9 @@ GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依�
 LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
 follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
 
-截至 2026-09-11 的權威基準：`main` 與最新 staging runtime 都對準
-`e6ff5b9854ef9fa502f468f23efec6fa62241ac3`；staging `/api/health` 回報
-`revision=e6ff5b9854ef`、`status=ok`、`issues=[]`、`warnings=[]`。本次文件同步只會新增文件 commit，不會改變 runtime。
+截至 2026-09-12 的權威基準：`main` 與最新 staging runtime 都對準
+`6fa0c496345bfacf306633e68cb19e7e687eabf6`；staging `/api/health` 回報
+`revision=6fa0c496345b`、`status=ok`、`issues=[]`、`warnings=[]`。
 最新已部署 migration 是
 `20260911000300_line_oa_pairing_membership_window.sql`。
 
@@ -35,6 +35,12 @@ Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS sm
 之後 docs-only 文件同步的 `CI` `34583431760`、`Browser Smoke` `34583431873` 僅執行變更範圍分類器，完整 jobs 依 gate 跳過。
 產品 release 的 Staging Release Plan `34576631319`、Staging Go-Live `34576829556` 與 Staging Management Acceptance
 `34577046356` 亦已成功完成；執行秘書管理驗收也通過。
+
+本輪新增「管理模式 → LINE OA → 驗證 LINE OA」：伺服器會先檢查 `oa.manage`，再讀取該社 server environment
+的 access token，呼叫 LINE `/v2/bot/info`，核對 Basic ID 後寫入既有 service-only verification RPC；不把 token
+或 LINE 回應交給瀏覽器。Staging Go-Live `34604266568`、CI `34604026419`、Browser Smoke `34604026408` 均成功。
+實際按鈕已在 staging 出現，但目前回報 `oa_not_configured`：資料庫為本社讀取 `LINE_OA_HAPPY_*`，Render 目前可見的
+該社憑證名稱是 `LINE_OA_PANCHIAO_ELITE_*`。兩者歸屬尚未取得明確確認，真實 OA 身份驗證尚未完成。
 之後的 scheduler environment 隔離修正已推到 `main` commit
 `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718`
 均成功。管理驗收第一次 run `34575792573` 是驗收腳本誤找不存在的活動卡片；修正為點第一層「活動」導覽後重跑成功。
@@ -394,13 +400,14 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 以上程式與資料庫結果為既有驗證證據；當時的 Staging Go-Live 已完成 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。生日 V2／徵集 hosted acceptance `33345182984` 與 protected scheduler `33361427466` 也是歷史成功證據。
 
-## 最新掃描證據（2026-09-11；本輪部署後基準）
+## 最新掃描證據（2026-09-12；本輪部署後基準）
 
-- staging runtime revision 為 `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`；`68b12a5` 的旗標安全修補已部署；沒有 open PR。
-- staging health：revision `e6ff5b9854ef`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
+- staging runtime revision 為 `6fa0c496345bfacf306633e68cb19e7e687eabf6`；`68b12a5` 的旗標安全修補與 LINE OA 驗證按鈕已部署；沒有 open PR。
+- staging health：revision `6fa0c496345b`、`status=ok`、`issues=[]`、`warnings=[]`；與本次 Go-Live 的 exact SHA 相符。
 - `20260911000300_line_oa_pairing_membership_window.sql` 已部署；active 但 `ended_on` 已過期的社籍不再可自動配對。
 - 本次修補 push 後的 `CI` `34584379642`、`Browser Smoke` `34584379653`：以 `68b12a5` 成功完成；先前產品 release 的 CI／Browser Smoke 亦已成功。
-- Staging Release Plan `34586642034`、Staging Go-Live `34594381922`：以 `e6ff5b` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
+- Staging Release Plan `34604034989`、Staging Go-Live `34604266568`：以 `6fa0c4` 通過；migration apply、HTTPS smoke 與 hosted member acceptance 成功。
+- CI `34604026419` 與 Browser Smoke `34604026408`：以 `6fa0c4` 完整通過。
 - Staging Management Acceptance `34577046356`：以 `a8c1e55` 通過；執行秘書完成生日、文件、活動與活動封面流程。
 - 最新 Birthday Collection Scheduler `34595040657`：`failure`、route 回 `401 unauthorized`；兩端 scheduler secret 尚未同步，每日自動排程目前未證明。
 - 目前沒有 open PR；production 沒有修改。

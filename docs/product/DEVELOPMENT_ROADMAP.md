@@ -1,6 +1,6 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-11（Asia/Taipei）
+更新日期：2026-09-12（Asia/Taipei）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
@@ -15,11 +15,11 @@
 
 自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威來源是 GitHub `main`；扶輪社名稱編輯、祝福 IOU、生日祝福 V2、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening 都已進入主線。
 
-截至 2026-09-11 的實際掃描基準：
+截至 2026-09-12 的實際掃描基準：
 
-- `main` 與 staging 產品 runtime 目前都對準 `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在這次 staging release，不再是「尚未部署」。本次文件同步只會新增文件 commit，不會改變 staging runtime。
-- staging `/api/health` 回報 `status=ok`、`revision=e6ff5b9854ef`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
-- 最新 staging Go-Live 是 `34594381922`，以 exact SHA `e6ff5b9854ef…` 成功完成 migration、部署、HTTPS smoke 與 hosted member acceptance；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
+- `main` 與 staging 產品 runtime 目前都對準 `6fa0c496345bfacf306633e68cb19e7e687eabf6`。`68b12a5` 的 `line_oa_auto_pairing_v1` fail-closed 修補已包含在這次 staging release，不再是「尚未部署」。
+- staging `/api/health` 回報 `status=ok`、`revision=6fa0c496345b`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
+- 最新 staging Go-Live 是 `34604266568`，以 exact SHA `6fa0c496345b…` 成功完成 migration、部署、HTTPS smoke 與 hosted member acceptance；最新 migration 是 `20260911000300_line_oa_pairing_membership_window.sql`。
 - 對應的 Staging Release Plan `34586642034` 成功；Go-Live 第一次 hosted acceptance 的短暫失敗在重跑後由同一個 run `34594381922` 全部通過。
 - 管理驗收第一次 run `34575792573` 失敗的原因是驗收腳本誤找不存在的 `management-card-events`；依產品既有設計改點管理模式第一層「活動」導覽後，`34577046356` 已成功通過，沒有放寬產品權限或新增活動卡片。
 - 後續 scheduler workflow 環境隔離修正已在 `main` commit `6de28163e40bddd812bfc2c43a30fd43e04d006c`；CI `34573685666` 與 Browser Smoke `34573685718` 均成功。這是排程設定修正，沒有重新部署 staging 應用程式，staging runtime 仍是上列產品 release。
@@ -35,6 +35,12 @@ OA 管理頁顯示每社環境變數名稱（不顯示秘密值），以及由 p
  `line_oa_event_push_v1` 時不送出。程式與 migration 已在 staging，仍待下一次排程的實際 LINE 送達驗收。
 
 另補上 `line_oa_auto_pairing_v1` 在共用應用程式旗標判斷器中的明確開啟要求；沒有旗標資料列時維持關閉，修補 commit 為 `68b12a5`，已隨 `34594381922` 部署到 staging。
+
+2026-09-12 新增管理模式的「驗證 LINE OA」按鈕。伺服器會重新檢查 `oa.manage`，從該社環境變數讀取
+channel access token，呼叫 LINE `/v2/bot/info` 並核對 Basic ID，再透過既有 service-only RPC 記錄結果。
+這版已由 Staging Go-Live `34604266568` 部署，CI `34604026419` 與 Browser Smoke `34604026408` 均通過。
+線上按鈕已實際點擊；因 staging 資料庫期待 `LINE_OA_HAPPY_*`、Render 現有該社憑證名稱為
+`LINE_OA_PANCHIAO_ELITE_*`，目前回報 `oa_not_configured`，待確認兩組名稱是否同一 OA 後再完成真人驗證。
 
 另有兩項不在原路線圖、但已完成的工程工作：頁面查詢改為單次往返的組合型 RPC，以及 Render 機房由 Virginia 遷至新加坡（p50 由 520ms 降至 269ms）。
 
@@ -114,9 +120,9 @@ Phase 2 之後追加並完成的社務功能：
 
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
 - GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見 `TO-DO-LIST.md` 第 1 節。
-- staging 目前 runtime 是 `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`，`/api/health` 的 `issues` 與 `warnings` 都是空的；閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
+- staging 目前 runtime 是 `6fa0c496345bfacf306633e68cb19e7e687eabf6`，`/api/health` 的 `issues` 與 `warnings` 都是空的；閱讀本文件時仍應以 GitHub `main` 的最新 commit 為權威。
 - Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
-- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `e6ff5b9854ef9fa502f468f23efec6fa62241ac3`；生日旗標、Render scheduler secret 名稱、migration、HTTPS smoke 與 hosted acceptance 均已完成。GitHub workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，secret 名稱也已存在，但兩端秘密值目前不一致：`34595040657` 回 `401 unauthorized`，`34595311338` 因 concurrency queue 被取消。每日排程仍需修復後再驗證。
+- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `6fa0c496345bfacf306633e68cb19e7e687eabf6`；生日旗標、Render scheduler secret 名稱、migration、HTTPS smoke 與 hosted acceptance 均已完成。GitHub workflow 已改用只允許 `main` 的 `birthday-scheduler` environment，secret 名稱也已存在，但兩端秘密值目前不一致：`34595040657` 回 `401 unauthorized`，`34595311338` 因 concurrency queue 被取消。每日排程仍需修復後再驗證。
 - 生日 scheduler 的環境隔離問題已修正：workflow 不再使用需要人工審核的 `staging` environment，而是使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護。現在只差在明確授權後同步兩端 scheduler secret，再驗證下一次 schedule 真的執行；不可移除 `staging` 保護或把部署用 secrets 暴露給無審核 job。
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
