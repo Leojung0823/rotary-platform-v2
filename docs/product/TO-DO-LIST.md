@@ -110,6 +110,16 @@
   - **重跑不重送**：run `34695655038` 的 `generated_count`／`notified_count` 維持 2，但
     `jobCount=0`、`sentCount=0`。冪等閘門（`push.id is null` 加
     `line_push_logs.source_message_id` 的 partial unique index）正確擋下第二次推播。
+- **新文案與可點連結已驗收（2026-09-13）**：PR #99（`20260912000300`）把邀請改寫為
+  「有位社友的生日快到了／這個月輪到您為他寫一段生日祝福。題目我們已經準備好了，點開挑一題、
+  寫上幾句話就完成。」，並在 LINE 文字末端附上由 `action_path` 組出的絕對網址。
+  Staging Go-Live `34707246035` 部署（`/api/health` revision `4d4ba285d967`、`issues=[]`），
+  scheduler run `34708351703` 回報 `jobCount=1`、`sentCount=1`、`failedCount=0`，
+  `Michael` 的 LINE **實際收到新文案，連結可點且正確導向生日徵集頁**。
+- **驗收過程中確認的兩條產品規則**（都不是缺陷，不要為了測試方便繞過）：
+  1. `birthday_campaign_recipient_year_unique`：每位社員每社每年只有一個生日徵集。
+     要在同一年替同一位壽星再建一次會違反約束；本次改用生日年份 2027 才通過。
+  2. 邀請的收件人是被指派寫祝福的其他社員，壽星本人不會收到替自己寫祝福的邀請。
 - **完成證據**：第一次有實際 LINE 收件、推播紀錄為 `sent` 且有 provider request id；未配對、取消追蹤、關閉通知者不收件；第二次不重送。
 - **未逐項驗證的部分**：「取消追蹤」與「關閉通知」兩種情形沒有另做對照測試。僅間接觀察到 `HAPPY`
   那列 `person_id` 為 null、狀態 `unpaired` 的 follower 全程沒有收到任何訊息。要正式主張這兩條規則，
