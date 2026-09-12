@@ -126,9 +126,18 @@
   需要各自建一個對照案例；本項以「實際送達與不重送」結案，不宣稱已涵蓋全部負向情境。
 - **目前不需再做**：GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步，不能再把「secret 不一致」當成目前原因。
 
-### E-03 LINE Login 身份的 follow 自動配對真人驗收 `[>]`
+### E-03 LINE Login 身份的 follow 自動配對真人驗收 `[!]`（暫緩）
 
-- **外部動作**：找一位已用同一個 staging LINE Login channel 登入過的社員，切到該社員所屬社，加入同一社 OA；記錄加入前後 follower 狀態，不手動下拉配對。
+- **目前決策（2026-09-13）**：產品決定**暫緩**本項驗收，不列為目前的進行中工作。程式與旗標維持現狀，
+  不因為暫緩而關閉或改動。
+- **暫緩期間的已知狀態與殘留風險**：`line_oa_auto_pairing_v1` 在 staging 是開著的，webhook follow
+  事件會自動配對 follower。程式、migration、日期窗口防護與單元測試都已完成並部署，但
+  **「LINE Login identity 精確對上正確社員」這件事沒有真人證據**。也就是說，自動配對目前是
+  「已上線但未經真人驗證」的狀態，不是「已驗證正確」。多社、外社、停權與已過 `ended_on`
+  的誤配情境同樣未驗證。
+- **重啟時機**：production 上線前必須完成；或在 staging 出現配對錯誤（後台顯示的姓名與實際加入者
+  不符）時立即重啟。
+- **重啟後的外部動作**：找一位已用同一個 staging LINE Login channel 登入過的社員，切到該社員所屬社，加入同一社 OA；記錄加入前後 follower 狀態，不手動下拉配對。
 - **完成證據**：follow webhook 成功、`person_id` 自動指向正確社員；再驗證多社、外社、停權與已過 `ended_on` 的社員不會誤配。
 - **必要條件**：LINE Developers Console webhook／Use webhook 維持開啟，測試者必須使用真實 LINE 帳號與正確社別 OA。
 
@@ -490,7 +499,7 @@ staging 目前為 `LINE_OA_MODE=line`，`/api/health` 的 `warnings=[]`；真實
   出現在後台、訊息中心公告實際送達真人的 LINE。`/api/health` 的 `warnings` 已為空。
   卡關原因是 LINE Official Account Manager「回應設定」裡的 Webhook 開關預設關閉，
   而 Developers Console 的 Verify 在它關著時仍會成功。
-- `[x]` 生日邀請的實際 LINE 送達與重跑不重送已於 2026-09-12 完成，見 E-02；follow identity pairing 的真人驗收，見 E-03。
+- `[x]` 生日邀請的實際 LINE 送達與重跑不重送已於 2026-09-12 完成，見 E-02；follow identity pairing 的真人驗收已於 2026-09-13 暫緩，見 E-03。
 - `[!]` 每月推播額度與超額行為，見 E-05；各社各自的 OA／channel／webhook，見 E-04。
 - `[!]` production 憑證、scheduler、旗標、備份與回復流程，見 E-08；`deployment-env.mjs` 已要求
   production 使用 `LINE_OA_MODE=line`。
@@ -614,7 +623,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 1. **E-01：Flex staging 發布與真人收訊** `[x]`：Plan、Go-Live、staging 旗標啟用、三種卡片模板真人收訊與 `line_push_logs` 的 `sent`／provider request id 均已完成，2026-09-12 結案。
 2. **E-02：生日邀請 LINE 實際送達** `[x]`：2026-09-12 完成。`PANCHIAO-ELITE` 的邀請實際送達 `Michael` 的 LINE，重跑 `jobCount=0` 不重送；負向情境（取消追蹤、關閉通知）未另做對照測試。
-3. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
+3. **E-03：follow 自動配對真人驗收** `[!]`：2026-09-13 產品決定暫緩。旗標仍開著、程式已上線，但 identity 配對正確性沒有真人證據；production 上線前必須補做。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
 5. **E-06：登入後管理頁效能量測** `[>]`：使用已登入 staging 帳號量測 TTFB、LCP、FCP；沒有數字就寫未量測。
 6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
