@@ -212,6 +212,21 @@
 - `[ ]` **把生日開關整合進 `/me`**。`/me` 已有「通知與名冊隱私」卡片，生日公開設定另外放在
   `/birthdays`，個人隱私變成兩處管理。整合時要保留**每社獨立**的語意（偏好的 key 是 membership + club），
   不能整併成跨社共用一組設定；雙重社籍的成員必須還能分社設定。
+- `[ ]` **生日徵集產生失敗時的錯誤訊息無效**（2026-09-13 實測發現）。幹部在生日徵集管理頁用
+  「建立／重跑本月任務」產生一個該社員當年度已存在徵集的批次時，畫面只顯示
+  「操作沒有完成，請稍後再試。」——但**再試永遠不會成功**，因為真正原因是
+  `birthday_campaign_recipient_year_unique unique (club_id, recipient_membership_id, birthday_year)`：
+  每位社員每社每年只能有一個生日徵集。唯一約束的錯誤訊息沒有對照到
+  `src/lib/birthday-collection/rpc-error.ts`，就掉進 `unexpected` 這個 fallback
+  （`rpc-error.test.ts:20` 正是斷言未知訊息一律回 `unexpected`）。
+
+  實測經過：PANCHIAO-ELITE 的 LEO 已有 2026 年徵集（10 月批次建立），把生日改到 11/20 後產生
+  2026/11，RPC 拋例外、交易回滾，`birthday_wish_assignment_batches` 連一列都沒留下，
+  幹部完全看不出原因。改用年份 2027 即可通過。
+
+  要修的是給這個情境一個講得清楚的訊息（例如「這位社員今年已經有一個生日徵集」）。
+  **不要放寬那條唯一約束**——一個人一年只有一個生日，約束是對的，錯的是訊息。
+  順帶檢查 `rpc-error.ts` 還有哪些會落入 `unexpected` 的既有錯誤，那個 fallback 對使用者等於沒有資訊。
 
 ## 本輪結論
 
