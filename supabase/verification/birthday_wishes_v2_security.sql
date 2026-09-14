@@ -91,29 +91,51 @@ begin
   end if;
 end $$;
 
--- A missing preference remains private. V2-created preferences default to
--- public, but the caller still explicitly chooses when submitting the form.
+-- New memberships default to public. An explicit opt-out remains private and
+-- can be reversed without changing another membership.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '12000000-0000-4000-8000-000000000002', true);
 do $$
 declare page jsonb;
 begin
   page := public.get_my_birthday_page_v2('42000000-0000-4000-8000-000000000001');
-  if jsonb_array_length(page->'birthdays') <> 0
-     or (page->'my_preference'->>'has_preference')::boolean then
-    raise exception 'missing V2 preference was not private: %', page;
+  if jsonb_array_length(page->'birthdays') <> 2
+     or not (page->'my_preference'->>'has_preference')::boolean
+     or not (page->'my_preference'->>'is_listed')::boolean
+     or not (page->'my_preference'->>'allow_wishes')::boolean then
+    raise exception 'public V2 birthday default failed: %', page;
+  end if;
+
+  perform public.set_my_birthday_preference_v2(
+    '42000000-0000-4000-8000-000000000001', false, false
+  );
+  page := public.get_my_birthday_page_v2('42000000-0000-4000-8000-000000000001');
+  if jsonb_array_length(page->'birthdays') <> 1
+     or (page->'my_preference'->>'is_listed')::boolean
+     or (page->'my_preference'->>'allow_wishes')::boolean
+     or exists (
+       select 1
+       from jsonb_array_elements(page->'birthdays') as item
+       where item->>'membership_id' = '52000000-0000-4000-8000-000000000002'
+     ) then
+    raise exception 'explicit V2 birthday opt-out was not private: %', page;
   end if;
 
   perform public.set_my_birthday_preference_v2(
     '42000000-0000-4000-8000-000000000001', true, true
   );
   page := public.get_my_birthday_page_v2('42000000-0000-4000-8000-000000000001');
-  if jsonb_array_length(page->'birthdays') <> 1
-     or page->'birthdays'->0->>'birth_month' <> '8'
-     or page->'birthdays'->0->>'birth_day' <> '20'
-     or page->'birthdays'->0 ? 'birth_date'
-     or page->'birthdays'->0 ? 'birth_year'
-     or page->'birthdays'->0->>'age' is not null then
+  if jsonb_array_length(page->'birthdays') <> 2
+     or not exists (
+       select 1
+       from jsonb_array_elements(page->'birthdays') as item
+       where item->>'membership_id' = '52000000-0000-4000-8000-000000000002'
+         and item->>'birth_month' = '8'
+         and item->>'birth_day' = '20'
+         and not (item ? 'birth_date')
+         and not (item ? 'birth_year')
+         and item->>'age' is null
+     ) then
     raise exception 'V2 birthday privacy projection is invalid: %', page->'birthdays';
   end if;
 end $$;

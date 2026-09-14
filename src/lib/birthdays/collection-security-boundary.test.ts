@@ -20,8 +20,9 @@ describe("birthday collection security boundary", () => {
 
   it("fails closed before loading the collection projection when the flag is off", () => {
     expect(page).toContain('key: "birthday_wishes_collection_v1"');
-    expect(page).toContain("if (!evaluation.enabled || !query.clubId) notFound();");
-    expect(page.indexOf("if (!evaluation.enabled || !query.clubId) notFound();"))
+    expect(page).toContain("if (!evaluation.enabled) notFound();");
+    expect(page).toContain("if (!clubId)");
+    expect(page.indexOf("if (!evaluation.enabled) notFound();"))
       .toBeLessThan(page.indexOf("await createClient()"));
   });
 
@@ -101,5 +102,12 @@ describe("birthday collection security boundary", () => {
     expect(page).toContain("/clubs/${encodeURIComponent(managerPage.clubId)}/birthday-collection?mode=management");
     expect(page).toContain("幹部功能已移至社務管理模式。");
     expect(page).not.toContain("BirthdayCollectionManagement");
+  });
+
+  it("uses the global active club and keeps member mode on the member surface", () => {
+    expect(page).toContain('activeClubForMode(contextResolution.context, mode === "management" ? "management" : "member")');
+    expect(page).toContain('if (mode === "management")');
+    expect(page).toContain("const clubId = memberMode ? activeClub?.clubId ?? null");
+    expect(page).toContain("社員模式只顯示您有有效社籍的扶輪社任務");
   });
 });

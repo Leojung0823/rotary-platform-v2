@@ -13,6 +13,26 @@ function birthdayPath(clubId: string, kind?: "success" | "error", code?: string)
   return `/birthdays?${query.toString()}`;
 }
 
+function preferenceResultPath(
+  formData: FormData,
+  clubId: string | null,
+  kind: "success" | "error",
+  code: string,
+) {
+  // `/me` is an explicit, fixed return destination for the settings card.
+  // Never accept an arbitrary redirect URL from a browser form.
+  if (formData.get("returnTo") === "me") {
+    const query = new URLSearchParams({ [kind]: code });
+    const mode = String(formData.get("mode") ?? "");
+    if (mode === "member" || mode === "management" || mode === "platform") {
+      query.set("mode", mode);
+    }
+    return `/me?${query.toString()}`;
+  }
+
+  return clubId ? birthdayPath(clubId, kind, code) : `/birthdays?${kind}=${encodeURIComponent(code)}`;
+}
+
 function requiredUuid(formData: FormData, name: string) {
   const value = String(formData.get(name) ?? "").trim().toLowerCase();
   if (!uuidPattern.test(value)) throw new Error("invalid_input");
@@ -48,7 +68,7 @@ export async function setBirthdayPreferenceAction(formData: FormData) {
   try {
     clubId = requiredUuid(formData, "clubId");
   } catch {
-    redirect("/birthdays?error=invalid_input");
+    redirect(preferenceResultPath(formData, null, "error", "invalid_input"));
   }
 
   const isListed = formData.get("isListed") === "on";
@@ -62,8 +82,8 @@ export async function setBirthdayPreferenceAction(formData: FormData) {
     p_allow_wishes: allowWishes,
     },
   );
-  if (error) redirect(birthdayPath(clubId, "error", errorCode(error.message)));
-  redirect(birthdayPath(clubId, "success", "preference_saved"));
+  if (error) redirect(preferenceResultPath(formData, clubId, "error", errorCode(error.message)));
+  redirect(preferenceResultPath(formData, clubId, "success", "preference_saved"));
 }
 
 export async function createBirthdayWishAction(formData: FormData) {

@@ -60,19 +60,37 @@ begin
   end if;
 end $$;
 
--- Missing preference stays private; recipient then opts in explicitly.
+-- New memberships default to public; an explicit opt-out remains private and
+-- can be reversed independently for the same club.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '11000000-0000-4000-8000-000000000002', true);
 do $$
 declare page jsonb := public.get_my_birthday_page('41000000-0000-4000-8000-000000000001');
 begin
-  if jsonb_array_length(page->'birthdays') <> 0 then raise exception 'default birthday privacy failed'; end if;
+  if jsonb_array_length(page->'birthdays') <> 2 then raise exception 'public birthday default failed: %', page->'birthdays'; end if;
+  perform public.set_my_birthday_preference('41000000-0000-4000-8000-000000000001', false, false);
+  page := public.get_my_birthday_page('41000000-0000-4000-8000-000000000001');
+  if jsonb_array_length(page->'birthdays') <> 1
+     or exists (
+       select 1
+       from jsonb_array_elements(page->'birthdays') as item
+       where item->>'membership_id' = '51000000-0000-4000-8000-000000000002'
+     ) then
+    raise exception 'explicit birthday opt-out was not private: %', page->'birthdays';
+  end if;
+
   perform public.set_my_birthday_preference('41000000-0000-4000-8000-000000000001', true, true);
   page := public.get_my_birthday_page('41000000-0000-4000-8000-000000000001');
-  if page->'birthdays'->0->>'birth_month' <> '8'
-     or page->'birthdays'->0->>'birth_day' <> '20'
-     or page->'birthdays'->0 ? 'birth_year'
-     or page->'birthdays'->0 ? 'birth_date' then
+  if jsonb_array_length(page->'birthdays') <> 2
+     or not exists (
+       select 1
+       from jsonb_array_elements(page->'birthdays') as item
+       where item->>'membership_id' = '51000000-0000-4000-8000-000000000002'
+         and item->>'birth_month' = '8'
+         and item->>'birth_day' = '20'
+         and not (item ? 'birth_year')
+         and not (item ? 'birth_date')
+     ) then
     raise exception 'birthday projection leaked more than month/day';
   end if;
 end $$;

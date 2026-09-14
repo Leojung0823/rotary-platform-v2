@@ -115,7 +115,10 @@ end $$;
 -- The scheduler must now find a president when the club has no executive
 -- secretary at all. This is the exact shape that reported skipped_count 1.
 insert into public.birthday_visibility_preferences (membership_id, club_id, is_listed, allow_wishes)
-values ('8e000000-0000-4000-8000-000000000007', '8d000000-0000-4000-8000-000000000001', true, true);
+values ('8e000000-0000-4000-8000-000000000007', '8d000000-0000-4000-8000-000000000001', true, true)
+on conflict (membership_id) do update
+set is_listed = excluded.is_listed,
+    allow_wishes = excluded.allow_wishes;
 
 do $$
 declare

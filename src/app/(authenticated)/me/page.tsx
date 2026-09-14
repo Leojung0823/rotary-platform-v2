@@ -1,4 +1,5 @@
 import { updateIdentitySettingsAction } from "@/app/actions";
+import { setBirthdayPreferenceAction } from "@/app/birthday-actions";
 import { updateMyProfileAction } from "@/app/profile-actions";
 import Link from "next/link";
 import { Button, Card, Field, Input, Notice } from "@/components/ui";
@@ -7,6 +8,7 @@ import {
   parseMyBlessingIouLedger,
   parseRotaryYearFilter,
 } from "@/lib/blessing-iou/my-ledger";
+import { parseBirthdayPreferences } from "@/lib/birthdays/preferences";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import type { IdentityCenter } from "@/lib/identity-center";
 import { createClient } from "@/lib/supabase/server";
@@ -48,11 +50,15 @@ export default async function IdentityCenterPage({
   const [query, identity] = await Promise.all([searchParams, requireIdentity()]);
   // Both are request-cached and already resolved by the shell, so this costs
   // no additional round trip.
-  const [attendance, blessingIou, lineOaOnboarding] = await Promise.all([
+  const [attendance, blessingIou, lineOaOnboarding, birthdayV1, birthdayV2] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "attendance_ui_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "line_oa_onboarding_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2", subjectUuid: identity.id }),
   ]);
+  const birthdayEnabled = birthdayV1.enabled || birthdayV2.enabled;
+  const pageMode = query.mode === "management" || query.mode === "platform" ? query.mode : "member";
   const supabase = await createClient();
   const selectedLedgerClub = typeof query.clubId === "string" && uuidPattern.test(query.clubId)
     ? query.clubId
@@ -61,7 +67,7 @@ export default async function IdentityCenterPage({
   // Issued together: the ledger is a separate question from the identity
   // centre, and waiting for one before asking the other would cost a round
   // trip for no reason.
-  const [centerResult, ledgerResult] = await Promise.all([
+  const [centerResult, ledgerResult, birthdayPreferencesResult] = await Promise.all([
     supabase.rpc("get_my_identity_center"),
     blessingIou.enabled
       ? supabase.rpc("get_my_blessing_iou_ledger", {
@@ -69,9 +75,20 @@ export default async function IdentityCenterPage({
           p_rotary_year_start: selectedRotaryYear,
         })
       : Promise.resolve({ data: null, error: null }),
+    birthdayEnabled
+      ? supabase.rpc("get_my_birthday_preferences")
+      : Promise.resolve({ data: null, error: null }),
   ]);
   const { data, error } = centerResult;
   const ledger = parseMyBlessingIouLedger(ledgerResult.error ? null : ledgerResult.data);
+  let birthdayPreferences: ReturnType<typeof parseBirthdayPreferences> | null = null;
+  if (birthdayEnabled && !birthdayPreferencesResult.error) {
+    try {
+      birthdayPreferences = parseBirthdayPreferences(birthdayPreferencesResult.data);
+    } catch {
+      birthdayPreferences = null;
+    }
+  }
 
   if (error || !data) return <Notice tone="error">無法載入會員中心。</Notice>;
 
@@ -114,9 +131,60 @@ export default async function IdentityCenterPage({
           <p className="eyebrow">本社 LINE 官方帳號</p>
           <h2>LINE 通知連接</h2>
         </div>
-        <Link className="button button-secondary" href="/me/line-oa">查看連接狀態</Link>
+        <Link className="button button-secondary" href="/me/line-oa?mode=member" prefetch={false}>查看連接狀態</Link>
       </div>
       <p>加入目前所在社的官方帳號，並確認是否已連接到您的社員身份。</p>
+    </Card>}
+
+    {birthdayEnabled && <Card>
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">生日祝福</p>
+          <h2>生日公開設定</h2>
+        </div>
+        <Link className="button button-secondary" href={`/birthdays?mode=${pageMode}`} prefetch={false}>查看生日名單</Link>
+      </div>
+      <p>每個扶輪社分開設定。新加入的社籍預設公開月、日；既有尚未設定的社籍仍不公開，請由您確認後再公開。</p>
+      {birthdayPreferences === null ? <Notice tone="error">目前無法載入生日公開設定，請稍後重新整理。</Notice>
+        : birthdayPreferences.length === 0 ? <p className="subtle">目前沒有可設定的有效扶輪社社籍。</p>
+          : <div className="form-stack">
+            {birthdayPreferences.map((preference) => <Card key={preference.membershipId}>
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">{preference.clubCode}</p>
+                  <h3>{preference.clubName}</h3>
+                </div>
+                 <span>{preference.hasPreference ? "已建立設定" : "尚未確認（目前不公開）"}</span>
+              </div>
+              {!preference.hasBirthDate && <Notice>
+                尚未填寫生日。先在下方基本資料填寫生日，才能出現在同社生日名單。
+              </Notice>}
+              <form action={setBirthdayPreferenceAction} className="form-stack">
+                <input type="hidden" name="clubId" value={preference.clubId} />
+                <input type="hidden" name="returnTo" value="me" />
+                {query.mode && <input type="hidden" name="mode" value={query.mode} />}
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    name="isListed"
+                    defaultChecked={preference.isListed}
+                    disabled={!preference.hasBirthDate}
+                  />
+                  <span><strong>在同社生日名單顯示我的月、日</strong><small>關閉後，同社社員看不到您的生日，也不能新增生日祝福。</small></span>
+                </label>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    name="allowWishes"
+                    defaultChecked={preference.allowWishes}
+                    disabled={!preference.hasBirthDate}
+                  />
+                  <span><strong>允許同社社員寫生日祝福</strong><small>關閉後，新的與既有的生日祝福都不會顯示給同社社員。</small></span>
+                </label>
+                <Button type="submit" disabled={!preference.hasBirthDate}>儲存這個社的生日設定</Button>
+              </form>
+            </Card>)}
+          </div>}
     </Card>}
 
     {ledger?.selected_club_id && ledger.totals && <Card className="identity-ledger-card">
@@ -126,7 +194,7 @@ export default async function IdentityCenterPage({
           <h2>我的捐款</h2>
           <p>{rotaryYearLabel(ledger.selected_year)}</p>
         </div>
-        <Link className="button button-secondary" href="/blessings">前往祝福牆</Link>
+        <Link className="button button-secondary" href={`/blessings?mode=${pageMode}`} prefetch={false}>前往祝福牆</Link>
       </div>
       <form className="inline-form" action="/me">
         {query.mode && <input type="hidden" name="mode" value={query.mode} />}
@@ -182,7 +250,7 @@ export default async function IdentityCenterPage({
           <p className="eyebrow">出席紀錄</p>
           <h2>我的出席</h2>
         </div>
-        <Link className="button button-secondary attendance-entry-link" href="/attendance">開啟出席紀錄</Link>
+        <Link className="button button-secondary attendance-entry-link" href={`/attendance?mode=${pageMode}`} prefetch={false}>開啟出席紀錄</Link>
       </div>
       <p>本扶輪年度的出席率、逐月趨勢，以及每一場計入出席活動的結果。</p>
     </Card>}
@@ -209,7 +277,7 @@ export default async function IdentityCenterPage({
           <Card><span className="metric-label">LINE Login</span><strong className="metric-value metric-text">{center.line_identity?.status === "active" ? "已綁定" : "未綁定"}</strong></Card>
           <Card><span className="metric-label">平台密碼</span><strong className="metric-value metric-text">{center.account.has_password_login ? "可使用" : "未設定"}</strong></Card>
         </div>
-        <Link className="button" href="/me/security">開啟帳號安全</Link>
+        <Link className="button" href={`/me/security?mode=${pageMode}`} prefetch={false}>開啟帳號安全</Link>
       </Card>
     </div>
 

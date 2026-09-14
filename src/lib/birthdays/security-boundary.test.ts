@@ -10,7 +10,9 @@ describe("birthday wishes security boundary", () => {
   const v2AuthorAnonymity = source("supabase/migrations/20260824001200_birthday_wish_author_anonymity_core.sql");
   const v2AllowWishesProjection = source("supabase/migrations/20260824001300_birthday_wishes_v2_allow_wishes_projection.sql");
   const v1RollbackIsolation = source("supabase/migrations/20260824001400_birthday_wishes_v1_rollback_isolation.sql");
+  const defaultsMigration = source("supabase/migrations/20260914000700_birthday_privacy_defaults.sql");
   const page = source("src/app/(authenticated)/birthdays/page.tsx");
+  const memberPage = source("src/app/(authenticated)/me/page.tsx");
   const actions = source("src/app/birthday-actions.ts");
 
   it("keeps missing preferences private and never projects a birth year", () => {
@@ -20,6 +22,20 @@ describe("birthday wishes security boundary", () => {
     expect(migration).toContain("extract(day from person.birth_date)");
     expect(migration).not.toContain("'birth_year'");
     expect(page).toContain("不會顯示出生年份或完整生日");
+  });
+
+  it("makes new birthday preferences public without weakening club or privacy boundaries", () => {
+    expect(defaultsMigration).toContain("alter column is_listed set default true");
+    expect(defaultsMigration).toContain("alter column allow_wishes set default true");
+    expect(defaultsMigration).toContain("Do not backfill missing rows");
+    expect(defaultsMigration).toContain("get_my_birthday_preferences");
+    expect(defaultsMigration).toContain("set search_path = pg_catalog, public");
+    expect(defaultsMigration).toContain("on conflict (membership_id) do nothing");
+    expect(page).toContain("activeClubForMode(");
+    expect(page).toContain('mode === "management" ? "management" : "member"');
+    expect(page).toContain('const memberSurface = mode === null || mode === "member"');
+    expect(page).not.toContain('name="clubId" defaultValue');
+    expect(memberPage).toContain("parseBirthdayPreferences");
   });
 
   it("keeps browser access RPC-only and tenant-scoped", () => {
@@ -33,6 +49,8 @@ describe("birthday wishes security boundary", () => {
     expect(migration).toContain("membership.club_id = p_club_id");
     expect(actions).not.toContain('.from("birthday_wishes")');
     expect(actions).not.toContain('.from("birthday_visibility_preferences")');
+    expect(actions).not.toContain('redirect(formData.get("returnTo"))');
+    expect(actions).toContain('formData.get("returnTo") === "me"');
   });
 
   it("allows authors to remove their own wishes and managers only to hide with a reason", () => {
