@@ -134,7 +134,10 @@ p { color: var(--muted); line-height: 1.75; }
 .input { width: 100%; min-width: 0; min-height: 48px; padding: 10px 12px; border: 1px solid #bfcad4; border-radius: 9px; color: var(--ink); background: white; }
 .input:hover { border-color: #829aae; }
 .input:focus { border-color: var(--blue); outline: 3px solid rgba(22,119,168,.12); }
-.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+/* Buttons and the note that explains them stack, so the buttons never have
+   to share a row with prose and get squeezed into broken labels. */
+.header-actions { display: grid; gap: 6px; justify-items: end; }
 hr { width: 100%; border: 0; border-top: 1px solid var(--line); }
 .notice { padding: 13px 15px; border-radius: 10px; line-height: 1.55; font-size: 14px; font-weight: 650; }
 .notice-info { color: #145c7e; background: #e6f4fa; }
@@ -326,3 +329,13 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 }
 /* Keyboard users must be able to see which pill they are on. */
 .tag-option input:focus-visible + span { outline: 2px solid var(--navy-2); outline-offset: 2px; }
+
+/* Event descriptions are pasted in from LINE or email, so the line breaks the
+   organiser typed are the structure: collapsing them turns a schedule with
+   addresses and map links into one unreadable block. The long URLs those
+   descriptions carry have no break opportunities of their own, so they are
+   allowed to break anywhere rather than push the card sideways. */
+.event-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

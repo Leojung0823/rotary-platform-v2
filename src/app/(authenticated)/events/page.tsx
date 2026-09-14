@@ -161,12 +161,18 @@ function EventHeader({
       <h1>活動與報名</h1>
       <p>只顯示您目前所在社的活動；活動資料、名額、簽到與權限都由資料庫依社別驗證。{hasOtherClubs ? "要看另一個社，請用左側的社別切換。" : ""}</p>
     </div>
-    <div className="form-actions">
-      {clubId && canManage && <>
-        <a className="button button-secondary" href={`/clubs/${encodeURIComponent(clubId)}/events?mode=management`}>活動管理</a>
-        <span className="hint">幹部功能已移至社務管理模式。</span>
-      </>}
-      <Link className="button" href="/events/checkin">社員簽到</Link>
+    {/* The hint used to sit between the two buttons, so all three competed for
+        the same row and the labels broke mid-word. The buttons keep the row to
+        themselves and the hint sits under them. */}
+    <div className="header-actions">
+      <div className="form-actions">
+        {clubId && canManage && <a
+          className="button button-secondary"
+          href={`/clubs/${encodeURIComponent(clubId)}/events?mode=management`}
+        >活動管理</a>}
+        <Link className="button" href="/events/checkin">社員簽到</Link>
+      </div>
+      {clubId && canManage && <span className="hint">幹部功能已移至社務管理模式。</span>}
     </div>
   </header>;
 }
@@ -294,7 +300,7 @@ export default async function EventsPage({
               <p><strong>時間：</strong>{formatDateTime(event.starts_at)}－{formatDateTime(event.ends_at)}</p>
               <p><strong>地點：</strong>{event.location || "尚未填寫"}</p>
               <p><strong>報名截止：</strong>{formatDateTime(event.registration_deadline)}</p>
-              {event.description && <p>{event.description}</p>}
+              {event.description && <p className="event-description">{event.description}</p>}
             </div>
             <div className="card">
               <span className="metric-label">目前參加</span>
