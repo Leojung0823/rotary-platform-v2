@@ -7,12 +7,14 @@ const allPermissions = [
   "invitation.manage",
   "identity.read",
   "blessing_iou.manage",
+  "finance.read",
   "role.manage",
 ];
 const allFeatures = {
   blessingIouEnabled: true,
   birthdayCollectionEnabled: true,
   archiveHandoverEnabled: true,
+  duesFinanceEnabled: true,
 };
 
 describe("management overview cards", () => {
@@ -22,6 +24,7 @@ describe("management overview cards", () => {
       "invitations",
       "identity",
       "blessing-iou",
+      "dues-finance",
       "birthday-collection",
       "archives",
       "operators",
@@ -33,6 +36,7 @@ describe("management overview cards", () => {
       blessingIouEnabled: false,
       birthdayCollectionEnabled: false,
       archiveHandoverEnabled: false,
+      duesFinanceEnabled: false,
     }).map((tool) => tool.id)).toEqual(["members"]);
   });
 

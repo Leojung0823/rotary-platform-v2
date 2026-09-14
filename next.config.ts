@@ -24,6 +24,9 @@ if (hosted) {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingIncludes: {
+    "/*": ["./node_modules/@reogrid/font-tc/NotoSansTC-Regular.ttf"],
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
