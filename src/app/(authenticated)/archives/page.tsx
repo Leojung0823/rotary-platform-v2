@@ -14,6 +14,7 @@ import {
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./archives.module.css";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 const successMessages: Record<string, string> = {
   year_created: "扶輪年度與交接清單已建立。",
@@ -147,7 +148,7 @@ export default async function ArchivesPage({
               <div className={styles.versionList}>
                 <strong>歷史版本（只能新增，不會覆蓋）</strong>
                 {item.versions.length === 0 ? <p>尚未上傳檔案。</p> : item.versions.map((version) => <div key={version.id} className={styles.versionRow}>
-                  <span><strong>v{version.versionNumber}</strong> {version.originalFilename}<small>{bytes(version.fileSizeBytes)} · {new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(version.createdAt))}{version.changeSummary ? ` · ${version.changeSummary}` : ""}</small></span>
+                  <span><strong>v{version.versionNumber}</strong> {version.originalFilename}<small>{bytes(version.fileSizeBytes)} · {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,  dateStyle: "medium" }).format(new Date(version.createdAt))}{version.changeSummary ? ` · ${version.changeSummary}` : ""}</small></span>
                   <a className="button button-secondary" href={`/api/v1/archive/versions/${version.id}/download?club_id=${selectedClub.clubId}`}>下載</a>
                 </div>)}
               </div>

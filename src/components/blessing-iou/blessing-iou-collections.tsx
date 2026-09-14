@@ -7,6 +7,7 @@ import type {
   BlessingIouCollectionRecord,
 } from "@/lib/blessing-iou/collections-contracts";
 import styles from "./blessing-iou-collections.module.css";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 type ApiEnvelope<T> = { data?: T; error?: string };
 
@@ -28,7 +29,7 @@ const moneyFormatter = new Intl.NumberFormat("zh-TW", {
   maximumFractionDigits: 0,
 });
 
-const dateFormatter = new Intl.DateTimeFormat("zh-TW", {
+const dateFormatter = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, 
   year: "numeric",
   month: "2-digit",
   day: "2-digit",

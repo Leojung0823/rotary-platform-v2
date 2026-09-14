@@ -13,6 +13,7 @@ import { CopyLink } from "@/components/copy-link";
 import { Badge, Button, Card, Field, Input, Notice, Select } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { safeMessage } from "@/lib/validation";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 export const metadata: Metadata = { referrer: "no-referrer" };
 
@@ -177,11 +178,11 @@ export default async function InvitationsPage({
             return <tr key={invitation.invitation_id}>
               <td>
                 <strong>{invitation.display_name}</strong>
-                {invitation.accepted_at && <small>接受於 {new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(invitation.accepted_at))}</small>}
+                {invitation.accepted_at && <small>接受於 {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,  dateStyle: "medium" }).format(new Date(invitation.accepted_at))}</small>}
               </td>
               <td>{deliveryLabels[invitation.delivery_method] ?? invitation.delivery_method}</td>
               <td><Badge tone={statusTone(invitation.invitation_status)}>{statusLabels[invitation.invitation_status] ?? invitation.invitation_status}</Badge></td>
-              <td>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(invitation.expires_at))}</td>
+              <td>{new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,  dateStyle: "medium" }).format(new Date(invitation.expires_at))}</td>
               <td>
                 {!canResend && !canCancel
                   ? <span>已完成</span>

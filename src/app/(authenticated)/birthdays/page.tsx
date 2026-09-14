@@ -14,6 +14,7 @@ import { parseBirthdayPageProjection } from "@/lib/birthdays/contracts";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./birthdays.module.css";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 const successMessages: Record<string, string> = {
   preference_saved: "生日公開設定已儲存。",
@@ -188,7 +189,7 @@ export default async function BirthdayPage({
           {page.wishes.map((wish) => <Card key={wish.id} className={styles.wishCard}>
             <div className={styles.wishMeta}>
               <div><strong>{wish.authorIsHidden ? "匿名祝福者" : wish.authorName ?? "匿名祝福者"}</strong><span>祝福 {wish.recipientName}</span></div>
-              <time dateTime={wish.createdAt}>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(wish.createdAt))}</time>
+              <time dateTime={wish.createdAt}>{new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,  dateStyle: "medium" }).format(new Date(wish.createdAt))}</time>
             </div>
             <p className={styles.wishContent}>{wish.content}</p>
             {(wish.canEdit || wish.canDelete || wish.canModerate) && <div className={styles.wishActions}>
