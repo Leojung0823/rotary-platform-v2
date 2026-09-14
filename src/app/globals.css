@@ -1,15 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #152334;
-  --muted: #5b6b80;
-  --line: #dce3eb;
-  --canvas: #f4f7fa;
+  /* One palette for both surfaces. Desktop is the horizontal extension of the
+     phone, not a second product, so every colour here is the colour the mobile
+     layout uses too. */
+  --ink: #10233d;
+  --muted: #62748a;
+  --subtle-ink: #8795a8;
+  --line: #e3e9f0;
+  --canvas: #f6f8fb;
   --surface: #ffffff;
-  --navy: #12304a;
-  --navy-2: #1c496a;
-  --gold: #d5a92e;
-  --blue: #1677a8;
+  --navy: #102a43;
+  --navy-2: #1c3d5a;
+  /* Gold is brand accent only and never carries text: #f4b942 on white is
+     about 1.9:1. */
+  --gold: #f4b942;
+  --blue: #0a72e8;
+  --blue-soft: rgba(10, 114, 232, .08);
   --danger: #b4233c;
 
   /* Type scale. Every value is at or above 14px because the senior-friendly
@@ -38,9 +45,11 @@
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
 
   /* Separation by layer, not by line.
      A 1px rule around every card draws a box the reader has to look past. A
@@ -50,13 +59,13 @@
      does not dissolve on a very light screen. */
   --surface-sunken: #eef2f7;
   --hairline: rgba(18, 48, 74, .08);
-  --elevation-card: 0 1px 2px rgba(18, 48, 74, .04);
+  --elevation-card: 0 8px 28px rgba(15, 35, 60, .04);
   --elevation-raised: 0 12px 32px rgba(18, 48, 74, .14);
 
   /* Larger, consistent radii. A small radius on a large surface reads as
      cheap; one generous value everywhere reads as deliberate. */
   --radius-card: 20px;
-  --radius-control: 12px;
+  --radius-control: 14px;
   --radius-pill: 999px;
   --shadow: none;
 }
@@ -65,7 +74,7 @@
 html { background: var(--canvas); -webkit-text-size-adjust: 100%; }
 /* At these weights the default rasteriser renders heavier than the type is. */
 body { -webkit-font-smoothing: antialiased; }
-body { margin: 0; color: var(--ink); font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif; background: var(--canvas); }
+body { margin: 0; color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; background: var(--canvas); }
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; }
 button, summary, a { -webkit-tap-highlight-color: transparent; }
@@ -74,33 +83,45 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .skip-link { position: fixed; z-index: 100; left: 12px; top: -50px; background: white; padding: 10px 14px; border-radius: var(--radius-control); }
 .skip-link:focus { top: 12px; }
 
-.shell { min-height: 100vh; display: grid; grid-template-columns: 260px 1fr; }
-.sidebar { position: sticky; top: 0; height: 100vh; padding: 28px 20px; color: #eef7fb; background: linear-gradient(165deg, #102a41 0%, #173d59 62%, #0d2539 100%); display: flex; flex-direction: column; gap: 28px; }
-.brand { display: flex; align-items: center; gap: 12px; font-weight: var(--weight-strong); letter-spacing: .02em; }
-.brand small { display: block; margin-top: 2px; color: #8db4ca; font-size: 9px; letter-spacing: .16em; }
-.brand-mark { display: inline-grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; color: #102a41; border-radius: 50%; background: var(--gold); font-family: Georgia, serif; font-size: 24px; box-shadow: inset 0 0 0 5px rgba(255,255,255,.28); }
+/* 248px: wide enough for 社員名錄 without wrapping, narrow enough that the
+   content keeps the screen. */
+.shell { min-height: 100vh; display: grid; grid-template-columns: 248px 1fr; }
+/* A solid navy panel outweighed the content it was meant to support. The rail
+   is now a pale surface with a single hairline edge, so the eye lands on the
+   page first and the navigation stays available rather than loud. */
+.sidebar { position: sticky; top: 0; height: 100vh; padding: var(--space-6) var(--space-4); color: var(--ink); background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: var(--space-6); }
+.brand { display: flex; align-items: center; gap: var(--space-3); font-size: 18px; font-weight: var(--weight-strong); letter-spacing: .01em; }
+.brand small { display: block; margin-top: 2px; color: var(--subtle-ink); font-size: var(--text-micro); letter-spacing: .16em; }
+.brand-mark { display: inline-grid; place-items: center; flex: 0 0 auto; width: 38px; height: 38px; color: #102a41; border-radius: 50%; background: var(--gold); font-family: Georgia, serif; font-size: 24px; box-shadow: inset 0 0 0 5px rgba(255,255,255,.28); }
 .brand-mark.large { width: 64px; height: 64px; margin: 0 auto; font-size: 34px; }
-.sidebar nav { display: grid; gap: 6px; }
-.sidebar nav a { min-height: 48px; display: flex; align-items: center; padding: 12px 14px; border-radius: var(--radius-control); color: #bfd3df; font-weight: var(--weight-medium); }
-.sidebar nav a:hover { background: rgba(255,255,255,.08); color: white; }
-.account { display: flex; gap: 10px; align-items: center; margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); min-width: 0; }
+.sidebar nav { display: grid; gap: var(--space-1); }
+/* 50px tall, 15px label: a pointer and a fingertip both land on it, and a
+   reader at 70 does not have to lean in. */
+.sidebar nav a { min-height: 50px; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-control); color: #44566c; font-size: 15px; font-weight: var(--weight-medium); }
+.sidebar nav a:hover { background: var(--blue-soft); color: var(--blue); }
+/* Tinted rather than filled: a saturated block reads as a button, not as
+   "you are here". */
+.sidebar nav a[aria-current="page"] { background: var(--blue-soft); color: var(--blue); font-weight: var(--weight-strong); }
+.account { display: flex; gap: var(--space-3); align-items: center; min-height: 60px; margin-top: auto; padding-top: var(--space-4); border-top: 1px solid var(--line); min-width: 0; }
 .account div:last-child { min-width: 0; }
 .account strong, .account small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.account small { color: #a8c0cf; font-size: var(--text-small); }
-.avatar { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--radius-control); background: rgba(213,169,46,.18); color: #f2ce67; font-weight: var(--weight-strong); }
+.account small { color: var(--muted); font-size: var(--text-small); }
+.avatar { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--radius-control); background: rgba(244,185,66,.22); color: #8a6a12; font-weight: var(--weight-strong); }
 .link-button { min-height: 48px; display: inline-flex; align-items: center; border: 0; background: transparent; color: var(--blue); padding: 6px 0; cursor: pointer; font-weight: 700; }
-.sidebar .link-button { color: #9fb9c8; }
-.content { min-width: 0; padding: 48px clamp(24px, 5vw, 72px) 80px; }
+.sidebar .link-button { color: var(--muted); }
+/* Capped so a 1920px screen keeps a readable measure instead of stretching
+   the page to the bezels. */
+.content { min-width: 0; padding: var(--space-7) clamp(var(--space-7), 3.5vw, var(--space-9)) 80px; }
 .mobile-nav { display: none; }
 
 .loading-shell { background: var(--canvas); }
-.loading-nav-item { padding: 12px 14px; border-radius: var(--radius-control); color: #9fb9c8; font-weight: var(--weight-medium); }
+.loading-nav-item { padding: var(--space-3) var(--space-4); border-radius: var(--radius-control); color: var(--subtle-ink); font-weight: var(--weight-medium); }
 .loading-account { width: 100%; }
 .loading-account-copy { display: grid; flex: 1; gap: 7px; }
 .loading-page { width: 100%; }
 .loading-heading { display: grid; width: min(620px, 72vw); gap: 12px; }
 .skeleton { display: block; overflow: hidden; border-radius: var(--radius-pill); background: #dfe6ec; animation: skeleton-pulse 1.35s ease-in-out infinite; }
-.sidebar .skeleton { background: rgba(255,255,255,.16); }
+.sidebar .skeleton { background: #e9eef4; }
 .skeleton-eyebrow { width: 88px; height: 12px; }
 .skeleton-title { width: min(430px, 68vw); height: 44px; border-radius: 12px; }
 .skeleton-copy { width: min(360px, 64vw); height: 14px; }
@@ -123,7 +144,11 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
   .skeleton { animation: none; }
 }
 
-.page-stack { display: grid; gap: var(--space-6); max-width: 1180px; margin: 0 auto; }
+/* 1440px, not the full window. A desktop gains room by putting more beside
+   each other, not by stretching one column of text across 1900px -- past about
+   90 characters the eye loses the start of the next line. Inner grids spend the
+   extra width; the measure stays readable. */
+.page-stack { display: grid; gap: var(--space-6); max-width: 1440px; margin: 0 auto; }
 .narrow { max-width: 850px; }
 .page-header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 h1, h2, h3, p { margin-top: 0; }
@@ -180,16 +205,22 @@ p { color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
 .card-link { margin-top: auto; color: var(--blue); font-size: 14px; font-weight: var(--weight-medium); }
 /* A badge carries status, and the standard forbids colour as the only state
    indicator -- which makes this text load-bearing, not decoration. */
-.badge { display: inline-flex; width: fit-content; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; }
+/* 32px tall: at 24px a pill beside a 26px title read as a footnote to it
+   rather than as the event's state. */
+.badge { display: inline-flex; align-items: center; width: fit-content; min-height: 32px; padding: var(--space-1) var(--space-4); border-radius: var(--radius-pill); font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; }
 .badge-neutral { color: #556274; background: #eef1f4; }
 .badge-success { color: #166a48; background: #e3f5ec; }
 .badge-warning { color: #805c0d; background: #fff2cc; }
 .badge-danger { color: #9f1731; background: #fde8ec; }
 /* No drop shadow: a filled navy button on a light canvas already reads as
    the primary action, and the shadow only added weight. */
-.button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: var(--space-3) var(--space-5); border: 1px solid var(--navy); border-radius: var(--radius-control); color: white; background: var(--navy); cursor: pointer; font-size: var(--text-body); font-weight: var(--weight-strong); }
-.button:hover { background: var(--navy-2); }
-.button-secondary { color: var(--navy); background: white; border-color: #b7c5d0; box-shadow: none; }
+/* The primary action is the interaction blue, not the brand navy: navy is the
+   product's identity and appears in the chrome, so a navy button competes with
+   it instead of standing out. No gradient and no glow -- a solid fill at this
+   size is already the loudest thing on the page. */
+.button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: var(--space-3) var(--space-6); border: 1px solid var(--blue); border-radius: var(--radius-control); color: white; background: var(--blue); cursor: pointer; font-size: var(--text-body); font-weight: var(--weight-strong); }
+.button:hover { background: #0961c8; border-color: #0961c8; }
+.button-secondary { color: var(--ink); background: var(--surface); border-color: var(--line); box-shadow: none; }
 .attendance-entry-link { min-height: 48px; }
 .button-danger { background: var(--danger); border-color: var(--danger); }
 .line-button { background: #06c755; border-color: #06c755; color: white; }
@@ -370,8 +401,9 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
    The ratio is declared once, here, because the same poster is shown on the
    home card and in the events list and the two had drifted apart -- 8/3 against
    16/9 -- so the same image was cropped differently depending on where a member
-   happened to look at it. */
-:root { --event-cover-aspect: 8 / 3; }
+   happened to look at it. 16/7 is wide enough to read as a banner and tall
+   enough that faces in a group photo survive the crop. */
+:root { --event-cover-aspect: 16 / 7; }
 
 .event-cover {
   display: block;

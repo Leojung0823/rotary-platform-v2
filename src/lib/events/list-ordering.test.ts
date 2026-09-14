@@ -53,10 +53,15 @@ describe("event cover framing", () => {
     // The home card and the events list had drifted to 8/3 and 16/9, so one
     // image was cut two different ways depending on where a member looked.
     const home = readFileSync("src/components/member-home.module.css", "utf8");
-    expect(globals).toContain("--event-cover-aspect: 8 / 3");
+    // What matters is that there is exactly one ratio and both places read it,
+    // not which ratio it happens to be -- pinning the number here meant a
+    // deliberate change to the framing looked like a regression.
+    expect(globals).toMatch(/--event-cover-aspect:\s*\d+\s*\/\s*\d+/u);
     expect(globals).toContain("aspect-ratio: var(--event-cover-aspect)");
     expect(home).toContain("aspect-ratio: var(--event-cover-aspect)");
-    expect(home).not.toContain("aspect-ratio: 8 / 3");
-    expect(globals).not.toContain("aspect-ratio: 16 / 9");
+    for (const css of [globals, home]) {
+      const literals = css.match(/aspect-ratio:\s*\d+\s*\/\s*\d+/gu) ?? [];
+      expect(literals, "a cover ratio was written out instead of read from the token").toEqual([]);
+    }
   });
 });

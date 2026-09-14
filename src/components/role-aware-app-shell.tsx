@@ -29,7 +29,9 @@ import styles from "./role-aware-app-shell.module.css";
 const activeClubPreferenceActionPath = "/api/preferences/active-club";
 
 function environmentLabel() {
-  if (process.env.APP_ENV === "production") return "ONLINE";
+  // Production shows nothing: the tag exists so nobody mistakes a test system
+  // for the real one, and on the real one there is nothing to mistake.
+  if (process.env.APP_ENV === "production") return "";
   if (process.env.APP_ENV === "staging") return "STAGING";
   return "LOCAL";
 }
@@ -253,7 +255,10 @@ export function RoleAwareAppShell({
           <span className={styles.brandMark} aria-hidden="true">R</span>
           <span>
             扶輪管理平台
-            <small>ROTARY V2 · {environmentLabel()}</small>
+            {/* An environment tag earns its place only where mistaking one
+                for the other is possible. In production it is noise on the
+                brand. */}
+            {environmentLabel() && <small>{environmentLabel()}</small>}
           </span>
         </Link>
         <p className={styles.modeName}>{roleShellModeLabels[mode]}</p>

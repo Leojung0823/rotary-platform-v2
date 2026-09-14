@@ -1,16 +1,25 @@
-.memberHome { max-width: 880px; }
+/* The home page used to stop at 880px, so a 27" screen showed a phone layout
+   with grey either side. It now takes the page width and spends it sideways:
+   the event banner beside its details, the entry points in a row. */
+.memberHome { max-width: none; }
 /* A supporting line under the greeting, not a second heading competing with it. */
 .todayHeading { margin: 2px 0 0; color: var(--muted); font-size: 15px; font-weight: var(--weight-medium); }
 .secondarySection { display: grid; gap: 10px; }
 .secondarySection :global(.section-heading) { margin-bottom: 0; }
-.secondaryActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.secondaryAction { min-height: 72px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; color: var(--navy); background: white; box-shadow: var(--shadow); }
-.secondaryAction:hover { border-color: #8fb8cb; transform: translateY(-1px); }
+/* auto-fit rather than a fixed count: the number of entry points depends on
+   which features the club has switched on, and a hard three-column grid leaves
+   a hole when there are four. Every tile starts on the same line whatever its
+   text does, because the row height comes from the tallest one. */
+.secondaryActions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); align-items: stretch; }
+.secondaryAction { min-height: 76px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card); color: var(--ink); background: var(--surface); box-shadow: var(--elevation-card); }
+/* No lift on hover. A card that jumps under the cursor draws attention to the
+   pointer rather than to the card. */
+.secondaryAction:hover { border-color: var(--line); background: var(--surface-sunken); }
 .secondaryAction > span { min-width: 0; display: grid; gap: 3px; }
 .secondaryAction strong, .secondaryAction small { overflow-wrap: anywhere; }
 .secondaryAction small { color: var(--muted); line-height: 1.45; }
-.secondaryAction b { color: var(--blue); font-size: 20px; }
-.primaryCard, .nextCard { display: grid; gap: 18px; }
+.secondaryAction b { color: var(--blue); font-size: 20px; font-weight: var(--weight-strong); }
+.primaryCard, .nextCard { display: grid; gap: var(--space-5); }
 /* The empty state is a status line, not a card of content: it sits on one row
    on anything wider than a phone so the real content below stays in view. */
 .emptyCard { display: grid; gap: 14px; align-items: center; }
@@ -31,16 +40,25 @@
   border-radius: 12px;
   background: #eef2f0;
 }
-.primaryCard { border-color: #9ec5b0; background: linear-gradient(145deg, #f8fffb 0%, #f2f8f4 100%); }
-.eventHeading { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+/* The tinted green panel said "this is a different kind of thing" when what
+   it actually is, is the most important card of the same kind. It is now the
+   same surface as every other card, marked by a single gold edge -- the one
+   place the brand colour is allowed to carry meaning, because it carries no
+   text. */
+.primaryCard { position: relative; overflow: hidden; border-color: var(--hairline); background: var(--surface); }
+.primaryCard::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--gold); }
+.eventHeading { display: flex; gap: var(--space-4); align-items: flex-start; justify-content: space-between; }
 .eventHeading h2 { margin: 4px 0 0; overflow-wrap: anywhere; }
-.eventDetails { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; }
+/* The title of the thing you have to act on today is the largest text on the
+   page after your own name. */
+.primaryCard .eventHeading h2 { font-size: 26px; line-height: 1.35; }
+.eventDetails { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin: 0; }
 .eventDetails div { min-width: 0; }
 .eventDetails dt { color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); }
-.eventDetails dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+.eventDetails dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: var(--text-body); font-weight: var(--weight-medium); }
 .primaryCard .button, .emptyCard .button { width: fit-content; min-height: 48px; }
 .recentList { display: grid; gap: 10px; }
-.recentItem { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 14px; background: white; }
+.recentItem { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-5); border: 1px solid var(--hairline); border-radius: var(--radius-control); background: var(--surface); }
 .recentItem > div { min-width: 0; }
 .recentItem strong { display: block; overflow-wrap: anywhere; }
 .recentItem small { color: var(--muted); }
@@ -48,7 +66,9 @@
 .notificationHeading .eyebrow { width: 100%; }
 .notificationHeading h2 { margin: 0; }
 .notificationList { display: grid; gap: 10px; }
-.notificationItem { padding: 16px 18px; border: 1px solid #e1c87d; border-radius: 14px; background: #fffdf5; }
+/* A notice, not a warning. The amber wash made every routine club message
+   look like something had gone wrong. */
+.notificationItem { padding: var(--space-4) var(--space-5); border: 1px solid var(--hairline); border-left: 3px solid var(--gold); border-radius: var(--radius-control); background: var(--surface); }
 .notificationTitle { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .notificationItem p { margin: 8px 0; color: var(--text); overflow-wrap: anywhere; }
 .notificationItem small { color: var(--muted); }
@@ -60,19 +80,42 @@
   color: inherit;
   text-decoration: none;
 }
-.notificationLink:hover { border-color: #c9a53f; background: #fffaeb; }
+.notificationLink:hover { background: var(--surface-sunken); }
 .notificationLink:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .notificationChevron { color: var(--muted); font-size: 22px; line-height: 1; flex: none; }
-.blessingShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 72px; padding: 14px 18px; border: 1px solid #d8c17f; border-radius: 16px; background: linear-gradient(145deg, #fffdf7 0%, #fff8df 100%); color: #49370d; text-decoration: none; }
-.blessingShortcut:hover { border-color: #a77d1c; transform: translateY(-1px); }
+.blessingShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; min-height: 76px; padding: var(--space-4) var(--space-5); border: 1px solid var(--hairline); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); color: var(--ink); text-decoration: none; }
+.blessingShortcut:hover { background: var(--surface-sunken); }
 .blessingShortcut > span:not(.blessingIcon) { display: grid; gap: 2px; min-width: 0; }
-.blessingShortcut small { color: #6f5a27; overflow-wrap: anywhere; }
-.blessingIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #f4e2a9; font-size: 24px; }
-.financeShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 72px; padding: 14px 18px; border: 1px solid #b7c9de; border-radius: 16px; background: linear-gradient(145deg, #f8fbff 0%, #edf4fc 100%); color: #18344f; text-decoration: none; }
-.financeShortcut:hover { border-color: #6f93bb; transform: translateY(-1px); }
+.blessingShortcut small { color: var(--muted); overflow-wrap: anywhere; }
+.blessingIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: rgba(244, 185, 66, .22); font-size: 24px; }
+.financeShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; min-height: 76px; padding: var(--space-4) var(--space-5); border: 1px solid var(--hairline); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); color: var(--ink); text-decoration: none; }
+.financeShortcut:hover { background: var(--surface-sunken); }
 .financeShortcut > span:not(.financeIcon) { display: grid; gap: 2px; min-width: 0; }
-.financeShortcut small { color: #536d88; overflow-wrap: anywhere; }
-.financeIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #d9e7f7; font-size: 22px; font-weight: var(--weight-medium); }
+.financeShortcut small { color: var(--muted); overflow-wrap: anywhere; }
+.financeIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: var(--blue-soft); color: var(--blue); font-size: 22px; font-weight: var(--weight-strong); }
+
+/* Desktop: the banner and the details side by side instead of stacked, so the
+   whole card fits on the first screen. Guarded by :has() -- with no cover there
+   is no second column to make, and the card stays a single stack. */
+@media (min-width: 960px) {
+  .primaryCard:has(.eventCover) {
+    grid-template-columns: 60% minmax(0, 1fr);
+    column-gap: var(--space-7);
+    align-content: start;
+  }
+  .primaryCard:has(.eventCover) .eventCover {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    height: 100%;
+    align-self: stretch;
+  }
+  .primaryCard:has(.eventCover) .eventHeading,
+  .primaryCard:has(.eventCover) .eventDetails,
+  .primaryCard:has(.eventCover) :global(.button) { grid-column: 2; }
+  /* In a 40% column three side-by-side fields wrap to two words each. */
+  .primaryCard:has(.eventCover) .eventDetails { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+  .primaryCard:has(.eventCover) :global(.button) { align-self: start; }
+}
 
 @media (max-width: 640px) {
   .secondaryActions { grid-template-columns: 1fr; }
@@ -80,6 +123,7 @@
   .eventHeading { display: grid; gap: 10px; }
   .eventDetails { grid-template-columns: 1fr; gap: 10px; }
   .primaryCard .button, .emptyCard .button { width: 100%; }
-  .blessingShortcut { min-height: 80px; padding: 14px; }
-  .financeShortcut { min-height: 80px; padding: 14px; }
+  .primaryCard .eventHeading h2 { font-size: 22px; }
+  .blessingShortcut { min-height: 80px; padding: var(--space-4); }
+  .financeShortcut { min-height: 80px; padding: var(--space-4); }
 }
