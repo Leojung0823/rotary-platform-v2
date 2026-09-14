@@ -45,7 +45,7 @@
 - PR #120 `codex/event-cover-one-ratio`：已合併，merge `b57034d`；統一首頁與活動列表的活動封面裁切比例，檢查全綠。
 - PR #121：已合併，merge `5bf0866`；同步進度文件。
 - PR #122 `codex/ui-design-system`：已合併，merge `585a0a1`；design system 已進入目前 staging。
-- PR #123 `codex/ui-apple-pass`：已合併，merge `dddf1a5`；CI、Quality、Database、Browser Smoke 均通過。
+- PR #123 `codex/ui-apple-pass`：已合併，merge `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過。實際 diff 是 UI/CSS 與設計系統測試，不包含完整社員／社務管理模式邊界；合併後 main 的 Browser Smoke 另有 1 個 LINE OA audience 失敗。
 - PR #124 `codex/service-plan-v2`：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過，等待合併後再部署與 hosted 角色驗收。
 
 目前尚未合併的產品 PR 是 #124；社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
@@ -433,7 +433,7 @@ PR-01c 不做：
 [完成] PR #40 Announcements/Notifications · 首頁通知 projection
 [完成] PR-07a 帳號安全核心 · PR-07b 行動版 IA／accessibility 核心
 [完成程式] PR #107 Rich Menu · PR #108 社費／收款／核銷 · PR #110 生日設定 · PR #113 地點查座標
-[已合併] PR #109 手機 Web App · PR #117 同頁模式導覽修正 · PR #119 migration collision guard · PR #120 活動封面 · PR #122 UI design system · PR #123 模式層次與 header gutter
+[已合併] PR #109 手機 Web App · PR #117 同頁模式導覽修正 · PR #119 migration collision guard · PR #120 活動封面 · PR #122 UI design system · PR #123 UI 層次與 header gutter
 [待合併] PR #124 結構化年度服務計劃 V2
 [外部待辦 E-01] Flex staging 發布／旗標／真人收訊
 [外部待辦 E-02] 生日邀請實際送達／冪等重跑

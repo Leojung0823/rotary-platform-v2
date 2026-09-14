@@ -28,10 +28,10 @@ runtime 也是 `dddf1a51ab67`。本次已核對 `/api/health`：`status=ok`、`c
 - `[x]` PR #120 活動封面統一裁切比例：已合併，merge `b57034d`；CI、Quality、Database 與 Browser Smoke 均通過，並已隨目前 staging 發布。
 - `[x]` PR #121 進度文件同步：已合併，merge `5bf0866`；本次再依最新 main／staging 狀態修正三份文件。
 - `[x]` PR #122 UI design system：已合併，merge `585a0a1`；目前 staging 已部署同一個 exact SHA。
-- `[x]` PR #123 管理／社員層次與 header gutter：已合併，merge `dddf1a5`；CI、Quality、Database、Browser Smoke 全部通過，並已隨 Staging Go-Live `34856216706` 部署 staging。
+- `[x]` PR #123 UI 層次與 header gutter：已合併，merge `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署 staging。實際 diff 不包含完整社員／社務管理模式邊界；合併後 main 的 Browser Smoke 另有 1 個 LINE OA audience 失敗。
 - `[>]` PR #124 結構化年度服務計劃 V2：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 全部通過，等待合併後再部署與 hosted 角色驗收。
 
-目前 open PR 是 #124；#123 已於 2026-09-14 合併並隨 Staging Go-Live `34856216706` 發布。#124 的 migration
+目前產品 open PR 是 #124；進度同步由 #125 提出。#123 已於 2026-09-14 合併並隨 Staging Go-Live `34856216706` 發布。#124 的 migration
 `20260914001100_club_service_plan_v2.sql` 尚未部署 staging；本次文件更新不執行合併或部署。
 
 ## 2026-09-14 本輪主線交付

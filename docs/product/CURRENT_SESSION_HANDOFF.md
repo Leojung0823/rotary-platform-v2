@@ -22,10 +22,10 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #120 活動封面統一裁切比例：已合併，merge `b57034d`；CI、Quality、Database、Browser Smoke 均通過。
 - PR #121 進度文件同步：已合併，merge `5bf0866`。
 - PR #122 UI design system：已合併，merge `585a0a1`；已部署至目前 staging。
-- PR #123 管理／社員層次與 header gutter：已合併，merge `dddf1a5`；CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署至 staging。
+- PR #123 UI 層次與 header gutter：已合併，merge `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署至 staging。它不包含整套社員／社務管理模式邊界；合併後 main 的 Browser Smoke 另有 1 個 LINE OA audience 失敗，見本輪補充。
 - PR #124 結構化年度服務計劃 V2：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過。
 
-目前只有 PR #124 尚未合併；#123 已合併並已完成 staging release，這份交接筆記已同步最新 SHA 與 staging 證據。
+目前唯一尚未合併的產品功能 PR 是 #124；本份進度同步由 PR #125 提出。#123 已合併並已完成 staging release，這份交接筆記已同步最新 SHA 與 staging 證據。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -537,7 +537,7 @@ staging health (historical)        status=ok; revision 244ac256c42d;
 ## 2026-09-14 最新核對補充
 
 - GitHub `origin/main` exact SHA：`dddf1a51ab67127bc4fed34876b696346eb0b29d`。
-- PR #123 已以一般 merge 合併，merge commit `dddf1a5`；CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署 staging。
+- PR #123 已以一般 merge 合併，merge commit `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署 staging。#123 的實際 diff 只有 UI/CSS 與設計系統測試，不是完整的模式邊界實作。
 - PR #124（結構化年度服務計劃 V2）仍為 open，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過，migration
   `20260914001100_club_service_plan_v2.sql` 尚未部署。
 - Staging Release `34856107965` 與 Go-Live `34856216706` 已以 exact SHA
