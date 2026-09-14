@@ -1,13 +1,13 @@
-# 交接筆記（持續更新；最新核對 2026-09-14）
+# 交接筆記（持續更新；最新核對 2026-09-15，#130 合併後）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
 ## 最新 GitHub 開發掃描（2026-09-15；以最新 main 核對）
 
-本次以 GitHub `origin/main=691beb67e6cf7c28977d6d6dded0812bcb5b82b6` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=675993430747bcaead27b60a4811651aab04f81d` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`dddf1a51ab67`，已於 2026-09-15 00:02（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
+`dddf1a51ab67`，已於 2026-09-15 01:14（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
 `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
 
 - PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
@@ -28,8 +28,9 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #124 結構化年度服務計劃 V2：已合併，merge `691beb6`；CI、Quality、Database、Browser Smoke 均通過，尚未部署 staging，仍待 hosted 角色與草稿隔離驗收。
 - PR #125 進度文件同步：已合併，merge `9a77d7b`；本次文件再補記 #124 合併後的最新主線狀態。
 - PR #127 手機／桌機共用設計系統第二輪：已合併，merge `44456f8`；CI、Quality 與 Browser Smoke `34862992487` 均通過，包含 320px 橫向溢出修正與 rollback，但尚未部署 staging。
+- PR #130 社員／社務管理模式邊界修正：已合併，merge `6759934`；application、database、validate 與 Browser Smoke `34871617599` 均通過，沒有新增 migration，尚未部署 staging。
 
-目前沒有尚未合併的產品功能 PR。#124 已進入 `main` 但尚未部署 staging；#123 已合併並完成 staging release；#126／#127 也已進入 main 但尚未部署 staging。這份交接筆記正在補記 #124／#125 合併後的最新 SHA 與 staging 證據。
+目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130 已進入 `main` 但尚未部署 staging；#123 已合併並完成 staging release。#130 沒有 migration，尚未部署不會造成資料庫版本落差。這份交接筆記正在補記 #130 合併後的最新 SHA 與 staging 證據。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -84,9 +85,9 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
   `20260914001100_club_service_plan_v2.sql` 也尚未部署。新的 staging Go-Live 需以目前 `main` 的 exact SHA
   重新執行，並重新核對 migration、health 與 hosted acceptance。
 
-### 2026-09-15 最新主線與 open PR 核對
+### 2026-09-15 #130 合併前主線與 open PR 快照（歷史）
 
-- `origin/main=691beb67e6cf7c28977d6d6dded0812bcb5b82b6`，包含 PR #124／#126／#127／#125；staging 仍是
+- 當時的 `origin/main=691beb67e6cf7c28977d6d6dded0812bcb5b82b6`，包含 PR #124／#126／#127／#125；staging 仍是
   `dddf1a51ab67127bc4fed34876b696346eb0b29d`。
 - #124 `74180bf` 已合併為 `691beb6`：服務計劃 V2；所有既有 GitHub checks 綠燈，尚未部署 staging。
 - #125 `7b6d622` 已合併為 `9a77d7b`：文件同步，已補上 #124 合併前的主線狀態；本次文件再更新 #124 合併後狀態。
@@ -549,9 +550,13 @@ staging health (historical)        status=ok; revision 244ac256c42d;
                                   issues=[]; warnings=[]
 ```
 
-## 2026-09-15 最新核對補充
+## 2026-09-15 #130 合併後核對補充
 
-- GitHub `origin/main` exact SHA：`691beb67e6cf7c28977d6d6dded0812bcb5b82b6`。
+- GitHub `origin/main` exact SHA：`675993430747bcaead27b60a4811651aab04f81d`。
+- PR #130 `codex/management-mode-boundary-20260915` 已合併，merge commit 為
+  `675993430747bcaead27b60a4811651aab04f81d`；application、database、validate 與 Browser Smoke
+  `34871617599` 均通過。它沒有新增 migration，尚未部署 staging。
+- 目前沒有 open PR；`origin/main` 已包含 #130，staging 仍停在 #123 的 exact SHA，production 沒有修改。
 - PR #123 已以一般 merge 合併，merge commit `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署 staging。#123 的實際 diff 只有 UI/CSS 與設計系統測試，不是完整的模式邊界實作。
 - PR #126（已發佈活動編輯）已合併，merge commit `5f50c31`；CI、Quality、Database、Browser Smoke 均通過，但它是在上一個 staging Go-Live 後才進入 `main`，尚未部署 staging。
 - PR #124（結構化年度服務計劃 V2）已合併為 `691beb6`；CI、Quality、Database、Browser Smoke 均通過，migration
