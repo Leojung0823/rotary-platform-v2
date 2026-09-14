@@ -22,6 +22,7 @@ export const featureFlagKeys = [
   "line_oa_onboarding_v1",
   "line_oa_flex_templates_v1",
   "club_join_link_v1",
+  "line_rich_menu_v1",
 ] as const;
 
 export type FeatureFlagKey = (typeof featureFlagKeys)[number];
@@ -72,6 +73,7 @@ export const flagsRequiringExplicitEnable: readonly FeatureFlagKey[] = [
   "line_oa_onboarding_v1",
   "line_oa_flex_templates_v1",
   "club_join_link_v1",
+  "line_rich_menu_v1",
 ];
 
 export const emergencyKillSwitches: Readonly<Partial<Record<FeatureFlagKey, string>>> = {
@@ -86,6 +88,7 @@ export const emergencyKillSwitches: Readonly<Partial<Record<FeatureFlagKey, stri
   line_oa_onboarding_v1: "DISABLE_LINE_OA_ONBOARDING",
   line_oa_flex_templates_v1: "DISABLE_LINE_OA_FLEX_TEMPLATES",
   club_join_link_v1: "DISABLE_CLUB_JOIN_LINK",
+  line_rich_menu_v1: "DISABLE_LINE_RICH_MENU",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
