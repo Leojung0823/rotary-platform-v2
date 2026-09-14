@@ -71,17 +71,37 @@ begin
 end;
 $$;
 
--- One push per event, held by the index rather than by the caller.
+-- One push per event VERSION, held by the index rather than by the caller.
+--
+-- This used to be one push per event, which was right while an event could
+-- only be published once. Now that a published event can be edited, a change
+-- of time or place has to be able to reach the members a second time -- and
+-- the thing that must still never happen is the same version being pushed
+-- twice, which is what a retry or a double submit would otherwise do.
 do $$
 declare
   index_definition text;
 begin
   select pg_catalog.pg_get_indexdef(oid) into index_definition
   from pg_catalog.pg_class
-  where relname = 'line_push_logs_one_per_event';
+  where relname = 'line_push_logs_one_per_event_version';
 
   if index_definition is null or position('UNIQUE' in index_definition) = 0 then
-    raise exception 'the per-event push index must exist and be unique';
+    raise exception 'the per-event-version push index must exist and be unique';
+  end if;
+
+  -- Both columns, or the index is not saying what it claims to say: on
+  -- source_event_id alone an edit could never notify anyone again, and on
+  -- source_event_version alone it would collide across unrelated events.
+  if position('source_event_id' in index_definition) = 0
+     or position('source_event_version' in index_definition) = 0 then
+    raise exception 'the push index must key on both the event and its version, got %', index_definition;
+  end if;
+
+  -- The rule it replaced must be gone, not merely superseded: leaving it in
+  -- place would silently block the second push the edit flow depends on.
+  if exists (select 1 from pg_catalog.pg_class where relname = 'line_push_logs_one_per_event') then
+    raise exception 'the old per-event push index still exists and would block an edit notice';
   end if;
 end;
 $$;

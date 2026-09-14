@@ -89,6 +89,13 @@ export function EventManagementPanel({
             hasCover={Boolean(event.cover_image_path)}
           />}
 
+          {/* Editing is offered for exactly the states the database will accept,
+              so the link never lands on a refusal. */}
+          {(event.status === "draft" || event.status === "published") && <Link
+            className="button button-secondary"
+            href={`/clubs/${selectedClub.club_id}/events/${event.id}/edit`}
+          >編輯活動</Link>}
+
           {event.status === "draft" && <form action={publishEventAction} className="form-actions">
             <input type="hidden" name="clubId" value={selectedClub.club_id} />
             <input type="hidden" name="eventId" value={event.id} />

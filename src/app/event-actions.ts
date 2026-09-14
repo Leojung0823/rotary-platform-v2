@@ -344,3 +344,92 @@ export async function geocodeVenueAddressAction(
     formattedAddress: outcome.formattedAddress,
   };
 }
+
+/**
+ * Edits an event that has already been published.
+ *
+ * Reuses the create form's validation wholesale, because the fields and their
+ * constraints are the same question asked twice; only the database rules differ
+ * (see 20260914001000). The version the form was rendered from travels with the
+ * submission so a second officer editing the same event is refused rather than
+ * silently overwritten.
+ */
+export async function updateEventAction(
+  _state: EventCreateActionState,
+  formData: FormData,
+): Promise<EventCreateActionState> {
+  const values = readEventCreateFormValues(formData);
+  const revision = Number(formData.get("revision") ?? 0) + 1;
+  const clubId = String(formData.get("clubId") ?? "");
+  const eventId = String(formData.get("eventId") ?? "");
+  const expectedVersion = Number.parseInt(String(formData.get("expectedVersion") ?? ""), 10);
+
+  if (!uuidPattern.test(clubId) || !uuidPattern.test(eventId)) {
+    return createEventFailure(values, revision, "目前無法確認這場活動，請重新整理後再試。");
+  }
+
+  const validated = validateEventCreateForm(values);
+  if (!validated.ok) {
+    return createEventFailure(values, revision, "請修正下列欄位後再儲存。", validated.fieldErrors);
+  }
+
+  type UpdateOutcome = { notify_members?: unknown; changed_field_count?: unknown };
+  let outcome: UpdateOutcome | null = null;
+  try {
+    const supabase = await createClient();
+    const result = await supabase.rpc("update_club_event", {
+      p_club_id: clubId,
+      p_event_id: eventId,
+      p_event_type: validated.input.eventType,
+      p_title: validated.input.title,
+      p_description: validated.input.description,
+      p_location: validated.input.location,
+      p_starts_at: validated.input.startsAt,
+      p_ends_at: validated.input.endsAt,
+      p_registration_deadline: validated.input.registrationDeadline,
+      p_capacity: validated.input.capacity,
+      p_counts_for_attendance: validated.input.countsForAttendance,
+      p_venue_latitude: validated.input.venue?.latitude ?? null,
+      p_venue_longitude: validated.input.venue?.longitude ?? null,
+      p_expected_version: Number.isNaN(expectedVersion) ? null : expectedVersion,
+    });
+    if (result.error) return updateEventRpcFailure(values, revision, result.error.message);
+    outcome = (result.data ?? null) as UpdateOutcome | null;
+  } catch {
+    return createEventFailure(values, revision, "目前無法儲存這場活動，請稍後再試。已輸入的內容仍保留。");
+  }
+
+  // Members were told a time and a place. Only those moving is worth a push;
+  // a typo fix that notified everyone would be noise. The push never turns a
+  // saved edit into a failure -- the same rule publishing follows.
+  if (outcome?.notify_members === true) {
+    try {
+      const supabase = await createClient();
+      await pushPublishedEventToLine({ supabase, clubId, eventId });
+    } catch {
+      // Recorded by the push path itself; the edit is already saved.
+    }
+  }
+
+  revalidatePath("/events");
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath(`/clubs/${clubId}/events`);
+  redirect(`/clubs/${clubId}/events?mode=management&success=event_updated`);
+}
+
+function updateEventRpcFailure(
+  values: EventCreateFormValues,
+  revision: number,
+  message?: string,
+) {
+  const messages: Record<string, string> = {
+    event_not_editable: "這場活動已取消或已結束，不能再編輯。",
+    event_already_finished: "這場活動已經結束，不能再編輯。",
+    event_changed_elsewhere: "另一位幹部剛剛改過這場活動。請重新整理看最新內容，再決定要不要覆蓋。",
+    capacity_below_registrations: "名額不能少於目前已報名的人數。請先調整報名，或把名額設為不限。",
+    event_manage_required: "您沒有管理這個社活動的權限。",
+    event_not_found: "找不到這場活動。",
+  };
+  const matched = Object.keys(messages).find((code) => message?.includes(code));
+  return createEventFailure(values, revision, matched ? messages[matched] : "目前無法儲存這場活動，請稍後再試。");
+}

@@ -27,7 +27,12 @@ describe("event application boundary", () => {
     expect(actions).not.toContain("redirect(error.message");
     expect(actions).not.toContain("code: error.message");
     expect(actions).toContain("return createEventFailure");
-    expect(createForm).toContain("useActionState(createEventAction");
+    // The form posts through a server action rather than assembling a request
+    // itself; which action depends on whether it is creating or editing, and
+    // both are actions.
+    expect(createForm).toContain("useActionState(");
+    expect(createForm).toContain("editing ? updateEventAction : createEventAction");
+    expect(createForm).not.toContain("fetch(");
     expect(createForm).toContain("aria-invalid");
     expect(createForm).toContain("aria-describedby");
   });
