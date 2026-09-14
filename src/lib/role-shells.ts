@@ -37,14 +37,18 @@ type NavigationDefinition = Readonly<{
 }>;
 
 const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefinition[]>> = {
-  // Member navigation is deliberately fixed at four first-level destinations.
-  // Check-in stays inside 活動; messages and social features stay inside 首頁;
-  // management mode changes live in the account menu. None of these links is
-  // an authorization boundary -- every destination still checks its own route,
-  // RPC and RLS authority.
+  // Member navigation carries the destinations people go to directly. Check-in
+  // stays inside 活動 and the message centre stays on 首頁, where its unread
+  // count is announced. 互動 and 社務 were once kept out of this bar to hold it
+  // to four; both turned out to be places members and officers navigate to
+  // often enough to deserve a tab, so they were promoted (2026-09-14).
+  // 社務 appears only for someone who can manage something -- see below. None
+  // of these links is an authorization boundary: every destination still checks
+  // its own route, RPC and RLS authority.
   member: [
     { id: "home", label: "首頁", mobileLabel: "首頁", icon: "home", href: () => "/dashboard" },
     { id: "events", label: "活動", mobileLabel: "活動", icon: "calendar", href: () => "/events" },
+    { id: "interact", label: "社內互動", mobileLabel: "互動", icon: "chat", href: () => "/interact" },
     { id: "directory", label: "社員名錄", mobileLabel: "社員", icon: "users", href: () => "/directory" },
     { id: "account", label: "我的", mobileLabel: "我的", icon: "user", href: () => "/me" },
   ],

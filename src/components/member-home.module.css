@@ -1,5 +1,6 @@
 .memberHome { max-width: 880px; }
-.todayHeading { margin: 0; color: var(--muted); font-size: 17px; font-weight: 700; }
+/* A supporting line under the greeting, not a second heading competing with it. */
+.todayHeading { margin: 2px 0 0; color: var(--muted); font-size: 15px; font-weight: 650; }
 .secondarySection { display: grid; gap: 10px; }
 .secondarySection :global(.section-heading) { margin-bottom: 0; }
 .secondaryActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -9,7 +10,14 @@
 .secondaryAction strong, .secondaryAction small { overflow-wrap: anywhere; }
 .secondaryAction small { color: var(--muted); line-height: 1.45; }
 .secondaryAction b { color: var(--blue); font-size: 20px; }
-.primaryCard, .nextCard, .emptyCard { display: grid; gap: 18px; }
+.primaryCard, .nextCard { display: grid; gap: 18px; }
+/* The empty state is a status line, not a card of content: it sits on one row
+   on anything wider than a phone so the real content below stays in view. */
+.emptyCard { display: grid; gap: 14px; align-items: center; }
+.emptyCard h2 { margin: 4px 0 0; font-size: 19px; }
+@media (min-width: 560px) {
+  .emptyCard { grid-template-columns: minmax(0, 1fr) auto; }
+}
 /* The cover sits flush inside the card. A fixed aspect ratio keeps the card
    height stable whatever the uploader's image proportions are, so the layout
    does not shift once the signed URL loads. */
