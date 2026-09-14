@@ -86,13 +86,17 @@
 
 @media (max-width: 840px) {
   .shell { display: block; }
-  .rail { position: relative; height: auto; min-height: 0; display: block; padding: 10px 52px 10px 16px; }
+  /* The avatar is pinned to the top-right corner, but reserving its gutter on
+     the whole rail shortened every row beneath it -- the club switcher stopped
+     52px early with nothing in the gap. Only the row the avatar actually sits
+     in needs to clear it. */
+  .rail { position: relative; height: auto; min-height: 0; display: block; padding: 10px 16px; }
   .header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
-  .brand { flex: 0 1 auto; min-width: 0; font-size: var(--text-small); }
+  .brand { flex: 0 1 auto; min-width: 0; padding-right: 44px; font-size: var(--text-small); }
   .brand small { display: none; }
   .brandMark { width: 30px; height: 30px; font-size: 18px; }
   .modeName { display: none; }
-  .mobileContext { flex: 1 1 calc(100% - 50px); display: block; overflow: hidden; margin: 0; color: #bdd4df; font-size: var(--text-small); font-weight: var(--weight-medium); line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+  .mobileContext { flex: 1 1 calc(100% - 50px); display: block; overflow: hidden; margin: 0; padding-right: 44px; color: #bdd4df; font-size: var(--text-small); font-weight: var(--weight-medium); line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
   .modeSwitcher { flex: 1 0 100%; order: 3; }
   .modeSwitcher .controlLabel { display: none; }
   .modeOptions { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }

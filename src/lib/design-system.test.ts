@@ -63,10 +63,24 @@ describe("design system floors", () => {
     expect(heading).not.toMatch(/letter-spacing:\s*-/u);
   });
 
-  it("gives a card an edge rather than a shadow", () => {
+  it("separates a card by layer rather than by outline", () => {
+    // The first pass swapped the heavy shadow for a full-strength border, which
+    // still draws a box around everything. A card now reads as a lighter plane
+    // on a darker canvas: a hairline so the edge does not dissolve, and a
+    // shadow small enough to be a seam rather than lift.
     const card = globals.slice(globals.indexOf(".card {"));
     const rule = card.slice(0, card.indexOf("}"));
-    expect(rule).toContain("border: 1px solid var(--line)");
-    expect(rule).not.toContain("box-shadow: 0");
+    expect(rule).toContain("var(--hairline)");
+    expect(rule).toContain("var(--radius-card)");
+    expect(rule).not.toContain("solid var(--line)");
+    expect(rule).not.toMatch(/box-shadow: 0 \d{2}px/u);
+  });
+
+  it("uses gold once per screen and never as text", () => {
+    // #d5a92e on white is about 2.2:1, so it fails the moment it carries a
+    // word. It is the club's own colour and appeared nowhere but the brand
+    // mark, so it is spent on a single rule above the page title.
+    expect(globals).toContain(".page-header h1::before");
+    expect(globals).not.toMatch(/color: var\(--gold\)/u);
   });
 });
