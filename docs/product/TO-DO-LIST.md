@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-15（Asia/Taipei；#139 合併後核對）
+更新日期：2026-09-15（Asia/Taipei；#141 合併後核對）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
@@ -8,14 +8,14 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
-## 2026-09-15 GitHub 開發狀態快照
+## 2026-09-15 GitHub 開發狀態快照（#141 合併後）
 
 以下是本次掃描當下的 GitHub 狀態。**PR 尚未合併前，不算 `main` 完成；進入 `main` 也不代表已部署到 staging。**
-本次掃描的 `origin/main` 是 `37b297f9dbaaa73d8781d7510a04d80ca31f7e2b`；staging 目前健康，
-runtime 是 `dddf1a51ab67`。本次已於 2026-09-15 03:39（Asia/Taipei）核對 `/api/health`：`status=ok`、`configuration=true`、
+本次掃描的 `origin/main` 是 `feebd5902e59d71d073433b7f64557d23a853f00`；staging 目前健康，
+runtime 是 `dddf1a51ab67`。本次已於 2026-09-15 03:52（Asia/Taipei）核對 `/api/health`：`status=ok`、`configuration=true`、
 `database=true`、`issues=[]`、`warnings=[]`。因此 `main` 已領先 staging；#124、#126、#127、#130、#132、#135 與 #139
-已進入 `main`，但尚未部署 staging。新的 Staging Release plan `34888099085` 已建立，目前停在 `staging` environment 人工核准，
-尚未取得 migration dry-run 結果。
+已進入 `main`，但尚未部署 staging。#140 與 #141 只有文件變更，也已合併至 `main`，不會改變 staging runtime。
+先前針對舊 SHA 的 Staging Release plans 已取消；本次文件快照合併後，才建立一個對應最終 `main` SHA 的新 plan。
 
 - `[>]` PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 發布與各社 OA 外部設定。
 - `[>]` PR #108 社費／收款／核銷與報表：已合併，merge `a52bfe7`；程式在 `main`，待 staging／hosted 驗收。
@@ -41,11 +41,14 @@ runtime 是 `dddf1a51ab67`。本次已於 2026-09-15 03:39（Asia/Taipei）核�
 - `[x]` PR #137 staging plan 文件同步：已合併，merge `8b970dc9`；純文件變更，完整資料庫／member-browser jobs 依變更範圍規則跳過。
 - `[x]` PR #138 進度文件同步：已合併，merge `e5313907`；純文件變更，記錄 #137 合併後的主線狀態。
 - `[x]` PR #139 社務頁年度預設值修正：已合併，merge `37b297f9`；修正 `date` 直接指定給 `integer` 造成的社務頁載入錯誤，新增 forward-only migration 與資料庫驗證。
+- `[x]` PR #140 進度文件同步：已合併；純文件變更，更新 #139 合併後的主線／staging 落差與待辦證據。
+- `[x]` PR #141 LINE OA rollout 決策同步：已合併，merge `feebd590`；純文件變更，記錄本次只使用 `PANCHIAO-ELITE`，HAPPY 不納入 rollout。
 
 目前沒有 open PR；#123 已於 2026-09-14 合併並隨 Staging Go-Live `34856216706` 發布；#124、#126、#127、#130、#132、#135、#139
-已合併但尚未部署，#125、#136、#137、#138 文件同步也已合併。#124 的
+已合併但尚未部署，#125、#136、#137、#138、#140、#141 文件同步也已合併。#124 的
 `20260914001100_club_service_plan_v2.sql`、#132 的 `20260915000100_event_push_version_contract.sql` 與 #139 的
-`20260915000200_club_service_plan_year_cast.sql` 已進入 main 但尚未部署 staging；本次文件更新不執行部署。
+`20260915000200_club_service_plan_year_cast.sql` 已進入 main 但尚未部署 staging；目前沒有可沿用的 Staging Release plan，
+需在本次文件快照合併後，以最新 `main` exact SHA 重新 plan；本次文件更新不執行部署。
 
 ## 2026-09-15 本輪主線交付
 
@@ -798,11 +801,20 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 - `20260914001000_update_club_event.sql` 會更新既有 `line_push_logs` 資料；staging Supabase Free 方案沒有備份／PITR。因此在取得可驗證的 logical backup／rollback point 前，仍不能誠實輸入 `BACKUP-READY`，也不執行 Go-Live。
 - 目前應先由產品／平台管理員決定 staging 的 rollback 方案（升級備份能力或核准受控匯出），再進行 migration apply、部署與 hosted acceptance；不能用 `include_all` 繞過這個安全門檻。
 
-## 最新掃描證據（2026-09-15；#139 合併後）
+## 歷史掃描證據（2026-09-15；#139 合併後）
 
 - GitHub `origin/main` exact SHA 為 `37b297f9dbaaa73d8781d7510a04d80ca31f7e2b`；PR #139 已用一般 merge 合併，merge commit 為此 SHA；目前沒有 open PR。
 - PR #139 的 application、database、validate 與 Browser Smoke 均通過；合併後 main 的 CI `34886934834` 與 Browser Smoke `34886934913` 也均通過。Browser Smoke 包含完整 migration reset、資料庫旗標回復與社員／角色殼層流程。
 - #139 的根因是 `get_club_affairs_page` 在 `p_start_year` 為 null 時，把 `date` 型別的 `current_rotary_year_start()` 直接指定給 `integer`；staging 舊版因此在 `/club-affairs` 顯示通用載入錯誤。新增 `20260915000200_club_service_plan_year_cast.sql` 只從 PostgreSQL 現有函式定義做精準 forward-fix，沒有修改歷史 migration、資料表、RLS 或權限。
 - 新增的 `supabase/verification/club_service_plan_year_cast_security.sql` 已註冊進 verification manifest；本機 typecheck、lint、test、build、migration guard、verification manifest 與 `git diff --check` 均通過。`npm run verify:db` 本機曾因 Docker／Supabase 無回應中止，沒有把它當成本機通過；GitHub database job 已成功。
-- Staging Release plan `34888099085` 對 `main@37b297f9` 已建立，目前等待 `staging` environment 人工核准，尚未產生新的遠端 dry-run 結果；staging health 仍是 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`、revision `dddf1a51ab67`。
+- Staging Release plan `34888099085` 曾對 `main@37b297f9` 建立，但後續 main 又有文件合併，該 plan 已取消，不可沿用；staging health 當時仍是 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`、revision `dddf1a51ab67`。
 - 在 plan 完成並取得 rollback／forward-fix 依據前，不執行 Staging Go-Live；production 沒有修改。
+
+## 最新掃描證據（2026-09-15；#141 合併後）
+
+- GitHub `origin/main` exact SHA 為 `feebd5902e59d71d073433b7f64557d23a853f00`；PR #140、#141 已合併，兩者都是文件變更；目前沒有 open PR。
+- PR #139 的 application、database、validate 與 Browser Smoke，以及合併後 main 的 CI `34886934834`、Browser Smoke `34886934913` 均成功；文件同步依變更範圍規則不重跑完整 database／member-browser jobs。
+- PR #141 已把 E-04 的 rollout 決策寫清楚：目前只啟用 `PANCHIAO-ELITE`；不使用 HAPPY，也沒有 `HAPPY` 的 OA/channel secret。未來若啟用 HAPPY，必須另設自己的 `LINE_OA_HAPPY_*` 憑證與驗收。
+- staging `/api/health` 於 2026-09-15 03:52（Asia/Taipei）仍回報 `status=ok`、`revision=dddf1a51ab67`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；這個 runtime 仍只到 #123，main 後續的程式與 migration 尚未部署。
+- 針對 `37b297f9`、`79fd63d0` 與 `feebd590` 的舊 Staging Release plan 已因 main 後續前進而取消；本文件快照合併後，下一步只建立一個對應最新 main exact SHA 的 plan，並等待 `staging` environment 人工核准。
+- `20260914001000_update_club_event.sql` 仍包含既有 `line_push_logs` 資料回填；staging Supabase Free 方案仍沒有 backup／PITR。因此在取得可驗證 rollback point 或核准受控匯出方案前，不輸入 `BACKUP-READY`，也不執行 Go-Live；production 沒有修改。

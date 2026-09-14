@@ -1,13 +1,13 @@
-# 交接筆記（持續更新；最新核對 2026-09-15，#139 合併後與 staging plan）
+# 交接筆記（持續更新；最新核對 2026-09-15，#141 合併後與 staging plan）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
 ## 最新 GitHub 開發掃描（2026-09-15；以最新 main 核對）
 
-本次以 GitHub `origin/main=37b297f9dbaaa73d8781d7510a04d80ca31f7e2b` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=feebd5902e59d71d073433b7f64557d23a853f00` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`dddf1a51ab67`，已於 2026-09-15 03:39（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
+`dddf1a51ab67`，已於 2026-09-15 03:52（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
 `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
 
 - PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
@@ -35,8 +35,10 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #137 staging plan 文件同步：已合併，merge `8b970dc9`；純文件變更，記錄 plan 與目前 `main` exact SHA 的差異及 rollback blocker。
 - PR #138 進度文件同步：已合併，merge `e5313907`；純文件變更。
 - PR #139 社務頁年度預設值修正：已合併，merge `37b297f9`；新增 forward-only migration `20260915000200_club_service_plan_year_cast.sql` 與 verification。
+- PR #140 進度文件同步：已合併；純文件變更，更新 #139 合併後的主線／staging 落差。
+- PR #141 LINE OA rollout 決策同步：已合併，merge `feebd590`；純文件變更，記錄本次只使用 `PANCHIAO-ELITE`，HAPPY 不納入 rollout。
 
-目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135、#136、#137、#138、#139 已進入 `main`；其中 #137、#138 只有文件變更，沒有讓 staging runtime 前進。#123 已合併並完成 staging release；#132、#139 的 migration 與 #135 的 redirect 修正尚未部署。新的 Staging Release plan `34888099085` 仍等待 `staging` environment 核准。
+目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135、#136、#137、#138、#139、#140、#141 已進入 `main`；其中 #136–#141 的文件變更沒有讓 staging runtime 前進。#123 已合併並完成 staging release；#132、#139 的 migration 與 #135 的 redirect 修正尚未部署。針對舊 SHA 的 Staging Release plans 已取消，本次文件快照合併後才建立對應最新 `main` 的新 plan。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -631,13 +633,21 @@ staging health (historical)        status=ok; revision 244ac256c42d;
   `database=true`、`issues=[]`、`warnings=[]`；因此 #124、#126、#127、#130、#132、#135、#136 尚未在
   staging 生效；#137 只有文件變更，不影響 runtime。
 
-## 2026-09-15 最新核對（#139 合併後）
+## 歷史核對（2026-09-15；#139 合併後）
 
 - `origin/main` exact SHA 是 `37b297f9dbaaa73d8781d7510a04d80ca31f7e2b`；PR #139 已一般 merge，沒有 open PR。
 - #139 的 PR checks 與合併後 main 的 CI／Browser Smoke 均成功。修正根因是 `get_club_affairs_page` 將日期型別的
   `current_rotary_year_start()` 直接放入整數 `target_year`；p_start_year 為 null 時，staging 舊版社務頁因此顯示通用載入錯誤。
 - 新增 `20260915000200_club_service_plan_year_cast.sql`，從 PostgreSQL 現有函式定義只替換該宣告，並新增
   `supabase/verification/club_service_plan_year_cast_security.sql`；沒有修改歷史 migration、資料表、RLS 或權限。
-- `Staging Release` run `34888099085` 對 `main@37b297f9` 已建立，目前等待 `staging` environment 人工核准，尚未完成遠端 dry-run；
-  staging `/api/health` 仍為 `status=ok`、`issues=[]`、`warnings=[]`、revision `dddf1a51ab67`。
+- `Staging Release` run `34888099085` 曾對 `main@37b297f9` 建立，但後續 main 又有文件合併，該 plan 已取消，不可沿用；
+  staging `/api/health` 當時仍為 `status=ok`、`issues=[]`、`warnings=[]`、revision `dddf1a51ab67`。
 - `npm run verify:db` 本機曾因 Docker／Supabase 無回應中止，不能列為本機通過；GitHub database job 已成功。尚未執行 Staging Go-Live，production 沒有修改。
+
+## 2026-09-15 最新核對（#141 合併後）
+
+- GitHub `origin/main` exact SHA 是 `feebd5902e59d71d073433b7f64557d23a853f00`；PR #140、#141 已合併，都是文件變更；目前沒有 open PR。
+- #141 已記錄產品決策：本次 rollout 只使用 `PANCHIAO-ELITE`，HAPPY 不使用；未來若啟用 HAPPY，必須另設自己的 `LINE_OA_HAPPY_*` 憑證與驗收，不能跨社共用。
+- staging `/api/health` 於 2026-09-15 03:52（Asia/Taipei）回報 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，revision 仍為 `dddf1a51ab67`；目前 deployed exact SHA 仍是 #123 的 `dddf1a51ab67127bc4fed34876b696346eb0b29d`，main 後續程式與 migration 尚未部署。
+- 針對 `37b297f9`、`79fd63d0` 與 `feebd590` 的舊 Staging Release plans 都已因 main 後續前進而取消；這份文件快照合併後，才建立一個對應最終 main exact SHA 的新 plan，並等待 `staging` environment 人工核准。
+- `20260914001000_update_club_event.sql` 仍包含既有 `line_push_logs` 資料回填；staging Supabase Free 方案沒有 backup／PITR。因此在取得可驗證 rollback point 或核准受控匯出方案前，不輸入 `BACKUP-READY`，也不執行 Go-Live；production 沒有修改。
