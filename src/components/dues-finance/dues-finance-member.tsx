@@ -4,10 +4,11 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Field, Input, Notice } from "@/components/ui";
 import type { DuesFinanceMemberLedger } from "@/lib/dues-finance/contracts";
+import { APP_TIME_ZONE } from "@/lib/time";
 import styles from "./dues-finance-member.module.css";
 
 const moneyFormatter = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
-const dateFormatter = new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" });
+const dateFormatter = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, dateStyle: "medium" });
 
 function today() {
   return new Date().toISOString().slice(0, 10);

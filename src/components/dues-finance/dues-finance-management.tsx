@@ -8,13 +8,14 @@ import type {
   DuesFinanceManagementLedger,
   DuesFinancePaymentMethod,
 } from "@/lib/dues-finance/contracts";
+import { APP_TIME_ZONE } from "@/lib/time";
 import styles from "./dues-finance-management.module.css";
 
 type MemberOption = Readonly<{ membershipId: string; displayName: string }>;
 type ManagementPermissions = Readonly<{ canManage: boolean; canApprove: boolean }>;
 
 const moneyFormatter = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
-const dateFormatter = new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" });
+const dateFormatter = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, dateStyle: "medium" });
 const paymentMethodLabels: Record<DuesFinancePaymentMethod, string> = {
   cash: "現金",
   bank_transfer: "轉帳",

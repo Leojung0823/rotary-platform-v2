@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Badge, EmptyState, Notice } from "@/components/ui";
 import { hasPlatformAccess, requireIdentity } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 type Club = {
   club_id: string;
@@ -72,7 +73,7 @@ export default async function PlatformClubsPage() {
                       {statusLabel[club.club_status] ?? club.club_status}
                     </Badge>
                   </td>
-                  <td>{new Intl.DateTimeFormat("zh-TW").format(new Date(club.created_at))}</td>
+                  <td>{new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE }).format(new Date(club.created_at))}</td>
                   <td><Link href={`/platform/clubs/${club.club_id}`}>查看 →</Link></td>
                 </tr>
               ))}

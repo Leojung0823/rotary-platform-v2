@@ -6,6 +6,7 @@ import { identityProviderLabels, type IdentityCenter } from "@/lib/identity-cent
 import { createClient } from "@/lib/supabase/server";
 import { safeMessage } from "@/lib/validation";
 import Link from "next/link";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 const successMessages: Record<string, string> = {
   device_revoked: "裝置已登出。",
@@ -51,7 +52,7 @@ export default async function AccountSecurityPage({
         {center.line_identity ? <div className="form-stack">
           <div className="status-pair"><Badge tone="success">已綁定</Badge><Badge tone="neutral">身份驗證</Badge></div>
           <p><strong>{center.line_identity.display_name}</strong></p>
-          <p className="subtle">綁定：{new Intl.DateTimeFormat("zh-TW").format(new Date(center.line_identity.bound_at))}</p>
+          <p className="subtle">綁定：{new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE }).format(new Date(center.line_identity.bound_at))}</p>
           {center.account.has_password_login ? <>
             <Notice tone="error">解除後會立即撤銷所有登入工作階段與裝置。下次只能使用平台密碼登入，或請秘書建立重新綁定邀請。</Notice>
             <form action={unbindMyLineIdentityAction} className="form-stack">
@@ -80,7 +81,7 @@ export default async function AccountSecurityPage({
         <thead><tr><th>裝置</th><th>最近使用</th><th>狀態</th><th>操作</th></tr></thead>
         <tbody>{center.devices.map((device) => <tr key={device.id}>
           <td data-label="裝置"><strong>{device.name}</strong>{device.is_current && <div><Badge tone="neutral">目前裝置</Badge></div>}</td>
-          <td data-label="最近使用">{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "short" }).format(new Date(device.last_seen_at))}</td>
+          <td data-label="最近使用">{new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,  dateStyle: "short", timeStyle: "short" }).format(new Date(device.last_seen_at))}</td>
           <td data-label="狀態"><Badge tone={device.revoked_at ? "danger" : "success"}>{device.revoked_at ? "已撤銷" : "有效"}</Badge></td>
           <td data-label="操作">{!device.revoked_at && <form action={revokeDeviceAction}><input type="hidden" name="deviceId" value={device.id} /><Button type="submit" className="button-secondary">{device.is_current ? "登出目前裝置" : "登出此裝置"}</Button></form>}</td>
         </tr>)}</tbody>
@@ -92,7 +93,7 @@ export default async function AccountSecurityPage({
       <div className="table-wrap" data-mobile-cards><table>
         <thead><tr><th>時間</th><th>方式</th><th>結果</th></tr></thead>
         <tbody>{center.login_history.map((history, index) => <tr key={`${history.created_at}-${index}`}>
-          <td data-label="時間">{new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "medium" }).format(new Date(history.created_at))}</td>
+          <td data-label="時間">{new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,  dateStyle: "short", timeStyle: "medium" }).format(new Date(history.created_at))}</td>
           <td data-label="方式">{identityProviderLabels[history.provider] ?? history.provider}</td>
           <td data-label="結果"><Badge tone={history.outcome === "success" ? "success" : "danger"}>{history.outcome === "success" ? "成功" : history.outcome === "blocked" ? "已阻擋" : "失敗"}</Badge></td>
         </tr>)}</tbody>
