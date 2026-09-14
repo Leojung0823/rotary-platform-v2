@@ -173,17 +173,13 @@ grant execute on function public.update_club_event(uuid, uuid, text, text, text,
 alter table public.line_push_logs
   add column if not exists source_event_version integer;
 
--- Existing announcements were all sent at the version the event carries now,
--- because nothing could edit an event before this migration.
-update public.line_push_logs as log
-set source_event_version = event.version
-from public.club_events as event
-where log.source_event_id = event.id
-  and log.source_event_version is null;
-
 drop index if exists line_push_logs_one_per_event;
+-- Before this migration, published events could not be edited, so every legacy
+-- event push belongs to version 1. Keep those rows untouched: staging is on a
+-- Free plan with no restore point. The expression index treats a legacy NULL
+-- as version 1, preserving the old idempotency rule without a data backfill.
 create unique index line_push_logs_one_per_event_version
-  on public.line_push_logs (source_event_id, source_event_version)
+  on public.line_push_logs (source_event_id, (coalesce(source_event_version, 1)))
   where source_event_id is not null;
 
 create or replace function public.record_club_event_line_push(
@@ -231,7 +227,8 @@ begin
 
   select id into push_id
   from public.line_push_logs
-  where source_event_id = p_event_id and source_event_version = effective_version;
+  where source_event_id = p_event_id
+    and coalesce(source_event_version, 1) = effective_version;
   if push_id is not null then
     return push_id;
   end if;

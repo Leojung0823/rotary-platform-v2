@@ -51,6 +51,14 @@ describe("editing a published event", () => {
     expect(migration).toContain("drop index if exists line_push_logs_one_per_event;");
   });
 
+  it("does not rewrite existing push rows while preserving legacy version one", () => {
+    // Staging has no database restore point. A legacy publish row is version 1
+    // because published-event edits did not exist before this migration; the
+    // expression index and lookup preserve its idempotency without backfill.
+    expect(migration).not.toContain("set source_event_version = event.version");
+    expect(migration).toContain("coalesce(source_event_version, 1)");
+  });
+
   it("passes the saved version to the versioned push contract", () => {
     expect(actions).toContain("eventVersion");
     expect(eventPush).toContain("p_event_version");

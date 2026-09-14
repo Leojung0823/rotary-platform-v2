@@ -106,6 +106,12 @@ begin
     raise exception 'the push index must key on both the event and its version, got %', index_definition;
   end if;
 
+  -- Existing rows predate versioned edits and therefore keep NULL. The index
+  -- must make that legacy value collide with version 1 without rewriting data.
+  if position('COALESCE(source_event_version, 1)' in index_definition) = 0 then
+    raise exception 'the push index must treat legacy NULL versions as version 1, got %', index_definition;
+  end if;
+
   -- The rule it replaced must be gone, not merely superseded: leaving it in
   -- place would silently block the second push the edit flow depends on.
   if exists (select 1 from pg_catalog.pg_class where relname = 'line_push_logs_one_per_event') then
