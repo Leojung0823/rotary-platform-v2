@@ -29,6 +29,11 @@ async function selectActiveMemberClub(page, clubId) {
   await expect(clubChoice).toBeVisible();
   await clubChoice.click();
   await expect(page).toHaveURL(/\/dashboard(?:\?mode=member)?$/u);
+  // The server action keeps the same dashboard pathname, so a URL assertion
+  // alone can finish before the Set-Cookie redirect response is applied.
+  // Reload and assert the selected club itself before opening the member page.
+  await page.reload();
+  await expect(clubChoice).toHaveAttribute("aria-current", "true");
 }
 
 async function expectNoHorizontalOverflow(page) {
