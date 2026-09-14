@@ -20,7 +20,7 @@
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
-  font-weight: 800;
+  font-weight: var(--weight-medium);
 }
 
 @media (max-width: 840px) {

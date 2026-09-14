@@ -55,7 +55,7 @@
 }
 .live div { display: grid; gap: 2px; }
 .live strong { color: #1c6b45; }
-.live span { color: #2f7d59; font-size: 13px; }
+.live span { color: #2f7d59; font-size: var(--text-small); }
 
 .detail form, .detail > p { padding: 0 20px; }
 

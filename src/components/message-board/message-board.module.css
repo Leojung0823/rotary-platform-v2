@@ -175,7 +175,7 @@
   border-radius: 50%;
   background: #e2e8f0;
   color: #334155;
-  font-weight: 800;
+  font-weight: var(--weight-medium);
 }
 
 .avatar img {
@@ -275,5 +275,5 @@
    inside the composer rather than above it -- it is part of writing the post,
    not a separate decision made beforehand. */
 .audience { display: grid; gap: 8px; padding: 12px 0 0; }
-.audienceLabel { color: #334155; font-size: 13px; font-weight: 750; }
-.audienceHint { color: #64748b; font-size: 12px; }
+.audienceLabel { color: #334155; font-size: var(--text-small); font-weight: var(--weight-medium); }
+.audienceHint { color: #64748b; font-size: var(--text-small); }

@@ -15,8 +15,8 @@
 .recordHeading small { display: block; margin-top: 4px; }
 .amountList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
 .amountList div { min-width: 0; padding: 10px 12px; border-radius: 12px; background: #f5f8fa; }
-.amountList dt { color: var(--muted); font-size: 13px; }
-.amountList dd { margin: 3px 0 0; font-weight: 750; overflow-wrap: anywhere; }
+.amountList dt { color: var(--muted); font-size: var(--text-small); }
+.amountList dd { margin: 3px 0 0; font-weight: var(--weight-medium); overflow-wrap: anywhere; }
 .details { border-top: 1px solid var(--line); padding-top: 12px; }
 .details summary, .inlineDetails summary { cursor: pointer; color: var(--blue); font-weight: 700; }
 .receiptList { display: grid; gap: 8px; }

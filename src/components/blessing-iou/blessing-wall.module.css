@@ -38,7 +38,7 @@
   margin: 0 0 0.3rem;
   color: #8a6618;
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: var(--weight-medium);
   letter-spacing: 0.12em;
 }
 
@@ -58,7 +58,7 @@
   display: grid;
   gap: 0.45rem;
   color: #334155;
-  font-weight: 750;
+  font-weight: var(--weight-medium);
 }
 
 .fields textarea,
@@ -185,7 +185,7 @@
   padding: 0.65rem 1.1rem;
   cursor: pointer;
   font: inherit;
-  font-weight: 750;
+  font-weight: var(--weight-medium);
 }
 
 .formActions button,
@@ -205,7 +205,7 @@
 
 .overLimit {
   color: #b91c1c !important;
-  font-weight: 750 !important;
+  font-weight: var(--weight-medium) !important;
 }
 
 .message,
@@ -277,7 +277,7 @@
   border-radius: 50%;
   background: #f5e8bd;
   color: #6f5113;
-  font-weight: 800;
+  font-weight: var(--weight-medium);
 }
 
 .avatar img {
@@ -307,7 +307,7 @@
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
   font-size: 0.9rem;
-  font-weight: 750;
+  font-weight: var(--weight-medium);
 }
 
 .publicAmount {
