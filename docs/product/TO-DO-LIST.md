@@ -10,27 +10,27 @@
 
 ## 2026-09-14 GitHub 開發狀態快照
 
-以下是本次掃描當下的 GitHub 狀態。**PR 尚未合併前，不算 `main` 完成，也不代表已部署到 staging。**
-本次掃描的 `origin/main` 是 `9be63a10481bd4ed83aad644dc26bd2190b25059`；staging 目前健康，
+以下是本次掃描當下的 GitHub 狀態。**PR 尚未合併前，不算 `main` 完成；進入 `main` 也不代表已部署到 staging。**
+本次掃描的 `origin/main` 是 `244ac256c42df905e3673ec133b6af033b00c363`；staging 目前健康，
 但仍是已部署版本 `2d7839d2d646`，尚未跟上最新主線。
 
-- `[>]` PR #107 Rich Menu：`codex/line-rich-menu-v1`，HEAD `9123104`；application、database、validate、Browser Smoke 均已通過，PR 已恢復 clean／mergeable，等待合併與各社 OA 外部設定。
-- `[>]` PR #108 社費／收款／核銷與報表：`codex/dues-finance-v1`，HEAD `42e61ed`；已用普通 merge 同步 #107 base 並保留 #111 的社務驗證檔，PDF 繁中字型與日期時區問題已修正，本機 908 項測試通過；GitHub application、database、validate、member Browser Smoke 均已通過，PR 為 clean／mergeable，等待合併與 hosted 驗收。
-- `[>]` PR #109 手機 Web App：`codex/pwa-v1`，HEAD `e29d1cc`，全部必要檢查已通過；等待合併與真實手機驗收。
-- `[>]` PR #110 生日設定 UX：`codex/birthday-settings-ux-v1`，HEAD `b63872d`；已修正 local HTTP 使用 production build 時 active-club cookie 被錯誤標成 Secure 的問題，補上 `APP_ENV` same-origin 回歸測試，並把 Browser Smoke 改為檢查導覽列可見的目前社別摘要。GitHub CI／Quality／Browser Smoke 均成功，PR 仍為 open、clean／mergeable，等待合併與 staging／hosted 驗收。
-- `[x]` PR #111 社務資訊／年度服務計劃：已合併至 `main`，merge commit `2d7839d`；migration `20260914000800_club_service_plan.sql` 已進入主線，但尚未部署 staging。
-- `[x]` PR #113 活動地址查座標：已合併至 `main`，merge commit `0989a2b`；目前 staging 尚未部署這項 migration。
-- `[>]` PR #115 staging migration 順序處理：`codex/staging-include-all-input`，HEAD `5011991`；Plan／Go-Live 的 `include_all` 預設關閉，只有確認是已知的順序落差才手動開啟，GitHub CI／Quality 已通過，Browser Smoke 尚在執行。
-- `[x]` PR #114 的錯誤改名方案已關閉；已改由 PR #115 處理，沒有修改或刪除 `20260914000400_event_venue_geocode_gate.sql`。
-- `[>]` PR #112 進度文件同步：`codex/sync-current-progress-20260914`，HEAD `e48af86`；因 main 已前進，仍需重新同步後才能合併。
+- `[>]` PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 發布與各社 OA 外部設定。
+- `[>]` PR #108 社費／收款／核銷與報表：已合併，merge `a52bfe7`；程式在 `main`，待 staging／hosted 驗收。
+- `[>]` PR #109 手機 Web App：`codex/pwa-v1`，HEAD `ddaf422`，已普通 merge 同步最新 `main`，GitHub 檢查重新執行中；待合併與真實手機驗收。
+- `[>]` PR #110 生日設定 UX：已合併，merge `493c5a1`；待 staging／hosted 驗收。
+- `[x]` PR #111 社務資訊／年度服務計劃：已合併至 `main`，merge `2d7839d`；migration `20260914000800_club_service_plan.sql` 尚未部署 staging。
+- `[>]` PR #113 活動地址查座標：已合併，merge `0989a2b`；migration 順序已由 #118 修正，待 staging 發布與地址查詢驗收。
+- `[x]` PR #115 staging migration 順序處理：已合併，merge `6260191`；`include_all` 預設關閉，只有明確指定才允許 out-of-order migration。
+- `[x]` PR #118 migration collision repair：已合併，merge `244ac25`；地點 migration 已從 `20260914000400` 改為 `20260914000900`，完整 migration reset、database、Quality、Browser Smoke 均通過。
+- `[>]` PR #117 同頁模式導覽修正：`codex/fix-mobile-nav-contrast`，HEAD `8eaac4d`，已普通 merge 同步最新 `main`，GitHub 檢查重新執行中；待合併。
+- `[>]` PR #112 進度文件同步：已同步最新 `main`，待本次文件修正完成後更新 PR。
 
-合併順序要保留 migration 依賴：先處理 #107，再更新 #108 的 base；#111 已經合併，#110 依賴 #108 的最新狀態。
-目前沒有在本次文件同步中執行部署；這一節只記錄程式、合併與檢查狀態。
+合併順序已完成 migration 依賴的修正：#115 與 #118 已先合併；接下來等 #117／#109 檢查全綠，再更新本文件 PR。沒有在本次文件同步中執行部署。
 
-## 2026-09-14 本輪交付
+## 2026-09-14 本輪主線交付
 
-九次 staging 部署，全部已上線。每一項都經過 CI、Browser Smoke、Staging Release Plan 與 Go-Live，
-`/api/health` 的 revision 與 Go-Live 的 exact SHA 相符、`issues=[]`、`warnings=[]`。
+本輪多個功能已進入 GitHub `main`，但 staging 仍停在 PR #111 的版本；因此下面的 `[>]` 代表程式已完成、
+尚待 staging／真人驗收，不把「已合併」誤寫成「已上線」。
 
 ### 新功能
 
@@ -47,11 +47,14 @@
 - **社務頁與年度服務計劃** `[>]`（PR #111）。社員端的社務資訊：社團資料、幹部名單、
   年度服務計劃、文件中心入口。服務計劃每社每扶輪年度一份，草稿只有可編輯者看得到，
   發布時間只認第一次、取消發布則清空。刻意不綁 `rotary_years`，因為那些年度列要從文件中心手動建立。
-- **用地址查活動座標** `[>]`（PR #113）。移植自 `ask-how-i-charge` 的 geocoding server function；PR #114 的改名方案已關閉，migration 順序由 PR #115 的明確 `include_all` 閘門處理。
+- **用地址查活動座標** `[>]`（PR #113、#118）。移植自 `ask-how-i-charge` 的 geocoding server function；migration 同號問題已修正為 `20260914000900`，待 staging 發布後驗收。
   保留語言區域鎖台灣、同一地址多種寫法輪流試、偏好台灣範圍內的結果；
   改為金鑰只在 `server-only` 模組讀取、十秒逾時、未設定金鑰時明確回報而非看似故障。
   查詢閘門用新增的 `current_can_manage_club_events`——每次查詢都是計費請求，
   沒有閘門任何登入社員都能拿社團金鑰當免費服務。
+- **LINE Rich Menu** `[>]`（PR #107）。每社獨立設定與旗標已進入 `main`，待 staging 發布、各社 OA 設定與真人驗收。
+- **社費、收款、核銷與財務報表** `[>]`（PR #108）。核心程式與資料庫已進入 `main`，待 staging／hosted 驗收。
+- **生日設定 UX** `[>]`（PR #110）。生日頁沿用全域社別、每社預設公開且保留既有缺列私密語意，並補上徵集重複時的可理解錯誤提示；待 staging／hosted 驗收。
 
 ### 修正
 
@@ -61,7 +64,7 @@
 - **活動列表四項** `[x]`（PR #104）。排序改為新到舊；已取消活動對社員隱藏（幹部仍可見）；
   活動說明保留 organiser 的換行分段；標題列按鈕不再折行。
   **後果**：已報名社員不會再從活動頁看到「這場取消了」，該通知走訊息中心與 LINE 推播。
-- **首頁與導覽** `[x]`（PR #106）。底部導覽從四項擴為五項（新增「互動」），
+- **首頁與導覽** `[x]`（PR #106、#117）。底部導覽從四項擴為五項（新增「互動」），
   本輪再加「社務」成為六項。首頁移除重複第三次的社名徽章、空狀態收斂成一行。
   **這反轉了本文件 §2 記錄的「社員第一層固定為四項」**；`role-shells.ts` 註解已寫明改動日期與理由。
 
@@ -69,12 +72,12 @@
 
 - 「四項導覽」這個決定被寫在**五個地方**（註解、單元測試、兩處 E2E `toHaveCount`、一處「互動不存在」
   的反向斷言），花了三輪 CI 才清完，因為每輪只浮現下一個。
-- geocode 的 migration 編號與 Codex 的改名撞號，**只有 staging dry run 攔得到**——
-  本機 `check:migrations` 比對的是本機檔案順序，不是遠端已套用狀態。見 [[project-rotary-codex-coworking]]。
+- geocode 的 migration 編號與社費 migration 撞號；staging dry run 先攔到遠端順序落差，後續 clean reset 也證實同號。
+  PR #118 已把尚未套用的地點 migration 移到 `20260914000900`，並加上 path-exact 的一次性修復白名單。
 
 ### 本輪交付後待真人驗收
 
-程式都已在 staging，以下每一項都需要有人看畫面或動手，我無法代為確認：
+已部署 staging 的功能與本輪新進 `main` 的功能不同；以下每一項都需要有人看畫面或動手，我無法代為確認：
 
 - `[>]` **公開加入連結的關閉行為**。已有四位真人成功加入，但**按「關閉連結」後再點同一條是否失效**
   還沒驗過。那個開關是這個功能唯一的控制，必須確定它真的有效。
@@ -84,7 +87,7 @@
   只看到「本年度的服務計劃尚未發布」。這是該功能最要緊的邊界。
 - `[>]` **首頁活動封面**。需要該活動已上傳封面才看得到。
 - `[>]` **用地址查座標**。`GOOGLE_MAPS_API_KEY` 已於 2026-09-14 設入 Render staging；
-  待 PR #115 合併、以 `include_all=true` 完成 migration apply 與部署後，在活動表單輸入地址確認座標正確填入。
+  待以 `main=244ac25` 完成 migration apply 與部署後，在活動表單輸入地址確認座標正確填入。
 - `[>]` **E-03 的另一半**，見上。
 
 ## 外部處理待辦（唯一清單）
@@ -285,8 +288,8 @@
 
 ### E-11 LINE Rich Menu／完整 OA 整合 `[>]`
 
-- **目前證據**：Rich Menu 程式已在 PR #107 完成並通過既有檢查，但尚未合併到 `main`，也尚未部署 staging；
-  外部 OA 設定與真人驗收仍未完成，不是本輪 staging blocker。
+- **目前證據**：Rich Menu 程式已在 PR #107 合併至 `main`（merge `1164f763`）並通過 GitHub 檢查，
+  但尚未部署 staging；外部 OA 設定與真人驗收仍未完成，不是本輪 staging blocker。
 - **外部動作**：產品先決定各社 Rich Menu 的入口與文案；開發完成後，由各社在自己的 LINE OA／Messaging API channel 設定並驗證 menu、URI 與權限邊界，不共用其他社的 OA。
 - **完成證據**：每個啟用的社都能在自己的 OA 看到正確 Rich Menu；登入／社別切換不會把 A 社入口導到 B 社；停用旗標或未設定 OA 時不會送出錯誤連結。
 
@@ -294,16 +297,16 @@
 
 這些是需要另外開發與驗證的產品功能，不應誤寫成「等外部設定」：
 
-- `[>]` 社費、收款與核銷（應收、部分收款、代墊、核銷）已在 PR #108，待合併、部署與 hosted 驗收。
-- `[>]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）已在 PR #108，待合併、部署與 hosted 驗收。
-- `[>]` LINE Rich Menu 與完整 OA 整合已在 PR #107，待合併與各社 OA 外部設定（見 E-11）。
+- `[>]` 社費、收款與核銷（應收、部分收款、代墊、核銷）已在 PR #108 合併，待部署與 hosted 驗收。
+- `[>]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）已在 PR #108 合併，待部署與 hosted 驗收。
+- `[>]` LINE Rich Menu 與完整 OA 整合已在 PR #107 合併，待部署與各社 OA 外部設定（見 E-11）。
 - `[>]` 手機 Web App（安裝、離線提示與推播準備）已在 PR #109，待合併與真實手機驗收。
 - `[>]` 社務資訊與年度服務計劃已合併至 `main`（PR #111），待 staging／hosted 與角色邊界驗收。
 - `[ ]` 社務 AI 助理（摘要、公告草稿、會議紀錄與授權查詢）；目前沒有可執行企劃或已授權的 AI 服務規格，不能直接開發。
 
-### 生日設定 UX 調整（產品決定 2026-09-12；PR #110 檢查已通過，待合併與 staging 驗收）
+### 生日設定 UX 調整（產品決定 2026-09-12；PR #110 已合併，待 staging 驗收）
 
-實際操作 `/birthdays` 時提出，四項都已在 PR #110 實作；PR 尚未合併前不算 `main` 完成：
+實際操作 `/birthdays` 時提出，四項都已在 PR #110 實作；程式已進入 `main`，尚待 staging／hosted 驗收：
 
 - `[>]` **`/birthdays` 不應該可以切換扶輪社**。PR #110 已移除頁面內重複選擇器，改用全域已選社別。
 - `[>]` **生日隱私改為預設全部打開**。PR #110 已讓新社籍預設公開，並保留既有缺列資料的私密語意，
@@ -315,16 +318,17 @@
 
 ## 本輪結論
 
-截至 2026-09-14，能在 repo 內完成的功能已分別送出 PR；但 PR 尚未合併前，不能寫成
-`main` 或 staging 已完成。GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 依產品決定暫緩；
+截至 2026-09-14，能在 repo 內完成的功能已分別送出 PR；已合併進 `main` 的功能仍要與 staging
+部署、真人／實機驗收分開記錄。GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 依產品決定暫緩；
 自動化檢查也不能取代 E-06／E-07 的登入後效能量測與實機驗收。
 
-目前權威基準是 `origin/main=9be63a10481bd4ed83aad644dc26bd2190b25059`。staging 目前健康但仍是已部署版本
-`2d7839d2d646`；#113 已進入 `main` 但 migration 順序被 staging dry-run 擋下，#107／#108／#109／#110／#115 仍在 PR 階段；production 沒有修改。
+目前權威基準是 `origin/main=244ac256c42df905e3673ec133b6af033b00c363`。staging 目前健康但仍是已部署版本
+`2d7839d2d646`；#107、#108、#110、#113、#115、#118 已進入 `main`，#109／#117 仍在 PR 階段；production 沒有修改。
 
 本輪已補上的 repo 內缺口包括：生日設定 UX／預設公開且保留既有缺列私密語意、財務 PDF 繁中字型、
-社務資訊與年度服務計劃，以及 Rich Menu、手機 Web App、社費／報表的獨立 PR。社務資訊已進入 `main`；
-其餘產品 PR 合併與 staging 驗收前，只能標成「程式完成、等待合併／外部驗收」。
+社務資訊與年度服務計劃、Rich Menu、手機 Web App、社費／報表的獨立 PR、同頁模式導覽修正，以及 migration
+同號修復。#107、#108、#110、#113、#115、#118 已進入 `main`；#109／#117 待 GitHub 檢查全綠後合併，
+全部新功能仍待依各項目完成 staging／外部驗收。
 
 前一輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
 Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS smoke 與 hosted member acceptance 均通過。
@@ -689,7 +693,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 7. **E-04／E-05：各社 OA 設定與額度政策** `[!]`：逐社確認 channel 與憑證；產品決定超額行為。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
-10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式在 PR #107，待合併後再做各社 OA 設定與真人驗收。
+10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併 PR #107，待 staging、各社 OA 設定與真人驗收。
 11. **E-12：staging 備份能力** `[!]`：決定升級方案或自行匯出；在此之前不部署破壞性 migration 到 staging。
 
 ## 歷史驗證證據（管理模式輪，2026-09-02）
@@ -709,14 +713,14 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-14；本輪開發掃描基準）
 
-- `origin/main` exact SHA 為 `9be63a10481bd4ed83aad644dc26bd2190b25059`；目前有產品 open PR #107、#108、#109、#110、#115，
-  文件同步 PR #112 另列；#114 已關閉；
-  完整狀態與 base/head 關係見本文件開頭，不能把它們當成已進入 `main`。
-- staging runtime revision 為 `2d7839d2d646`，`/api/health` 為 `status=ok` 且 `issues=[]`、`warnings=[]`；尚未包含 PR #113。
+- `origin/main` exact SHA 為 `244ac256c42df905e3673ec133b6af033b00c363`；#107、#108、#110、#111、#113、#115、#118 已合併，
+  #109／#117 仍為 open PR；文件同步 PR #112 另列。完整狀態與 base/head 關係見本文件開頭。
+- staging runtime revision 為 `2d7839d2d646`，`/api/health` 為 `status=ok` 且 `issues=[]`、`warnings=[]`；尚未包含 #107、#108、#110、#113、#115、#118。
 - Flex Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，核對同一個 exact SHA `fbdc061`。
 - staging `/api/health`：`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
-- staging Go-Live `34686702234` 以 exact SHA `fbdc061…` 成功；最新已部署 migration 是
+- staging Go-Live `34686702234` 以 exact SHA `fbdc061…` 成功；這是歷史基準，最新已部署 migration 是
   `20260912000200_line_oa_flex_templates_flag.sql`。
 - 本輪文件同步後的 `CI` `34686598214` 與 `Browser Smoke` `34686598210` 均成功；完整 database／member-browser jobs 依變更範圍 gate 跳過。
-- 生日 Collection Scheduler 真人送達與重跑不重送已由 `34695450977`／`34695655038` 完成；follow identity pairing 仍依 E-03 暫緩。
+- 生日 Collection Scheduler 真人送達與重跑不重送已由 `34695450977`／`34695655038` 完成；follow identity pairing 仍依 E-03 待精確身份核對。
+- #118 已修正 `20260914000400` 的 migration collision，改為 `20260914000900`；CI database、Quality、Browser Smoke 與完整 migration reset 均通過。
 - production 沒有修改；所有需要外部平台、真人或產品決定的項目均已集中列在 E-01–E-12。

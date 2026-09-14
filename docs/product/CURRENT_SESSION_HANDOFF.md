@@ -5,19 +5,22 @@
 
 ## 最新 GitHub 開發掃描（2026-09-14；以最新 main 核對）
 
-本次以 GitHub `origin/main=9be63a10481bd4ed83aad644dc26bd2190b25059` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=244ac256c42df905e3673ec133b6af033b00c363` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
 `2d7839d2d646`，production 沒有修改。
 
-- PR #107 Rich Menu：`9123104`，application、database、validate、Browser Smoke 均已通過，PR 已恢復 clean／mergeable，等待合併與各社 OA 設定。
-- PR #108 社費／收款／核銷／報表：`42e61ed`，已用普通 merge 同步 #107 base；PDF 繁中字型與日期時區問題已修正，本機 908 項測試通過，GitHub application／database／validate／member Browser Smoke 均已通過，PR 為 clean／mergeable，等待合併與 hosted 驗收。
-- PR #109 手機 Web App：`e29d1cc`，檢查已通過，等待合併與真實手機驗收。
-- PR #110 生日設定 UX：`b63872d`，已修正 local HTTP 使用 production build 時 active-club cookie 被錯誤標成 Secure 的問題，補上 `APP_ENV` same-origin 回歸測試，並把 Browser Smoke 改為檢查導覽列可見的目前社別摘要。GitHub CI／Quality／Browser Smoke 均成功，PR 仍為 open、clean／mergeable，等待合併與 staging／hosted 驗收。
-- PR #111 社務資訊／年度服務計劃：已合併至 `main`，merge commit `2d7839d`；migration 為 `20260914000800`，待 staging／hosted 角色邊界驗收。
-- PR #113 活動地址查座標：已合併至 `main`，merge commit `0989a2b`；staging dry-run 因 migration 順序落差失敗。
-- PR #115 staging migration 順序處理：HEAD `5011991`，`include_all` 預設關閉，CI／Quality 已通過，Browser Smoke 執行中，等待合併。
+- PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
+- PR #108 社費／收款／核銷／報表：已合併，merge `a52bfe7`；程式在 `main`，待 staging／hosted 驗收。
+- PR #109 手機 Web App：HEAD `ddaf422`，已普通 merge 同步最新 `main`，GitHub 檢查執行中；合併後待 iOS／Android 實機驗收。
+- PR #110 生日設定 UX：已合併，merge `493c5a1`；程式在 `main`，待 staging／hosted 驗收。
+- PR #111 社務資訊／年度服務計劃：已合併，merge `2d7839d`；migration `20260914000800` 待 staging／hosted 角色邊界驗收。
+- PR #113 活動地址查座標：已合併，merge `0989a2b`；原 migration 順序問題已由 #118 修正。
+- PR #115 staging migration 順序處理：已合併，merge `6260191`；`include_all` 預設關閉。
+- PR #117 同頁模式導覽修正：HEAD `8eaac4d`，已普通 merge 同步最新 `main`，GitHub 檢查執行中。
+- PR #118 migration collision repair：已合併，merge `244ac25`；完整 migration reset、database、Quality、Browser Smoke 均通過。
 
-合併依賴為先 #107、再更新 #108 的 base、之後處理 #110；#113 已合併但要等 #115 解決 staging 發布順序。
+目前產品 PR 只剩 #109／#117 仍未合併；文件 PR #112 會在本輪同步完成後更新。兩個產品 PR 的檢查完成後才可合併。
+#118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
 
