@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-labelledby="title">
+  <title id="title">扶輪平台</title>
+  <rect width="192" height="192" rx="42" fill="#0d6eaa"/>
+  <circle cx="96" cy="96" r="57" fill="#fff" opacity=".96"/>
+  <path d="M64 132V60h30c22 0 35 11 35 29 0 13-7 22-19 26l25 17h-22l-22-15H82v15H64Zm18-31h11c12 0 18-4 18-12 0-9-6-13-18-13H82v25Z" fill="#0d6eaa"/>
+</svg>

@@ -22,12 +22,33 @@ if (hosted) {
   });
 }
 
+const publicAppShellHeaders = [
+  ...securityHeaders,
+  // These files contain no account, club, role, or permission data. A short
+  // browser cache reduces repeat navigation cost without making the
+  // authenticated HTML or API responses cacheable.
+  { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
+];
+
+const serviceWorkerHeaders = [
+  ...securityHeaders,
+  // The worker itself must be revalidated so a new cache policy can take
+  // effect promptly after a release.
+  { key: "Cache-Control", value: "no-cache" },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/icon.svg", headers: publicAppShellHeaders },
+      { source: "/manifest.webmanifest", headers: publicAppShellHeaders },
+      { source: "/offline.html", headers: publicAppShellHeaders },
+      { source: "/sw.js", headers: serviceWorkerHeaders },
+      { source: "/:path*", headers: securityHeaders },
+    ];
   },
 };
 
