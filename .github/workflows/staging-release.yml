@@ -10,6 +10,11 @@ on:
         default: plan
         options:
           - plan
+      include_all:
+        description: "Include pending migrations whose timestamps precede the remote latest (default: false)"
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,6 +34,7 @@ jobs:
       url: ${{ vars.STAGING_BASE_URL }}
     env:
       STAGING_OPERATION: ${{ inputs.operation }}
+      STAGING_INCLUDE_ALL: ${{ inputs.include_all }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
       STAGING_EXPECT_ENV: staging
@@ -87,10 +93,15 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           set -euo pipefail
-          supabase db push --linked --dry-run
+          if [[ "$STAGING_INCLUDE_ALL" == "true" ]]; then
+            supabase db push --linked --dry-run --include-all
+          else
+            supabase db push --linked --dry-run
+          fi
           {
             echo "### Staging migration plan"
             echo "- Operation: \`$STAGING_OPERATION\`"
+            echo "- Include all migrations: \`$STAGING_INCLUDE_ALL\`"
             echo "- Commit: \`$GITHUB_SHA\`"
             echo "- Project suffix: \`${SUPABASE_PROJECT_REF: -4}\`"
             echo "- Remote migration dry-run completed successfully."

@@ -19,6 +19,11 @@ on:
         description: "Confirm a usable staging backup/rollback point by entering BACKUP-READY"
         required: true
         type: string
+      include_all:
+        description: "Include pending migrations whose timestamps precede the remote latest (default: false)"
+        required: true
+        type: boolean
+        default: false
       provision_test_data:
         description: "Create or confirm the pure-test club and member for a brand-new staging project"
         required: true
@@ -52,6 +57,7 @@ jobs:
       STAGING_PLAN_RUN_ID: ${{ inputs.plan_run_id }}
       STAGING_LAUNCH_CONFIRMATION: ${{ inputs.confirmation }}
       STAGING_BACKUP_CONFIRMATION: ${{ inputs.backup_confirmation }}
+      STAGING_INCLUDE_ALL: ${{ inputs.include_all }}
       STAGING_PROVISION_TEST_DATA: ${{ inputs.provision_test_data }}
       STAGING_PROVISIONING_CONFIRMATION: ${{ inputs.provisioning_confirmation }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
@@ -171,13 +177,25 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: supabase db push --linked --dry-run
+        run: |
+          set -euo pipefail
+          if [[ "$STAGING_INCLUDE_ALL" == "true" ]]; then
+            supabase db push --linked --dry-run --include-all
+          else
+            supabase db push --linked --dry-run
+          fi
 
       - name: Apply remote migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: supabase db push --linked
+        run: |
+          set -euo pipefail
+          if [[ "$STAGING_INCLUDE_ALL" == "true" ]]; then
+            supabase db push --linked --include-all
+          else
+            supabase db push --linked
+          fi
 
       - name: Provision or confirm initial staging test data
         if: inputs.provision_test_data == true

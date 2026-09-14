@@ -19,6 +19,15 @@ describe("staging release workflow safety", () => {
     expect(workflow).not.toContain("DEPLOY-STAGING");
   });
 
+  it("keeps out-of-order migration inclusion explicitly opt-in", () => {
+    expect(workflow).toContain("      include_all:");
+    expect(workflow).toContain("        default: false");
+    expect(workflow).toContain("STAGING_INCLUDE_ALL: ${{ inputs.include_all }}");
+    expect(workflow).toContain('if [[ "$STAGING_INCLUDE_ALL" == "true" ]]');
+    expect(workflow).toContain("supabase db push --linked --dry-run --include-all");
+    expect(workflow).toContain("supabase db push --linked --dry-run\n");
+  });
+
   it("uses environment-scoped Supabase credentials without printing them", () => {
     expect(workflow).toContain("SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}");
     expect(workflow).toContain("SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}");

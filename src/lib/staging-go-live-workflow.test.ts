@@ -21,6 +21,7 @@ describe("staging go-live workflow safety", () => {
       "plan_run_id",
       "confirmation",
       "backup_confirmation",
+      "include_all",
       "provision_test_data",
       "provisioning_confirmation",
     ]) {
@@ -29,6 +30,8 @@ describe("staging go-live workflow safety", () => {
     expect(workflow).toContain("ref: ${{ github.sha }}");
     expect(workflow).toContain("STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}");
     expect(workflow).toContain("E2E_EXPECTED_SHA: ${{ inputs.expected_sha }}");
+    expect(workflow).toContain("STAGING_INCLUDE_ALL: ${{ inputs.include_all }}");
+    expect(workflow).toContain("        default: false");
     expect(workflow).toContain("LAUNCH-STAGING");
     expect(workflow).toContain("BACKUP-READY");
     expect(workflow).toContain("PROVISION-STAGING-TEST-DATA");
@@ -60,7 +63,14 @@ describe("staging go-live workflow safety", () => {
     expect(workflow.match(/supabase db push --linked\n/gu)).toHaveLength(1);
     expect(workflow).not.toContain("db reset");
     expect(workflow).not.toContain("--include-seed");
-    expect(workflow).not.toContain("--include-all");
+  });
+
+  it("keeps include-all opt-in for both preview and apply", () => {
+    expect(workflow).toContain('if [[ "$STAGING_INCLUDE_ALL" == "true" ]]');
+    expect(workflow).toContain("supabase db push --linked --dry-run --include-all");
+    expect(workflow).toContain("supabase db push --linked --include-all");
+    expect(workflow).toContain("supabase db push --linked --dry-run\n");
+    expect(workflow).toContain("supabase db push --linked\n");
   });
 
   it("keeps the deployment hook secret, bounded and separate from readiness", () => {

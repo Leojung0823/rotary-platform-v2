@@ -128,6 +128,11 @@ Plan 只執行：
 supabase db push --linked --dry-run
 ```
 
+若 staging 遠端已經套用較新的 migration，而本機仍有一支尚未套用、但時間戳較早的 migration，
+Plan 會明確顯示 `Found local migration files to be inserted before the last migration on remote database`。
+這時重新執行 Plan 時才把 `include_all` 設為 `true`，確認 dry-run 列出的檔案就是預期項目；
+Go-Live 的 `include_all` 必須使用與該次成功 Plan 相同的值。平常維持預設 `false`，不要用它掩蓋未知的 migration 歷史落差。
+
 Plan 不會套用 migration、不會 reset remote database，也不會載入 seed。
 
 ### 5.2 確認備份並執行 Staging Go-Live
