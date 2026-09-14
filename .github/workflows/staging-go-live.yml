@@ -29,6 +29,11 @@ on:
         required: false
         type: string
         default: ""
+      include_all:
+        description: "Apply a migration whose number sits before the last one already on the remote. Leave off unless the plan dry run has refused for that reason."
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -171,13 +176,29 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: supabase db push --linked --dry-run
+        run: |
+          set -euo pipefail
+          # Mirrors the plan: out-of-order is refused by default, and this is
+          # the one sanctioned way past it. Renaming the file is not -- the
+          # history guard forbids touching a migration already on main.
+          if [ "${{ inputs.include_all }}" = "true" ]; then
+            echo "::warning::Applying with --include-all: a migration is being applied out of order."
+            supabase db push --linked --dry-run --include-all
+          else
+            supabase db push --linked --dry-run
+          fi
 
       - name: Apply remote migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: supabase db push --linked
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.include_all }}" = "true" ]; then
+            supabase db push --linked --include-all
+          else
+            supabase db push --linked
+          fi
 
       - name: Provision or confirm initial staging test data
         if: inputs.provision_test_data == true
