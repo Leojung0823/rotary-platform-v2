@@ -5,21 +5,23 @@
 
 ## 最新 GitHub 開發掃描（2026-09-14；以最新 main 核對）
 
-本次以 GitHub `origin/main=244ac256c42df905e3673ec133b6af033b00c363` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=a61b33331f4546c28193b16e2470c6733a783828` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`2d7839d2d646`，production 沒有修改。
+`244ac256c42d`，production 沒有修改。
 
 - PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
 - PR #108 社費／收款／核銷／報表：已合併，merge `a52bfe7`；程式在 `main`，待 staging／hosted 驗收。
-- PR #109 手機 Web App：HEAD `ddaf422`，已普通 merge 同步最新 `main`，GitHub 檢查執行中；合併後待 iOS／Android 實機驗收。
+- PR #109 手機 Web App：已合併，merge `694c961`；GitHub 檢查已通過，待 iOS／Android 實機驗收。
 - PR #110 生日設定 UX：已合併，merge `493c5a1`；程式在 `main`，待 staging／hosted 驗收。
 - PR #111 社務資訊／年度服務計劃：已合併，merge `2d7839d`；migration `20260914000800` 待 staging／hosted 角色邊界驗收。
 - PR #113 活動地址查座標：已合併，merge `0989a2b`；原 migration 順序問題已由 #118 修正。
 - PR #115 staging migration 順序處理：已合併，merge `6260191`；`include_all` 預設關閉。
-- PR #117 同頁模式導覽修正：HEAD `8eaac4d`，已普通 merge 同步最新 `main`，GitHub 檢查執行中。
+- PR #117 同頁模式導覽修正：已合併，merge `8a424b2`；CI、Quality、Database 與 Browser Smoke 均通過。
 - PR #118 migration collision repair：已合併，merge `244ac25`；完整 migration reset、database、Quality、Browser Smoke 均通過。
+- PR #119 migration collision guard：已合併，merge `a61b333`；全樹同號檢查與單元測試，以及 CI、Quality、Database、Browser Smoke 均通過。
+- PR #120 活動封面統一裁切比例：HEAD `f25b878`，尚未合併；CI／Quality 已通過，Database／Browser Smoke 當時仍在執行。
 
-目前產品 PR 只剩 #109／#117 仍未合併；文件 PR #112 會在本輪同步完成後更新。兩個產品 PR 的檢查完成後才可合併。
+目前只有 PR #120 尚未合併；#112 文件同步已合併，這份交接筆記會在本輪再同步最新 SHA 與 staging 證據。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -63,6 +65,15 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 - `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由前一輪 Go-Live `34594381922` 部署到 staging；本輪 Flex migration 已由 Go-Live `34686702234` 部署。
 
 外部處理的唯一清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12，涵蓋 Flex staging、生日邀請送達、follow 配對、各社 OA、額度政策、效能量測、實機／M1、雙重社籍、production 準備、暫緩的 recovery email、Rich Menu 與 staging 備份決策。
+
+## 本輪最新 staging 證據
+
+- Staging Release `34848419628` 與 Staging Go-Live `34848522481` 均成功，使用同一個 exact SHA
+  `244ac256c42df905e3673ec133b6af033b00c363`。
+- Go-Live 已套用 `20260914000500`、`20260914000600`、`20260914000700` 與
+  `20260914000900`；`/api/health` 回報 `status=ok`、`configuration=true`、`database=true`、
+  `issues=[]`、`warnings=[]`，revision 為 `244ac256c42d`。
+- #109、#117、#119 是 Go-Live 後才合併到 `main` 的變更，目前不宣稱已部署 staging；#120 仍待合併。
 
 ## 前一輪已合併並部署的待辦收尾（2026-09-12）
 
@@ -501,9 +512,13 @@ staging Auth fix commits           lint / typecheck / 647 tests passed locally;
 staging plan (previous deployed)   passed (run 34668072136; exact SHA 3e88322)
 staging Go-Live (latest round)     passed (run 34668149625; revision 3e88322,
                                   migration + smoke + hosted member acceptance passed)
-staging plan (Flex current)        passed (run 34686603765; exact SHA fbdc061,
+staging plan (historical Flex)     passed (run 34686603765; exact SHA fbdc061,
                                   dry-run completed)
-staging Go-Live (Flex current)     passed (run 34686702234; revision fbdc061,
+staging Go-Live (historical Flex)  passed (run 34686702234; revision fbdc061,
+                                  migration + smoke + hosted member acceptance passed)
+staging plan (latest current)      passed (run 34848419628; exact SHA 244ac256,
+                                  dry-run completed)
+staging Go-Live (latest current)   passed (run 34848522481; revision 244ac256,
                                   migration + smoke + hosted member acceptance passed)
 CI (docs-only sync)                passed (run 34686598214; classifier passed,
                                   full database/member-browser jobs skipped)
@@ -511,7 +526,7 @@ Browser Smoke (docs-only sync)     passed (run 34686598210; classifier passed,
                                   member-browser job skipped)
 staging management acceptance      passed (run 34577046356; exact SHA a8c1e55,
                                   birthday + archive + event + cover flows passed)
-staging health (current)           status=ok; revision 2d7839d2d646;
+staging health (current)           status=ok; revision 244ac256c42d;
                                   issues=[]; warnings=[]
 ```
 
