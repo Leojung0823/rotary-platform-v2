@@ -15,7 +15,7 @@ describe("club management route boundary", () => {
   it("requires the proxy-selected management mode and the server role projection", () => {
     expect(layout).toContain('headerStore.get("x-rotary-requested-mode") !== "management"');
     expect(layout).toContain("currentExperienceMode(identity.id)");
-    expect(layout).toContain("isManagementMode(mode)");
+    expect(layout).toContain("mode !== null && !isManagementMode(mode)");
     expect(layout).toContain('redirect("/access-denied")');
   });
 

@@ -11,6 +11,9 @@ export default async function ClubManagementLayout({ children }: { children: Rea
   const headerStore = await headers();
   if (headerStore.get("x-rotary-requested-mode") !== "management") redirect("/access-denied");
   const mode = await currentExperienceMode(identity.id);
-  if (!isManagementMode(mode)) redirect("/access-denied");
+  // A disabled or unavailable role-shell projection must preserve the legacy
+  // route. The child page and its RPC/RLS checks remain the authority; the
+  // layout only prevents a member-mode URL from rendering a management page.
+  if (mode !== null && !isManagementMode(mode)) redirect("/access-denied");
   return children;
 }
