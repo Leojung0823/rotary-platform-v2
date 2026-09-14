@@ -178,10 +178,11 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     const bar = page.getByRole("navigation", { name: "主要導覽" });
     await expect(bar.getByRole("link")).toHaveCount(5);
     const ids = await bar.locator("a").evaluateAll((links) => links.map((link) => link.dataset.navigationId));
-    expect(ids).toEqual(["home", "events", "directory", "account"]);
+    expect(ids).toEqual(["home", "events", "interact", "directory", "account"]);
     await expect(bar.locator('[data-navigation-id="directory"]')).toContainText("社員");
     await expect(bar.locator('[data-navigation-id="messages"]')).toHaveCount(0);
-    await expect(bar.locator('[data-navigation-id="interact"]')).toHaveCount(0);
+    // 社內互動 is a tab of its own now; 訊息 is still reached from the homepage.
+    await expect(bar.locator('[data-navigation-id="interact"]')).toHaveCount(1);
     await expect(bar.locator('[data-navigation-id="manage-club"]')).toHaveCount(0);
   }
 
