@@ -7,7 +7,7 @@
   /* The accent drawn as text on a light surface. Kept separate because a hue
      that reads well as a filled pill is not always legible as a label: the
      management amber only clears WCAG AA once darkened. */
-  --shell-accent-ink: #0a72e8;
+  --shell-accent-ink: #0a5fc4;
   min-height: 100vh;
   display: grid;
   /* 248px holds 社員名錄 and 年度服務計劃 without wrapping; anything wider is
@@ -15,7 +15,7 @@
   grid-template-columns: 248px minmax(0, 1fr);
 }
 
-.shellMember { --shell-accent: #0a72e8; --shell-accent-ink: #0a72e8; }
+.shellMember { --shell-accent: #0a72e8; --shell-accent-ink: #0a5fc4; }
 .shellManagement { --shell-accent: #a86f16; --shell-accent-ink: #9c6714; }
 .shellPlatform { --shell-accent: #7b4ca3; --shell-accent-ink: #7b4ca3; }
 
@@ -158,7 +158,7 @@
   .navigation a[aria-current="page"]:visited,
   .navigation a[aria-current="page"]:hover,
   .navigation a[aria-current="page"]:focus,
-  .navigation a[aria-current="page"]:active { color: var(--shell-accent-ink, #0a72e8); background: none; }
+  .navigation a[aria-current="page"]:active { color: var(--shell-accent-ink, #0a5fc4); background: none; }
   .navigationIcon { height: 20px; font-size: 18px; }
   .navigationIcon svg { display: block; color: inherit; stroke: currentColor; }
   .navigation a { position: relative; }

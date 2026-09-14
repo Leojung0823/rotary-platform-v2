@@ -83,4 +83,22 @@ describe("design system floors", () => {
     expect(globals).toContain(".page-header h1::before");
     expect(globals).not.toMatch(/color: var\(--gold\)/u);
   });
+
+  it("separates the blue that fills from the blue that is read", () => {
+    // --blue is 4.58:1 on pure white: it clears AA only just, and it does not
+    // clear it at all on the surfaces it is actually drawn on -- 4.28:1 on the
+    // translucent mobile bar, 4.14:1 on --blue-soft. So --blue fills and
+    // --blue-ink is read, and the two must not be swapped by habit.
+    expect(globals).toContain("--blue-ink:");
+
+    const offenders: string[] = [];
+    for (const sheet of styleSheets("src")) {
+      for (const line of readFileSync(sheet, "utf8").split("\n")) {
+        if (/color:\s*var\(--blue\)/u.test(line) && !/-color:/u.test(line)) {
+          offenders.push(`${sheet}: ${line.trim()}`);
+        }
+      }
+    }
+    expect(offenders, "--blue is a fill; text takes --blue-ink").toEqual([]);
+  });
 });

@@ -18,7 +18,7 @@
 .amountList dt { color: var(--muted); font-size: var(--text-small); }
 .amountList dd { margin: 3px 0 0; font-weight: var(--weight-medium); overflow-wrap: anywhere; }
 .details { border-top: 1px solid var(--line); padding-top: 12px; }
-.details summary, .inlineDetails summary { cursor: pointer; color: var(--blue); font-weight: 700; }
+.details summary, .inlineDetails summary { cursor: pointer; color: var(--blue-ink); font-weight: 700; }
 .receiptList { display: grid; gap: 8px; }
 .receiptRow { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
 .receiptRow > span { display: grid; gap: 3px; min-width: 0; }

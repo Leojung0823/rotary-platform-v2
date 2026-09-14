@@ -16,6 +16,12 @@
      about 1.9:1. */
   --gold: #f4b942;
   --blue: #0a72e8;
+  /* The same blue drawn as text, darkened. #0a72e8 is 4.58:1 on pure white --
+     it only just clears AA, and it drops to 4.28:1 on the translucent mobile
+     bar and 4.14:1 on --blue-soft, both of which are below it. A hue that
+     reads well as a filled pill is not automatically legible as a label, so
+     the two roles get two values. */
+  --blue-ink: #0a5fc4;
   --blue-soft: rgba(10, 114, 232, .08);
   --danger: #b4233c;
 
@@ -98,16 +104,16 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 /* 50px tall, 15px label: a pointer and a fingertip both land on it, and a
    reader at 70 does not have to lean in. */
 .sidebar nav a { min-height: 50px; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-control); color: #44566c; font-size: 15px; font-weight: var(--weight-medium); }
-.sidebar nav a:hover { background: var(--blue-soft); color: var(--blue); }
+.sidebar nav a:hover { background: var(--blue-soft); color: var(--blue-ink); }
 /* Tinted rather than filled: a saturated block reads as a button, not as
    "you are here". */
-.sidebar nav a[aria-current="page"] { background: var(--blue-soft); color: var(--blue); font-weight: var(--weight-strong); }
+.sidebar nav a[aria-current="page"] { background: var(--blue-soft); color: var(--blue-ink); font-weight: var(--weight-strong); }
 .account { display: flex; gap: var(--space-3); align-items: center; min-height: 60px; margin-top: auto; padding-top: var(--space-4); border-top: 1px solid var(--line); min-width: 0; }
 .account div:last-child { min-width: 0; }
 .account strong, .account small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account small { color: var(--muted); font-size: var(--text-small); }
 .avatar { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--radius-control); background: rgba(244,185,66,.22); color: #8a6a12; font-weight: var(--weight-strong); }
-.link-button { min-height: 48px; display: inline-flex; align-items: center; border: 0; background: transparent; color: var(--blue); padding: 6px 0; cursor: pointer; font-weight: 700; }
+.link-button { min-height: 48px; display: inline-flex; align-items: center; border: 0; background: transparent; color: var(--blue-ink); padding: 6px 0; cursor: pointer; font-weight: 700; }
 .sidebar .link-button { color: var(--muted); }
 /* Capped so a 1920px screen keeps a readable measure instead of stretching
    the page to the bezels. */
@@ -175,7 +181,7 @@ p { color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
   background: var(--gold);
 }
 .subtle, .hint { color: var(--muted); font-size: var(--text-small); line-height: 1.6; }
-.back-link { display: inline-block; margin-bottom: var(--space-6); color: var(--blue); font-weight: var(--weight-medium); font-size: var(--text-small); }
+.back-link { display: inline-block; margin-bottom: var(--space-6); color: var(--blue-ink); font-weight: var(--weight-medium); font-size: var(--text-small); }
 /* A lighter plane on a slightly darker canvas rather than an outlined box. */
 .card { padding: var(--space-5); border: 1px solid var(--hairline); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); }
 .identity-ledger-card { min-width: 0; }
@@ -202,7 +208,7 @@ p { color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
 .directory-role-badge { display: inline-flex; flex: 0 0 auto; padding: 2px var(--space-2); border-radius: var(--radius-pill); background: #eef1f4; color: #4c5a6b; font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; }
 .directory-card-meta { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: var(--text-small); }
 .directory-chevron { flex: 0 0 auto; color: var(--muted); font-size: 20px; font-weight: 700; }
-.card-link { margin-top: auto; color: var(--blue); font-size: 14px; font-weight: var(--weight-medium); }
+.card-link { margin-top: auto; color: var(--blue-ink); font-size: var(--text-small); font-weight: var(--weight-medium); }
 /* A badge carries status, and the standard forbids colour as the only state
    indicator -- which makes this text load-bearing, not decoration. */
 /* 32px tall: at 24px a pill beside a 26px title read as a footnote to it
@@ -235,7 +241,7 @@ p { color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
 .label { font-size: 14px; font-weight: var(--weight-medium); }
 .input { width: 100%; min-width: 0; min-height: 48px; padding: 10px 12px; border: 1px solid #bfcad4; border-radius: 9px; color: var(--ink); background: white; }
 .input:hover { border-color: #829aae; }
-.input:focus { border-color: var(--blue); outline: 3px solid rgba(22,119,168,.12); }
+.input:focus { border-color: var(--blue); outline: 3px solid rgba(10, 114, 232, .18); }
 .form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 6px; }
 /* Buttons and the note that explains them stack, so the buttons never have
    to share a row with prose and get squeezed into broken labels. */
@@ -252,13 +258,13 @@ hr { width: 100%; border: 0; border-top: 1px solid var(--line); }
    to be the smallest. */
 .field-error { overflow-wrap: anywhere; color: #95213a; font-size: var(--text-small); font-weight: var(--weight-medium); line-height: 1.5; }
 .empty { padding: 56px 24px; border: 1px dashed #bdc9d2; border-radius: var(--radius-card); text-align: center; background: rgba(255,255,255,.55); }
-.empty-icon { display: grid; place-items: center; width: 50px; height: 50px; margin: 0 auto 14px; border-radius: 50%; color: var(--blue); background: #e4f2f8; font-family: Georgia, serif; font-size: 25px; font-weight: bold; }
+.empty-icon { display: grid; place-items: center; width: 50px; height: 50px; margin: 0 auto 14px; border-radius: 50%; color: var(--blue-ink); background: var(--blue-soft); font-family: Georgia, serif; font-size: 25px; font-weight: bold; }
 .empty p { margin-bottom: 0; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-card); background: white; box-shadow: var(--shadow); }
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
 th { padding: var(--space-3) var(--space-4); color: var(--muted); background: #f7f9fb; font-size: var(--text-small); font-weight: var(--weight-medium); letter-spacing: .04em; }
 td { padding: 16px; border-top: 1px solid var(--line); vertical-align: middle; }
-td a { color: var(--blue); font-weight: var(--weight-medium); }
+td a { color: var(--blue-ink); font-weight: var(--weight-medium); }
 code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5; }
 
 /* Opt-in mobile card tables keep the desktop table semantics while making
@@ -317,7 +323,7 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   [data-mobile-cards] .button { width: 100%; }
 }
 .dropdown { position: relative; }
-.dropdown summary { color: var(--blue); cursor: pointer; font-weight: var(--weight-medium); list-style: none; }
+.dropdown summary { color: var(--blue-ink); cursor: pointer; font-weight: var(--weight-medium); list-style: none; }
 .dropdown-panel { position: absolute; z-index: 10; right: 0; width: 300px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: white; box-shadow: 0 18px 50px rgba(18,48,74,.2); }
 .dropdown-panel p { font-size: var(--text-small); line-height: 1.55; }
 .dropdown-panel .button { width: 100%; }

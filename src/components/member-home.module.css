@@ -18,7 +18,7 @@
 .secondaryAction > span { min-width: 0; display: grid; gap: 3px; }
 .secondaryAction strong, .secondaryAction small { overflow-wrap: anywhere; }
 .secondaryAction small { color: var(--muted); line-height: 1.45; }
-.secondaryAction b { color: var(--blue); font-size: 20px; font-weight: var(--weight-strong); }
+.secondaryAction b { color: var(--blue-ink); font-size: 20px; font-weight: var(--weight-strong); }
 .primaryCard, .nextCard { display: grid; gap: var(--space-5); }
 /* The empty state is a status line, not a card of content: it sits on one row
    on anything wider than a phone so the real content below stays in view. */
@@ -92,7 +92,7 @@
 .financeShortcut:hover { background: var(--surface-sunken); }
 .financeShortcut > span:not(.financeIcon) { display: grid; gap: 2px; min-width: 0; }
 .financeShortcut small { color: var(--muted); overflow-wrap: anywhere; }
-.financeIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: var(--blue-soft); color: var(--blue); font-size: 22px; font-weight: var(--weight-strong); }
+.financeIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: var(--blue-soft); color: var(--blue-ink); font-size: 22px; font-weight: var(--weight-strong); }
 
 /* Desktop: the banner and the details side by side instead of stacked, so the
    whole card fits on the first screen. Guarded by :has() -- with no cover there
