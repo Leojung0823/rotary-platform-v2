@@ -294,7 +294,7 @@ export default async function EventsPage({
               <p><strong>時間：</strong>{formatDateTime(event.starts_at)}－{formatDateTime(event.ends_at)}</p>
               <p><strong>地點：</strong>{event.location || "尚未填寫"}</p>
               <p><strong>報名截止：</strong>{formatDateTime(event.registration_deadline)}</p>
-              {event.description && <p>{event.description}</p>}
+              {event.description && <p className="event-description">{event.description}</p>}
             </div>
             <div className="card">
               <span className="metric-label">目前參加</span>

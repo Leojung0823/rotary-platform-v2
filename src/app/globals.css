@@ -326,3 +326,13 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 }
 /* Keyboard users must be able to see which pill they are on. */
 .tag-option input:focus-visible + span { outline: 2px solid var(--navy-2); outline-offset: 2px; }
+
+/* Event descriptions are pasted in from LINE or email, so the line breaks the
+   organiser typed are the structure: collapsing them turns a schedule with
+   addresses and map links into one unreadable block. The long URLs those
+   descriptions carry have no break opportunities of their own, so they are
+   allowed to break anywhere rather than push the card sideways. */
+.event-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
