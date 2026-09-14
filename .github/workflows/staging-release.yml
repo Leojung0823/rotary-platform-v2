@@ -10,6 +10,11 @@ on:
         default: plan
         options:
           - plan
+      include_all:
+        description: "Apply a migration whose number sits before the last one already on the remote. Leave off unless a dry run has refused for that reason."
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,6 +34,7 @@ jobs:
       url: ${{ vars.STAGING_BASE_URL }}
     env:
       STAGING_OPERATION: ${{ inputs.operation }}
+      STAGING_INCLUDE_ALL: ${{ inputs.include_all }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
       STAGING_EXPECT_ENV: staging
@@ -87,7 +93,18 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           set -euo pipefail
-          supabase db push --linked --dry-run
+          # Supabase refuses a migration numbered before the last one already on
+          # the remote, which is the right default: it is how an out-of-order
+          # file gets noticed at all. --include-all is the sanctioned way
+          # through once that has happened -- renaming the file is not, because
+          # the history guard forbids touching a migration that is already on
+          # main. It stays off unless a dry run has refused for this reason.
+          if [ "$STAGING_INCLUDE_ALL" = "true" ]; then
+            echo "::warning::Applying with --include-all: a migration is being applied out of order."
+            supabase db push --linked --dry-run --include-all
+          else
+            supabase db push --linked --dry-run
+          fi
           {
             echo "### Staging migration plan"
             echo "- Operation: \`$STAGING_OPERATION\`"
