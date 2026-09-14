@@ -8,8 +8,8 @@
 本次以 GitHub `origin/main=2d7839d2d6469fddb7a1141eaeb0abb8406f8216` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging 仍是前一個產品 runtime，production 沒有修改。
 
-- PR #107 Rich Menu：`9123104`，application、database、validate 已通過，Browser Smoke 執行中，等待合併與各社 OA 設定。
-- PR #108 社費／收款／核銷／報表：`ea2bf4e`，PDF 繁中字型缺檔已修正；上一輪 application、database、validate、member Browser Smoke 均已通過，目前需處理 #107 更新造成的 base 衝突。
+- PR #107 Rich Menu：`9123104`，application、database、validate、Browser Smoke 均已通過，PR 已恢復 clean／mergeable，等待合併與各社 OA 設定。
+- PR #108 社費／收款／核銷／報表：`42e61ed`，已用普通 merge 同步 #107 base；PDF 繁中字型與日期時區問題已修正，本機 908 項測試通過，新的 GitHub checks 執行中。
 - PR #109 手機 Web App：`e29d1cc`，檢查已通過，等待合併與真實手機驗收。
 - PR #110 生日設定 UX：`c89c2f6`，修正切換社別測試會過早繼續的問題，新的 database、application、validate、member Browser Smoke 正在 GitHub 執行。
 - PR #111 社務資訊／年度服務計劃：已合併至 `main`，merge commit `2d7839d`；migration 為 `20260914000800`，待 staging／hosted 角色邊界驗收。

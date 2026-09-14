@@ -14,8 +14,8 @@
 本次掃描的 `origin/main` 是 `2d7839d2d6469fddb7a1141eaeb0abb8406f8216`；staging 仍維持前一個已部署版本，
 未因為下列 PR 自動發布。
 
-- `[>]` PR #107 Rich Menu：`codex/line-rich-menu-v1`，HEAD `9123104`；application、database、validate 已通過，Browser Smoke 正在 GitHub 執行，並等待合併與各社 OA 外部設定。
-- `[>]` PR #108 社費／收款／核銷與報表：`codex/dues-finance-v1`，HEAD `ea2bf4e`；PDF 缺少繁中字型的問題已修正，上一輪 application、database、validate、member Browser Smoke 均已通過；因 #107 分支更新目前需先處理 PR base 的衝突，再進行合併與 staging 驗收。
+- `[>]` PR #107 Rich Menu：`codex/line-rich-menu-v1`，HEAD `9123104`；application、database、validate、Browser Smoke 均已通過，PR 已恢復 clean／mergeable，等待合併與各社 OA 外部設定。
+- `[>]` PR #108 社費／收款／核銷與報表：`codex/dues-finance-v1`，HEAD `42e61ed`；已用普通 merge 同步 #107 base 並保留 #111 的社務驗證檔，PDF 繁中字型與日期時區問題已修正，本機 908 項測試通過；新的 GitHub application、database、validate、member Browser Smoke 正在執行。
 - `[>]` PR #109 手機 Web App：`codex/pwa-v1`，HEAD `e29d1cc`，全部必要檢查已通過；等待合併與真實手機驗收。
 - `[>]` PR #110 生日設定 UX：`codex/birthday-settings-ux-v1`，HEAD `c89c2f6`；修正切換社別測試會在 Server Action cookie 尚未套用前繼續執行的問題，新的 application、database、validate、member Browser Smoke 正在 GitHub 執行。
 - `[x]` PR #111 社務資訊／年度服務計劃：已合併至 `main`，merge commit `2d7839d`；migration `20260914000800_club_service_plan.sql` 已進入主線，但尚未部署 staging。
