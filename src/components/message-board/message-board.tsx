@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { BoardPost } from "@/lib/message-board/contracts";
 import type { AudienceTag } from "@/components/audience/audience-picker";
 import styles from "./message-board.module.css";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 const BOARD_CONTENT_MAX_CODE_POINTS = 1000;
 function boardContentLength(value: string) { return Array.from(value).length; }
@@ -27,7 +28,7 @@ async function readResponse<T>(response: Response): Promise<T> {
 function formatTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "時間未知";
-  return new Intl.DateTimeFormat("zh-TW", {
+  return new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

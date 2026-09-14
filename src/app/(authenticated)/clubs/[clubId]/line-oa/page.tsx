@@ -26,6 +26,7 @@ import {
 } from "@/components/ui";
 import { safeMessage } from "@/lib/validation";
 import type { MemberRow } from "../members/page";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 type OaAdmin = {
   account: {
@@ -471,7 +472,7 @@ export default async function LineOaPage({
               {oa.push_logs.map((log) => (
                 <tr key={log.id}>
                   <td data-label="時間">
-                    {new Intl.DateTimeFormat("zh-TW", {
+                    {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
                       dateStyle: "short",
                       timeStyle: "short",
                     }).format(new Date(log.created_at))}
