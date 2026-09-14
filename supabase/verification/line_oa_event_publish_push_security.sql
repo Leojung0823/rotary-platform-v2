@@ -38,7 +38,7 @@ begin
     'public.list_club_message_line_targets(uuid, uuid)',
     'public.record_club_message_line_push(uuid, uuid, integer, jsonb, text, text, text)',
     'public.list_club_event_line_targets(uuid, uuid)',
-    'public.record_club_event_line_push(uuid, uuid, integer, jsonb, text, text, text)'
+    'public.record_club_event_line_push(uuid, uuid, integer, jsonb, text, text, text, integer)'
   ] loop
     if not has_function_privilege('authenticated', function_signature, 'EXECUTE') then
       raise exception 'enabling the flag did not grant %', function_signature;
@@ -62,12 +62,20 @@ begin
     'public.list_club_message_line_targets(uuid, uuid)',
     'public.record_club_message_line_push(uuid, uuid, integer, jsonb, text, text, text)',
     'public.list_club_event_line_targets(uuid, uuid)',
-    'public.record_club_event_line_push(uuid, uuid, integer, jsonb, text, text, text)'
+    'public.record_club_event_line_push(uuid, uuid, integer, jsonb, text, text, text, integer)'
   ] loop
     if has_function_privilege('authenticated', function_signature, 'EXECUTE') then
       raise exception 'disabling the flag did not revoke %', function_signature;
     end if;
   end loop;
+end;
+$$;
+
+do $$
+begin
+  if to_regprocedure('public.record_club_event_line_push(uuid, uuid, integer, jsonb, text, text, text)') is not null then
+    raise exception 'the stale seven-argument event push overload still exists';
+  end if;
 end;
 $$;
 

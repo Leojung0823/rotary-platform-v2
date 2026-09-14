@@ -63,11 +63,14 @@ export async function pushPublishedEventToLine({
   clubId,
   eventId,
   subjectUuid,
+  eventVersion,
 }: {
   supabase: SupabaseClient;
   clubId: string;
   eventId: string;
   subjectUuid?: string;
+  /** The version just saved by an edit; publish uses the database's current version. */
+  eventVersion?: number | null;
 }): Promise<MessagePushOutcome> {
   const evaluation = await evaluateCurrentFeatureFlag({ key: "line_oa_event_push_v1", subjectUuid });
   if (!evaluation.enabled) return { status: "skipped", reason: "flag_disabled" };
@@ -119,6 +122,7 @@ export async function pushPublishedEventToLine({
     p_delivery_status: delivery.status,
     p_provider_request_id: delivery.requestId ?? null,
     p_failure_code: delivery.status === "failed" ? (delivery.failureCode ?? "provider_error") : null,
+    p_event_version: eventVersion ?? null,
   });
 
   if (delivery.status === "failed") {
