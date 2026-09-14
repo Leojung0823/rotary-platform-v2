@@ -12,7 +12,7 @@ insert into auth.users (
   ('00000000-0000-0000-0000-000000000000', '17000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'birthday-default-legacy@example.test', '', now(), '{}', '{}', now(), now());
 
 insert into public.people (id, canonical_name, primary_email, birth_date) values
-  ('27000000-0000-4000-8000-000000000001', '生日設定雙重社籍社員', 'birthday-default-member@example.test', '1980-08-20'),
+  ('27000000-0000-4000-8000-000000000001', '生日設定雙重社籍社員', 'birthday-default-member@example.test', null),
   ('27000000-0000-4000-8000-000000000002', '生日設定外社社員', 'birthday-default-outsider@example.test', '1990-03-04'),
   ('27000000-0000-4000-8000-000000000003', '後來填寫生日的社員', 'birthday-default-legacy@example.test', null);
 
@@ -56,25 +56,45 @@ begin
   if not exists (
        select 1
        from public.birthday_visibility_preferences as preference
-       where preference.membership_id = '57000000-0000-4000-8000-000000000001'
-         and preference.club_id = '47000000-0000-4000-8000-000000000001'
-         and preference.is_listed
-         and preference.allow_wishes
-     )
-     or not exists (
-       select 1
-       from public.birthday_visibility_preferences as preference
-       where preference.membership_id = '57000000-0000-4000-8000-000000000002'
-         and preference.club_id = '47000000-0000-4000-8000-000000000002'
+       where preference.membership_id = '57000000-0000-4000-8000-000000000003'
+         and preference.club_id = '47000000-0000-4000-8000-000000000003'
          and preference.is_listed
          and preference.allow_wishes
      ) then
     raise exception 'new membership did not receive public birthday defaults';
   end if;
 
-  -- The legacy-like membership was created before its person had a birthday,
-  -- so no preference row was created. Adding the birthday later must not
-  -- silently make that existing membership public.
+  if exists (
+       select 1
+       from public.birthday_visibility_preferences as preference
+       where preference.membership_id in (
+         '57000000-0000-4000-8000-000000000001',
+         '57000000-0000-4000-8000-000000000002',
+         '57000000-0000-4000-8000-000000000004'
+       )
+     ) then
+    raise exception 'legacy memberships received an implicit birthday preference';
+  end if;
+
+  -- The two memberships for the current person were created before that
+  -- person had a birthday, so no preference row was created. Adding the
+  -- birthday later must not silently make either existing membership public.
+  update public.people
+  set birth_date = '1980-08-20'
+  where id = '27000000-0000-4000-8000-000000000001';
+  if exists (
+       select 1
+       from public.birthday_visibility_preferences as preference
+       where preference.membership_id in (
+         '57000000-0000-4000-8000-000000000001',
+         '57000000-0000-4000-8000-000000000002'
+       )
+     ) then
+    raise exception 'editing a birthday created a public preference for an existing membership';
+  end if;
+
+  -- A separate legacy-like membership was also created before its person had
+  -- a birthday; adding the birthday later must preserve the same behavior.
   update public.people
   set birth_date = '1980-08-21'
   where id = '27000000-0000-4000-8000-000000000003';
@@ -123,8 +143,9 @@ begin
        select 1 from jsonb_array_elements(preferences) as item
        where item->>'club_id' = '47000000-0000-4000-8000-000000000001'
          and item->>'club_code' = 'BDAY-DEFAULT-A'
-         and (item->>'is_listed')::boolean
-         and (item->>'allow_wishes')::boolean
+         and (item->>'has_preference')::boolean = false
+         and (item->>'is_listed')::boolean = false
+         and (item->>'allow_wishes')::boolean = false
      )
      or not exists (
        select 1 from jsonb_array_elements(preferences) as item
