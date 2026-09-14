@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import {
   declineBirthdayCollectionAssignmentAction,
@@ -7,7 +8,11 @@ import {
 } from "@/app/birthday-collection-actions";
 import { Badge, Button, Card, EmptyState, Field, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
+import { activeClubForMode } from "@/lib/experience-context";
+import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
 import { parseBirthdayCollectionPageProjection } from "@/lib/birthdays/collection-contracts";
+import { resolveExperienceContext } from "@/lib/experience-context.server";
+import { currentExperienceMode } from "@/lib/experience-mode.server";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./birthday-collection.module.css";
@@ -32,6 +37,8 @@ const errorMessages: Record<string, string> = {
   not_ready: "這則祝福目前還不能發布。",
   invalid_question: "題目格式不正確，請檢查題目、語氣與排序。",
   duplicate_question: "題目代碼已存在，請換一個代碼。",
+  campaign_already_exists: "本次壽星中有人今年已建立生日徵集，因此本次任務未建立。請查看該年度其他月份的既有徵集；更改生日月份不會新增第二個徵集，重試也不會解決。",
+  not_found: "找不到這筆祝福或題目，請重新整理清單後再操作。",
   forbidden: "您目前沒有執行這項操作的權限。",
   feature_disabled: "生日祝福徵集目前尚未開放。",
   notification_failed: "任務已建立，但通知沒有完成；請稍後重試通知。",
@@ -47,12 +54,40 @@ export default async function BirthdayCollectionPage({
 }: {
   searchParams: Promise<{ clubId?: string; mode?: string; success?: string; error?: string }>;
 }) {
-  const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
-  const evaluation = await evaluateCurrentFeatureFlag({
-    key: "birthday_wishes_collection_v1",
-    subjectUuid: identity.id,
-  });
-  if (!evaluation.enabled || !query.clubId) notFound();
+  const [identity, query, cookieStore] = await Promise.all([requireIdentity(), searchParams, cookies()]);
+  const [evaluation, mode] = await Promise.all([
+    evaluateCurrentFeatureFlag({
+      key: "birthday_wishes_collection_v1",
+      subjectUuid: identity.id,
+    }),
+    currentExperienceMode(identity.id),
+  ]);
+  if (!evaluation.enabled) notFound();
+
+  const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
+  const contextResolution = await resolveExperienceContext(preferredClubId);
+  const activeClub = contextResolution.ok
+    ? activeClubForMode(contextResolution.context, mode === "management" ? "management" : "member")
+    : null;
+  const memberMode = mode === null || mode === "member";
+  const managementView = mode === "management";
+  if (mode === "management") {
+    if (!activeClub) redirect("/access-denied");
+    redirect(`/clubs/${encodeURIComponent(activeClub.clubId)}/birthday-collection?mode=management`);
+  }
+  if (query.mode === "management" && mode !== null) redirect("/access-denied");
+
+  // The member page must never use the manager-capable collection RPC for an
+  // account that only manages a club. In member mode, including a legacy
+  // rollback with no explicit mode, the global member context is the source
+  // of the club; an old query parameter cannot select a manager-only club.
+  const clubId = memberMode ? activeClub?.clubId ?? null : query.clubId ?? preferredClubId;
+  if (!clubId) {
+    return <div className="page-stack">
+      <CollectionHeader />
+      <EmptyState title="目前沒有可使用的生日祝福徵集" body="社員模式只顯示您有有效社籍的扶輪社任務。" />
+    </div>;
+  }
 
   const supabase = await createClient();
   // Keep a bookmarked manager URL as a redirect only. Do not fetch the public
@@ -60,12 +95,12 @@ export default async function BirthdayCollectionPage({
   // tenant and permission checks before rendering manager data.
   if (query.mode === "management") {
     const { data: managerData, error: managerError } = await supabase.rpc("get_my_birthday_wish_collection_page", {
-      p_club_id: query.clubId,
+      p_club_id: clubId,
     });
     if (managerError || !managerData) redirect("/access-denied");
     try {
       const managerPage = parseBirthdayCollectionPageProjection(managerData, []);
-      if (managerPage.clubId.toLowerCase() !== query.clubId.toLowerCase() || !managerPage.canManage) redirect("/access-denied");
+      if (managerPage.clubId.toLowerCase() !== clubId.toLowerCase() || !managerPage.canManage) redirect("/access-denied");
       redirect(`/clubs/${encodeURIComponent(managerPage.clubId)}/birthday-collection?mode=management`);
     } catch {
       redirect("/access-denied");
@@ -73,22 +108,22 @@ export default async function BirthdayCollectionPage({
   }
 
   const [{ data, error }, { data: publishedData, error: publishedError }] = await Promise.all([
-    supabase.rpc("get_my_birthday_wish_collection_page", { p_club_id: query.clubId }),
-    supabase.rpc("list_published_birthday_wish_submissions", { p_club_id: query.clubId }),
+    supabase.rpc("get_my_birthday_wish_collection_page", { p_club_id: clubId }),
+    supabase.rpc("list_published_birthday_wish_submissions", { p_club_id: clubId }),
   ]);
   if (error || !data || publishedError || !publishedData) {
-    return <div className="page-stack"><CollectionHeader clubId={query.clubId} /><Notice tone="error">目前無法確認生日祝福徵集權限，請稍後重新整理。</Notice></div>;
+    return <div className="page-stack"><CollectionHeader clubId={clubId} /><Notice tone="error">目前無法確認生日祝福徵集權限，請稍後重新整理。</Notice></div>;
   }
 
   let page;
   try {
     page = parseBirthdayCollectionPageProjection(data, publishedData);
   } catch {
-    return <div className="page-stack"><CollectionHeader clubId={query.clubId} /><Notice tone="error">徵集資料格式不完整，系統已停止顯示。</Notice></div>;
+    return <div className="page-stack"><CollectionHeader clubId={clubId} /><Notice tone="error">徵集資料格式不完整，系統已停止顯示。</Notice></div>;
   }
 
   return <div className="page-stack">
-    <CollectionHeader clubId={page.clubId} canManage={page.canManage} />
+    <CollectionHeader clubId={page.clubId} canManage={page.canManage && managementView} />
     {query.success && successMessages[query.success] && <Notice tone="success">{successMessages[query.success]}</Notice>}
     {query.error && <Notice tone="error">{errorMessages[query.error] ?? errorMessages.unexpected}</Notice>}
 
@@ -131,6 +166,19 @@ export default async function BirthdayCollectionPage({
   </div>;
 }
 
-function CollectionHeader({ clubId, canManage = false }: { clubId: string; canManage?: boolean }) {
-  return <header className="page-header"><div><p className="eyebrow">生日祝福</p><h1>生日祝福徵集</h1><p>系統每月最多派給您一則任務；您仍可自行祝福更多社員。壽星與一般社員看不到作者，幹部才能管理作者。</p></div><div className="form-actions">{canManage && <><a className="button" href={`/clubs/${encodeURIComponent(clubId)}/birthday-collection?mode=management`}>幹部管理</a><span className="hint">幹部功能已移至社務管理模式。</span></>}<Link className="button button-secondary" href={`/birthdays?clubId=${clubId}`}>返回生日頁</Link></div></header>;
+function CollectionHeader({ clubId, canManage = false }: { clubId?: string; canManage?: boolean }) {
+  return <header className="page-header">
+    <div>
+      <p className="eyebrow">生日祝福</p>
+      <h1>生日祝福徵集</h1>
+      <p>系統每月最多派給您一則任務；您仍可自行祝福更多社員。壽星與一般社員看不到作者，幹部才能管理作者。</p>
+    </div>
+    <div className="form-actions">
+      {canManage && clubId && <>
+        <a className="button" href={`/clubs/${encodeURIComponent(clubId)}/birthday-collection?mode=management`}>幹部管理</a>
+        <span className="hint">幹部功能已移至社務管理模式。</span>
+      </>}
+      <Link className="button button-secondary" href={clubId ? `/birthdays?clubId=${encodeURIComponent(clubId)}&mode=member` : "/birthdays?mode=member"} prefetch={false}>返回生日頁</Link>
+    </div>
+  </header>;
 }

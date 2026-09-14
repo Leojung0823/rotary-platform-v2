@@ -42,7 +42,10 @@ values
   ('54000000-0000-4000-8000-000000000004', '44000000-0000-4000-8000-000000000001', '24000000-0000-4000-8000-000000000005', 'active');
 
 insert into public.birthday_visibility_preferences (membership_id, club_id, is_listed, allow_wishes)
-values ('54000000-0000-4000-8000-000000000002', '44000000-0000-4000-8000-000000000001', true, true);
+values ('54000000-0000-4000-8000-000000000002', '44000000-0000-4000-8000-000000000001', true, true)
+on conflict (membership_id) do update
+set is_listed = excluded.is_listed,
+    allow_wishes = excluded.allow_wishes;
 
 insert into public.club_operator_permissions (
   id, club_id, app_account_id, operator_role_key, permission_level, assignment_status, starts_at
@@ -108,7 +111,10 @@ insert into public.birthday_visibility_preferences (
   '44000000-0000-4000-8000-000000000002',
   true,
   true
-);
+)
+on conflict (membership_id) do update
+set is_listed = excluded.is_listed,
+    allow_wishes = excluded.allow_wishes;
 
 insert into public.club_operator_permissions (
   id, club_id, app_account_id, operator_role_key, permission_level, assignment_status, starts_at

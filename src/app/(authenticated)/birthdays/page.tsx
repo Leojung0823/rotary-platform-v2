@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   createBirthdayWishAction,
@@ -8,12 +9,18 @@ import {
   updateBirthdayWishAction,
 } from "@/app/birthday-actions";
 import { DirectoryAvatar } from "@/components/directory-avatar";
-import { Badge, Button, Card, EmptyState, Field, Notice, Select } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Field, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
 import { parseBirthdayPageProjection } from "@/lib/birthdays/contracts";
+import { activeClubForMode } from "@/lib/experience-context";
+import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
+import { resolveExperienceContext } from "@/lib/experience-context.server";
+import { currentExperienceMode } from "@/lib/experience-mode.server";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./birthdays.module.css";
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 const successMessages: Record<string, string> = {
   preference_saved: "生日公開設定已儲存。",
@@ -54,20 +61,47 @@ export default async function BirthdayPage({
 }: {
   searchParams: Promise<{ clubId?: string; success?: string; error?: string }>;
 }) {
-  const [identity, query] = await Promise.all([requireIdentity(), searchParams]);
-  const [v1Evaluation, v2Evaluation, collectionEvaluation] = await Promise.all([
+  const [identity, query, cookieStore] = await Promise.all([requireIdentity(), searchParams, cookies()]);
+  const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
+  const contextPromise = resolveExperienceContext(preferredClubId);
+  const [v1Evaluation, v2Evaluation, collectionEvaluation, mode] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_collection_v1", subjectUuid: identity.id }),
+    currentExperienceMode(identity.id),
   ]);
+  const contextResolution = await contextPromise;
   if (!v1Evaluation.enabled && !v2Evaluation.enabled) notFound();
   const birthdayV2Enabled = v2Evaluation.enabled;
+
+  // The shell's global club switcher is the only club selector on this page.
+  // A missing mode is treated as the safe member surface, including during a
+  // legacy rollback. Never let an old clubId bookmark select a manager-only
+  // club when the request has not explicitly entered management mode.
+  const activeClubId = contextResolution.ok
+    ? (mode !== "management"
+      && typeof query.clubId === "string"
+      && uuidPattern.test(query.clubId)
+      && contextResolution.context.memberClubs.some((club) => club.clubId === query.clubId)
+      ? query.clubId
+      : activeClubForMode(
+        contextResolution.context,
+        mode === "management" ? "management" : "member",
+      )?.clubId ?? null)
+    : null;
+  const memberSurface = mode === null || mode === "member";
+  if (memberSurface && !activeClubId) {
+    return <div className="page-stack">
+      <BirthdayHeader />
+      <EmptyState title="目前沒有可查看的生日名單" body="社員模式只顯示您有有效社籍的扶輪社生日資料。" />
+    </div>;
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc(
     birthdayV2Enabled ? "get_my_birthday_page_v2" : "get_my_birthday_page",
     {
-    p_club_id: query.clubId ?? null,
+      p_club_id: activeClubId,
     },
   );
 
@@ -88,6 +122,18 @@ export default async function BirthdayPage({
     </div>;
   }
 
+  // The database intentionally returns moderation data to a manager. A
+  // manager who is looking at the member surface must still see exactly what
+  // an ordinary member sees, including anonymous authors and no moderation
+  // controls. Keep the caller's own edit/delete affordances intact.
+  const managementView = mode === "management";
+  const wishes = managementView ? page.wishes : page.wishes.map((wish) => ({
+    ...wish,
+    authorName: null,
+    authorIsHidden: true,
+    canDelete: wish.canEdit && wish.canDelete,
+    canModerate: false,
+  }));
   const selectedClub = page.clubs.find((club) => club.clubId === page.selectedClubId) ?? null;
   const today = currentTaipeiMonthDay();
   const birthdays = [...page.birthdays].sort((left, right) => (
@@ -95,26 +141,18 @@ export default async function BirthdayPage({
     - (right.daysUntil ?? upcomingDistance(right.birthMonth, right.birthDay, today))
   ));
   const authoredRecipientIds = new Set(
-    page.wishes.filter((wish) => wish.canEdit).map((wish) => wish.recipientMembershipId),
+    wishes.filter((wish) => wish.canEdit).map((wish) => wish.recipientMembershipId),
   );
 
   return <div className="page-stack">
     <BirthdayHeader
       collectionEnabled={collectionEvaluation.enabled}
       clubId={selectedClub?.clubId ?? null}
+      managementAvailable={managementView && page.canManage}
     />
 
     {query.success && successMessages[query.success] && <Notice tone="success">{successMessages[query.success]}</Notice>}
     {query.error && <Notice tone="error">{errorMessages[query.error] ?? errorMessages.unexpected}</Notice>}
-
-    {page.clubs.length > 1 && <form className="inline-form" action="/birthdays">
-      <Field label="扶輪社">
-        <Select name="clubId" defaultValue={page.selectedClubId ?? ""}>
-          {page.clubs.map((club) => <option key={club.clubId} value={club.clubId}>{club.clubName}</option>)}
-        </Select>
-      </Field>
-      <Button type="submit">切換扶輪社</Button>
-    </form>}
 
     {!selectedClub ? <EmptyState title="目前沒有可查看的生日名單" body="有效社員或有管理權限的幹部才可使用這個功能。" /> : <>
       <Card className={styles.privacyCard}>
@@ -122,13 +160,14 @@ export default async function BirthdayPage({
           <p className="eyebrow">隱私由您決定</p>
           <h2>我的生日公開設定</h2>
           <p>{birthdayV2Enabled
-            ? "新設定預設公開月、日；尚未設定的舊資料仍維持不公開。您可以隨時關閉。"
-            : "開啟後只顯示月、日，不會顯示出生年份或完整生日。"}</p>
+            ? "新建立的生日設定預設公開月、日；既有尚未設定者仍不公開，請由您確認後再公開。生日名單不會顯示完整生日，年齡則依您在「我的」設定的同意顯示。"
+            : "新建立的生日設定預設公開月、日；既有尚未設定者仍不公開，請由您確認後再公開。生日名單只顯示月、日，不會顯示出生年份或完整生日。"}</p>
         </div>
         {page.myPreference ? <form action={setBirthdayPreferenceAction} className={styles.preferenceForm}>
           <input type="hidden" name="clubId" value={selectedClub.clubId} />
+          {mode && <input type="hidden" name="mode" value={mode} />}
           {!page.myPreference.hasBirthDate && <Notice>
-            尚未填寫生日。請先到 <Link className={styles.inlineLink} href="/me">我的資料</Link> 完成設定。
+            尚未填寫生日。請先到 <Link className={styles.inlineLink} href="/me?mode=member" prefetch={false}>我的資料</Link> 完成設定。
           </Notice>}
           <label className="checkbox-row">
             <input
@@ -182,10 +221,10 @@ export default async function BirthdayPage({
       <section>
         <div className="section-heading">
           <div><p className="eyebrow">今年</p><h2>生日祝福牆</h2></div>
-          <span>{page.wishes.length} 則祝福</span>
+          <span>{wishes.length} 則祝福</span>
         </div>
-        {page.wishes.length === 0 ? <EmptyState title="今年還沒有祝福" body="從上方選一位開放祝福的社員，送出第一句生日快樂。" /> : <div className={styles.wishList}>
-          {page.wishes.map((wish) => <Card key={wish.id} className={styles.wishCard}>
+        {wishes.length === 0 ? <EmptyState title="今年還沒有祝福" body="從上方選一位開放祝福的社員，送出第一句生日快樂。" /> : <div className={styles.wishList}>
+          {wishes.map((wish) => <Card key={wish.id} className={styles.wishCard}>
             <div className={styles.wishMeta}>
               <div><strong>{wish.authorIsHidden ? "匿名祝福者" : wish.authorName ?? "匿名祝福者"}</strong><span>祝福 {wish.recipientName}</span></div>
               <time dateTime={wish.createdAt}>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(wish.createdAt))}</time>
@@ -228,10 +267,17 @@ export default async function BirthdayPage({
 function BirthdayHeader({
   collectionEnabled = false,
   clubId = null,
+  managementAvailable = false,
 }: {
   collectionEnabled?: boolean;
   clubId?: string | null;
+  managementAvailable?: boolean;
 } = {}) {
+  const collectionHref = managementAvailable && clubId
+    ? `/clubs/${clubId}/birthday-collection?mode=management`
+    : clubId
+      ? `/birthday-collection?clubId=${clubId}&mode=member`
+      : "/birthday-collection?mode=member";
   return <header className="page-header">
     <div>
       <p className="eyebrow">社員交流</p>
@@ -239,8 +285,8 @@ function BirthdayHeader({
       <p>社員自己決定是否公開月、日；祝福只在同一扶輪社內顯示。</p>
     </div>
     <div className="form-actions">
-      {collectionEnabled && clubId && <Link className="button button-secondary" href={`/birthday-collection?clubId=${clubId}`}>生日祝福任務</Link>}
-      <Link className="button button-secondary" href="/dashboard">返回首頁</Link>
+      {collectionEnabled && clubId && <Link className="button button-secondary" href={collectionHref} prefetch={false}>生日祝福任務</Link>}
+      <Link className="button button-secondary" href="/dashboard?mode=member" prefetch={false}>返回首頁</Link>
     </div>
   </header>;
 }

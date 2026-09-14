@@ -38,7 +38,10 @@ insert into public.club_memberships (id, club_id, person_id, membership_status) 
   ('56000000-0000-4000-8000-000000000004', '46000000-0000-4000-8000-000000000002', '26000000-0000-4000-8000-000000000004', 'active');
 
 insert into public.birthday_visibility_preferences (membership_id, club_id, is_listed, allow_wishes)
-values ('56000000-0000-4000-8000-000000000003', '46000000-0000-4000-8000-000000000001', true, true);
+values ('56000000-0000-4000-8000-000000000003', '46000000-0000-4000-8000-000000000001', true, true)
+on conflict (membership_id) do update
+set is_listed = excluded.is_listed,
+    allow_wishes = excluded.allow_wishes;
 
 -- Keep the manager as an operator-only actor. This avoids accidentally making
 -- the test depend on a member-facing active-membership projection.
