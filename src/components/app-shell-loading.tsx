@@ -40,7 +40,7 @@ export function AppShellLoading() {
       <aside className="sidebar" aria-hidden="true">
         <div className="brand">
           <span className="brand-mark">R</span>
-          <span>扶輪管理平台<small>ROTARY V2</small></span>
+          <span>扶輪管理平台</span>
         </div>
         <nav aria-hidden="true">
           {navigationSkeletons.map((key) => <span className="loading-nav-item" key={key}><span className="skeleton skeleton-loading-nav" /></span>)}
