@@ -85,6 +85,7 @@ describe("role-aware navigation", () => {
     expect(roleShellNavigation(projected, "member").map((item) => item.href)).toEqual([
       "/dashboard?mode=member",
       "/events?mode=member",
+      "/interact?mode=member",
       "/directory?mode=member",
       "/me?mode=member",
     ]);
@@ -100,10 +101,10 @@ describe("role-aware navigation", () => {
     ]);
   });
 
-  it("keeps a club-level manager at the same four member destinations", () => {
+  it("keeps a club-level manager at the same member destinations as anyone else", () => {
     const managerContext = context({ member: true, management: true, platform: false });
     expect(roleShellNavigation(managerContext, "member").map((item) => item.id)).toEqual([
-      "home", "events", "directory", "account",
+      "home", "events", "interact", "directory", "account",
     ]);
     expect(roleShellNavigation(managerContext, "member").some((item) => item.id === "manage-club")).toBe(false);
   });
@@ -152,7 +153,7 @@ describe("role-aware navigation", () => {
     expect(member.some((item) => item.href.startsWith("/attendance"))).toBe(false);
 
     expect(member.map((item) => item.id))
-      .toEqual(["home", "events", "directory", "account"]);
+      .toEqual(["home", "events", "interact", "directory", "account"]);
     expect(management.map((item) => item.id))
       .toEqual(["overview", "events", "attendance", "members"]);
   });
@@ -209,7 +210,7 @@ describe("message centre navigation", () => {
     expect(roleShellNavigation(projected, "member", {
       messageCenterEnabled: true,
       unreadMessageCount: 3,
-    })).toHaveLength(4);
+    })).toHaveLength(5);
   });
 
   it("keeps 我的 last in member navigation", () => {
@@ -264,5 +265,17 @@ describe("current navigation resolver", () => {
     const platform = roleShellNavigation(projected, "platform");
     expect(resolveCurrentNavigationItemId(platform, "/platform/clubs/fixture-club")).toBe("clubs");
     expect(resolveCurrentNavigationItemId(platform, "/platform/clubs/new")).toBe("new-club");
+  });
+});
+
+describe("member navigation entry points", () => {
+  it("offers 社內互動 as a tab rather than only a card on the home page", () => {
+    const items = roleShellNavigation(context(), "member");
+    expect(items.map((item) => item.id)).toContain("interact");
+    expect(items.find((item) => item.id === "interact")?.mobileLabel).toBe("互動");
+  });
+
+  it("keeps 我的 last now that a tab was added before it", () => {
+    expect(roleShellNavigation(context(), "member").at(-1)?.id).toBe("account");
   });
 });
