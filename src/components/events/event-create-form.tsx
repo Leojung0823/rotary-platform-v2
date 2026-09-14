@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { geocodeVenueAddressAction, type VenueGeocodeState } from "@/app/event-actions";
+import { geocodeVenueAddressAction, updateEventAction, type VenueGeocodeState } from "@/app/event-actions";
 import { createEventAction } from "@/app/event-actions";
 import { AudiencePicker, type AudienceMember, type AudienceTag } from "@/components/audience/audience-picker";
 import { addressesWholeClub, type AudienceSelection } from "@/lib/audience/selection";
@@ -9,6 +9,7 @@ import {
   EVENT_CREATE_FIELDS,
   initialEventCreateActionState,
   type EventCreateField,
+  type EventCreateFormValues,
 } from "@/lib/events/validation";
 
 const fieldLabels: Record<EventCreateField, string> = {
@@ -29,14 +30,26 @@ type EventCreateFormProps = {
   eventTypeLabels: Record<string, string>;
   tags: readonly AudienceTag[];
   members: readonly AudienceMember[];
+  /* Editing reuses this form rather than a copy of it: the fields and their
+     rules are the same question asked twice, and two forms would drift. */
+  editing?: {
+    eventId: string;
+    version: number;
+    values: EventCreateFormValues;
+  };
 };
 
-export function EventCreateForm({ clubId, eventTypeLabels, tags, members }: EventCreateFormProps) {
+export function EventCreateForm({ clubId, eventTypeLabels, tags, members, editing }: EventCreateFormProps) {
   const [targeted, setTargeted] = useState(false);
   const handleAudienceChange = useCallback((selection: AudienceSelection) => {
     setTargeted(!addressesWholeClub(selection));
   }, []);
-  const [state, formAction, pending] = useActionState(createEventAction, initialEventCreateActionState);
+  const [state, formAction, pending] = useActionState(
+    editing ? updateEventAction : createEventAction,
+    editing
+      ? { ...initialEventCreateActionState, values: editing.values }
+      : initialEventCreateActionState,
+  );
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const values = state.values;
 
@@ -65,6 +78,13 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members }: Even
   const describedBy = (field: EventCreateField) => errorFor(field) ? `event-create-${field}-error` : undefined;
 
   return <form action={formAction} className="form-stack" key={state.revision} noValidate>
+    {editing && <>
+      <input type="hidden" name="eventId" value={editing.eventId} />
+      {/* The version the form was rendered from. A second officer who saved in
+          the meantime makes this stale, and the database refuses rather than
+          letting one edit quietly erase the other. */}
+      <input type="hidden" name="expectedVersion" value={editing.version} />
+    </>}
     <input type="hidden" name="clubId" value={clubId} />
     {/* Carried so the redirect after creating a draft returns to the
         management view; the member view hides drafts. */}
