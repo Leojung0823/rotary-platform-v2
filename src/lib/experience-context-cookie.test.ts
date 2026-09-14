@@ -30,8 +30,13 @@ describe("active club cookie boundary", () => {
       .toBe(false);
   });
 
+  it("uses a local HTTP site origin when the app environment is unavailable", () => {
+    expect(activeClubCookieOptions({ NEXT_PUBLIC_SITE_URL: "http://localhost:3000", NODE_ENV: "production" } as NodeJS.ProcessEnv).secure)
+      .toBe(false);
+  });
+
   it("marks staging cookies Secure", () => {
-    expect(activeClubCookieOptions({ APP_ENV: "staging", NODE_ENV: "production" } as NodeJS.ProcessEnv).secure)
+    expect(activeClubCookieOptions({ APP_ENV: "staging", NEXT_PUBLIC_SITE_URL: "https://staging.example.test", NODE_ENV: "production" } as NodeJS.ProcessEnv).secure)
       .toBe(true);
   });
 });
