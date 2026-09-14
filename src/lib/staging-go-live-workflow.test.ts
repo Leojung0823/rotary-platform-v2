@@ -60,7 +60,27 @@ describe("staging go-live workflow safety", () => {
     expect(workflow.match(/supabase db push --linked\n/gu)).toHaveLength(1);
     expect(workflow).not.toContain("db reset");
     expect(workflow).not.toContain("--include-seed");
-    expect(workflow).not.toContain("--include-all");
+  });
+
+  it("only applies migrations out of order behind an explicit, defaulted-off input", () => {
+    // --include-all was banned outright by the fail-closed sweep in #35, listed
+    // beside db reset and --include-seed. It does not belong in that company:
+    // those destroy or invent data, while this only applies a migration whose
+    // number sits before the last one already on the remote. That situation is
+    // real -- a migration merged to main can be overtaken by a rename from
+    // another agent -- and the history guard forbids renaming a merged file, so
+    // without this there is no way forward at all.
+    //
+    // The rail that matters is kept: it can never happen silently. Every use
+    // sits behind the input, which defaults to false and warns when set.
+    expect(workflow).toContain("include_all:");
+    expect(workflow).toContain("default: false");
+    for (const match of workflow.matchAll(/--include-all/gu)) {
+      const preceding = workflow.slice(Math.max(0, match.index - 400), match.index);
+      expect(preceding, "--include-all must sit inside the input check").toContain(
+        'if [ "${{ inputs.include_all }}" = "true" ]',
+      );
+    }
   });
 
   it("keeps the deployment hook secret, bounded and separate from readiness", () => {
