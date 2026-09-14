@@ -12,7 +12,7 @@
   min-height: 44px;
   display: flex;
   align-items: center;
-  color: var(--blue);
+  color: var(--blue-ink);
   cursor: pointer;
   font-weight: var(--weight-medium);
 }

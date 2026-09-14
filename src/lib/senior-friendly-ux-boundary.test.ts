@@ -8,11 +8,26 @@ describe("senior-friendly UX guardrails", () => {
     const globalCss = read("src/app/globals.css");
     const shellCss = read("src/components/role-aware-app-shell.module.css");
 
-    expect(globalCss).toMatch(/\.button\s*\{[^}]*min-height:\s*48px/u);
-    expect(globalCss).toMatch(/\.input\s*\{[^}]*min-height:\s*48px/u);
-    expect(globalCss).toMatch(/\.checkbox-row\s*\{[^}]*min-height:\s*48px/u);
-    expect(shellCss).toMatch(/\.navigation a\s*\{[^}]*min-height:\s*48px/u);
-    expect(shellCss).toMatch(/\.accountPanel a, \.accountPanel button\s*\{[^}]*min-height:\s*48px/u);
+    // 48px is a floor, not a fixed value: a rule that grew to 50px is more
+    // reachable, not less, and the guard should not push it back down.
+    const minHeightOf = (css: string, selector: string) => {
+      const rule = new RegExp(`${selector}\\s*\\{([^}]*)\\}`, "u").exec(css);
+      expect(rule, `${selector} has no rule to check`).not.toBeNull();
+      const declared = /min-height:\s*(\d+)px/u.exec(rule![1]);
+      expect(declared, `${selector} declares no min-height`).not.toBeNull();
+      return Number(declared![1]);
+    };
+
+    expect(minHeightOf(globalCss, "\\.button")).toBeGreaterThanOrEqual(48);
+    expect(minHeightOf(globalCss, "\\.input")).toBeGreaterThanOrEqual(48);
+    expect(minHeightOf(globalCss, "\\.checkbox-row")).toBeGreaterThanOrEqual(48);
+    expect(minHeightOf(shellCss, "\\.navigation a")).toBeGreaterThanOrEqual(48);
+    expect(minHeightOf(shellCss, "\\.accountPanel a, \\.accountPanel button")).toBeGreaterThanOrEqual(48);
+    // The two controls that carry the most consequence in the rail are given
+    // more than the floor, because picking the wrong club or the wrong account
+    // is the most expensive mis-tap in the product.
+    expect(minHeightOf(shellCss, "\\.clubSwitcher summary")).toBeGreaterThanOrEqual(56);
+    expect(minHeightOf(shellCss, "\\.accountMenu summary")).toBeGreaterThanOrEqual(56);
   });
 
   it("has a mobile card contract for the measured wide tables", () => {
