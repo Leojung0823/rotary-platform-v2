@@ -41,7 +41,7 @@ async function readResponse<T>(response: Response): Promise<T> {
 function formatTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "時間未知";
-  return new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, 
+  return new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

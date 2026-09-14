@@ -420,7 +420,7 @@ export default async function LineOaPage({
               {oa.push_logs.map((log) => (
                 <tr key={log.id}>
                   <td data-label="時間">
-                    {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, 
+                    {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
                       dateStyle: "short",
                       timeStyle: "short",
                     }).format(new Date(log.created_at))}

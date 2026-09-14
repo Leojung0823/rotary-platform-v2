@@ -29,7 +29,7 @@ const moneyFormatter = new Intl.NumberFormat("zh-TW", {
   maximumFractionDigits: 0,
 });
 
-const dateFormatter = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, 
+const dateFormatter = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
   year: "numeric",
   month: "2-digit",
   day: "2-digit",

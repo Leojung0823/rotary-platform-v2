@@ -67,7 +67,7 @@ function entryValidationMessage(text: string, amountInput: string) {
   return null;
 }
 
-const dateFormatter = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, 
+const dateFormatter = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
   year: "numeric",
   month: "long",
   day: "numeric",
