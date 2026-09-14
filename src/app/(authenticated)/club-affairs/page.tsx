@@ -101,10 +101,6 @@ export default async function ClubAffairsPage({
           <p className="eyebrow">{rotaryYearLabel(page.start_year)} 年度</p>
           <h2>年度服務計劃</h2>
         </div>
-        {page.can_manage_plan && <Link
-          className="button button-secondary"
-          href={`/club-affairs/service-plan/edit?mode=management&year=${page.start_year}`}
-        >{page.service_plan ? "編輯" : "撰寫"}</Link>}
       </div>
 
       {page.service_plan
