@@ -271,12 +271,14 @@ runtime 是 `dddf1a51ab67`。本次已於 2026-09-15 03:39（Asia/Taipei）核�
 - **完成證據**：follow webhook 成功、`person_id` 自動指向正確社員；再驗證多社、外社、停權與已過 `ended_on` 的社員不會誤配。
 - **必要條件**：LINE Developers Console webhook／Use webhook 維持開啟，測試者必須使用真實 LINE 帳號與正確社別 OA。
 
-### E-04 每社 LINE OA 與 channel 設定 `[!]`
+### E-04 每社 LINE OA 與 channel 設定 `[x]`（本次 rollout）
 
+- **產品決定已確認**：本次 rollout **不使用 HAPPY**，目前只啟用 `PANCHIAO-ELITE`；因此本階段不建立
+  `HAPPY` 的 OA、channel、webhook 或 `LINE_OA_HAPPY_*` secrets。
 - **已完成**：`PANCHIAO-ELITE` 使用 `LINE_OA_PANCHIAO_ELITE_*`，staging 的管理頁身份驗證已成功。
-- **待產品決定**：若 `HAPPY` 也要使用 OA，必須建立 HAPPY 自己的 OA／Messaging API channel、自己的 webhook 與
+- **安全保留**：未來若要啟用 HAPPY，必須建立 HAPPY 自己的 OA／Messaging API channel、自己的 webhook 與
   `LINE_OA_HAPPY_*` server secrets；不能把 PANCHIAO 的 key 改名或跨社 fallback。
-- **完成證據**：每個要上線的社都通過 LINE `/v2/bot/info` Basic ID 核對、webhook Verify、follow 與指定對象推播驗收。
+- **完成證據**：本次啟用的社通過 LINE `/v2/bot/info` Basic ID 核對、webhook Verify、follow 與指定對象推播驗收。
 
 ### E-05 LINE 推播額度與超額政策 `[!]`
 
@@ -606,7 +608,7 @@ staging 目前為 `LINE_OA_MODE=line`，`/api/health` 的 `warnings=[]`；真實
   卡關原因是 LINE Official Account Manager「回應設定」裡的 Webhook 開關預設關閉，
   而 Developers Console 的 Verify 在它關著時仍會成功。
 - `[x]` 生日邀請的實際 LINE 送達與重跑不重送已於 2026-09-12 完成，見 E-02；follow identity pairing 的真人驗收已於 2026-09-13 暫緩，見 E-03。
-- `[!]` 每月推播額度與超額行為，見 E-05；各社各自的 OA／channel／webhook，見 E-04。
+- `[!]` 每月推播額度與超額行為，見 E-05；E-04 的本次 rollout 社別決定已完成。
 - `[!]` production 憑證、scheduler、旗標、備份與回復流程，見 E-08；`deployment-env.mjs` 已要求
   production 使用 `LINE_OA_MODE=line`。
 
@@ -734,7 +736,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
 5. **E-06：登入後管理頁效能量測** `[>]`：使用已登入 staging 帳號量測 TTFB、LCP、FCP；沒有數字就寫未量測。
 6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
-7. **E-04／E-05：各社 OA 設定與額度政策** `[!]`：逐社確認 channel 與憑證；產品決定超額行為。
+7. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次只啟用 PANCHIAO-ELITE，已結案。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
 10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併 PR #107，待 staging、各社 OA 設定與真人驗收。

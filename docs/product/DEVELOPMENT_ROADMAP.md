@@ -460,7 +460,7 @@ PR-01c 不做：
 [外部待辦 E-01] Flex staging 發布／旗標／真人收訊
 [外部待辦 E-02] 生日邀請實際送達／冪等重跑
 [外部待辦 E-03] LINE Login identity follow 自動配對真人驗收
-[外部待辦 E-04／E-05] 各社 OA 設定／推播額度政策
+[已決定 E-04] 本次 rollout 只啟用 PANCHIAO-ELITE，HAPPY 不使用；[外部待辦 E-05] 推播額度政策
 [外部待辦 E-06／E-07／E-10] 效能量測／實機與 M1／雙重社籍驗收
 [產品決策 E-08／E-09] production 準備／Recovery email（若重啟）
 [後續開發／外部待辦 E-11] LINE Rich Menu／完整 OA 整合
@@ -476,7 +476,7 @@ PR-01c 不做：
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
 5. **E-06：登入後管理頁效能量測** `[>]`：使用已登入 staging 帳號量測 TTFB、LCP、FCP；沒有數字就寫未量測。
 6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
-7. **E-04／E-05：各社 OA 設定與額度政策** `[!]`：逐社確認 channel 與憑證；產品決定超額行為。
+7. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次 rollout 只啟用 PANCHIAO-ELITE，已完成。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
 10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併 PR #107（merge `1164f763`），待 staging 發布、各社 OA 設定與真人驗收。
