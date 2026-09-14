@@ -100,7 +100,7 @@ export default async function InvitationsPage({
         <h1>社員邀請</h1>
         <p>建立、重送、取消並追蹤邀請；原始 token 只在建立或重送後顯示一次。</p>
       </div>
-      <Link className="button" href={`/clubs/${clubId}/members/new`}>＋ 建立邀請</Link>
+      <Link className="button" href={`/clubs/${clubId}/members/new?mode=management`} prefetch={false}>＋ 建立邀請</Link>
     </header>
 
     <ClubAdminNav clubId={clubId} />

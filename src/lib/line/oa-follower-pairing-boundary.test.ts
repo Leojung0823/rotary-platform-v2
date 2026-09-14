@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 
 const page = readFileSync("src/app/(authenticated)/clubs/[clubId]/line-oa/page.tsx", "utf8");
 const audiencePicker = readFileSync("src/components/audience/audience-picker.tsx", "utf8");
+const sendAction = readFileSync("src/app/line-oa-actions.ts", "utf8");
+const verificationAction = readFileSync("src/app/line-oa-verification-actions.ts", "utf8");
+const adminNav = readFileSync("src/components/club-admin-nav.tsx", "utf8");
 
 describe("LINE OA follower pairing controls", () => {
   it("offers pairing on the rows that arrived unpaired", () => {
@@ -68,5 +71,26 @@ describe("LINE OA delivery wording", () => {
   it("distinguishes an unpaired member from a person who has not followed the OA", () => {
     expect(audiencePicker).toContain("尚未與本社 LINE OA 完成配對");
     expect(audiencePicker).not.toContain("尚未加入官方帳號");
+  });
+});
+
+describe("LINE OA management return paths", () => {
+  it("keeps server-action feedback in management mode", () => {
+    expect(sendAction).toContain("/line-oa?mode=management");
+    expect(sendAction).toContain("&error=${encodeURIComponent(code)}");
+    expect(sendAction).toContain("&success=message_sent");
+    expect(verificationAction).toContain("/line-oa?mode=management");
+    expect(verificationAction).toContain("&error=${encodeURIComponent(code)}");
+    expect(verificationAction).toContain("&success=verified");
+  });
+
+  it("opens every club administration tab in management mode", () => {
+    expect(adminNav).toContain("/identity?mode=management");
+    expect(adminNav).toContain("/members?mode=management");
+    expect(adminNav).toContain("/invitations?mode=management");
+    expect(adminNav).toContain("/line?mode=management");
+    expect(adminNav).toContain("/line-oa?mode=management");
+    expect(adminNav).toContain("/audit?mode=management");
+    expect(adminNav).toContain("prefetch={false}");
   });
 });

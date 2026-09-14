@@ -38,7 +38,7 @@ test("an officer creates a tag, applies it to a member, and archives it", async 
   await page.getByLabel("標籤名稱").fill(tagName);
   await page.getByLabel("說明（選填）").fill("由瀏覽器測試建立");
   await page.getByRole("button", { name: "建立標籤" }).click();
-  await expect(page).toHaveURL(/\/members\?success=tag_created$/u);
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/members\?mode=management&success=tag_created$/u);
   await expect(page.getByText("標籤已建立。")).toBeVisible();
 
   const row = page.locator("tr").filter({ hasText: tagName });
@@ -49,7 +49,7 @@ test("an officer creates a tag, applies it to a member, and archives it", async 
   // The same name again is refused rather than creating a second tag.
   await page.getByLabel("標籤名稱").fill(tagName);
   await page.getByRole("button", { name: "建立標籤" }).click();
-  await expect(page).toHaveURL(/\/members\?error=tag_exists$/u);
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/members\?mode=management&error=tag_exists$/u);
   await expect(page.getByText("同名標籤已存在。")).toBeVisible();
 
   // Apply it to a member.
@@ -64,7 +64,10 @@ test("an officer creates a tag, applies it to a member, and archives it", async 
   await expect(page.locator(".tag-option").filter({ hasText: tagName }).locator("input")).toBeChecked();
 
   // The count on the tag list reflects it.
-  await page.goto(new URL(page.url().replace(/\/members\/[^/?]+.*/u, "/members"), baseURL).toString());
+  const membersUrl = new URL(page.url());
+  membersUrl.pathname = membersUrl.pathname.replace(/\/members\/[^/?]+$/u, "/members");
+  membersUrl.search = "?mode=management";
+  await page.goto(membersUrl.toString());
   await expect(page.locator("tr").filter({ hasText: tagName }).locator("td").nth(2)).toHaveText("1");
 
   // Archiving removes it from the list without touching what it was used for.

@@ -171,7 +171,7 @@ export default async function ClubAffairsPage({
         <div><p className="eyebrow">社務文件</p><h2>文件中心</h2></div>
       </div>
       <p>章程、會議紀錄、年度成果與交接文件都收在這裡。</p>
-      <Link className="card-link" href="/archives">開啟文件中心 →</Link>
+      <Link className="card-link" href={`/archives?clubId=${encodeURIComponent(club.club_id)}&mode=member`}>開啟文件中心 →</Link>
     </Card>
   </div>;
 }

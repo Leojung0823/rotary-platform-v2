@@ -17,7 +17,7 @@ export async function setMemberAccountStatusAction(formData: FormData) {
   const accountId = String(formData.get("accountId") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim();
-  const returnPath = `/clubs/${clubId}/members/${membershipId}`;
+  const returnPath = `/clubs/${encodeURIComponent(clubId)}/members/${encodeURIComponent(membershipId)}?mode=management`;
 
   if (!clubId || !membershipId || !accountId || !allowedAccountStatuses.has(status)
       || reason.length < 2 || reason.length > 500) {
@@ -33,7 +33,7 @@ export async function setMemberAccountStatusAction(formData: FormData) {
   });
 
   if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
-  redirect(`${returnPath}?success=account_status_updated`);
+  redirect(`${returnPath}&success=account_status_updated`);
 }
 
 export async function unbindMyLineIdentityAction(formData: FormData) {

@@ -138,6 +138,10 @@ export function resolveExperienceMode(context: ExperienceContext, requestedMode:
     : context.defaultMode;
 }
 
+export function isManagementMode(mode: ExperienceMode | null): mode is "management" {
+  return mode === "management";
+}
+
 export function clubsForExperienceMode(context: ExperienceContext, mode: ExperienceMode): readonly ClubContext[] {
   if (mode === "member") return context.memberClubs;
   if (mode === "management") return [

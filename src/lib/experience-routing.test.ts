@@ -45,7 +45,7 @@ describe("dashboard role routing", () => {
     expect(resolveExperienceDashboard(context(managedClub.club_id), "management")).toEqual({
       kind: "resolver",
       mode: "management",
-      destination: `/clubs/${managedClub.club_id}/identity`,
+      destination: `/clubs/${managedClub.club_id}/identity?mode=management`,
     });
     expect(resolveExperienceDashboard(context(), "invented-role")).toMatchObject({ mode: "member" });
   });

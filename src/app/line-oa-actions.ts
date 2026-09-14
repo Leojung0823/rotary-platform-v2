@@ -7,8 +7,12 @@ import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.s
 import { FLEX_TEMPLATES, buildClubFlexMessage, type FlexTemplate } from "@/lib/line/flex-templates";
 import { buildFlexPushLogArgs, deliverClubOaFlex } from "@/lib/line/flex-dispatch";
 
+function pagePath(clubId: string) {
+  return `/clubs/${encodeURIComponent(clubId)}/line-oa?mode=management`;
+}
+
 function errorPath(clubId: string, code: string) {
-  return `/clubs/${clubId}/line-oa?error=${encodeURIComponent(code)}`;
+  return `${pagePath(clubId)}&error=${encodeURIComponent(code)}`;
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -103,5 +107,5 @@ export async function sendLineOaAction(formData: FormData) {
   if (logged.error || delivery.status === "failed") {
     redirect(errorPath(clubId, delivery.failureCode ?? "unexpected"));
   }
-  redirect(`/clubs/${clubId}/line-oa?success=message_sent`);
+  redirect(`${pagePath(clubId)}&success=message_sent`);
 }

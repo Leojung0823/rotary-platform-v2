@@ -1,4 +1,8 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { requireIdentity } from "@/lib/auth";
+import { isManagementMode } from "@/lib/experience-context";
+import { currentExperienceMode } from "@/lib/experience-mode.server";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +19,17 @@ export default async function LegacyServicePlanEditPage({
   searchParams: Promise<{ year?: string }>;
 }) {
   const query = await searchParams;
+  const identity = await requireIdentity();
+  const headerStore = await headers();
+  if (headerStore.get("x-rotary-requested-mode") !== "management") {
+    redirect("/access-denied");
+  }
+  const mode = await currentExperienceMode(identity.id);
+  // When role shells are unavailable, keep the old permission-only fallback;
+  // otherwise a resolved member mode must never render this management editor.
+  if (mode !== null && !isManagementMode(mode)) {
+    redirect("/access-denied");
+  }
   const resolution = await resolveExperienceContext(null);
   const activeClubId = resolution.ok ? resolution.context.activeClubId : null;
   if (!activeClubId) redirect("/access-denied");

@@ -22,12 +22,12 @@ type OaVerificationAccount = {
 };
 
 function pagePath(clubId: string) {
-  return `/clubs/${encodeURIComponent(clubId)}/line-oa`;
+  return `/clubs/${encodeURIComponent(clubId)}/line-oa?mode=management`;
 }
 
 function errorPath(clubId: string, code: string) {
   if (!uuidPattern.test(clubId)) return "/dashboard?error=unexpected";
-  return `${pagePath(clubId)}?error=${encodeURIComponent(code)}`;
+  return `${pagePath(clubId)}&error=${encodeURIComponent(code)}`;
 }
 
 function fail(clubId: string, code: string): never {
@@ -178,5 +178,5 @@ export async function verifyLineOaAction(formData: FormData) {
     fail(clubId, "oa_verification_failed");
   }
 
-  redirect(`${pagePath(clubId)}?success=verified`);
+  redirect(`${pagePath(clubId)}&success=verified`);
 }

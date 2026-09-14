@@ -24,6 +24,6 @@ export function resolveExperienceDashboard(
     mode,
     destination: mode === "member"
       ? `/club/${encodeURIComponent(activeClub.clubId)}`
-      : `/clubs/${encodeURIComponent(activeClub.clubId)}/identity`,
+      : `/clubs/${encodeURIComponent(activeClub.clubId)}/identity?mode=management`,
   };
 }
