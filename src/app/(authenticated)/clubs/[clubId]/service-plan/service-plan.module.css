@@ -2,4 +2,4 @@
 .editorSection { display: grid; gap: 16px; }
 .editorSection .section-heading { margin-bottom: 0; }
 .editorSection .section-heading p:last-child { margin-bottom: 0; }
-.editorPrompt { margin: 0; padding: 12px 14px; border-radius: 10px; color: #31516a; background: #edf5f8; font-size: 13px; }
+.editorPrompt { margin: 0; padding: 12px 14px; border-radius: 10px; color: #31516a; background: #edf5f8; font-size: var(--text-small); }
