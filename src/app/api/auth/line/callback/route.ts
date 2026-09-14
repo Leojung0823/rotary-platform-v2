@@ -9,6 +9,7 @@ import {
   lineOAuthCookieOptions,
   safeLineRedirectPath,
   trustedLineRedirectUrl,
+  lineOAuthFlows,
   type LineOAuthFlow,
 } from "@/lib/line/security";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
@@ -67,7 +68,8 @@ function loginFailure(errorCode = GENERIC_LINE_FAILURE, redirectPath = "/login")
 }
 
 function parseFlow(value: string): LineOAuthFlow {
-  if (value === "login" || value === "invitation" || value === "bind") return value;
+  const match = lineOAuthFlows.find((flow) => flow === value);
+  if (match) return match;
   throw new Error("LINE Login flow is invalid.");
 }
 

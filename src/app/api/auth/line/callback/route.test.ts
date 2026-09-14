@@ -60,7 +60,11 @@ vi.mock("@/lib/line/provider", () => ({
   lineMode: () => "mock",
 }));
 
-vi.mock("@/lib/line/security", () => ({
+vi.mock("@/lib/line/security", async (importOriginal) => ({
+  // The flow list is taken from the real module on purpose: mocking it would
+  // let the callback pass these tests while rejecting a flow in production,
+  // which is the bug this file failed to catch once already.
+  lineOAuthFlows: (await importOriginal<typeof import("@/lib/line/security")>()).lineOAuthFlows,
   clearLineOAuthCookies: (store: { set: typeof mocks.cookieSet }) => {
     for (const name of ["line_oauth_state", "line_oauth_nonce", "line_invitation", "line_return_to", "line_flow"]) {
       store.set(name, "", { maxAge: 0 });
