@@ -6,6 +6,7 @@ const allPermissions = [
   "member.manage",
   "invitation.manage",
   "identity.read",
+  "service_plan.manage",
   "blessing_iou.manage",
   "finance.read",
   "role.manage",
@@ -23,6 +24,7 @@ describe("management overview cards", () => {
       "members",
       "invitations",
       "identity",
+      "service-plan",
       "blessing-iou",
       "dues-finance",
       "birthday-collection",
@@ -44,6 +46,8 @@ describe("management overview cards", () => {
     const tools = managementToolsForClub("club/with spaces", allPermissions, allFeatures);
     expect(tools.find((tool) => tool.id === "archives")?.href)
       .toBe("/clubs/club%2Fwith%20spaces/archives?mode=management");
+    expect(tools.find((tool) => tool.id === "service-plan")?.href)
+      .toBe("/clubs/club%2Fwith%20spaces/service-plan?mode=management");
     expect(tools.some((tool) => tool.id === "messages")).toBe(false);
   });
 });

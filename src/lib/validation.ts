@@ -131,6 +131,9 @@ export function safeMessage(code?: string): string | null {
     missing_contact: "手機與電子郵件至少需要填寫一項。",
     invalid_birth_date: "生日不正確。請輸入 1900 年 1 月 1 日至今天之間的實際日期。",
     invalid_profile_input: "資料未通過檢查。請確認：姓名必填、手機與電子郵件至少填寫一項、生日介於 1900 年與今天之間。",
+    invalid_service_plan_input: "年度服務計劃資料未通過檢查，請確認標題、年度內容與字數限制。",
+    invalid_service_plan_sections: "四類服務資料格式不完整，請重新整理後再填寫。",
+    service_plan_publish_incomplete: "發布前，四類服務都要填寫年度目標、執行活動、最新成果與社員參與。",
     invitation_invalid: "邀請不存在、已取消、已接受或已過期。",
     invitation_email_mismatch: "輸入的 Email 與扶輪社預建的社員資料不一致，請聯絡秘書確認。",
     use_existing_account: "這個 Email 可能已有平台帳號，請先登入；忘記密碼可使用重設功能。",
@@ -156,6 +159,11 @@ export function parseNewPassword(formData: FormData) {
 }
 
 export function mapDatabaseError(message: string): string {
+  if (message.includes("service_plan_publish_incomplete")) return "service_plan_publish_incomplete";
+  if (message.includes("invalid_service_plan_sections")) return "invalid_service_plan_sections";
+  if (message.includes("invalid_service_plan_input")
+    || message.includes("invalid_service_plan_year")
+    || message.includes("club_not_active")) return "invalid_service_plan_input";
   if (message.includes("invalid_self_profile_input")) return "invalid_profile_input";
   if (message.includes("invalid_club_english_name")) return "invalid_club_english_name";
   if (message.includes("invalid_club_name")) return "invalid_club_name";
