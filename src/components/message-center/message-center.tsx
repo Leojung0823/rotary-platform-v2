@@ -15,6 +15,7 @@ import type {
   SentClubMessage,
 } from "@/lib/message-center/contracts";
 import styles from "./message-center.module.css";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 // Mirrored from the server-side validator rather than imported: that module
 // pulls in the cursor codec, which is Node-only, and this component ships to
@@ -40,7 +41,7 @@ async function readResponse<T>(response: Response): Promise<T> {
 function formatTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "時間未知";
-  return new Intl.DateTimeFormat("zh-TW", {
+  return new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

@@ -19,6 +19,7 @@ import {
   type HandoverStatus,
 } from "@/lib/archive/contracts";
 import styles from "@/app/(authenticated)/archives/archives.module.css";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 const handoverLabels: Record<HandoverStatus, string> = {
   preparation: "準備中",
@@ -119,7 +120,7 @@ export function ArchiveManagementPanel({
             <div className={styles.versionList}>
               <strong>歷史版本（只能新增，不會覆蓋）</strong>
               {item.versions.length === 0 ? <p>尚未上傳檔案。</p> : item.versions.map((version) => <div key={version.id} className={styles.versionRow}>
-                <span><strong>v{version.versionNumber}</strong> <span>{version.originalFilename}</span><small>{bytes(version.fileSizeBytes)} · {new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(new Date(version.createdAt))}{version.changeSummary ? ` · ${version.changeSummary}` : ""}</small></span>
+                <span><strong>v{version.versionNumber}</strong> <span>{version.originalFilename}</span><small>{bytes(version.fileSizeBytes)} · {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,  dateStyle: "medium" }).format(new Date(version.createdAt))}{version.changeSummary ? ` · ${version.changeSummary}` : ""}</small></span>
                 <a className="button button-secondary" href={`/api/v1/archive/versions/${version.id}/download?club_id=${selectedClub.clubId}`}>下載</a>
               </div>)}
             </div>
@@ -149,7 +150,7 @@ export function ArchiveManagementPanel({
 
         <Card>
           <h3>具名交接確認</h3>
-          <div className={styles.confirmations}>{page.confirmations.length === 0 ? <p>尚無確認紀錄。</p> : page.confirmations.map((confirmation) => <div key={confirmation.id}><Badge tone="success">{confirmation.confirmationRole === "outgoing" ? "卸任幹部" : "新任幹部"}</Badge><strong>{confirmation.confirmedBy}</strong><span>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(confirmation.confirmedAt))}</span></div>)}</div>
+          <div className={styles.confirmations}>{page.confirmations.length === 0 ? <p>尚無確認紀錄。</p> : page.confirmations.map((confirmation) => <div key={confirmation.id}><Badge tone="success">{confirmation.confirmationRole === "outgoing" ? "卸任幹部" : "新任幹部"}</Badge><strong>{confirmation.confirmedBy}</strong><span>{new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,  dateStyle: "medium", timeStyle: "short" }).format(new Date(confirmation.confirmedAt))}</span></div>)}</div>
           <div className={styles.confirmButtons}>
             <form action={confirmArchiveHandoverAction}><input type="hidden" name="clubId" value={selectedClub.clubId} /><input type="hidden" name="yearId" value={selectedYear.id} /><input type="hidden" name="confirmationRole" value="outgoing" /><Button type="submit" className="button-secondary">我是卸任幹部，確認已交付</Button></form>
             <form action={confirmArchiveHandoverAction}><input type="hidden" name="clubId" value={selectedClub.clubId} /><input type="hidden" name="yearId" value={selectedYear.id} /><input type="hidden" name="confirmationRole" value="incoming" /><Button type="submit">我是新任幹部，確認已收到</Button></form>

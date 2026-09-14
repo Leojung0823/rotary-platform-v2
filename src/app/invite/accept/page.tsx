@@ -4,6 +4,7 @@ import { Button, Card, Field, Input, Notice } from "@/components/ui";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { safeMessage } from "@/lib/validation";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,7 @@ export default async function AcceptInvitationPage({
                     <strong>{invitations[0].club_name}</strong>
                     <div>
                       {invitations[0].club_code} · 到期時間：
-                      {new Intl.DateTimeFormat("zh-TW", {
+                      {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
                         dateStyle: "medium",
                         timeStyle: "short",
                       }).format(new Date(invitations[0].expires_at))}
@@ -76,7 +77,7 @@ export default async function AcceptInvitationPage({
                       <strong>{invitation.club_name}</strong>
                       <span className="subtle">
                         {invitation.club_code} · 到期時間：
-                        {new Intl.DateTimeFormat("zh-TW", {
+                        {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
                           dateStyle: "medium",
                           timeStyle: "short",
                         }).format(new Date(invitation.expires_at))}

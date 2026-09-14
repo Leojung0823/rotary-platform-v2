@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { BlessingIouEntry } from "@/lib/blessing-iou/contracts";
 import { BLESSING_IOU_MAX_AMOUNT, BLESSING_IOU_TEXT_MAX_CODE_POINTS } from "@/lib/blessing-iou/validation";
 import styles from "./blessing-wall.module.css";
+import { APP_TIME_ZONE } from "@/lib/time";
 
 type BlessingList = {
   entries: BlessingIouEntry[];
@@ -66,7 +67,7 @@ function entryValidationMessage(text: string, amountInput: string) {
   return null;
 }
 
-const dateFormatter = new Intl.DateTimeFormat("zh-TW", {
+const dateFormatter = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
   year: "numeric",
   month: "long",
   day: "numeric",
