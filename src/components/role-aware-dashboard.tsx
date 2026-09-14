@@ -56,6 +56,7 @@ export function RoleAwareDashboardLanding({
     blessingIouEnabled: false,
     birthdayCollectionEnabled: false,
     archiveHandoverEnabled: false,
+    duesFinanceEnabled: false,
   },
 }: {
   identity: Identity;

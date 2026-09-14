@@ -293,3 +293,54 @@ export async function registerEventAction(formData: FormData) {
   revalidatePath("/events");
   redirect(eventPath(clubId, "success", "registration_saved"));
 }
+
+export type VenueGeocodeState =
+  | { status: "idle" }
+  | { status: "found"; latitude: number; longitude: number; formattedAddress: string }
+  | { status: "error"; message: string };
+
+const geocodeMessages: Record<string, string> = {
+  not_configured: "這個環境還沒有設定地圖查詢金鑰，請直接貼上地圖連結或座標。",
+  not_found: "查不到這個地址，請換個寫法，或直接貼上地圖連結。",
+  lookup_failed: "地圖查詢沒有回應，請稍後再試，或直接貼上地圖連結。",
+  forbidden: "您沒有管理這個社活動的權限。",
+  invalid: "請輸入要查詢的地址。",
+};
+
+/**
+ * Turns an address into venue coordinates for the check-in radius.
+ *
+ * Gated on the same authority as creating the event it belongs to. Without
+ * that gate any signed-in member could use the club's Google key as a free
+ * geocoding service, which is billed per request.
+ */
+export async function geocodeVenueAddressAction(
+  _state: VenueGeocodeState,
+  formData: FormData,
+): Promise<VenueGeocodeState> {
+  const clubId = String(formData.get("clubId") ?? "");
+  const address = String(formData.get("venueAddress") ?? "").trim();
+  if (!uuidPattern.test(clubId) || !address || address.length > 300) {
+    return { status: "error", message: geocodeMessages.invalid };
+  }
+
+  const supabase = await createClient();
+  const { data: allowed, error } = await supabase.rpc("current_can_manage_club_events", {
+    p_club_id: clubId,
+  });
+  if (error || allowed !== true) {
+    return { status: "error", message: geocodeMessages.forbidden };
+  }
+
+  const { geocodeVenueAddress } = await import("@/lib/events/geocode");
+  const outcome = await geocodeVenueAddress(address);
+  if (!outcome.ok) {
+    return { status: "error", message: geocodeMessages[outcome.reason] ?? geocodeMessages.lookup_failed };
+  }
+  return {
+    status: "found",
+    latitude: outcome.latitude,
+    longitude: outcome.longitude,
+    formattedAddress: outcome.formattedAddress,
+  };
+}

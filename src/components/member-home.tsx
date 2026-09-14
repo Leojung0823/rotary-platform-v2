@@ -189,9 +189,12 @@ async function MemberHomeContent({
       coverUrl={coverUrls.get(projection.primaryEvent.coverImagePath ?? "")}
       primary
     /> : <Card className={styles.emptyCard}>
-      <p className="eyebrow">今天</p>
-      <h2>目前沒有需要處理的活動</h2>
-      <p>新的已發布活動會在這裡顯示。</p>
+      {/* Nothing to do is the most common state on most days, so it says so in
+          one line instead of spending the whole first screen on an absence. */}
+      <div>
+        <p className="eyebrow">今天</p>
+        <h2>目前沒有需要處理的活動</h2>
+      </div>
       <Link className="button button-secondary" href="/events" prefetch={false}>查看活動</Link>
     </Card>}
 
@@ -219,12 +222,14 @@ export function MemberHome({
   identity,
   activeClub,
   blessingIouEnabled = false,
+  duesFinanceEnabled = false,
   messageCenterEnabled = false,
   lineOaOnboardingEnabled = false,
 }: {
   identity: Identity;
   activeClub: Pick<ClubContext, "clubId" | "clubCode" | "clubName">;
   blessingIouEnabled?: boolean;
+  duesFinanceEnabled?: boolean;
   messageCenterEnabled?: boolean;
   lineOaOnboardingEnabled?: boolean;
 }) {
@@ -235,7 +240,6 @@ export function MemberHome({
         <h1>{identity.display_name}，您好</h1>
         <h2 className={styles.todayHeading}>今天與我有關的事情</h2>
       </div>
-      <Badge tone="success">{activeClub.clubName}</Badge>
     </header>
     <Suspense fallback={<MemberHomeContentLoading />}>
       <MemberHomeContent activeClubId={activeClub.clubId} messageCenterEnabled={messageCenterEnabled} />
@@ -256,10 +260,6 @@ export function MemberHome({
           <span><strong>訊息中心</strong><small>查看幹部發送給您的社內訊息</small></span>
           <b aria-hidden="true">→</b>
         </Link>}
-        <Link className={styles.secondaryAction} href="/interact?mode=member" prefetch={false}>
-          <span><strong>社內互動</strong><small>前往留言板、生日祝福與祝福 IOU</small></span>
-          <b aria-hidden="true">→</b>
-        </Link>
       </div>
     </section>
     {blessingIouEnabled && <Link
@@ -269,6 +269,15 @@ export function MemberHome({
     >
       <span className={styles.blessingIcon} aria-hidden="true">♡</span>
       <span><strong>祝福 IOU</strong><small>分享祝福，也可以留下希望捐贈的金額</small></span>
+      <b aria-hidden="true">→</b>
+    </Link>}
+    {duesFinanceEnabled && <Link
+      className={styles.financeShortcut}
+      href={`/dues?clubId=${encodeURIComponent(activeClub.clubId)}&mode=member`}
+      prefetch={false}
+    >
+      <span className={styles.financeIcon} aria-hidden="true">$</span>
+      <span><strong>我的社費</strong><small>查看自己的應收、收款與代墊狀態</small></span>
       <b aria-hidden="true">→</b>
     </Link>}
   </div>;

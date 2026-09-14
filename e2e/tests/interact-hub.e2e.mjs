@@ -20,9 +20,12 @@ async function login(page) {
 test("the member homepage opens an interaction hub that reaches all three social features", async ({ page }) => {
   await login(page);
 
+  // 社內互動 was a card on the home page and is now a tab of its own, so this
+  // is where a member actually reaches the hub from.
   const bar = page.getByRole("navigation", { name: "主要導覽" });
-  await expect(bar.locator('[data-navigation-id="interact"]')).toHaveCount(0);
-  await page.getByRole("link", { name: /社內互動/u }).first().click();
+  const interactTab = bar.locator('[data-navigation-id="interact"]');
+  await expect(interactTab).toHaveCount(1);
+  await interactTab.click();
   await expect(page).toHaveURL(/\/interact/u);
   await expect(page.getByRole("heading", { name: "社內互動" })).toBeVisible();
 

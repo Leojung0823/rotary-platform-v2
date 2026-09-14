@@ -14,6 +14,18 @@ describe("birthday collection RPC error mapping", () => {
     expect(birthdayCollectionRpcErrorCode("birthday_assignment_batch_not_complete")).toBe("not_ready");
   });
 
+  it("distinguishes an existing annual campaign from a duplicate question", () => {
+    expect(birthdayCollectionRpcErrorCode("duplicate key birthday_campaign_recipient_year_unique")).toBe("campaign_already_exists");
+    expect(birthdayCollectionRpcErrorCode("23505 birthday_campaign_recipient_year_unique")).toBe("campaign_already_exists");
+  });
+
+  it("maps bounded input and missing-record failures", () => {
+    expect(birthdayCollectionRpcErrorCode("invalid_birthday_assignment_period")).toBe("invalid_input");
+    expect(birthdayCollectionRpcErrorCode("invalid_birthday_wish_content")).toBe("invalid_input");
+    expect(birthdayCollectionRpcErrorCode("birthday_submission_not_found")).toBe("not_found");
+    expect(birthdayCollectionRpcErrorCode("birthday_club_question_not_found")).toBe("not_found");
+  });
+
   it("preserves the existing bounded classifications", () => {
     expect(birthdayCollectionRpcErrorCode("question_bank_exhausted")).toBe("question_bank_exhausted");
     expect(birthdayCollectionRpcErrorCode("23505 duplicate key")).toBe("duplicate_question");

@@ -412,6 +412,91 @@ async function addBlessingIouLedgerFixture({ clubId, email }) {
   await member.auth.signOut();
 }
 
+async function addDuesFinanceBrowserFixtures({ clubId, managerEmail, memberAccount }) {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
+
+  const manager = createClient(url, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const signIn = await manager.auth.signInWithPassword({ email: managerEmail, password });
+  if (signIn.error) fail("dues finance fixture sign-in did not succeed");
+
+  // rotary_years intentionally has no browser table privilege. Resolve or
+  // create it through the same protected RPC that the management page uses.
+  const yearList = await manager.rpc("list_dues_finance_rotary_years", { p_club_id: clubId });
+  if (yearList.error) fail("dues finance Rotary year fixture lookup did not succeed");
+  let yearId = yearList.data?.find((year) => year.start_year === 2026)?.id ?? null;
+  if (!yearId) {
+    const createdYear = await manager.rpc("create_rotary_year", {
+      p_club_id: clubId,
+      p_start_year: 2026,
+      p_theme: "本機社費財務驗收",
+      p_president_name: "本機社員管理者",
+      p_secretary_name: "本機測試執秘",
+    });
+    if (createdYear.error || typeof createdYear.data !== "string") {
+      fail("could not create local dues finance Rotary year");
+    }
+    yearId = createdYear.data;
+  }
+
+  const membership = await admin.from("club_memberships")
+    .select("id, person_id")
+    .eq("club_id", clubId)
+    .eq("person_id", memberAccount.person_id)
+    .eq("membership_status", "active")
+    .single();
+  if (membership.error || !membership.data) fail("could not find local dues finance member membership");
+
+  const annualDefault = await manager.rpc("set_club_dues_annual_default", {
+    p_club_id: clubId,
+    p_rotary_year_id: yearId,
+    p_default_amount: 5000,
+    p_reason: "本機財務頁面驗收",
+  });
+  if (annualDefault.error) fail("dues finance annual default fixture did not succeed");
+
+  const generated = await manager.rpc("generate_club_dues_receivables", {
+    p_club_id: clubId,
+    p_rotary_year_id: yearId,
+    p_source_note: "本機 2026-27 社費驗收",
+  });
+  if (generated.error) fail("dues finance receivable fixture did not succeed");
+
+  const ledger = await manager.rpc("get_club_dues_finance_ledger", {
+    p_club_id: clubId,
+    p_rotary_year_id: yearId,
+    p_limit: 500,
+  });
+  if (ledger.error) fail("dues finance ledger fixture lookup did not succeed");
+  const receivable = ledger.data?.receivables?.find((entry) => entry.membership_id === membership.data.id);
+  if (!receivable) fail("dues finance member receivable fixture is missing");
+
+  const receipt = await manager.rpc("record_dues_receipt", {
+    p_club_id: clubId,
+    p_received_on: "2026-09-14",
+    p_payment_method: "bank_transfer",
+    p_reference_note: "本機 E2E 收款",
+    p_items: [{ receivable_id: receivable.receivable_id, amount: 2000 }],
+    p_idempotency_key: "e2e-dues-finance-receipt-v1",
+  });
+  if (receipt.error) fail("dues finance receipt fixture did not succeed");
+
+  const advance = await manager.rpc("submit_dues_advance", {
+    p_club_id: clubId,
+    p_rotary_year_id: yearId,
+    p_amount: 800,
+    p_description: "本機財務頁面驗收代墊",
+    p_incurred_on: "2026-09-13",
+    p_idempotency_key: "e2e-dues-finance-advance-v1",
+    p_payer_membership_id: membership.data.id,
+  });
+  if (advance.error) fail("dues finance advance fixture did not succeed");
+
+  await manager.auth.signOut();
+}
+
 async function allowPublicBlessingAmounts({ clubId, email }) {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
@@ -594,6 +679,11 @@ await configureLineOaFixture({
 await addBlessingIouLedgerFixture({
   clubId: memberClub.id,
   email: "e2e-shell-ordinary@example.test",
+});
+await addDuesFinanceBrowserFixtures({
+  clubId: memberClub.id,
+  managerEmail: "e2e-shell-member-manager@example.test",
+  memberAccount: fixtures.ordinary,
 });
 await addBirthdayCollectionBrowserFixtures({
   clubId: managedClub.id,

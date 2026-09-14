@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { setActiveClubPreferenceAction } from "@/app/experience-context-actions";
 import { Badge, Button, Card, EmptyState, Notice } from "@/components/ui";
 import {
   activeClubForMode,
@@ -9,6 +8,8 @@ import {
   type ExperienceMode,
 } from "@/lib/experience-context";
 import { resolveExperienceDashboard } from "@/lib/experience-routing";
+
+const activeClubPreferenceActionPath = "/api/preferences/active-club";
 
 const modeLabels: Record<ExperienceMode, string> = {
   member: "社員模式",
@@ -73,7 +74,7 @@ export function ExperienceContextResolver({
           <span className="club-code">{club.clubCode}</span>
           <h3>{club.clubName}</h3>
           <p>{club.clubId === activeClub?.clubId ? "目前所在" : "選擇後會回到這個工作模式"}</p>
-          <form action={setActiveClubPreferenceAction}>
+          <form action={activeClubPreferenceActionPath} method="post">
             <input type="hidden" name="clubId" value={club.clubId} />
             <input type="hidden" name="mode" value={mode} />
             <Button type="submit">{club.clubId === activeClub?.clubId ? "繼續使用這個社" : "選擇這個社"}</Button>
