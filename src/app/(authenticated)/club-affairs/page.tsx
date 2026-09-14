@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, Card, Notice } from "@/components/ui";
+import {
+  SERVICE_PLAN_CATEGORIES,
+  SERVICE_PLAN_STATUS_LABELS,
+  servicePlanSections,
+  type ServicePlan,
+  type ServicePlanProgressStatus,
+} from "@/lib/club-affairs/service-plan";
 import { createClient } from "@/lib/supabase/server";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
 import styles from "./club-affairs.module.css";
@@ -13,7 +20,7 @@ type AffairsPage = {
   officers: Array<{ role_key: string; display_name: string }>;
   start_year: number;
   can_manage_plan: boolean;
-  service_plan: { title: string; body: string; plan_status: string; published_at: string | null; updated_at: string } | null;
+  service_plan: ServicePlan | null;
   plan_years: number[];
 };
 
@@ -26,6 +33,16 @@ const updatedFormatter = new Intl.DateTimeFormat("zh-TW", {
 
 function rotaryYearLabel(startYear: number) {
   return `${startYear}–${startYear + 1}`;
+}
+
+function statusTone(status: ServicePlanProgressStatus) {
+  if (status === "completed") return "success" as const;
+  if (status === "in_progress") return "warning" as const;
+  return "neutral" as const;
+}
+
+function planValue(value: string) {
+  return value.trim() || "尚未補充";
 }
 
 export default async function ClubAffairsPage({
@@ -46,6 +63,7 @@ export default async function ClubAffairsPage({
   const { data, error } = await supabase.rpc("get_club_affairs_page", {
     p_club_id: activeClubId,
     p_start_year: Number.isNaN(requestedYear) ? null : requestedYear,
+    p_as_member: true,
   });
   if (error) return <Notice tone="error">目前無法載入社務資訊，請稍後重新整理。</Notice>;
 
@@ -83,27 +101,60 @@ export default async function ClubAffairsPage({
           <p className="eyebrow">{rotaryYearLabel(page.start_year)} 年度</p>
           <h2>年度服務計劃</h2>
         </div>
-        {page.can_manage_plan && <Link
-          className="button button-secondary"
-          href={`/club-affairs/service-plan/edit?year=${page.start_year}`}
-        >{page.service_plan ? "編輯" : "撰寫"}</Link>}
       </div>
 
       {page.service_plan
         ? <>
-          {page.service_plan.plan_status === "draft" && <Notice tone="info">
-            這份計劃還是草稿，只有您看得到。發布後社員才會看到。
-          </Notice>}
-          <h3 className={styles.planTitle}>{page.service_plan.title}</h3>
-          {/* The plan is written as prose with the officer's own paragraphing,
-              which is the structure of the document. */}
-          <p className={styles.planBody}>{page.service_plan.body}</p>
+          <div className={styles.planIntro}>
+            <h3 className={styles.planTitle}>{page.service_plan.title}</h3>
+            {page.service_plan.annual_theme.trim() && <p className={styles.planTheme}>
+              <strong>年度主軸：</strong>{page.service_plan.annual_theme}
+            </p>}
+            <p className={styles.planBody}>{page.service_plan.body}</p>
+          </div>
+          {page.service_plan.member_invitation.trim() && <div className={styles.memberInvitation}>
+            <p className="eyebrow">一起參與</p>
+            <h3>社員可以怎麼加入</h3>
+            <p className={styles.planBody}>{page.service_plan.member_invitation}</p>
+          </div>}
+          <div className={styles.serviceCategoryGrid}>
+            {servicePlanSections(page.service_plan.sections).map((section, index) => {
+              const category = SERVICE_PLAN_CATEGORIES[index];
+              return <article className={styles.serviceCategory} key={category.key}>
+                <div className={styles.serviceCategoryHeader}>
+                  <div>
+                    <p className="eyebrow">服務面向 {index + 1}</p>
+                    <h3>{category.label}</h3>
+                  </div>
+                  <Badge tone={statusTone(section.progress_status)}>
+                    {SERVICE_PLAN_STATUS_LABELS[section.progress_status]}
+                  </Badge>
+                </div>
+                <p className={styles.serviceCategoryDescription}>{category.description}</p>
+                <dl className={styles.planFacts}>
+                  <div className={styles.planFact}>
+                    <dt>年度目標</dt><dd>{planValue(section.annual_goal)}</dd>
+                  </div>
+                  <div className={styles.planFact}>
+                    <dt>執行活動</dt><dd>{planValue(section.activities)}</dd>
+                  </div>
+                  <div className={styles.planFact}>
+                    <dt>最新成果</dt><dd>{planValue(section.latest_result)}</dd>
+                  </div>
+                  <div className={styles.planFact}>
+                    <dt>下一步</dt><dd>{planValue(section.next_step)}</dd>
+                  </div>
+                  <div className={styles.planFact}>
+                    <dt>社員參與</dt><dd>{planValue(section.member_participation)}</dd>
+                  </div>
+                </dl>
+              </article>;
+            })}
+          </div>
           <p className="subtle">更新於 {updatedFormatter.format(new Date(page.service_plan.updated_at))}</p>
         </>
         : <p className="subtle">
-          {page.can_manage_plan
-            ? "本年度還沒有服務計劃，點「撰寫」開始。"
-            : "本年度的服務計劃尚未發布。"}
+          本年度的服務計劃尚未發布。
         </p>}
 
       {page.plan_years.length > 1 && <div className={styles.yearLinks}>

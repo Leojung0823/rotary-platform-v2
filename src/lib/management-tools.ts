@@ -47,6 +47,12 @@ export function managementToolsForClub(
       description: "維護扶輪社名稱與基本資料。",
       href: managementToolHref(clubId, "identity"),
     } : null,
+    hasPermission("service_plan.manage") ? {
+      id: "service-plan",
+      title: "年度服務計劃",
+      description: "更新社員服務、職業服務、社區服務與國際服務成果。",
+      href: managementToolHref(clubId, "service-plan"),
+    } : null,
     features.blessingIouEnabled && hasPermission("blessing_iou.manage") ? {
       id: "blessing-iou",
       title: "祝福 IOU",

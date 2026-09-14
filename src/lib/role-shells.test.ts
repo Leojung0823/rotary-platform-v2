@@ -258,6 +258,10 @@ describe("current navigation resolver", () => {
       management,
       `/clubs/${memberClub.club_id}/blessing-iou`,
     )).toBe("overview");
+    expect(resolveCurrentNavigationItemId(
+      management,
+      `/clubs/${memberClub.club_id}/service-plan`,
+    )).toBe("overview");
     expect(resolveCurrentNavigationItemId(management, "/attendance/manage/fixture-event"))
       .toBe("attendance");
     expect(resolveCurrentNavigationItemId(management, "/messages/fixture-message"))

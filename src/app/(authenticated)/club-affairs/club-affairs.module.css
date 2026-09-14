@@ -10,4 +10,25 @@
    break opportunities of their own. */
 .planBody { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
 
+.planIntro { display: grid; gap: 8px; }
+.planTheme { margin: 0; color: var(--ink); font-size: 16px; }
+.planTheme strong { color: var(--blue); }
+.memberInvitation { margin-top: 22px; padding: 18px 20px; border: 1px solid #bfe4d1; border-radius: 14px; background: #f0fbf5; }
+.memberInvitation h3 { margin-bottom: 6px; }
+.memberInvitation p:last-child { margin-bottom: 0; }
+.serviceCategoryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
+.serviceCategory { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: #fbfcfd; }
+.serviceCategoryHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.serviceCategoryHeader .eyebrow { margin-bottom: 5px; }
+.serviceCategoryHeader h3 { margin-bottom: 0; font-size: 19px; }
+.serviceCategoryDescription { margin: 12px 0 0; font-size: 14px; }
+.planFacts { display: grid; gap: 10px; margin: 18px 0 0; }
+.planFact { padding-top: 10px; border-top: 1px solid var(--line); }
+.planFact dt { color: var(--muted); font-size: 13px; font-weight: 800; }
+.planFact dd { margin: 4px 0 0; color: var(--ink); line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+
 .yearLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+@media (max-width: 760px) {
+  .serviceCategoryGrid { grid-template-columns: 1fr; }
+}
