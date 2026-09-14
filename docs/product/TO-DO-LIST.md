@@ -1,12 +1,27 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-12（Asia/Taipei）
+更新日期：2026-09-14（Asia/Taipei）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
 的舊掃描結果；那份檔案屬於獨立 worktree，不是權威 repo 的版本。
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
+
+## 2026-09-14 GitHub 開發狀態快照
+
+以下是本次掃描當下的 GitHub 狀態。**PR 尚未合併前，不算 `main` 完成，也不代表已部署到 staging。**
+本次掃描的 `origin/main` 是 `6d559a68fbb60246f59a4f0706d8a6b2b09901eb`；staging 仍維持前一個已部署版本，
+未因為下列 PR 自動發布。
+
+- `[>]` PR #107 Rich Menu：`codex/line-rich-menu-v1`，HEAD `1b839c6`，application、database、validate、Browser Smoke 均通過；等待合併與各社 OA 外部設定。
+- `[>]` PR #108 社費／收款／核銷與報表：`codex/dues-finance-v1`，HEAD `ea2bf4e`；PDF 缺少繁中字型的問題已修正，application、database、validate、member Browser Smoke 均已通過，等待合併與 staging 驗收。
+- `[>]` PR #109 手機 Web App：`codex/pwa-v1`，HEAD `e29d1cc`，全部必要檢查已通過；等待合併與真實手機驗收。
+- `[>]` PR #110 生日設定 UX：`codex/birthday-settings-ux-v1`，HEAD `aebed8b`；補上社員先切換目前社別的回歸測試，新的 application、database、validate、member Browser Smoke 正在 GitHub 執行。
+- `[>]` PR #111 社務資訊／年度服務計劃：`codex/club-affairs-and-service-plan-v2`，HEAD `b1895cc`；已將 migration 改為 `20260914000800`，避開 #107 的 `20260914000300` 撞號，application、database、validate、member Browser Smoke 均已通過。
+
+合併順序要保留 migration 依賴：#107 → #108 → #110；#111 已使用 `20260914000800`，可在這串功能之後合併。
+目前沒有合併或部署動作；這一節只記錄程式與檢查狀態。
 
 ## 外部處理待辦（唯一清單）
 
@@ -54,8 +69,8 @@
 
 ### E-02 生日邀請 LINE 實際送達 `[x]`
 
-- **目前證據**：scheduler protected route 已成功執行；最新 run `34673612440` 回報成功，但
-  `generated_count=1`、`notified_count=1`、`line_push.jobCount=0`、`sentCount=0`，所以只證明排程路徑，不證明社員收到 LINE。
+- **先前無收件人的紀錄（歷史）**：scheduler protected route 的 run `34673612440` 曾回報成功，但
+  `generated_count=1`、`notified_count=1`、`line_push.jobCount=0`、`sentCount=0`；那次只證明排程路徑，不能取代後來的真人送達驗收。
 - **`jobCount=0` 的根因已查明（2026-09-12）——不是 bug**：該次 run log 顯示
   `line_push.status="sent"`，代表 `line_oa_event_push_v1` 是開著的，是
   `list_birthday_collection_line_push_jobs` 真的回傳 0 列。以 staging 資料庫逐環比對
@@ -198,9 +213,10 @@
 - **外部動作**：準備一個同時具兩社有效社籍、其中一社另有執行秘書權限的 staging 測試帳號，實際切換社別與模式；再測外社執行秘書、停權／退社帳號。
 - **完成證據**：每個社只看到自己的資料；社員模式與管理模式能正確切換；沒有管理權的有效社員不能進管理頁；停權／退社不能取得原有權限。
 
-### E-11 LINE Rich Menu／完整 OA 整合 `[ ]`
+### E-11 LINE Rich Menu／完整 OA 整合 `[>]`
 
-- **目前證據**：目前只有 LINE OA 設定、follow、手動推播、事件推播與 Flex 第一版；Rich Menu 尚未開發，不是本輪 staging blocker。
+- **目前證據**：Rich Menu 程式已在 PR #107 完成並通過既有檢查，但尚未合併到 `main`，也尚未部署 staging；
+  外部 OA 設定與真人驗收仍未完成，不是本輪 staging blocker。
 - **外部動作**：產品先決定各社 Rich Menu 的入口與文案；開發完成後，由各社在自己的 LINE OA／Messaging API channel 設定並驗證 menu、URI 與權限邊界，不共用其他社的 OA。
 - **完成證據**：每個啟用的社都能在自己的 OA 看到正確 Rich Menu；登入／社別切換不會把 A 社入口導到 B 社；停用旗標或未設定 OA 時不會送出錯誤連結。
 
@@ -208,66 +224,37 @@
 
 這些是需要另外開發與驗證的產品功能，不應誤寫成「等外部設定」：
 
-- `[ ]` 社費、收款與核銷（應收、部分收款、代墊、核銷）。
-- `[ ]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）。
-- `[ ]` LINE Rich Menu 與完整 OA 整合（開發與外部設定見 E-11）。
-- `[ ]` 手機 Web App（安裝、離線提示與推播準備）。
-- `[ ]` 社務 AI 助理（摘要、公告草稿、會議紀錄與授權查詢）。
+- `[>]` 社費、收款與核銷（應收、部分收款、代墊、核銷）已在 PR #108，待合併、部署與 hosted 驗收。
+- `[>]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）已在 PR #108，待合併、部署與 hosted 驗收。
+- `[>]` LINE Rich Menu 與完整 OA 整合已在 PR #107，待合併與各社 OA 外部設定（見 E-11）。
+- `[>]` 手機 Web App（安裝、離線提示與推播準備）已在 PR #109，待合併與真實手機驗收。
+- `[>]` 社務資訊與年度服務計劃已在 PR #111，待合併與 hosted／角色邊界驗收。
+- `[ ]` 社務 AI 助理（摘要、公告草稿、會議紀錄與授權查詢）；目前沒有可執行企劃或已授權的 AI 服務規格，不能直接開發。
 
-### 生日設定 UX 調整（產品決定 2026-09-12）
+### 生日設定 UX 調整（產品決定 2026-09-12；PR #110 已完成開發，待合併）
 
-實際操作 `/birthdays` 時提出，三項都要開發，不是外部設定：
+實際操作 `/birthdays` 時提出，四項都已在 PR #110 實作；PR 尚未合併前不算 `main` 完成：
 
-- `[ ]` **`/birthdays` 不應該可以切換扶輪社**。該頁目前有「扶輪社」下拉與「切換扶輪社」按鈕，
-  但社別切換已經有全域 `ClubSwitcher`。重複的入口容易把設定存到錯的社——表單送出的是當前
-  `clubId`（`src/app/(authenticated)/birthdays/page.tsx:129`），切錯社就寫到別社的社籍上。
-  移除這個區塊，沿用全域已選社別。
-- `[ ]` **生日隱私改為預設全部打開**。目前尚未設定的社籍沒有 `birthday_visibility_preferences` 列，
-  投影以 `coalesce(preference.is_listed, false)` 視為關閉
-  （`20260901000100_birthday_collection_manager_permissions.sql:837-838`），排程的 inner join
-  也因此完全排除該社員。**這是隱私模型的變更，要一併決定兩件事**：既有「尚未設定」的社籍要不要回填，
-  以及排程端「缺列」的語意是否跟著改成預設納入。只改畫面預設值而不改這兩處，會出現「畫面說預設公開、
-  排程卻仍然看不到這個人」的不一致——2026-09-12 的 E-02 卡關正是這個成因。
-- `[ ]` **把生日開關整合進 `/me`**。`/me` 已有「通知與名冊隱私」卡片，生日公開設定另外放在
-  `/birthdays`，個人隱私變成兩處管理。整合時要保留**每社獨立**的語意（偏好的 key 是 membership + club），
-  不能整併成跨社共用一組設定；雙重社籍的成員必須還能分社設定。
-- `[ ]` **生日徵集產生失敗時的錯誤訊息無效**（2026-09-13 實測發現）。幹部在生日徵集管理頁用
-  「建立／重跑本月任務」產生一個該社員當年度已存在徵集的批次時，畫面只顯示
-  「操作沒有完成，請稍後再試。」——但**再試永遠不會成功**，因為真正原因是
-  `birthday_campaign_recipient_year_unique unique (club_id, recipient_membership_id, birthday_year)`：
-  每位社員每社每年只能有一個生日徵集。唯一約束的錯誤訊息沒有對照到
-  `src/lib/birthday-collection/rpc-error.ts`，就掉進 `unexpected` 這個 fallback
-  （`rpc-error.test.ts:20` 正是斷言未知訊息一律回 `unexpected`）。
-
-  實測經過：PANCHIAO-ELITE 的 LEO 已有 2026 年徵集（10 月批次建立），把生日改到 11/20 後產生
-  2026/11，RPC 拋例外、交易回滾，`birthday_wish_assignment_batches` 連一列都沒留下，
-  幹部完全看不出原因。改用年份 2027 即可通過。
-
-  要修的是給這個情境一個講得清楚的訊息（例如「這位社員今年已經有一個生日徵集」）。
-  **不要放寬那條唯一約束**——一個人一年只有一個生日，約束是對的，錯的是訊息。
-  順帶檢查 `rpc-error.ts` 還有哪些會落入 `unexpected` 的既有錯誤，那個 fallback 對使用者等於沒有資訊。
+- `[>]` **`/birthdays` 不應該可以切換扶輪社**。PR #110 已移除頁面內重複選擇器，改用全域已選社別。
+- `[>]` **生日隱私改為預設全部打開**。PR #110 已讓新社籍預設公開，並保留既有缺列資料的私密語意，
+  新社籍由 migration 建立明確的公開列；既有缺列不回填，仍維持私密，補生日也不會偷偷公開。
+- `[>]` **把生日開關整合進 `/me`**。PR #110 已加入每社獨立的生日設定投影與入口，
+  偏好仍以 `membership_id + club_id` 分開識別，雙重社籍可以分社設定。
+- `[>]` **生日徵集產生失敗時的錯誤訊息無效**（2026-09-13 實測發現）。PR #110 已加入
+  已把「同一社員同一扶輪年已有徵集」轉成可理解的提示，保留每年唯一約束，不放寬資料庫規則。
 
 ## 本輪結論
 
-原待辦清單的 0、2–3、6–11 項，能在程式與本機環境完成的部分已完成；
-GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 已依產品決定擱置；自動化檢查不取代
-E-06／E-07 的登入後效能量測與實機驗收。生日 V2 核心、生日祝福徵集、LINE OA 真實推播基礎與管理模式核心都已進入 `main`。
-生日首頁通知修復與本輪 LINE／生日推播修補也已部署到 staging；最新 staging runtime 為 `fbdc061dd702`，Flex Go-Live run 是 `34686702234`。
+截至 2026-09-14，能在 repo 內完成的功能已分別送出 PR；但 PR 尚未合併前，不能寫成
+`main` 或 staging 已完成。GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 依產品決定暫緩；
+自動化檢查也不能取代 E-06／E-07 的登入後效能量測與實機驗收。
 
-本輪又補上三個可在 repo 內完成的 LINE 缺口：webhook redelivery 雜湊穩定化、OA 後台安全顯示
-環境變數名稱，以及生日徵集邀請的 LINE 推播路徑。這些修改已合併並部署到 staging；仍要做一次
-生日邀請的實際送達驗收。
+目前權威基準是 `origin/main=6d559a68fbb60246f59a4f0706d8a6b2b09901eb`。staging 仍是前一個已部署版本
+`fbdc061dd702`，本次 #107–#111 的任何 PR 都尚未自動發布；production 沒有修改。
 
-另補上 `line_oa_auto_pairing_v1` 共用旗標判斷的明確開啟要求（`68b12a5`）；已隨 Go-Live `34594381922` 部署 staging。
-
-LINE OA 的 staging 真實 Messaging API、訊息中心公告推播、活動發布推播與 webhook 基礎已完成真人送達驗收；
-follow 自動配對的程式與 flag 已完成，但「LINE Login identity 精確對上社員」仍需專門真人驗收。
-
-截至 2026-09-12 的權威基準：本輪 staging release 採用的 `main` exact SHA 為 `fbdc061dd702f453ab340bd595279223487d0838`，
-staging 最新產品 runtime 為 `fbdc061dd702`；staging `/api/health` 回報
-`revision=fbdc061dd702`、`status=ok`、`issues=[]`、`warnings=[]`。Flex 第一版已進入 main，Plan `34686603765` 與 Go-Live `34686702234` 均成功，已部署 staging，但旗標尚未開啟。
-最新已部署 migration 是
-`20260912000200_line_oa_flex_templates_flag.sql`；Flex 旗標尚未開啟。
+本輪已補上的 repo 內缺口包括：生日設定 UX／預設公開且保留既有缺列私密語意、財務 PDF 繁中字型、
+社務資訊與年度服務計劃，以及 Rich Menu、手機 Web App、社費／報表的獨立 PR。合併與 staging 驗收前，
+這些只能標成「程式完成、等待合併／外部驗收」。
 
 前一輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
 Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS smoke 與 hosted member acceptance 均通過。
@@ -292,9 +279,9 @@ fallback 給 HAPPY。剩下的是 follow 事件自動配對真人驗收，不是
 
 `68b12a5` 的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功，並已由 `34594381922` 部署到 staging；沒有待核准的同一輪 Go-Live。
 
-生日旗標與正確 Render staging service 的 scheduler secret 已同步；最新排程 `34673612440` 成功，
-但 `line_push.jobCount=0`、`sentCount=0`，所以 LINE 邀請實際送達仍尚未證明；這不是目前的 secret 不一致問題。
-production 沒有修改；目前沒有 open PR，PR #98 已合併至 `main`。
+生日旗標與正確 Render staging service 的 scheduler secret 已同步；既有排程證據與本次 PR 狀態分開記錄，
+不能用舊的 `34673612440` 取代新的 hosted 驗收。production 沒有修改；目前有 #107–#111 五個 open PR，
+詳見本文件開頭的最新快照。
 
 ## 逐項狀態
 
@@ -303,7 +290,7 @@ production 沒有修改；目前沒有 open PR，PR #98 已合併至 `main`。
 - 已以權威 `main`、實際 migration、RPC、verification、TypeScript、測試和瀏覽器流程交叉確認。
 - 已保留 PR #61 的 canonical Attendance；沒有採用已關閉 PR #37 的重複 authority。
 - 所有新增資料庫 RPC／投影都有對應 verification SQL，並已登錄 manifest。
-- 掃描當下沒有 open PR；PR #40 已關閉，因 base 過時且公告功能已在 `main`，保留的舊分支不能直接合併。
+- PR #40 已關閉，因 base 過時且公告功能已在 `main`，保留的舊分支不能直接合併；目前的 open PR 以文件開頭快照為準。
 - PR #93 已加入 CI／Browser Smoke 的變更範圍 gate：低風險文件只跑輕量 gate，高風險程式／資料庫／建置／流程修改才跑完整檢查；分類失敗時 fail-open。
 
 ### 1. GPS Check-in `[x]`
@@ -417,22 +404,23 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
 ## 另外掃描到、但不在舊清單內的待辦
 
-### 生日祝福徵集（核心 `[x]`；排程營運 `[>]`）
+### 生日祝福徵集（核心與排程營運 `[x]`）
 
 生日 V2 核心已完成（新設定預設公開、年齡依出生年份同意顯示、同一作者同一壽星每日最多 10 則、
 作者匿名投影與幹部可見）。徵集程式已完成：
 
-- 每月批次與生日前 7 天排程；
+- 每月批次與前置一個日曆月排程；
 - 每位社員每月最多一則自動邀約的公平分配與冪等鍵；
 - 100 題平台題庫、社團題庫 CRUD、題目快照、同批次題目文字不重複與題庫不足時整批停止；
 - 徵集任務、參與者、發布／隱藏／重新送出狀態、匿名公開牆與幹部管理介面；
 - service-role-only scheduler、訊息通知冪等、feature flag EXECUTE 邊界與 verification。
 
-已完成 staging 外部啟用與核心驗收：平台管理員透過受保護 CLI 開啟
+已完成 staging 外部啟用、排程真人送達與核心驗收：平台管理員透過受保護 CLI 開啟
 `birthday_wishes_v2`、`birthday_wishes_collection_v1`；正確 Render staging service 的
 `BIRTHDAY_COLLECTION_SCHEDULER_SECRET` 已同步至 GitHub `birthday-scheduler` environment。
-最新 scheduler `34673612440` 已成功呼叫 protected staging route，但因本輪沒有符合條件的收件人，
-`line_push.jobCount=0`、`sentCount=0`；仍要依 E-02 做有收件人的真人送達與冪等重跑驗收。不能移除 staging 保護。
+歷史 scheduler `34673612440` 因沒有符合條件的收件人而 `jobCount=0`；後續已由
+`34695450977` 完成真人送達、`34695655038` 完成冪等重跑驗收，不能用前一筆歷史紀錄覆蓋後來的完成證據。
+不能移除 staging 保護。
 歷史失敗 run `33121570908`／`33121704322` 保留作為啟用前的追蹤證據；M1 真人使用者測試仍是另一個待辦。
 
 規格請看 [`BIRTHDAY_WISHES_V2_PLAN.md`](../mvp/BIRTHDAY_WISHES_V2_PLAN.md)。
@@ -441,7 +429,7 @@ staging Auth 設定同步已修復（run `33400262734`），redirect 已同步�
 
 產品決定（2026-09-02）：本輪先把**真實 Messaging API 接通**。現在 channel access token／secret 已設入
 staging，真實 Messaging API、訊息中心公告、活動發布與 webhook 基礎均已完成 staging 真人驗收；生日邀請的
-實際送達、follow identity pairing、Flex staging 發布、production 準備、額度政策與 Rich Menu 外部設定仍列在上方 E-01–E-11。
+實際送達、follow identity pairing、Flex staging 發布、production 準備、額度政策與 Rich Menu 外部設定仍列在上方 E-01–E-12。
 
 #### 現況（已在 `main`，不是待辦）
 
@@ -486,7 +474,7 @@ staging 目前為 `LINE_OA_MODE=line`，`/api/health` 的 `warnings=[]`；真實
    `deployment-env.test.ts` 補憑證成對檢查與不洩漏社代碼。文件新增
    [`LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md`](../mvp/LINE_OA_MESSAGING_DEPLOYMENT_CHECKLIST.md)。
 
-#### 外部條件摘要（完整清單以 E-01–E-11 為準）
+#### 外部條件摘要（完整清單以 E-01–E-12 為準）
 
 - `[x]` 取得該社的 **channel access token 與 channel secret**（LINE Developers Console → Messaging API channel）。**已完成（2026-09-02）**。
 - `[x]` 在 **LINE Developers Console 設定 webhook URL** 為
@@ -575,12 +563,13 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   推播文字帶標題、時間（Asia/Taipei、24 小時制、含星期）與地點；推播失敗只改成另一個成功代碼，
   不會讓發布變成失敗。**2026-09-03 已在 staging 端對端驗收：發布活動後推播實際送達手機。**
 
-- `[>]` 事件驅動自動推播的**最後一個來源**：生日祝福徵集邀請。程式已完成
+- `[x]` 事件驅動自動推播的**最後一個來源**：生日祝福徵集邀請。程式已完成
   `20260911000200_birthday_collection_line_push.sql`、scheduler route 串接、service-role-only
-  收件人投影／推播紀錄、既有 `line_oa_event_push_v1` 明確啟用閘門與單元測試；migration
-  已部署到 staging；最新 scheduler `34673612440` 成功但 `jobCount=0`、`sentCount=0`，仍待有收件人的實際邀請 LINE 送達驗收。通知目前由
-  `ensure_birthday_wish_collection_notification`（service-role scheduler）建立，沒有登入使用者，
-  所以特別使用 service-role 版本，不擴大前兩條 `member.manage`／`event.manage` 的權限。
+  收件人投影／推播紀錄、既有 `line_oa_event_push_v1` 明確啟用閘門與單元測試；PANCHIAO-ELITE 的
+  scheduler run `34695450977` 實際送達 `Michael`，重跑 `34695655038` 的 `jobCount=0`、`sentCount=0`，
+  已完成 LINE 真人送達與冪等驗收。通知目前由 `ensure_birthday_wish_collection_notification`
+  （service-role scheduler）建立，沒有登入使用者，所以特別使用 service-role 版本，不擴大前兩條
+  `member.manage`／`event.manage` 的權限。
 - `[x]` Flex 圖文訊息與訊息模板：`messaging.ts` 原本已支援 Flex payload；本輪新增三種固定卡片模板（社務公告、活動提醒、生日祝福）、管理頁即時預覽、伺服器端旗標與權限重驗證。PR #98 已合併至 `main`，migration 已部署到 staging；staging 旗標已於 2026-09-12 開啟，三種卡片模板均已對指定對象實際送達真人手機，推播紀錄為 `sent` 且帶 provider request id，E-01 已結案。
 - `[>]` webhook `follow` 事件自動配對 follower 的 migration、route、verification、flag、日期窗口防護與 staging 部署已完成；
   共用旗標判斷的 fail-closed 修補也已隨 Go-Live `34594381922` 部署；仍待用「曾以 LINE Login 登入的社員加入同一社 OA」驗證精確 identity pairing，以及多社／外社／停權／退社實例。
@@ -619,7 +608,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 下一步順序
 
-唯一的外部待辦清單是本文件前面的 E-01–E-11；執行順序如下：
+唯一的外部待辦清單是本文件前面的 E-01–E-12；執行順序如下：
 
 1. **E-01：Flex staging 發布與真人收訊** `[x]`：Plan、Go-Live、staging 旗標啟用、三種卡片模板真人收訊與 `line_push_logs` 的 `sent`／provider request id 均已完成，2026-09-12 結案。
 2. **E-02：生日邀請 LINE 實際送達** `[x]`：2026-09-12 完成。`PANCHIAO-ELITE` 的邀請實際送達 `Michael` 的 LINE，重跑 `jobCount=0` 不重送；負向情境（取消追蹤、關閉通知）未另做對照測試。
@@ -630,7 +619,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 7. **E-04／E-05：各社 OA 設定與額度政策** `[!]`：逐社確認 channel 與憑證；產品決定超額行為。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
-10. **E-11：LINE Rich Menu／完整 OA 整合** `[ ]`：先完成產品入口設計，再另立開發與各社 OA 設定驗收。
+10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式在 PR #107，待合併後再做各社 OA 設定與真人驗收。
 11. **E-12：staging 備份能力** `[!]`：決定升級方案或自行匯出；在此之前不部署破壞性 migration 到 staging。
 
 ## 歷史驗證證據（管理模式輪，2026-09-02）
@@ -648,15 +637,15 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 以上程式與資料庫結果為既有驗證證據；當時的 Staging Go-Live 已完成 migration apply、部署 revision wait、HTTPS smoke 與 hosted member acceptance。生日 V2／徵集 hosted acceptance `33345182984` 與 protected scheduler `33361427466` 也是歷史成功證據。
 
-## 最新掃描證據（2026-09-12；本輪部署後基準）
+## 最新掃描證據（2026-09-14；本輪開發掃描基準）
 
-- 本輪 staging release 採用的 `main` exact SHA 為 `fbdc061dd702f453ab340bd595279223487d0838`；PR #98 merge commit 為
-  `55047dd1f2d936a5147458fd16faa5038b068c3d`；目前沒有 open PR，後續 `main` 文件同步 commit 不改產品部署內容。
+- `origin/main` exact SHA 為 `6d559a68fbb60246f59a4f0706d8a6b2b09901eb`；目前有 open PR #107–#111，
+  完整狀態與 base/head 關係見本文件開頭，不能把它們當成已進入 `main`。
 - staging runtime revision 為 `fbdc061dd702`，已包含 Flex migration，但 `line_oa_flex_templates_v1` 尚未開啟。
 - Flex Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，核對同一個 exact SHA `fbdc061`。
 - staging `/api/health`：`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
 - staging Go-Live `34686702234` 以 exact SHA `fbdc061…` 成功；最新已部署 migration 是
   `20260912000200_line_oa_flex_templates_flag.sql`。
 - 本輪文件同步後的 `CI` `34686598214` 與 `Browser Smoke` `34686598210` 均成功；完整 database／member-browser jobs 依變更範圍 gate 跳過。
-- 最新 Birthday Collection Scheduler `34673612440` 成功，但 `line_push.jobCount=0`、`sentCount=0`；生日邀請實際送達仍是 E-02。
-- production 沒有修改；所有需要外部平台、真人或產品決定的項目均已集中列在 E-01–E-11。
+- 生日 Collection Scheduler 真人送達與重跑不重送已由 `34695450977`／`34695655038` 完成；follow identity pairing 仍依 E-03 暫緩。
+- production 沒有修改；所有需要外部平台、真人或產品決定的項目均已集中列在 E-01–E-12。

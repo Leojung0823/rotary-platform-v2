@@ -1,7 +1,22 @@
-# 交接筆記（持續更新；最新核對 2026-09-12）
+# 交接筆記（持續更新；最新核對 2026-09-14）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 最新 GitHub 開發掃描（2026-09-14）
+
+本次以 GitHub `origin/main=6d559a68fbb60246f59a4f0706d8a6b2b09901eb` 及 open PR 逐一核對。
+PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging 仍是前一個產品 runtime，production 沒有修改。
+
+- PR #107 Rich Menu：`1b839c6`，檢查已通過，等待合併與各社 OA 設定。
+- PR #108 社費／收款／核銷／報表：`ea2bf4e`，PDF 繁中字型缺檔已修正；application、database、validate、member Browser Smoke 均已通過，等待合併與 staging 驗收。
+- PR #109 手機 Web App：`e29d1cc`，檢查已通過，等待合併與真實手機驗收。
+- PR #110 生日設定 UX：`aebed8b`，補上社員先切換目前社別的回歸測試，新的 database、application、validate、member Browser Smoke 正在 GitHub 執行。
+- PR #111 社務資訊／年度服務計劃：`b1895cc`，migration 已從撞號的 `20260914000300` 改為 `20260914000800`，application、database、validate、member Browser Smoke 均已通過。
+
+合併依賴為 #107 → #108 → #110；#111 使用 `20260914000800`，可在這串 migration 後合併。
+社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
+[`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
 
 ## 本輪進度（2026-09-12；Flex 卡片模板）
 
@@ -17,10 +32,10 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 `55047dd1f2d936a5147458fd16faa5038b068c3d`；本輪 migration 已由 Go-Live `34686702234` 部署，
 `line_oa_flex_templates_v1` 尚未在 staging 開啟，真人收訊仍待驗收。
 
-## 最新狀態核對（2026-09-12；本輪部署後基準）
+## 上一個狀態核對（2026-09-12；已部署基準）
 
-- 本次最新核對的 `main` HEAD 為 `fbdc061dd702f453ab340bd595279223487d0838`；staging 產品 runtime 已為
-  `fbdc061dd702`，已包含 Flex migration；目前沒有 open PR，PR #98 已合併。
+- 當時核對的 `main` HEAD 為 `fbdc061dd702f453ab340bd595279223487d0838`；staging 產品 runtime 已為
+  `fbdc061dd702`，已包含 Flex migration；當時尚沒有 open PR，PR #98 已合併。這段是 9/12 的歷史快照。
 - staging `/api/health` 回報 `status=ok`、revision `fbdc061dd702`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。
 - Flex 本輪的 Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，且使用同一個 exact SHA
   `fbdc061dd702f453ab340bd595279223487d0838`；migration 已部署，旗標尚未開啟。
@@ -36,12 +51,12 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 - 前一輪 docs-only commit 的 `CI` `34583431760`、`Browser Smoke` `34583431873` 變更範圍分類器均成功，完整 database／validate／member-browser jobs 依 docs-only gate 跳過；前一輪產品 release 的 Staging Release Plan `34586642034`、Staging Go-Live `34594381922` 均成功完成，管理驗收 `34577046356` 亦已成功。
 - 管理驗收第一次 run `34575792573` 因腳本誤找不存在的 `management-card-events` 失敗；改點管理模式第一層「活動」導覽後，`34577046356` 成功完成活動建立、封面上傳、發布與取消。
 - 生日首頁通知修復已在 staging runtime：完成生日任務後，首頁不再顯示待辦通知，訊息中心仍保留完成歷史。
-- 最新生日 scheduler run `34673612440` 已成功；但 `line_push.jobCount=0`、`sentCount=0`，代表尚未證明生日邀請實際送到 LINE。GitHub `birthday-scheduler` environment 與正確 Render staging service 的 secret 已同步，目前不是 secret 不一致問題。
+- 當時生日 scheduler run `34673612440` 已成功；但 `line_push.jobCount=0`、`sentCount=0`，代表那次尚未證明生日邀請實際送到 LINE。後續真人送達與冪等重跑已由 `34695450977`／`34695655038` 完成；GitHub `birthday-scheduler` environment 與正確 Render staging service 的 secret 已同步。
 - 排程環境隔離的程式修法已完成：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護。下一步是準備符合條件的測試收件人，重跑 scheduler 驗證實際收件與冪等；不要把秘密寫入 repo，也不要移除 staging 部署保護。
 - production 沒有修改；staging 最新 migration 是 `20260912000200_line_oa_flex_templates_flag.sql`；Flex Go-Live `34686702234` 已成功，下一步是開啟 staging 旗標並做真人收訊。
 - `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由前一輪 Go-Live `34594381922` 部署到 staging；本輪 Flex migration 已由 Go-Live `34686702234` 部署。
 
-外部處理的唯一清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-11，涵蓋 Flex staging、生日邀請送達、follow 配對、各社 OA、額度政策、效能量測、實機／M1、雙重社籍、production 準備、暫緩的 recovery email 與 Rich Menu。
+外部處理的唯一清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12，涵蓋 Flex staging、生日邀請送達、follow 配對、各社 OA、額度政策、效能量測、實機／M1、雙重社籍、production 準備、暫緩的 recovery email、Rich Menu 與 staging 備份決策。
 
 ## 前一輪已合併並部署的待辦收尾（2026-09-12）
 
@@ -404,7 +419,7 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
 - 首頁 bounded notification projection 與訊息入口。
 - `/me/security` 帳號安全分層與 recovery confirmation flow。
 - 生日祝福 V2：新設定預設公開、年齡依同意顯示、同一作者同一壽星每日最多 10 則、作者匿名投影。
-- 生日祝福徵集：每月批次、生日前 7 天排程、每位社員每月最多一則自動任務、100 題平台題庫、
+- 生日祝福徵集：每月批次、前置一個日曆月排程、每位社員每月最多一則自動任務、100 題平台題庫、
   社團題庫 CRUD、題目快照、同批次題目不重複、題庫不足整批停止與可重試、發布／隱藏／重送、
   幹部管理、通知冪等、匿名公開牆與權限驗證。
 - 社員固定四項導覽、首頁互動入口、幹部管理往返、巢狀路由 current state、名錄 responsive header。
@@ -435,8 +450,9 @@ staging redirect（`site_url` 與 `uri_allow_list`）現已同步並嚴格驗證
 
 ## 仍未完成／需外部條件
 
-- 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署與 hosted acceptance 均已完成；最新 scheduler run
-  `34673612440` 已成功，但 `line_push.jobCount=0`、`sentCount=0`，所以日常排程的實際 LINE 送達仍是營運待辦，不應寫成全部完成。
+- 生日祝福 V2 與徵集的程式、旗標、secret、staging 部署、hosted acceptance、真人送達與冪等重跑均已完成；
+  歷史 scheduler run `34673612440` 曾因沒有符合條件的收件人而 `jobCount=0`，後續已由
+  `34695450977`／`34695655038` 完成有收件人的送達驗收，不能把歷史空跑當成目前未完成。
 - 排程不是目前的 secret 錯誤：workflow 使用獨立的 `birthday-scheduler` environment，GitHub 與正確 Render staging service 的 scheduler secret 已同步。下一步要準備有配對、仍追蹤且開啟通知的測試社員，再驗證下一次 schedule；不能直接放寬 staging 的部署審核規則。
 - GPS accuracy 政策已於 2026-08-31 決定：不設門檻，維持 200 公尺距離判定。這一項已結案，不是待辦。
 - recovery 的 Management API token 已修復、redirect 已同步；custom SMTP 與 recovery email 依產品決定暫緩，
@@ -470,8 +486,8 @@ staging plan                      passed (run 33121197083)
 staging Go-Live                   passed (run 33121275958)
 staging birthday acceptance       passed (run 33345182984; V2 + collection enabled)
 staging birthday scheduler        historical passed (run 33361427466; protected staging route)
-latest birthday scheduler         passed (run 34673612440; no eligible LINE recipient,
-                                  line_push.jobCount=0 / sentCount=0)
+historical birthday scheduler    passed (run 34673612440; no eligible LINE recipient,
+                                  line_push.jobCount=0 / sentCount=0; later delivery passed)
 staging Auth config sync           passed (run 33400262734; redirects verified,
                                   recovery template BLOCKED_BY_PLAN pending custom SMTP)
 staging Auth fix commits           lint / typecheck / 647 tests passed locally;
