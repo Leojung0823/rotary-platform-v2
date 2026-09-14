@@ -292,11 +292,18 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 }
 
 /* Event cover: fixed aspect so a portrait phone photo cannot push the rest of
-   the card off the screen, and so the list keeps a predictable rhythm. */
+   the card off the screen, and so the list keeps a predictable rhythm.
+
+   The ratio is declared once, here, because the same poster is shown on the
+   home card and in the events list and the two had drifted apart -- 8/3 against
+   16/9 -- so the same image was cropped differently depending on where a member
+   happened to look at it. */
+:root { --event-cover-aspect: 8 / 3; }
+
 .event-cover {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--event-cover-aspect);
   object-fit: cover;
   margin-bottom: 14px;
   border-radius: 12px;

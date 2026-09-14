@@ -24,7 +24,9 @@
 .eventCover {
   width: 100%;
   height: auto;
-  aspect-ratio: 8 / 3;
+  /* Shared with the events list through globals.css so one poster is never
+     cropped two different ways. */
+  aspect-ratio: var(--event-cover-aspect);
   object-fit: cover;
   border-radius: 12px;
   background: #eef2f0;
