@@ -106,7 +106,7 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     await expect(rolePage.getByRole("navigation", { name: "切換工作模式" })).toHaveCount(0);
     await expect(rolePage.getByLabel("切換目前所在的社或委員會")).toHaveCount(0);
     const memberNavigation = rolePage.getByRole("navigation", { name: "主要導覽" });
-    await expect(memberNavigation.getByRole("link")).toHaveCount(4);
+    await expect(memberNavigation.getByRole("link")).toHaveCount(5);
     await expect(memberNavigation.getByRole("link", { name: "社團管理" })).toHaveCount(0);
     await rolePage.getByLabel("帳號選單").click();
     const manageLink = rolePage.getByRole("link", { name: "進入社務管理" });
@@ -176,7 +176,7 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
   }
   if (["role-shells-412", "role-shells-375", "role-shells-320"].includes(testInfo.project.name)) {
     const bar = page.getByRole("navigation", { name: "主要導覽" });
-    await expect(bar.getByRole("link")).toHaveCount(4);
+    await expect(bar.getByRole("link")).toHaveCount(5);
     const ids = await bar.locator("a").evaluateAll((links) => links.map((link) => link.dataset.navigationId));
     expect(ids).toEqual(["home", "events", "directory", "account"]);
     await expect(bar.locator('[data-navigation-id="directory"]')).toContainText("社員");
