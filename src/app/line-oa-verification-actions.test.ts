@@ -45,7 +45,7 @@ describe("LINE OA identity verification action", () => {
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
   it("uses the authorized club's server credential and records only verified LINE data", async () => {
-    await expect(submit()).rejects.toThrow(`redirect:/clubs/${clubId}/line-oa?success=verified`);
+    await expect(submit()).rejects.toThrow(`redirect:/clubs/${clubId}/line-oa?mode=management&success=verified`);
     expect(mocks.permissions).toHaveBeenCalledWith("list_my_permissions", { p_club_id: clubId });
     expect(mocks.eq).toHaveBeenCalledWith("club_id", clubId);
     expect(mocks.eq).toHaveBeenCalledWith("account_status", "active");
@@ -87,7 +87,7 @@ describe("LINE OA identity verification action", () => {
   });
   it.each([401, 403, 429, 500, 400])("does not record a rejected LINE response (%s)", async (status) => {
     mocks.fetch.mockResolvedValue(new Response("private-provider-detail", { status }));
-    await expect(submit()).rejects.toThrow("?error=");
+    await expect(submit()).rejects.toThrow("&error=");
     expect(mocks.record).not.toHaveBeenCalled();
     expect(JSON.stringify(mocks.redirect.mock.calls)).not.toContain("private-provider-detail");
   });

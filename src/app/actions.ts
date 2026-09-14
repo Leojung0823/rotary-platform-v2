@@ -21,6 +21,10 @@ function errorPath(path: string, code: string) {
   return `${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(code)}`;
 }
 
+function lineOaManagementPath(clubId: string) {
+  return `/clubs/${encodeURIComponent(clubId)}/line-oa?mode=management`;
+}
+
 async function provisionOperatorAccount(email: string, password: string, inviteId: string) {
   const admin = createTrustedAdminClient();
   const { data, error } = await admin.auth.admin.createUser({
@@ -376,6 +380,7 @@ export async function revokeDeviceAction(formData: FormData) {
 
 export async function configureLineOaAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = lineOaManagementPath(clubId);
   const supabase = await createClient();
   const { error } = await supabase.rpc("configure_line_oa", {
     p_club_id: clubId,
@@ -384,8 +389,8 @@ export async function configureLineOaAction(formData: FormData) {
     p_channel_id: String(formData.get("channelId") ?? ""),
     p_mode: "active",
   });
-  if (error) redirect(errorPath(`/clubs/${clubId}/line-oa`, mapDatabaseError(error.message)));
-  redirect(`/clubs/${clubId}/line-oa?success=configured`);
+  if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
+  redirect(`${returnPath}&success=configured`);
 }
 
 // A club configured on the wrong club, or an account being retired, otherwise
@@ -394,6 +399,7 @@ export async function configureLineOaAction(formData: FormData) {
 // while no environment variable happens to match its derived key.
 export async function disableLineOaAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = lineOaManagementPath(clubId);
   const supabase = await createClient();
   const { error } = await supabase.rpc("configure_line_oa", {
     p_club_id: clubId,
@@ -404,39 +410,42 @@ export async function disableLineOaAction(formData: FormData) {
     p_channel_id: String(formData.get("channelId") ?? ""),
     p_mode: "disabled",
   });
-  if (error) redirect(errorPath(`/clubs/${clubId}/line-oa`, mapDatabaseError(error.message)));
-  redirect(`/clubs/${clubId}/line-oa?success=disabled`);
+  if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
+  redirect(`${returnPath}&success=disabled`);
 }
 
 export async function pairLineOaAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = lineOaManagementPath(clubId);
   const supabase = await createClient();
   const { error } = await supabase.rpc("pair_line_oa_follower", {
     p_club_id: clubId,
     p_oa_user_id: String(formData.get("oaUserId") ?? ""),
     p_person_id: String(formData.get("personId") ?? ""),
   });
-  if (error) redirect(errorPath(`/clubs/${clubId}/line-oa`, mapDatabaseError(error.message)));
-  redirect(`/clubs/${clubId}/line-oa?success=paired`);
+  if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
+  redirect(`${returnPath}&success=paired`);
 }
 
 export async function unpairLineOaAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = lineOaManagementPath(clubId);
   const supabase = await createClient();
   const { error } = await supabase.rpc("unpair_line_oa_follower", {
     p_club_id: clubId,
     p_follower_id: String(formData.get("followerId") ?? ""),
     p_reason: String(formData.get("reason") ?? "管理員解除 OA 配對"),
   });
-  if (error) redirect(errorPath(`/clubs/${clubId}/line-oa`, mapDatabaseError(error.message)));
-  redirect(`/clubs/${clubId}/line-oa?success=unpaired`);
+  if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
+  redirect(`${returnPath}&success=unpaired`);
 }
 
 export async function sendLineOaAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = lineOaManagementPath(clubId);
   const text = String(formData.get("message") ?? "").trim();
   const kind = String(formData.get("kind") ?? "broadcast") as "broadcast" | "multicast";
-  if (!text || text.length > 2000) redirect(errorPath(`/clubs/${clubId}/line-oa`, "unexpected"));
+  if (!text || text.length > 2000) redirect(errorPath(returnPath, "unexpected"));
 
   const supabase = await createClient();
   const permissions = await supabase.rpc("list_my_permissions", { p_club_id: clubId });
@@ -444,7 +453,7 @@ export async function sendLineOaAction(formData: FormData) {
     permissions.error ||
     !(permissions.data as { permission_key: string }[]).some((item) => item.permission_key === "oa.manage")
   ) {
-    redirect(errorPath(`/clubs/${clubId}/line-oa`, "forbidden"));
+    redirect(errorPath(returnPath, "forbidden"));
   }
 
   const admin = createTrustedAdminClient();
@@ -453,7 +462,7 @@ export async function sendLineOaAction(formData: FormData) {
     .select("oa_user_id")
     .eq("club_id", clubId)
     .eq("follower_status", "following");
-  if (recipientsResult.error) redirect(errorPath(`/clubs/${clubId}/line-oa`, "unexpected"));
+  if (recipientsResult.error) redirect(errorPath(returnPath, "unexpected"));
 
   const recipients = (recipientsResult.data ?? []).map((row) => row.oa_user_id);
   let delivery;
@@ -473,7 +482,7 @@ export async function sendLineOaAction(formData: FormData) {
     p_failure_code: delivery.status === "failed" ? "provider_error" : null,
   });
   if (logged.error || delivery.status === "failed") {
-    redirect(errorPath(`/clubs/${clubId}/line-oa`, "unexpected"));
+    redirect(errorPath(returnPath, "unexpected"));
   }
-  redirect(`/clubs/${clubId}/line-oa?success=message_sent`);
+  redirect(`${returnPath}&success=message_sent`);
 }
