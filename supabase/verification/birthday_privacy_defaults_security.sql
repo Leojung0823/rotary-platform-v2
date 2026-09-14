@@ -8,17 +8,20 @@ insert into auth.users (
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
 ) values
   ('00000000-0000-0000-0000-000000000000', '17000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'birthday-default-member@example.test', '', now(), '{}', '{}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '17000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'birthday-default-outsider@example.test', '', now(), '{}', '{}', now(), now());
+  ('00000000-0000-0000-0000-000000000000', '17000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'birthday-default-outsider@example.test', '', now(), '{}', '{}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '17000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'birthday-default-legacy@example.test', '', now(), '{}', '{}', now(), now());
 
 insert into public.people (id, canonical_name, primary_email, birth_date) values
   ('27000000-0000-4000-8000-000000000001', '生日設定雙重社籍社員', 'birthday-default-member@example.test', '1980-08-20'),
-  ('27000000-0000-4000-8000-000000000002', '生日設定外社社員', 'birthday-default-outsider@example.test', '1990-03-04');
+  ('27000000-0000-4000-8000-000000000002', '生日設定外社社員', 'birthday-default-outsider@example.test', '1990-03-04'),
+  ('27000000-0000-4000-8000-000000000003', '後來填寫生日的社員', 'birthday-default-legacy@example.test', null);
 
 insert into public.app_accounts (
   id, auth_user_id, person_id, login_email, account_display_name, account_status
 ) values
   ('37000000-0000-4000-8000-000000000001', '17000000-0000-4000-8000-000000000001', '27000000-0000-4000-8000-000000000001', 'birthday-default-member@example.test', '生日設定雙重社籍社員', 'active'),
-  ('37000000-0000-4000-8000-000000000002', '17000000-0000-4000-8000-000000000002', '27000000-0000-4000-8000-000000000002', 'birthday-default-outsider@example.test', '生日設定外社社員', 'active');
+  ('37000000-0000-4000-8000-000000000002', '17000000-0000-4000-8000-000000000002', '27000000-0000-4000-8000-000000000002', 'birthday-default-outsider@example.test', '生日設定外社社員', 'active'),
+  ('37000000-0000-4000-8000-000000000003', '17000000-0000-4000-8000-000000000003', '27000000-0000-4000-8000-000000000003', 'birthday-default-legacy@example.test', '後來填寫生日的社員', 'active');
 
 insert into public.clubs (id, club_code, club_name, club_status, activated_at)
 values
@@ -30,7 +33,8 @@ insert into public.club_memberships (id, club_id, person_id, membership_status)
 values
   ('57000000-0000-4000-8000-000000000001', '47000000-0000-4000-8000-000000000001', '27000000-0000-4000-8000-000000000001', 'active'),
   ('57000000-0000-4000-8000-000000000002', '47000000-0000-4000-8000-000000000002', '27000000-0000-4000-8000-000000000001', 'active'),
-  ('57000000-0000-4000-8000-000000000003', '47000000-0000-4000-8000-000000000003', '27000000-0000-4000-8000-000000000002', 'active');
+  ('57000000-0000-4000-8000-000000000003', '47000000-0000-4000-8000-000000000003', '27000000-0000-4000-8000-000000000002', 'active'),
+  ('57000000-0000-4000-8000-000000000004', '47000000-0000-4000-8000-000000000001', '27000000-0000-4000-8000-000000000003', 'active');
 
 do $$
 begin
@@ -68,28 +72,16 @@ begin
     raise exception 'new membership did not receive public birthday defaults';
   end if;
 
-  -- A missing row represents an existing V1 member who has not confirmed the
-  -- new default. The rollout must not silently turn that member public.
-  delete from public.birthday_visibility_preferences
-  where membership_id = '57000000-0000-4000-8000-000000000002';
-
-  if exists (
-       select 1
-       from public.birthday_visibility_preferences as preference
-       where preference.membership_id = '57000000-0000-4000-8000-000000000002'
-     ) then
-    raise exception 'missing legacy birthday preference was backfilled';
-  end if;
-
-  -- Adding or editing a birthday on an existing membership must not silently
-  -- create a public preference either; the member must confirm it in the UI.
+  -- The legacy-like membership was created before its person had a birthday,
+  -- so no preference row was created. Adding the birthday later must not
+  -- silently make that existing membership public.
   update public.people
   set birth_date = '1980-08-21'
-  where id = '27000000-0000-4000-8000-000000000001';
+  where id = '27000000-0000-4000-8000-000000000003';
   if exists (
        select 1
        from public.birthday_visibility_preferences as preference
-       where preference.membership_id = '57000000-0000-4000-8000-000000000002'
+       where preference.membership_id = '57000000-0000-4000-8000-000000000004'
      ) then
     raise exception 'editing a legacy birthday created a public preference';
   end if;
@@ -150,6 +142,19 @@ begin
   ) then
     raise exception 'birthday preferences leaked from another person';
   end if;
+
+  -- The missing-row member can read only their own club-scoped projection,
+  -- and remains private until an explicit preference save.
+  perform set_config('request.jwt.claim.sub', '17000000-0000-4000-8000-000000000003', true);
+  preferences := public.get_my_birthday_preferences();
+  if jsonb_array_length(preferences) <> 1
+     or (preferences->0->>'has_birth_date')::boolean = false
+     or (preferences->0->>'has_preference')::boolean
+     or (preferences->0->>'is_listed')::boolean
+     or (preferences->0->>'allow_wishes')::boolean then
+    raise exception 'legacy missing birthday preference became public: %', preferences;
+  end if;
+  perform set_config('request.jwt.claim.sub', '17000000-0000-4000-8000-000000000001', true);
 
   perform public.set_my_birthday_preference(
     '47000000-0000-4000-8000-000000000001', false, false
