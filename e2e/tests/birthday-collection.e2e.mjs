@@ -20,6 +20,22 @@ async function login(page, email) {
   await expect(page).toHaveURL(/\/dashboard$/u);
 }
 
+async function selectActiveMemberClub(page, clubId) {
+  await page.goto(new URL("/dashboard", baseURL).toString());
+  await page.locator('summary[aria-label="切換目前所在的社或委員會"]').click();
+  const clubChoice = page.locator(
+    `form:has(input[name="clubId"][value="${clubId}"]) button`,
+  );
+  await expect(clubChoice).toBeVisible();
+  await clubChoice.click();
+  await expect(page).toHaveURL(/\/dashboard(?:\?mode=member)?$/u);
+  // The server action keeps the same dashboard pathname, so a URL assertion
+  // alone can finish before the Set-Cookie redirect response is applied.
+  // Reload and assert the selected club itself before opening the member page.
+  await page.reload();
+  await expect(clubChoice).toHaveAttribute("aria-current", "true");
+}
+
 async function expectNoHorizontalOverflow(page) {
   const overflow = await page.evaluate(() => Math.max(
     document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -141,10 +157,12 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
     try {
       const memberPage = await memberContext.newPage();
       await login(memberPage, memberEmail);
+      await selectActiveMemberClub(memberPage, clubId);
       await memberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
 
       const multiMemberPage = await multiMemberContext.newPage();
       await login(multiMemberPage, multiMemberEmail);
+      await selectActiveMemberClub(multiMemberPage, clubId);
       await multiMemberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
       const multiAssignmentCard = multiMemberPage.locator("section.card")
         .filter({ hasText: birthdayDate })

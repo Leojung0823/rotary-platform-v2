@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
-import { setActiveClubPreferenceAction } from "@/app/experience-context-actions";
 import { LegacyAppShell } from "@/components/app-shell";
 import { ContextUnavailableScreen } from "@/components/context-unavailable";
 import {
@@ -26,6 +25,8 @@ import {
   resolveRoleShell,
 } from "@/lib/role-shells";
 import styles from "./role-aware-app-shell.module.css";
+
+const activeClubPreferenceActionPath = "/api/preferences/active-club";
 
 function environmentLabel() {
   if (process.env.APP_ENV === "production") return "ONLINE";
@@ -98,7 +99,7 @@ function ModeSwitcher({ context, mode }: { context: ExperienceContext; mode: Exp
 }
 
 function ClubOption({ club, mode, active }: { club: ClubContext; mode: ExperienceMode; active: boolean }) {
-  return <form action={setActiveClubPreferenceAction} className={styles.clubOption}>
+  return <form action={activeClubPreferenceActionPath} method="post" className={styles.clubOption}>
     <input type="hidden" name="clubId" value={club.clubId} />
     <input type="hidden" name="mode" value={mode} />
     <button type="submit" aria-current={active ? "true" : undefined}>

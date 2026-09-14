@@ -30,7 +30,13 @@ export function isSameOriginMutation(input: {
   fetchSite: string | null;
   configuredSiteUrl?: string;
 }) {
-  const production = process.env.APP_ENV === "production" || process.env.NODE_ENV === "production";
+  // APP_ENV is the deployment target. A local Browser Smoke build runs
+  // `next start`, so NODE_ENV is still "production" even though the app is
+  // intentionally served from localhost.
+  const configuredEnvironment = process.env.APP_ENV?.trim();
+  const production = configuredEnvironment
+    ? configuredEnvironment === "production"
+    : process.env.NODE_ENV === "production";
   const configured = input.configuredSiteUrl?.trim();
   const expectedOrigin = configured
     ? trustedOrigin(configured, production)

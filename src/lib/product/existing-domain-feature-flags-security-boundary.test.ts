@@ -18,7 +18,7 @@ const rollbackKeys = [
 ] as const;
 
 describe("existing-domain feature-flag database contract", () => {
-  const migration = source("supabase/migrations/20260913000100_club_join_link.sql");
+  const migration = source("supabase/migrations/20260914000400_dues_finance_v1_core.sql");
 
   it("keeps both table constraints and the mutation allow-list in sync", () => {
     const constraints = [...migration.matchAll(

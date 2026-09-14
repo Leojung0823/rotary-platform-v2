@@ -10,7 +10,7 @@ describe("member profile and account security boundary", () => {
   const securityPage = source("src/app/(authenticated)/me/security/page.tsx");
 
   it("keeps high-risk login controls off the general profile page", () => {
-    expect(profilePage).toContain('href="/me/security"');
+    expect(profilePage).toContain("href={`/me/security?mode=${pageMode}`}");
     expect(profilePage).not.toContain("unbindMyLineIdentityAction");
     expect(profilePage).not.toContain("revokeDeviceAction");
     expect(profilePage).not.toContain("最近登入</h2>");

@@ -25,6 +25,8 @@ const errorMessages: Record<string, string> = {
   not_ready: "這則祝福目前還不能發布。",
   invalid_question: "題目格式不正確，請檢查題目、語氣與排序。",
   duplicate_question: "題目代碼已存在，請換一個代碼。",
+  campaign_already_exists: "本次壽星中有人今年已建立生日徵集，因此本次任務未建立。請查看該年度其他月份的既有徵集；更改生日月份不會新增第二個徵集，重試也不會解決。",
+  not_found: "找不到這筆祝福或題目，請重新整理清單後再操作。",
   forbidden: "您目前沒有執行這項操作的權限。",
   feature_disabled: "生日祝福徵集目前尚未開放。",
   notification_failed: "任務已建立，但通知沒有完成；請稍後重試通知。",
