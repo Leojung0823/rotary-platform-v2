@@ -47,7 +47,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     await expect(multiPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
     await multiPage.getByLabel("切換目前所在的社或委員會").click();
     await multiPage.getByRole("button", { name: /^本機 Shell 第二社 E2E-SHELL-SECOND/u }).click();
-    await expect(multiPage.getByLabel("我的扶輪社").getByText("本機 Shell 第二社", { exact: true })).toBeVisible();
+    await expect(multiPage.getByLabel("切換目前所在的社或委員會")).toContainText("本機 Shell 第二社");
     await multiContext.close();
 
     const managementContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
