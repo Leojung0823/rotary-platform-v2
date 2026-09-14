@@ -49,7 +49,7 @@
 - PR #122 `codex/ui-design-system`：已合併，merge `585a0a1`；design system 已進入目前 staging。
 - PR #123 `codex/ui-apple-pass`：已合併，merge `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過。實際 diff 是 UI/CSS 與設計系統測試，不包含完整社員／社務管理模式邊界；合併後 main 的 Browser Smoke 另有 1 個 LINE OA audience 失敗。
 - PR #124 `codex/service-plan-v2`：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過，等待合併後再部署與 hosted 角色驗收。
-- PR #125 `codex/sync-progress-20260914-current`：進度文件同步，HEAD `15b0d8b`；分支已用 merge 對齊 #126／#127，最新文件已補上主線與 staging 落差，仍待合併。
+- PR #125 `codex/sync-progress-20260914-current`：進度文件同步，HEAD `4a678b9`；分支已用 merge 對齊 #126／#127，最新文件已補上主線與 staging 落差，仍待合併。
 - PR #127 `codex/ui-desktop-system`：已合併，merge `44456f8`；CI、Quality、Browser Smoke `34862992487` 均通過，前一輪 320px 橫向溢出已修正，尚未部署 staging。
 
 目前尚未合併的產品 PR 是 #124；進度文件 PR #125 也尚未合併。社務 AI 助理仍沒有可執行企劃，暫不擅自開發。

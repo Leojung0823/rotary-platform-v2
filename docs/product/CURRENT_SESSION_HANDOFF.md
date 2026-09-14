@@ -88,7 +88,7 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 - `origin/main=5f50c313aad15b783ad024e3ed88c025c2e66352`，包含 PR #126；staging 仍是
   `dddf1a51ab67127bc4fed34876b696346eb0b29d`。
 - #124 `74180bf`：服務計劃 V2，所有既有 GitHub checks 綠燈，尚未合併。
-- #125 `15b0d8b`：文件同步，已用 merge 對齊 #126／#127，已補上最新內容，待合併。
+- #125 `4a678b9`：文件同步，已用 merge 對齊 #126／#127，已補上最新內容，待合併。
 - #127 `e425518` 已合併為 `44456f8`：手機／桌機設計系統第二輪；CI、Quality 與 Browser Smoke run `34862992487`
   均通過，前一輪 320px 橫向溢出已由狀態標籤寬度修正，尚未部署 staging。
 - #126 的 Browser Smoke `34860978552` 已通過，只有時間／地點變更才觸發活動推播。
@@ -556,7 +556,7 @@ staging health (historical)        status=ok; revision 244ac256c42d;
 - PR #124（結構化年度服務計劃 V2）仍為 open，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過，migration
   `20260914001100_club_service_plan_v2.sql` 尚未部署。
 - PR #127（手機／桌機共用設計系統第二輪）已合併為 `44456f8`；CI、Quality 與 Browser Smoke `34862992487` 均通過，修正了 320px 動態 QR 頁面 6px 橫向溢出；尚未部署。
-- PR #125（本文件同步）目前 HEAD `15b0d8b`，已用 merge 對齊 #126／#127，並已補上 staging 落後主線的狀態；尚未合併。
+- PR #125（本文件同步）目前 HEAD `4a678b9`，已用 merge 對齊 #126／#127，並已補上 staging 落後主線的狀態；尚未合併。
 - Staging Release `34856107965` 與 Go-Live `34856216706` 已以 exact SHA
   `dddf1a51ab67127bc4fed34876b696346eb0b29d` 成功完成；目前 `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。
 - #123 合併後主線 Browser Smoke `34855905727` 使用同一個 exact SHA，結果為 184 passed、38 skipped、1 failed；
