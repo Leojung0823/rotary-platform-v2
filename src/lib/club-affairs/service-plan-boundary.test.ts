@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const migration = readFileSync("supabase/migrations/20260914000300_club_service_plan.sql", "utf8");
+const migration = readFileSync("supabase/migrations/20260914000800_club_service_plan.sql", "utf8");
 const page = readFileSync("src/app/(authenticated)/club-affairs/page.tsx", "utf8");
 const editor = readFileSync("src/app/(authenticated)/club-affairs/service-plan/edit/page.tsx", "utf8");
 
