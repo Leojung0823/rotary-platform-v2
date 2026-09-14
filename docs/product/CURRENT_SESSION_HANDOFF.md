@@ -5,9 +5,10 @@
 
 ## 最新 GitHub 開發掃描（2026-09-14；以最新 main 核對）
 
-本次以 GitHub `origin/main=dddf1a51ab67127bc4fed34876b696346eb0b29d` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=5f50c313aad15b783ad024e3ed88c025c2e66352` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`dddf1a51ab67`，已核對 `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`，production 沒有修改。
+`dddf1a51ab67`，已於 2026-09-14 23:40（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
+`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
 
 - PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
 - PR #108 社費／收款／核銷／報表：已合併，merge `a52bfe7`；程式在 `main`，待 staging／hosted 驗收。
@@ -23,9 +24,11 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #121 進度文件同步：已合併，merge `5bf0866`。
 - PR #122 UI design system：已合併，merge `585a0a1`；已部署至目前 staging。
 - PR #123 UI 層次與 header gutter：已合併，merge `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署至 staging。它不包含整套社員／社務管理模式邊界；合併後 main 的 Browser Smoke 另有 1 個 LINE OA audience 失敗，見本輪補充。
+- PR #126 已發佈活動編輯：已合併，merge `5f50c31`；CI、Quality、Database、Browser Smoke 均通過，尚未部署 staging。
 - PR #124 結構化年度服務計劃 V2：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過。
+- PR #127 手機／桌機共用設計系統第二輪：尚未合併，HEAD `e425518`；CI、Quality 已通過，修正 320px 橫向溢出後的 Browser Smoke `34862992487` 正在執行。
 
-目前唯一尚未合併的產品功能 PR 是 #124；本份進度同步由 PR #125 提出。#123 已合併並已完成 staging release，這份交接筆記已同步最新 SHA 與 staging 證據。
+目前尚未合併的產品功能 PR 是 #124、#127；本份進度同步由 PR #125 提出，且因 main 已前進到 #126，分支已用 merge 對齊但仍需更新後合併。#123 已合併並完成 staging release；#126 已進入 main 但尚未部署 staging。這份交接筆記已同步最新 SHA 與 staging 證據。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -76,8 +79,19 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
   `dddf1a51ab67127bc4fed34876b696346eb0b29d`。
 - Go-Live 已套用目前 `main` 的 migration；`/api/health` 回報 `status=ok`、`configuration=true`、`database=true`、
   `issues=[]`、`warnings=[]`，revision 為 `dddf1a51ab67`。
-- #123 已包含在這次 Go-Live；#124 尚未合併，migration
-  `20260914001100_club_service_plan_v2.sql` 尚未部署。
+- #123 已包含在這次 Go-Live；#126 之後才合併到 `main`，因此尚未部署；#124 尚未合併，migration
+  `20260914001100_club_service_plan_v2.sql` 尚未部署。新的 staging Go-Live 需以目前 `main` 的 exact SHA
+  重新執行，並重新核對 migration、health 與 hosted acceptance。
+
+### 2026-09-14 最新主線與 open PR 核對
+
+- `origin/main=5f50c313aad15b783ad024e3ed88c025c2e66352`，包含 PR #126；staging 仍是
+  `dddf1a51ab67127bc4fed34876b696346eb0b29d`。
+- #124 `74180bf`：服務計劃 V2，所有既有 GitHub checks 綠燈，尚未合併。
+- #125 `48113b6`：文件同步，已用 merge 對齊 #126，需再更新內容後合併。
+- #127 `e425518`：手機／桌機設計系統第二輪；CI、Quality 已通過，Browser Smoke run `34862992487`
+  正在執行，前一輪 320px 橫向溢出已由狀態標籤寬度修正。
+- #126 的 Browser Smoke `34860978552` 已通過，只有時間／地點變更才觸發活動推播。
 
 ## 前一輪已合併並部署的待辦收尾（2026-09-12）
 
