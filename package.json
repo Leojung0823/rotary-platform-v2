@@ -27,6 +27,7 @@
     "flags:disable:staging": "node --env-file=.env.staging scripts/set-feature-flags.mjs disable"
   },
   "dependencies": {
+    "@reogrid/font-tc": "^2.0.0",
     "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "2.110.8",
     "exceljs": "^4.4.0",

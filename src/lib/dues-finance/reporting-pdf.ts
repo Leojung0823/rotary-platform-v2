@@ -10,7 +10,7 @@ const MARGIN = 42;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 const FOOTER_HEIGHT = 22;
 const BOTTOM = PAGE_HEIGHT - MARGIN - FOOTER_HEIGHT;
-const FONT_PATH = join(process.cwd(), "public", "fonts", "NotoSansTC-Regular.woff");
+const FONT_PATH = join(process.cwd(), "node_modules", "@reogrid", "font-tc", "NotoSansTC-Regular.ttf");
 
 type PdfDocument = InstanceType<typeof PDFDocument>;
 type Column = Readonly<{ label: string; width: number; align?: "left" | "right" | "center" }>;
