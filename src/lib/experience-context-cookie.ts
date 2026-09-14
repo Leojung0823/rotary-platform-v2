@@ -11,7 +11,12 @@ export function activeClubCookieOptions(environment: NodeJS.ProcessEnv = process
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: environment.NODE_ENV === "production",
+    // The CI browser runs a production Next build against a local HTTP
+    // server. APP_ENV describes the site boundary; NODE_ENV only describes
+    // how Next was built and must not make local HTTP cookies unusable.
+    secure: environment.APP_ENV === "staging"
+      || environment.APP_ENV === "production"
+      || (!environment.APP_ENV && environment.NODE_ENV === "production"),
     path: "/",
     maxAge: activeClubCookieMaxAgeSeconds,
   };
