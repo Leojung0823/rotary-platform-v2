@@ -1,13 +1,13 @@
-# 交接筆記（持續更新；最新核對 2026-09-15，#132 合併後）
+# 交接筆記（持續更新；最新核對 2026-09-15，#135 合併後）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
 ## 最新 GitHub 開發掃描（2026-09-15；以最新 main 核對）
 
-本次以 GitHub `origin/main=4387ee578bef8273a6a59079965f4c3ab2ea6aa9` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=d2106bc8ceee5731b3954610cd2ef2fb5d42857e` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`dddf1a51ab67`，已於 2026-09-15 01:55（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
+`dddf1a51ab67`，已於 2026-09-15 02:28（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
 `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
 
 - PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
@@ -30,8 +30,9 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #127 手機／桌機共用設計系統第二輪：已合併，merge `44456f8`；CI、Quality 與 Browser Smoke `34862992487` 均通過，包含 320px 橫向溢出修正與 rollback，但尚未部署 staging。
 - PR #130 社員／社務管理模式邊界修正：已合併，merge `6759934`；application、database、validate 與 Browser Smoke `34871617599` 均通過，沒有新增 migration，尚未部署 staging。
 - PR #132 活動推播版本契約修正：已合併，merge `4387ee5`；application、database、validate 與 Browser Smoke `34876325765` 均通過。新增 `20260915000100_event_push_version_contract.sql`，尚未部署 staging。
+- PR #135 活動切換社團的公開網址修正：已合併，merge `d2106bc8`；application、database、validate 與 member-browser-smoke 均通過，沒有新增 migration，尚未部署 staging。
 
-目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132 已進入 `main` 但尚未部署 staging；#123 已合併並完成 staging release。#132 的 migration 尚未部署。這份交接筆記正在補記 #132 合併後的最新 SHA 與 staging 證據。
+目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135 已進入 `main` 但尚未部署 staging；#123 已合併並完成 staging release。#132 的 migration 與 #135 的 redirect 修正尚未部署。這份交接筆記正在補記 #135 合併後的最新 SHA 與 staging 證據。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -589,3 +590,23 @@ staging health (historical)        status=ok; revision 244ac256c42d;
   backup／PITR，因此在取得可驗證的 logical backup／rollback point，或完成不回填既有資料的 migration
   方案前，不能誠實標記 `BACKUP-READY`，也不能進行 Go-Live。
 - 目前沒有 open PR；#132 沒有修改 staging／production。
+
+## 2026-09-15 #135 合併後核對補充
+
+- GitHub `origin/main` exact SHA：`d2106bc8ceee5731b3954610cd2ef2fb5d42857e`。
+- PR #135 `codex/fix-active-club-host-redirect-20260915` 已合併，merge commit 為
+  `d2106bc8ceee5731b3954610cd2ef2fb5d42857e`；application、database、validate 與
+  member-browser-smoke 均通過。沒有新增 migration，production 沒有修改。
+- 原因已由登入後 staging 實測確認：社員切換社團時，反向代理會讓 `/api/preferences/active-club`
+  使用內部 `0.0.0.0:10000` 組 redirect，瀏覽器因此連不到；手動回到公開 staging HTTPS 網址後，
+  同一個登入 session 與所選社團頁面都正常。這不是登入、角色或社別資料隔離問題。
+- PR #135 改為使用既有 `trustedSiteRedirect` 組公開網址，仍保留 server-side session、active-club
+  驗證與既有 RPC／RLS 邊界；部署前不要把它標成 staging 已修正。
+- 合併後 `CI` run `34880910821` 與 `Browser Smoke` run `34880910900` 已針對同一個 merge commit
+  自動驗證；本輪沒有手動重跑 CI 或 Browser Smoke。
+- staging `/api/health` 於 2026-09-15 02:28（Asia/Taipei）仍是
+  `revision=dddf1a51ab67`、`status=ok`、`configuration=true`、`database=true`、
+  `issues=[]`、`warnings=[]`，所以 #135 尚未部署。下一次 staging Go-Live 仍須先重新執行
+  exact-SHA Staging Release plan；既有 plan 不能沿用。
+- #124、#126、#127、#130、#132、#135 目前都已進入 `main` 但未進 staging；E-03、E-06、E-07、E-10、
+  各社 OA／額度、Rich Menu 與 staging rollback point 仍依 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 管理。
