@@ -19,7 +19,7 @@
 
 .inlineLink {
   color: var(--blue);
-  font-weight: 800;
+  font-weight: var(--weight-medium);
   text-decoration: underline;
 }
 
@@ -80,7 +80,7 @@
 .wishMeta span,
 .wishMeta time {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-small);
 }
 
 .wishContent {
@@ -109,7 +109,7 @@
   align-items: center;
   color: var(--blue);
   cursor: pointer;
-  font-weight: 800;
+  font-weight: var(--weight-medium);
 }
 
 .wishActions details[open] form {

@@ -11,8 +11,8 @@
 .cardHeading small { display: block; margin-top: 4px; }
 .amounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
 .amounts div { padding: 10px 12px; border-radius: 12px; background: #f5f8fa; }
-.amounts dt { color: var(--muted); font-size: 13px; }
-.amounts dd { margin: 3px 0 0; font-weight: 750; }
+.amounts dt { color: var(--muted); font-size: var(--text-small); }
+.amounts dd { margin: 3px 0 0; font-weight: var(--weight-medium); }
 .resubmit { display: grid; gap: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
 .history { display: grid; gap: 5px; border-top: 1px solid var(--line); padding-top: 12px; color: var(--muted); }
 

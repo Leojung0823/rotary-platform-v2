@@ -1,6 +1,6 @@
 .memberHome { max-width: 880px; }
 /* A supporting line under the greeting, not a second heading competing with it. */
-.todayHeading { margin: 2px 0 0; color: var(--muted); font-size: 15px; font-weight: 650; }
+.todayHeading { margin: 2px 0 0; color: var(--muted); font-size: 15px; font-weight: var(--weight-medium); }
 .secondarySection { display: grid; gap: 10px; }
 .secondarySection :global(.section-heading) { margin-bottom: 0; }
 .secondaryActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -34,7 +34,7 @@
 .eventHeading h2 { margin: 4px 0 0; overflow-wrap: anywhere; }
 .eventDetails { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; }
 .eventDetails div { min-width: 0; }
-.eventDetails dt { color: var(--muted); font-size: 13px; font-weight: 750; }
+.eventDetails dt { color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); }
 .eventDetails dd { margin: 4px 0 0; overflow-wrap: anywhere; }
 .primaryCard .button, .emptyCard .button { width: fit-content; min-height: 48px; }
 .recentList { display: grid; gap: 10px; }
@@ -70,7 +70,7 @@
 .financeShortcut:hover { border-color: #6f93bb; transform: translateY(-1px); }
 .financeShortcut > span:not(.financeIcon) { display: grid; gap: 2px; min-width: 0; }
 .financeShortcut small { color: #536d88; overflow-wrap: anywhere; }
-.financeIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #d9e7f7; font-size: 22px; font-weight: 800; }
+.financeIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #d9e7f7; font-size: 22px; font-weight: var(--weight-medium); }
 
 @media (max-width: 640px) {
   .secondaryActions { grid-template-columns: 1fr; }

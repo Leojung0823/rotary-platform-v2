@@ -6,7 +6,7 @@
 .sectionHeading { display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 1rem; }
 .sectionHeading h2 { margin: 0; }
 .sectionHeading > span { color: #64748b; }
-.eyebrow { margin: 0 0 0.3rem; color: #8a6618; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; }
+.eyebrow { margin: 0 0 0.3rem; color: #8a6618; font-size: 0.75rem; font-weight: var(--weight-medium); letter-spacing: 0.12em; }
 .tableWrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; }
 .tableWrap table { width: 100%; min-width: 720px; border-collapse: collapse; }
 .tableWrap th, .tableWrap td { padding: 0.85rem 1rem; border-bottom: 1px solid #e2e8f0; text-align: right; vertical-align: middle; }
@@ -15,10 +15,10 @@
 .tableWrap td small { display: block; margin-top: 0.2rem; color: #64748b; }
 .monthBar { position: relative; display: block; width: 120px; height: 5px; margin-top: 0.5rem; overflow: hidden; border-radius: 999px; background: #e2e8f0; }
 .monthBar::after { position: absolute; inset: 0 auto 0 0; width: var(--bar-width); border-radius: inherit; background: #c49a2c; content: ""; }
-.received { color: #166534; font-weight: 750; }
-.outstanding { color: #b45309; font-weight: 750; }
+.received { color: #166534; font-weight: var(--weight-medium); }
+.outstanding { color: #b45309; font-weight: var(--weight-medium); }
 .statuses { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.3rem; }
-.statuses small { display: inline-flex !important; min-height: 28px; align-items: center; margin: 0 !important; border-radius: 999px; padding: 0.2rem 0.55rem; font-weight: 750; }
+.statuses small { display: inline-flex !important; min-height: 28px; align-items: center; margin: 0 !important; border-radius: 999px; padding: 0.2rem 0.55rem; font-weight: var(--weight-medium); }
 .paid { background: #ecfdf5; color: #166534 !important; }
 .partial { background: #fff7ed; color: #9a3412 !important; }
 .unpaid { background: #fef2f2; color: #991b1b !important; }
@@ -34,7 +34,7 @@
   .tableWrap[data-mobile-cards] table { min-width: 0; }
   .tableWrap[data-mobile-cards] th,
   .tableWrap[data-mobile-cards] td { padding: 0; border: 0; text-align: left; }
-  .tableWrap[data-mobile-cards] td::before { color: #64748b; font-size: 0.8125rem; font-weight: 750; }
+  .tableWrap[data-mobile-cards] td::before { color: #64748b; font-size: 0.8125rem; font-weight: var(--weight-medium); }
   .tableWrap[data-mobile-cards] .monthBar { width: 100%; }
   .tableWrap[data-mobile-cards] .statuses { justify-content: flex-start; }
 }

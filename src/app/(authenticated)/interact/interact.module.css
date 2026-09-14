@@ -40,7 +40,7 @@
 }
 
 .text strong { font-size: 16px; }
-.text small { color: var(--muted); font-size: 13px; }
+.text small { color: var(--muted); font-size: var(--text-small); }
 
 .chevron {
   flex: 0 0 auto;

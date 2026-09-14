@@ -9,7 +9,7 @@
   color: var(--muted);
   background: white;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-small);
 }
 
 .cameraFrame {
@@ -39,7 +39,7 @@
   color: #dceaf2;
   text-align: center;
   background: linear-gradient(145deg, #0b1822, #173d59);
-  font-weight: 750;
+  font-weight: var(--weight-medium);
 }
 
 .cameraGuide {
@@ -61,7 +61,7 @@
   border-radius: 999px;
   color: #102a41;
   background: rgba(255, 255, 255, .92);
-  font-size: 11px;
+  font-size: var(--text-small);
   font-weight: 900;
   letter-spacing: .12em;
 }
