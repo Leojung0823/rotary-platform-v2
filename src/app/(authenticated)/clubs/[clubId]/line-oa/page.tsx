@@ -6,6 +6,10 @@ import {
 } from "@/app/actions";
 import { sendLineOaAction } from "@/app/line-oa-actions";
 import { verifyLineOaAction } from "@/app/line-oa-verification-actions";
+import {
+  disableLineRichMenuAction,
+  publishLineRichMenuAction,
+} from "@/app/line-rich-menu-actions";
 import { AudiencePicker } from "@/components/audience/audience-picker";
 import { LineOaMessageComposer } from "@/components/line-oa-message-composer";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
@@ -69,7 +73,7 @@ export default async function LineOaPage({
   const { clubId } = await params;
   const query = await searchParams;
   const supabase = await createClient();
-  const [oaResult, membersResult, tagsResult, flexFlag] = await Promise.all([
+  const [oaResult, membersResult, tagsResult, flexFlag, richMenuFlag] = await Promise.all([
     supabase.rpc("get_line_oa_admin", { p_club_id: clubId }),
     supabase.rpc("list_club_members", {
       p_club_id: clubId,
@@ -78,6 +82,7 @@ export default async function LineOaPage({
     }),
     supabase.rpc("list_club_member_tags", { p_club_id: clubId }),
     evaluateCurrentFeatureFlag({ key: "line_oa_flex_templates_v1", subjectUuid: clubId }),
+    evaluateCurrentFeatureFlag({ key: "line_rich_menu_v1", subjectUuid: clubId }),
   ]);
   if (oaResult.error)
     return <Notice tone="error">您沒有查看 LINE OA 的權限。</Notice>;
@@ -119,6 +124,20 @@ export default async function LineOaPage({
       "LINE 回傳的 OA 與這個扶輪社填入的 Basic ID 不一致，請確認使用同一個 Messaging API channel。",
     oa_verification_failed:
       "LINE OA 身份驗證未完成，請確認伺服器憑證與 Basic ID 後再試。",
+    rich_menu_disabled: "目前尚未開啟 LINE Rich Menu，選單沒有發布。",
+    rich_menu_forbidden: "您沒有管理本社 LINE Rich Menu 的權限。",
+    rich_menu_oa_not_configured:
+      "本社的 LINE OA 尚未設定完成，或伺服器缺少該社的 channel access token。",
+    rich_menu_image_invalid: "請上傳 2500×1686 的 PNG 或 JPEG 圖片，且檔案不可超過 1 MB。",
+    rich_menu_invalid_site: "網站網址設定不正確，選單沒有發布。",
+    rich_menu_credentials_rejected: "LINE 拒絕了本社的 channel access token，選單沒有發布。",
+    rich_menu_rate_limited: "LINE 暫時限制請求，選單沒有發布，請稍後再試。",
+    rich_menu_request_rejected: "LINE 拒絕了選單設定，請確認 OA 憑證與圖片格式。",
+    rich_menu_provider_unavailable: "LINE 目前無法回應，選單沒有發布，請稍後再試。",
+    rich_menu_provider_timeout: "LINE 回應逾時，請稍後確認選單是否發布，再決定是否重試。",
+    rich_menu_provider_error: "LINE Rich Menu 發布失敗，請稍後再試。",
+    rich_menu_persist_failed: "選單已送出，但平台沒有完成狀態保存；請先確認 LINE 顯示狀態。",
+    rich_menu_unexpected: "目前無法完成 Rich Menu 操作，請稍後再試。",
   };
   const success: Record<string, string> = {
     configured: "LINE OA 設定已儲存。",
@@ -127,6 +146,8 @@ export default async function LineOaPage({
     message_sent: "訊息已送出或由 local mock 完成。",
     disabled: "這個 LINE OA 帳號已停用；重新儲存設定即可再次啟用。",
     verified: "LINE OA 身份驗證成功。社員加入引導功能開啟後，即可顯示加入連結；Webhook 仍需另行設定與驗收。",
+    rich_menu_published: "社員 Rich Menu 已發布給本社 LINE OA 好友。",
+    rich_menu_disabled: "社員 Rich Menu 已停用；LINE OA 仍可正常接收訊息。",
   };
   return (
     <div className="page-stack">
@@ -252,6 +273,37 @@ export default async function LineOaPage({
             </Badge>
           </div>
         </Card>
+        {oa.account && richMenuFlag.enabled && (
+          <Card>
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">社員入口</p>
+                <h2>LINE Rich Menu</h2>
+              </div>
+              <Badge tone={oa.account.rich_menu_id ? "success" : "neutral"}>
+                {oa.account.rich_menu_id ? "已發布" : "尚未發布"}
+              </Badge>
+            </div>
+            <p>
+              這是本社所有 LINE 好友共用的社員選單，只放社員入口：社團首頁、活動報名、生日祝福與我的資料。
+              不會放入幹部管理網址；網址會固定帶入本社社別。
+            </p>
+            <form action={publishLineRichMenuAction} className="form-stack" encType="multipart/form-data">
+              <input type="hidden" name="clubId" value={clubId} />
+              <Field label="選單圖片" hint="只接受 2500×1686 的 PNG 或 JPEG，檔案上限 1 MB。">
+                <Input name="image" type="file" accept="image/png,image/jpeg" required />
+              </Field>
+              <Button type="submit">發布社員 Rich Menu</Button>
+            </form>
+            {oa.account.rich_menu_id && (
+              <form action={disableLineRichMenuAction} className="form-stack">
+                <input type="hidden" name="clubId" value={clubId} />
+                <p className="subtle">停用會清除平台發布的預設選單；如果 LINE 目前使用其他選單，會保留原有選單。</p>
+                <Button type="submit" className="button-secondary">停用社員 Rich Menu</Button>
+              </form>
+            )}
+          </Card>
+        )}
       </div>
       {oa.account && (
         <Card>

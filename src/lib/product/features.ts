@@ -190,6 +190,7 @@ export const productFeatures: ProductFeature[] = [
     category: "平台與整合",
     status: "developing",
     phase: "V1.0",
+    featureFlagKey: "line_rich_menu_v1",
   },
   {
     slug: "mobile-web-app",
