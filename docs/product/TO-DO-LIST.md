@@ -32,7 +32,7 @@ runtime 是 `dddf1a51ab67`。本次已核對 `/api/health`：`status=ok`、`conf
 - `[x]` PR #123 UI 層次與 header gutter：已合併，merge `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署 staging。實際 diff 不包含完整社員／社務管理模式邊界；合併後 main 的 Browser Smoke 另有 1 個 LINE OA audience 失敗。
 - `[x]` PR #126 已發佈活動編輯：已合併，merge `5f50c31`；CI、Quality、Database、Browser Smoke 均通過，但尚未部署到 staging。
 - `[>]` PR #124 結構化年度服務計劃 V2：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 全部通過，等待合併後再部署與 hosted 角色驗收。
-- `[>]` PR #127 手機／桌機共用設計系統第二輪：尚未合併，HEAD `e425518`；CI、Quality 已通過，修正 320px 橫向溢出後的 Browser Smoke `34862992487` 仍在執行。
+- `[>]` PR #127 手機／桌機共用設計系統第二輪：尚未合併，HEAD `e425518`；CI、Quality 與 Browser Smoke `34862992487` 均通過，包含 320px 橫向溢出修正與 rollback。
 
 目前產品 open PR 是 #124、#127；進度同步 PR #125 也尚未合併且因 main 已前進而需要重新對齊。#123 已於 2026-09-14
 合併並隨 Staging Go-Live `34856216706` 發布；#126 已合併但尚未部署。#124 的 migration
@@ -352,7 +352,7 @@ runtime 是 `dddf1a51ab67`。本次已核對 `/api/health`：`status=ok`、`conf
 社務資訊與年度服務計劃、Rich Menu、手機 Web App、社費／報表的獨立 PR、同頁模式導覽修正，以及 migration
 同號修復與全樹 collision guard。#107、#108、#109、#110、#113、#115、#117、#118、#119 已進入 `main`；
 程式進入 `main` 不代表每項都已完成 staging／真人／實機驗收。#123 已完成 GitHub 檢查、合併，
-並已隨 Staging Go-Live `34856216706` 發布；#126 的自動檢查與合併已完成但尚未部署 staging；#124 的自動檢查全綠但尚未合併，#127 的 Browser Smoke 正在執行。
+並已隨 Staging Go-Live `34856216706` 發布；#126 的自動檢查與合併已完成但尚未部署 staging；#124 的自動檢查全綠但尚未合併，#127 的 CI／Quality／Browser Smoke 已全綠但尚未合併。
 
 前一輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
 Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS smoke 與 hosted member acceptance 均通過。
@@ -744,7 +744,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
   #123 已包含在這次 Go-Live；#124 尚未合併。
 - #123 合併後主線 Browser Smoke `34855905727` 使用同一個 exact SHA，但結果為失敗：184 passed、38 skipped、1 failed；
   唯一失敗是既有 `line-oa-audience.e2e.mjs` 的「無人完成 OA 配對時拒絕推播」測試，伺服器已回傳
-  `audience_unreachable` 的 server-action redirect，但瀏覽器未看到預期錯誤提示。#127 的後續修正版已針對 320px 狀態標籤溢出補強，Browser Smoke `34862992487` 仍在執行，不能提前宣稱修補完成。
+  `audience_unreachable` 的 server-action redirect，但瀏覽器未看到預期錯誤提示。#127 的後續修正版已針對 320px 狀態標籤溢出補強，Browser Smoke `34862992487` 已通過；但 #127 尚未合併，不能把修正寫成 staging 已上線。
 - 主線 CI `34855905908` 的 database job 在設定 Supabase CLI 時連續收到下載端 HTTP 504；validate job 通過。這是外部工具下載失敗，未把它誤判成程式測試通過，也不再無限重跑。
 - Flex Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，核對同一個 exact SHA `fbdc061`。
 - staging `/api/health`：`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。

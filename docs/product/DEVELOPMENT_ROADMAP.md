@@ -49,14 +49,14 @@
 - PR #123 `codex/ui-apple-pass`：已合併，merge `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過。實際 diff 是 UI/CSS 與設計系統測試，不包含完整社員／社務管理模式邊界；合併後 main 的 Browser Smoke 另有 1 個 LINE OA audience 失敗。
 - PR #124 `codex/service-plan-v2`：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過，等待合併後再部署與 hosted 角色驗收。
 - PR #125 `codex/sync-progress-20260914-current`：進度文件同步，HEAD `48113b6`；因 main 已合併 #126，分支已用 merge 對齊，仍待更新後合併。
-- PR #127 `codex/ui-desktop-system`：尚未合併，HEAD `e425518`；CI、Quality 已通過，Browser Smoke `34862992487` 正在執行，前一輪 320px 橫向溢出已修正。
+- PR #127 `codex/ui-desktop-system`：尚未合併，HEAD `e425518`；CI、Quality、Browser Smoke `34862992487` 均通過，前一輪 320px 橫向溢出已修正。
 
 目前尚未合併的產品 PR 是 #124、#127；進度文件 PR #125 也尚未合併。社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
 
 ## 目前已部署 staging 基準（2026-09-14）
 
 - 最新 staging runtime `/api/health` 回報 `status=ok`、`revision=dddf1a51ab67`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`（2026-09-14 23:40 Asia/Taipei 前後核對）。Staging 目前仍是 #123 的 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d`；`main=5f50c313` 已再合併 #126，因此 staging 落後 main。
-- #123 合併後主線 Browser Smoke `34855905727` 使用 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d`，結果為 184 passed、38 skipped、1 failed；#127 的修正版已針對同一輪後續發現的 320px 橫向溢出補強，新的 Browser Smoke `34862992487` 尚在執行，未宣稱已修好。
+- #123 合併後主線 Browser Smoke `34855905727` 使用 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d`，結果為 184 passed、38 skipped、1 failed；#127 的修正版已針對同一輪後續發現的 320px 橫向溢出補強，新的 Browser Smoke `34862992487` 已通過，但 #127 尚未合併或部署。
 - 主線 CI `34855905908` 的 database job 在設定 Supabase CLI 時遇到外部 HTTP 504；validate job 通過，不能把這次工具下載失敗當成程式檢查通過。
 - Staging Release `34842549154` 的 dry-run 曾明確拒絕地點 migration，原因是遠端已有 `20260914000800`。#115 已把 `include_all` 做成預設關閉的明確 workflow input；#118 進一步把未套用的地點 migration 改為 `20260914000900`，消除 clean reset 的同號錯誤。
 - 目前 `main` 的 migration 版本已無重複；下一次 staging 發布應使用最新 `main` 的 exact SHA，並先確認 plan／Go-Live 的 migration 與 health 結果。
