@@ -3,18 +3,21 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 最新 GitHub 開發掃描（2026-09-14）
+## 最新 GitHub 開發掃描（2026-09-14；以最新 main 核對）
 
-本次以 GitHub `origin/main=2d7839d2d6469fddb7a1141eaeb0abb8406f8216` 及 open PR 逐一核對。
-PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging 仍是前一個產品 runtime，production 沒有修改。
+本次以 GitHub `origin/main=9be63a10481bd4ed83aad644dc26bd2190b25059` 及 open PR 逐一核對。
+PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
+`2d7839d2d646`，production 沒有修改。
 
 - PR #107 Rich Menu：`9123104`，application、database、validate、Browser Smoke 均已通過，PR 已恢復 clean／mergeable，等待合併與各社 OA 設定。
 - PR #108 社費／收款／核銷／報表：`42e61ed`，已用普通 merge 同步 #107 base；PDF 繁中字型與日期時區問題已修正，本機 908 項測試通過，GitHub application／database／validate／member Browser Smoke 均已通過，PR 為 clean／mergeable，等待合併與 hosted 驗收。
 - PR #109 手機 Web App：`e29d1cc`，檢查已通過，等待合併與真實手機驗收。
 - PR #110 生日設定 UX：`b63872d`，已修正 local HTTP 使用 production build 時 active-club cookie 被錯誤標成 Secure 的問題，補上 `APP_ENV` same-origin 回歸測試，並把 Browser Smoke 改為檢查導覽列可見的目前社別摘要。GitHub CI／Quality／Browser Smoke 均成功，PR 仍為 open、clean／mergeable，等待合併與 staging／hosted 驗收。
 - PR #111 社務資訊／年度服務計劃：已合併至 `main`，merge commit `2d7839d`；migration 為 `20260914000800`，待 staging／hosted 角色邊界驗收。
+- PR #113 活動地址查座標：已合併至 `main`，merge commit `0989a2b`；staging dry-run 因 migration 順序落差失敗。
+- PR #115 staging migration 順序處理：HEAD `5011991`，`include_all` 預設關閉，CI／Quality 已通過，Browser Smoke 執行中，等待合併。
 
-合併依賴為先 #107、再更新 #108 的 base、之後處理 #110；#111 已合併。
+合併依賴為先 #107、再更新 #108 的 base、之後處理 #110；#113 已合併但要等 #115 解決 staging 發布順序。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
 
@@ -505,7 +508,7 @@ Browser Smoke (docs-only sync)     passed (run 34686598210; classifier passed,
                                   member-browser job skipped)
 staging management acceptance      passed (run 34577046356; exact SHA a8c1e55,
                                   birthday + archive + event + cover flows passed)
-staging health (current)           status=ok; revision fbdc061dd702;
+staging health (current)           status=ok; revision 2d7839d2d646;
                                   issues=[]; warnings=[]
 ```
 
