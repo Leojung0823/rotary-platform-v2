@@ -32,3 +32,18 @@ describe("event list", () => {
     expect(rule).toContain("overflow-wrap: anywhere");
   });
 });
+
+describe("event page header actions", () => {
+  it("keeps the explanatory note out of the button row", () => {
+    // With the note between them, the two buttons and the prose all competed
+    // for one row and the labels broke mid-word.
+    const header = listPage.slice(listPage.indexOf('className="header-actions"'));
+    const buttonRow = header.slice(header.indexOf('className="form-actions"'), header.indexOf("</div>"));
+    expect(buttonRow).not.toContain('className="hint"');
+    expect(header).toContain('className="hint"');
+  });
+
+  it("lets a crowded action row wrap instead of squeezing its buttons", () => {
+    expect(globals).toContain(".form-actions { display: flex; flex-wrap: wrap;");
+  });
+});

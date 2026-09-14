@@ -161,12 +161,18 @@ function EventHeader({
       <h1>活動與報名</h1>
       <p>只顯示您目前所在社的活動；活動資料、名額、簽到與權限都由資料庫依社別驗證。{hasOtherClubs ? "要看另一個社，請用左側的社別切換。" : ""}</p>
     </div>
-    <div className="form-actions">
-      {clubId && canManage && <>
-        <a className="button button-secondary" href={`/clubs/${encodeURIComponent(clubId)}/events?mode=management`}>活動管理</a>
-        <span className="hint">幹部功能已移至社務管理模式。</span>
-      </>}
-      <Link className="button" href="/events/checkin">社員簽到</Link>
+    {/* The hint used to sit between the two buttons, so all three competed for
+        the same row and the labels broke mid-word. The buttons keep the row to
+        themselves and the hint sits under them. */}
+    <div className="header-actions">
+      <div className="form-actions">
+        {clubId && canManage && <a
+          className="button button-secondary"
+          href={`/clubs/${encodeURIComponent(clubId)}/events?mode=management`}
+        >活動管理</a>}
+        <Link className="button" href="/events/checkin">社員簽到</Link>
+      </div>
+      {clubId && canManage && <span className="hint">幹部功能已移至社務管理模式。</span>}
     </div>
   </header>;
 }
