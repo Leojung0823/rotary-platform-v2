@@ -10,6 +10,7 @@ const event = {
   event_type: "regular_meeting",
   title: "本週例會",
   location: "扶輪社會館",
+  cover_image_path: "11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222",
   starts_at: "2026-08-12T10:00:00.000Z",
   ends_at: "2026-08-12T12:00:00.000Z",
   registration_state: "not_registered",
@@ -50,6 +51,7 @@ describe("member-home projection contract", () => {
         eventType: "regular_meeting",
         title: "本週例會",
         location: "扶輪社會館",
+        coverImagePath: "11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222",
         startsAt: "2026-08-12T10:00:00.000Z",
         endsAt: "2026-08-12T12:00:00.000Z",
         registrationState: "not_registered",
@@ -206,5 +208,29 @@ describe("member-home state presentation", () => {
   it("does not expose a check-in route after the member is already checked in", () => {
     const parsed = parseMemberHomeProjection(projection({ primary_event: { ...event, checkin_state: "checked_in" } }));
     expect(memberHomePrimaryAction(parsed!.primaryEvent!)).toEqual({ href: "/events", label: "前往報名" });
+  });
+});
+
+describe("member-home event cover path", () => {
+  // The page turns this value into a signed URL. If a projection could hand it
+  // an absolute URL, the card would load a third-party image from a member's
+  // browser, so anything that is not a plain relative path is rejected outright.
+  it("rejects an absolute URL where a storage path belongs", () => {
+    expect(parseMemberHomeProjection(projection({
+      primary_event: { ...event, cover_image_path: "https://evil.example.net/x.png" },
+    }))).toBeNull();
+  });
+
+  it("rejects a path that climbs out of the club folder", () => {
+    expect(parseMemberHomeProjection(projection({
+      primary_event: { ...event, cover_image_path: "../../other-club/cover.png" },
+    }))).toBeNull();
+  });
+
+  it("accepts an event with no cover", () => {
+    const parsed = parseMemberHomeProjection(projection({
+      primary_event: { ...event, cover_image_path: null },
+    }));
+    expect(parsed?.primaryEvent?.coverImagePath).toBeNull();
   });
 });
