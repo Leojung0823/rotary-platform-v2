@@ -5,7 +5,7 @@ import { addressVariants, pickResult } from "./geocode";
 const source = readFileSync("src/lib/events/geocode.ts", "utf8");
 const actions = readFileSync("src/app/event-actions.ts", "utf8");
 const migration = readFileSync(
-  "supabase/migrations/20260914000400_event_venue_geocode_gate.sql",
+  "supabase/migrations/20260914000900_event_venue_geocode_gate.sql",
   "utf8",
 );
 
