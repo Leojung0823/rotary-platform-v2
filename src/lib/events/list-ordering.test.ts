@@ -47,3 +47,16 @@ describe("event page header actions", () => {
     expect(globals).toContain(".form-actions { display: flex; flex-wrap: wrap;");
   });
 });
+
+describe("event cover framing", () => {
+  it("crops the same poster the same way wherever it appears", () => {
+    // The home card and the events list had drifted to 8/3 and 16/9, so one
+    // image was cut two different ways depending on where a member looked.
+    const home = readFileSync("src/components/member-home.module.css", "utf8");
+    expect(globals).toContain("--event-cover-aspect: 8 / 3");
+    expect(globals).toContain("aspect-ratio: var(--event-cover-aspect)");
+    expect(home).toContain("aspect-ratio: var(--event-cover-aspect)");
+    expect(home).not.toContain("aspect-ratio: 8 / 3");
+    expect(globals).not.toContain("aspect-ratio: 16 / 9");
+  });
+});
