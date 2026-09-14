@@ -11,6 +11,9 @@ describe("club management route boundary", () => {
   const dashboard = source("src/app/(authenticated)/dashboard/page.tsx");
   const routing = source("src/lib/experience-routing.ts");
   const servicePlanEdit = source("src/app/(authenticated)/club-affairs/service-plan/edit/page.tsx");
+  const attendancePage = source("src/app/(authenticated)/attendance/page.tsx");
+  const attendanceManagePage = source("src/app/(authenticated)/attendance/manage/page.tsx");
+  const attendanceActions = source("src/app/attendance-actions.ts");
 
   it("requires the proxy-selected management mode and the server role projection", () => {
     expect(layout).toContain('headerStore.get("x-rotary-requested-mode") !== "management"');
@@ -29,5 +32,14 @@ describe("club management route boundary", () => {
     expect(servicePlanEdit).toContain("currentExperienceMode(identity.id)");
     expect(servicePlanEdit).toContain("isManagementMode(mode)");
     expect(servicePlanEdit).toContain('redirect("/access-denied")');
+  });
+
+  it("keeps attendance management links, filters, and action results in management mode", () => {
+    expect(attendancePage).toContain('href="/attendance/manage?mode=management"');
+    expect(attendanceManagePage).toContain('href="/attendance?mode=member"');
+    expect(attendanceManagePage).toContain('new URLSearchParams({ clubId: selectedClub.club_id, mode: "management" })');
+    expect(attendanceManagePage).toContain('<input type="hidden" name="mode" value="management" />');
+    expect(attendanceActions).toContain('new URLSearchParams({ clubId, mode: "management", [key]: code })');
+    expect(attendanceActions).toContain('redirect("/attendance/manage?mode=management&error=invalid_input")');
   });
 });

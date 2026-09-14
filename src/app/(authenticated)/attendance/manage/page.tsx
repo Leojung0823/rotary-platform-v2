@@ -133,7 +133,7 @@ function ManageHeader() {
       <h1>出席管理與統計</h1>
       <p>查看全社出席率、逐場名冊，並在有正當理由時登記請假、公假、補出席或免計。</p>
     </div>
-    <Link className="button button-secondary" href="/attendance">我的出席</Link>
+    <Link className="button button-secondary" href="/attendance?mode=member">我的出席</Link>
   </header>;
 }
 
@@ -195,8 +195,8 @@ export default async function AttendanceManagePage({
   const dateTo = typeof projection.date_to === "string" ? projection.date_to : null;
 
   const linkFor = (eventId: string | null) => {
-    if (!selectedClub) return "/attendance/manage";
-    const query = new URLSearchParams({ clubId: selectedClub.club_id });
+    if (!selectedClub) return "/attendance/manage?mode=management";
+    const query = new URLSearchParams({ clubId: selectedClub.club_id, mode: "management" });
     if (eventId) query.set("eventId", eventId);
     if (dateFrom && dateTo) { query.set("dateFrom", dateFrom); query.set("dateTo", dateTo); }
     return `/attendance/manage?${query.toString()}`;
@@ -228,6 +228,7 @@ export default async function AttendanceManagePage({
       </div>
       <form className="inline-form" method="get">
         <input type="hidden" name="clubId" value={selectedClub.club_id} />
+        <input type="hidden" name="mode" value="management" />
         <label className="field"><span className="label">起</span>
           <input className="input" type="date" name="dateFrom" defaultValue={dateFrom} />
         </label>

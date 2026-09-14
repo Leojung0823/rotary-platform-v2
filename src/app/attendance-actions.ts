@@ -15,7 +15,7 @@ function managePath(
   key: "success" | "error",
   code: string,
 ) {
-  const params = new URLSearchParams({ clubId, [key]: code });
+  const params = new URLSearchParams({ clubId, mode: "management", [key]: code });
   if (eventId) params.set("eventId", eventId);
   return `/attendance/manage?${params.toString()}`;
 }
@@ -38,7 +38,7 @@ export async function setAttendanceAdjustmentAction(formData: FormData) {
   try {
     clubId = parseAttendanceUuid(formData.get("clubId"));
   } catch {
-    redirect("/attendance/manage?error=invalid_input");
+    redirect("/attendance/manage?mode=management&error=invalid_input");
   }
 
   let target: { eventId: string; membershipId: string; type: string; reason: string };
@@ -77,7 +77,7 @@ export async function revokeAttendanceAdjustmentAction(formData: FormData) {
   try {
     clubId = parseAttendanceUuid(formData.get("clubId"));
   } catch {
-    redirect("/attendance/manage?error=invalid_input");
+    redirect("/attendance/manage?mode=management&error=invalid_input");
   }
 
   let target: { adjustmentId: string; reason: string };

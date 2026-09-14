@@ -102,7 +102,7 @@ function AttendanceHeader({ canManage }: { canManage: boolean }) {
       <h1>我的出席</h1>
       <p>依扶輪社與期間統計本人出席率；出席率的分母與計算方式全部由資料庫依規則判定。</p>
     </div>
-    {canManage && <Link className="button" href="/attendance/manage">出席管理</Link>}
+    {canManage && <Link className="button" href="/attendance/manage?mode=management">出席管理</Link>}
   </header>;
 }
 
