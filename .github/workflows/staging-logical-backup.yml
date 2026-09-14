@@ -1,0 +1,150 @@
+name: Staging Logical Backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: "Exact main commit this backup is being taken before"
+        required: true
+        type: string
+      recipient_public_key_b64:
+        description: "Base64-encoded local RSA public key; only encrypted output is uploaded"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-logical-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Export encrypted staging public schema
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+    env:
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      RECIPIENT_PUBLIC_KEY_B64: ${{ inputs.recipient_public_key_b64 }}
+
+    steps:
+      - name: Check out the controlled backup workflow revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.84.2
+          github-token: ${{ github.token }}
+
+      - name: Validate staging target and local recipient key
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SUPABASE_PROJECT_REF" == "vmmzdautcsgknhyqrsto" ]] || {
+            echo "Refusing backup: the staging project reference is not the approved project."
+            exit 1
+          }
+          [[ "$STAGING_BASE_URL" == "https://rotary-platform-v2-mrha.onrender.com" ]] || {
+            echo "Refusing backup: the staging base URL is not the approved host."
+            exit 1
+          }
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "Refusing backup: source_sha must be an exact 40-character commit SHA."
+            exit 1
+          }
+          [[ "$SOURCE_SHA" == "$GITHUB_SHA" ]] || {
+            echo "Refusing backup: source_sha must equal the dispatched main revision."
+            exit 1
+          }
+          [[ -n "$RECIPIENT_PUBLIC_KEY_B64" ]] || {
+            echo "Refusing backup: no recipient public key was supplied."
+            exit 1
+          }
+          umask 077
+          printf '%s' "$RECIPIENT_PUBLIC_KEY_B64" | base64 --decode > /tmp/rotary-recipient-public.pem
+          openssl pkey -pubin -in /tmp/rotary-recipient-public.pem -noout
+          echo "Approved staging target, source commit and recipient public key validated."
+
+      - name: Verify protected staging credentials are present
+        shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [[ -n "${SUPABASE_ACCESS_TOKEN:-}" ]] || {
+            echo "SUPABASE_ACCESS_TOKEN is not configured in the staging environment."
+            exit 1
+          }
+          [[ -n "${SUPABASE_DB_PASSWORD:-}" ]] || {
+            echo "SUPABASE_DB_PASSWORD is not configured in the staging environment."
+            exit 1
+          }
+          echo "Protected staging credentials are available. Values were not printed."
+
+      - name: Export public schema and data to runner-local plaintext
+        shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          DUMP_FILE=/tmp/rotary-staging-public.sql
+          ENCRYPTED_FILE=/tmp/rotary-staging-public.sql.cms
+          trap 'rm -f "$DUMP_FILE" "$ENCRYPTED_FILE" /tmp/rotary-recipient-public.pem' EXIT
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db dump \
+            --linked \
+            --schema public \
+            --password "$SUPABASE_DB_PASSWORD" \
+            --file "$DUMP_FILE"
+          test -s "$DUMP_FILE"
+          rg -q 'line_push_logs' "$DUMP_FILE"
+          rg -q 'club_events' "$DUMP_FILE"
+          openssl cms \
+            -encrypt \
+            -binary \
+            -aes-256-cbc \
+            -recip /tmp/rotary-recipient-public.pem \
+            -in "$DUMP_FILE" \
+            -out "$ENCRYPTED_FILE" \
+            -outform DER
+          test -s "$ENCRYPTED_FILE"
+          sha256sum "$ENCRYPTED_FILE" > /tmp/rotary-staging-public.sql.cms.sha256
+          echo "Public schema dump was encrypted on the runner; plaintext will not be uploaded."
+          echo "Encrypted backup bytes: $(wc -c < "$ENCRYPTED_FILE" | tr -d ' ')"
+          echo "Encrypted backup SHA-256: $(awk '{print $1}' /tmp/rotary-staging-public.sql.cms.sha256)"
+
+      - name: Publish encrypted backup artifact for immediate local download
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotary-staging-logical-backup-${{ github.run_id }}
+          path: |
+            /tmp/rotary-staging-public.sql.cms
+            /tmp/rotary-staging-public.sql.cms.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Record controlled backup metadata
+        shell: bash
+        run: |
+          {
+            echo "### Controlled staging logical backup"
+            echo "- Source main commit: \`$SOURCE_SHA\`"
+            echo "- Scope: \`public\` schema and data"
+            echo "- Encryption: local RSA recipient key, AES-256-CBC payload"
+            echo "- Artifact: encrypted files only; retention is one day for download and deletion"
+            echo "- Plaintext: never uploaded"
+          } >> "$GITHUB_STEP_SUMMARY"
