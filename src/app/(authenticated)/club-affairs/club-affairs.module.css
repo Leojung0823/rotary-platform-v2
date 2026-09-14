@@ -1,0 +1,13 @@
+.englishName { margin: 2px 0 0; color: var(--muted); }
+
+.officerList { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.officerList li { display: flex; align-items: center; gap: 10px; }
+
+.planTitle { margin: 4px 0 0; font-size: 19px; }
+
+/* The officer writes the plan as paragraphs; collapsing them would turn a
+   document into a block of text, and the long links a plan carries have no
+   break opportunities of their own. */
+.planBody { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+
+.yearLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
