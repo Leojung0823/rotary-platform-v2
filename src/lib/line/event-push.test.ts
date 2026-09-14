@@ -77,7 +77,11 @@ describe("event publish LINE push", () => {
     });
     const calls: RpcCall[] = [];
 
-    const outcome = await pushPublishedEventToLine({ supabase: supabaseStub(published, calls), ...ids });
+    const outcome = await pushPublishedEventToLine({
+      supabase: supabaseStub(published, calls),
+      ...ids,
+      eventVersion: 7,
+    });
 
     expect(deliverClubOaText).toHaveBeenCalledWith(
       "multicast", ["Uone", "Utwo"], expect.stringContaining("九月例會"), expect.anything(),
@@ -85,6 +89,7 @@ describe("event publish LINE push", () => {
     expect(outcome).toEqual({ status: "sent", recipientCount: 2 });
     const logged = calls.find((call) => call.name === "record_club_event_line_push");
     expect(logged?.args.p_event_id).toBe(ids.eventId);
+    expect(logged?.args.p_event_version).toBe(7);
   });
 
   it("skips without a log when nobody addressed can be reached", async () => {

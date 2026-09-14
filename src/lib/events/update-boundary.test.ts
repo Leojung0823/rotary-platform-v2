@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync("supabase/migrations/20260914001000_update_club_event.sql", "utf8");
+const pushContractMigration = readFileSync("supabase/migrations/20260915000100_event_push_version_contract.sql", "utf8");
 const actions = readFileSync("src/app/event-actions.ts", "utf8");
+const eventPush = readFileSync("src/lib/line/event-push.ts", "utf8");
 const form = readFileSync("src/components/events/event-create-form.tsx", "utf8");
 const panel = readFileSync("src/components/events/event-management-panel.tsx", "utf8");
 
@@ -47,6 +49,13 @@ describe("editing a published event", () => {
     // announcement and wrong the moment an event can be edited twice.
     expect(migration).toContain("line_push_logs_one_per_event_version");
     expect(migration).toContain("drop index if exists line_push_logs_one_per_event;");
+  });
+
+  it("passes the saved version to the versioned push contract", () => {
+    expect(actions).toContain("eventVersion");
+    expect(eventPush).toContain("p_event_version");
+    expect(pushContractMigration).toContain("drop function if exists public.record_club_event_line_push");
+    expect(pushContractMigration).toContain("record_club_event_line_push(uuid, uuid, integer, jsonb, text, text, text, integer)");
   });
 
   it("does not turn a failed push into a failed edit", () => {

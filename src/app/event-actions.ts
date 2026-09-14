@@ -373,7 +373,7 @@ export async function updateEventAction(
     return createEventFailure(values, revision, "請修正下列欄位後再儲存。", validated.fieldErrors);
   }
 
-  type UpdateOutcome = { notify_members?: unknown; changed_field_count?: unknown };
+  type UpdateOutcome = { notify_members?: unknown; changed_field_count?: unknown; version?: unknown };
   let outcome: UpdateOutcome | null = null;
   try {
     const supabase = await createClient();
@@ -405,7 +405,12 @@ export async function updateEventAction(
   if (outcome?.notify_members === true) {
     try {
       const supabase = await createClient();
-      await pushPublishedEventToLine({ supabase, clubId, eventId });
+      const eventVersion = typeof outcome.version === "number"
+        && Number.isInteger(outcome.version)
+        && outcome.version >= 1
+        ? outcome.version
+        : null;
+      await pushPublishedEventToLine({ supabase, clubId, eventId, eventVersion });
     } catch {
       // Recorded by the push path itself; the edit is already saved.
     }
