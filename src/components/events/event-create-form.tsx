@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { geocodeVenueAddressAction, type VenueGeocodeState } from "@/app/event-actions";
 import { createEventAction } from "@/app/event-actions";
 import { AudiencePicker, type AudienceMember, type AudienceTag } from "@/components/audience/audience-picker";
 import { addressesWholeClub, type AudienceSelection } from "@/lib/audience/selection";
@@ -38,6 +39,17 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members }: Even
   const [state, formAction, pending] = useActionState(createEventAction, initialEventCreateActionState);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const values = state.values;
+
+  // The lookup writes into the coordinate field the manager can also type into
+  // by hand, so an address is a convenience rather than a second source of
+  // truth: whatever ends up in that one field is what gets submitted.
+  const applyVenueCoordinates = useCallback((latitude: number, longitude: number) => {
+    const field = document.getElementById("event-create-venueLocation");
+    if (field instanceof HTMLInputElement) {
+      field.value = `${latitude}, ${longitude}`;
+      field.focus();
+    }
+  }, []);
 
   useEffect(() => {
     if (state.status !== "error") return;
@@ -110,6 +122,7 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members }: Even
         <span className="hint" id="event-create-venueLocation-hint">填了之後，社員到現場可以直接用手機定位簽到（{"場地 200 公尺內"}），不必掃 QR。留空則此活動只能用 QR 簽到。</span>
         {errorFor("venueLocation") && <span className="field-error" id="event-create-venueLocation-error">{errorFor("venueLocation")}</span>}
       </label>
+      <VenueAddressLookup clubId={clubId} onFound={applyVenueCoordinates} />
       {/* Disabled rather than merely ignored when the event is addressed to
           particular people: a targeted event is not a 例會, so counting it
           would put an absence on the record of everyone who was never asked.
@@ -137,4 +150,61 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members }: Even
     </label>
     <div className="form-actions"><button className="button" type="submit" disabled={pending}>{pending ? "建立中…" : "建立草稿"}</button></div>
   </form>;
+}
+
+function VenueAddressLookup({
+  clubId,
+  onFound,
+}: {
+  clubId: string;
+  onFound: (latitude: number, longitude: number) => void;
+}) {
+  const [state, setState] = useState<VenueGeocodeState>({ status: "idle" });
+  const [pending, startTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Calls the action directly rather than sitting in a form of its own: this
+  // control lives inside the event form, and a nested form is invalid HTML.
+  const lookup = useCallback(() => {
+    const address = inputRef.current?.value.trim() ?? "";
+    const payload = new FormData();
+    payload.set("clubId", clubId);
+    payload.set("venueAddress", address);
+    startTransition(async () => {
+      const next = await geocodeVenueAddressAction({ status: "idle" }, payload);
+      setState(next);
+      if (next.status === "found") onFound(next.latitude, next.longitude);
+    });
+  }, [clubId, onFound]);
+
+  return <div className="field">
+    <span className="label">用地址查座標（選填）</span>
+    <div className="inline-form">
+      <input
+        className="input"
+        id="event-create-venueAddress"
+        ref={inputRef}
+        maxLength={300}
+        placeholder="例如：新北市板橋區文化路一段 1 號"
+        aria-describedby="event-create-venueAddress-hint"
+        onKeyDown={(pressed) => {
+          // Enter here means "look this up", not "create the event".
+          if (pressed.key !== "Enter") return;
+          pressed.preventDefault();
+          lookup();
+        }}
+      />
+      <button className="button button-secondary" type="button" onClick={lookup} disabled={pending}>
+        {pending ? "查詢中…" : "查座標"}
+      </button>
+    </div>
+    <span className="hint" id="event-create-venueAddress-hint">
+      查到之後會自動填進上面的座標欄位，您仍然可以手動修改。
+    </span>
+    {state.status === "found" && <span className="hint">
+      已填入 {state.latitude}, {state.longitude}
+      {state.formattedAddress ? `（${state.formattedAddress}）` : ""}
+    </span>}
+    {state.status === "error" && <span className="field-error">{state.message}</span>}
+  </div>;
 }
