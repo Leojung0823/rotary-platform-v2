@@ -101,4 +101,32 @@ describe("design system floors", () => {
     }
     expect(offenders, "--blue is a fill; text takes --blue-ink").toEqual([]);
   });
+
+  it("never reads a custom property nothing defines", () => {
+    // An unresolved var() does not fall back -- it invalidates the whole
+    // declaration. `outline: 2px solid var(--accent)` with no --accent anywhere
+    // meant the notification links simply had no visible focus ring, which is
+    // invisible in review and invisible in a screenshot.
+    const sheets = styleSheets("src");
+    const defined = new Set<string>();
+    for (const sheet of sheets) {
+      for (const match of readFileSync(sheet, "utf8").matchAll(/(--[a-z0-9-]+)\s*:/gu)) {
+        defined.add(match[1]);
+      }
+    }
+
+    const dangling: string[] = [];
+    for (const sheet of sheets) {
+      for (const line of readFileSync(sheet, "utf8").split("\n")) {
+        for (const match of line.matchAll(/var\((--[a-z0-9-]+)\s*(,?)/gu)) {
+          // A declared fallback is a deliberate default, not a dangling read.
+          if (match[2] === "," || defined.has(match[1])) continue;
+          dangling.push(`${sheet}: ${match[1]}`);
+        }
+      }
+    }
+    // Properties set from TSX style props are the one legitimate exception.
+    const setInMarkup = ["--nav-count", "--bar-width"];
+    expect(dangling.filter((entry) => !setInMarkup.some((name) => entry.endsWith(name)))).toEqual([]);
+  });
 });
