@@ -12,7 +12,7 @@
 
 .planIntro { display: grid; gap: 8px; }
 .planTheme { margin: 0; color: var(--ink); font-size: 16px; }
-.planTheme strong { color: var(--blue); }
+.planTheme strong { color: var(--blue-ink); }
 .memberInvitation { margin-top: 22px; padding: 18px 20px; border: 1px solid #bfe4d1; border-radius: 14px; background: #f0fbf5; }
 .memberInvitation h3 { margin-bottom: 6px; }
 .memberInvitation p:last-child { margin-bottom: 0; }
