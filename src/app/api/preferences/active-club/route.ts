@@ -8,9 +8,10 @@ import {
 import { resolveExperienceContext } from "@/lib/experience-context.server";
 import { resolveActiveClubPreferenceChange } from "@/lib/experience-context";
 import { isSameOriginMutation } from "@/lib/api/json-request";
+import { trustedSiteRedirect } from "@/lib/site-url";
 
-function redirectTo(request: Request, pathname: string) {
-  return NextResponse.redirect(new URL(pathname, request.url), 303);
+function redirectTo(pathname: string) {
+  return NextResponse.redirect(trustedSiteRedirect(pathname), 303);
 }
 
 /**
@@ -24,21 +25,21 @@ export async function POST(request: NextRequest) {
     origin: request.headers.get("origin"),
     fetchSite: request.headers.get("sec-fetch-site"),
     configuredSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-  })) return redirectTo(request, "/access-denied");
+  })) return redirectTo("/access-denied");
 
   const formData = await request.formData();
   const cookieStore = await cookies();
   const resolution = await resolveExperienceContext(
     readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value),
   );
-  if (!resolution.ok) return redirectTo(request, "/access-denied");
+  if (!resolution.ok) return redirectTo("/access-denied");
 
   const preference = resolveActiveClubPreferenceChange(
     resolution.context,
     formData.get("mode"),
     readActiveClubPreference(formData.get("clubId")),
   );
-  const target = new URL("/dashboard", request.url);
+  const target = trustedSiteRedirect("/dashboard");
   target.searchParams.set("mode", preference.mode);
   const response = NextResponse.redirect(target, 303);
   if (preference.clubId) {

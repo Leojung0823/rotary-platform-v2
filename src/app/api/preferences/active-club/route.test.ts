@@ -29,17 +29,19 @@ const clubTwo = {
 };
 
 function request({
+  requestUrl = "http://localhost:3000/api/preferences/active-club",
   origin = "http://localhost:3000",
   fetchSite = "same-origin",
   clubId = clubTwo.clubId,
   mode = "member",
 }: {
+  requestUrl?: string;
   origin?: string;
   fetchSite?: string;
   clubId?: string;
   mode?: string;
 } = {}) {
-  return new NextRequest("http://localhost:3000/api/preferences/active-club", {
+  return new NextRequest(requestUrl, {
     method: "POST",
     headers: {
       origin,
@@ -100,6 +102,22 @@ describe("POST /api/preferences/active-club", () => {
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe("http://localhost:3000/access-denied");
     expect(mocks.resolveExperienceContext).not.toHaveBeenCalled();
+  });
+
+  it("redirects to the public Render origin when the server request URL is internal", async () => {
+    vi.stubEnv("APP_ENV", "staging");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://rotary-platform-v2.onrender.com");
+    vi.stubEnv("RENDER_EXTERNAL_URL", "https://rotary-platform-v2.onrender.com");
+
+    const response = await route.POST(request({
+      requestUrl: "http://0.0.0.0:10000/api/preferences/active-club",
+      origin: "https://rotary-platform-v2.onrender.com",
+    }));
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location"))
+      .toBe("https://rotary-platform-v2.onrender.com/dashboard?mode=member");
+    expect(response.headers.get("location")).not.toContain("0.0.0.0");
   });
 
   it("does not expose a GET mutation endpoint", () => {
