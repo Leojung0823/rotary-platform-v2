@@ -38,12 +38,13 @@ export default async function ArchivedMembersPage({
         <h1>封存社員</h1>
         <p>已停用或已結束社籍的社友，最近封存的排在最前面。</p>
       </div>
-      <Link className="button button-secondary" href={`/clubs/${clubId}/members`}>← 回到社員</Link>
+      <Link className="button button-secondary" href={`/clubs/${clubId}/members?mode=management`} prefetch={false}>← 回到社員</Link>
     </header>
 
     <ClubAdminNav clubId={clubId} />
 
     <form className="inline-form">
+      <input type="hidden" name="mode" value="management" />
       <Input name="q" defaultValue={query.q} placeholder="搜尋姓名、手機或 Email" />
       <button className="button" type="submit">搜尋</button>
     </form>
@@ -68,7 +69,7 @@ export default async function ArchivedMembersPage({
               <td>{member.archived_at
                 ? archivedAtFormatter.format(new Date(member.archived_at))
                 : "時間不明"}</td>
-              <td><Link href={`/clubs/${clubId}/members/${member.membership_id}`}>管理 →</Link></td>
+              <td><Link href={`/clubs/${clubId}/members/${member.membership_id}?mode=management`} prefetch={false}>管理 →</Link></td>
             </tr>)}
           </tbody>
         </table>

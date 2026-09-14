@@ -20,12 +20,12 @@ function parseUuidList(formData: FormData, name: string) {
 }
 
 function membersPath(clubId: string, key: "success" | "error", code: string) {
-  return `/clubs/${encodeURIComponent(clubId)}/members?${key}=${encodeURIComponent(code)}`;
+  return `/clubs/${encodeURIComponent(clubId)}/members?mode=management&${key}=${encodeURIComponent(code)}`;
 }
 
 function memberPath(clubId: string, membershipId: string, key: "success" | "error", code: string) {
   return `/clubs/${encodeURIComponent(clubId)}/members/${encodeURIComponent(membershipId)}`
-    + `?${key}=${encodeURIComponent(code)}`;
+    + `?mode=management&${key}=${encodeURIComponent(code)}`;
 }
 
 function tagErrorCode(message: string | undefined) {

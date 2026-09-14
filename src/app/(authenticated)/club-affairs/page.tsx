@@ -101,6 +101,10 @@ export default async function ClubAffairsPage({
           <p className="eyebrow">{rotaryYearLabel(page.start_year)} 年度</p>
           <h2>年度服務計劃</h2>
         </div>
+        {page.can_manage_plan && <Link
+          className="button button-secondary"
+          href={`/club-affairs/service-plan/edit?mode=management&year=${page.start_year}`}
+        >{page.service_plan ? "編輯" : "撰寫"}</Link>}
       </div>
 
       {page.service_plan
@@ -171,7 +175,7 @@ export default async function ClubAffairsPage({
         <div><p className="eyebrow">社務文件</p><h2>文件中心</h2></div>
       </div>
       <p>章程、會議紀錄、年度成果與交接文件都收在這裡。</p>
-      <Link className="card-link" href="/archives">開啟文件中心 →</Link>
+      <Link className="card-link" href={`/archives?clubId=${encodeURIComponent(club.club_id)}&mode=member`}>開啟文件中心 →</Link>
     </Card>
   </div>;
 }

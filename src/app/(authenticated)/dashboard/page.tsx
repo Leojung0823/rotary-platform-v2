@@ -141,7 +141,7 @@ async function LegacyDashboard({
                   return (
                     <Link
                       key={club.club_id}
-                      href={canManageIdentity ? `/clubs/${club.club_id}/identity` : `/club/${club.club_id}`}
+                      href={canManageIdentity ? `/clubs/${club.club_id}/identity?mode=management` : `/club/${club.club_id}`}
                       className="club-card"
                     >
                       <div>

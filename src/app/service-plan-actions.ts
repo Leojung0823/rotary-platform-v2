@@ -47,7 +47,6 @@ export async function saveClubServicePlanV2Action(formData: FormData) {
     p_publish: publish,
     p_sections: sections,
   });
-
   if (error) {
     redirect(managementPath(clubId, startYear, mapDatabaseError(error.message)));
   }

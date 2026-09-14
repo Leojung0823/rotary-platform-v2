@@ -68,7 +68,7 @@ export default async function MemberDetailPage({ params, searchParams }: {
 
   return <div className="page-stack">
     <header className="page-header"><div>
-      <Link href={`/clubs/${clubId}/members`} className="back-link">← 返回社員列表</Link>
+      <Link href={`/clubs/${clubId}/members?mode=management`} className="back-link" prefetch={false}>← 返回社員列表</Link>
       <p className="eyebrow">社員身份</p><h1>{member.display_name}</h1>
       <div className="status-pair">
         <Badge tone={member.membership_status === "active" ? "success" : "warning"}>{statusLabel[member.membership_status] ?? member.membership_status}</Badge>
@@ -88,7 +88,7 @@ export default async function MemberDetailPage({ params, searchParams }: {
     <Card>
       <div className="section-heading">
         <div><p className="eyebrow">分眾</p><h2>標籤</h2></div>
-        <Link href={`/clubs/${clubId}/members`}>管理標籤 →</Link>
+        <Link href={`/clubs/${clubId}/members?mode=management`} prefetch={false}>管理標籤 →</Link>
       </div>
       {memberTags.length === 0
         ? <p className="subtle">這個扶輪社還沒有建立標籤。先在社員列表頁建立，才能用來指定活動與訊息的對象。</p>
