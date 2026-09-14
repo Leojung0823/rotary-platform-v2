@@ -1,0 +1,43 @@
+.management { display: grid; gap: 24px; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.metric { display: grid; gap: 5px; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: var(--shadow); }
+.metric span, .metric small { color: var(--muted); }
+.metric strong { font-size: clamp(20px, 3vw, 28px); overflow-wrap: anywhere; }
+.formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: end; }
+.actionForm { display: grid; gap: 12px; }
+.actionForm > button { width: fit-content; }
+.formHint { margin: 0; color: var(--muted); font-size: 14px; }
+.recordList { display: grid; gap: 12px; }
+.recordCard { display: grid; gap: 14px; }
+.recordHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.recordHeading h3 { margin: 0; overflow-wrap: anywhere; }
+.recordHeading small, .recordCard p { color: var(--muted); overflow-wrap: anywhere; }
+.recordHeading small { display: block; margin-top: 4px; }
+.amountList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.amountList div { min-width: 0; padding: 10px 12px; border-radius: 12px; background: #f5f8fa; }
+.amountList dt { color: var(--muted); font-size: 13px; }
+.amountList dd { margin: 3px 0 0; font-weight: 750; overflow-wrap: anywhere; }
+.details { border-top: 1px solid var(--line); padding-top: 12px; }
+.details summary, .inlineDetails summary { cursor: pointer; color: var(--blue); font-weight: 700; }
+.receiptList { display: grid; gap: 8px; }
+.receiptRow { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.receiptRow > span { display: grid; gap: 3px; min-width: 0; }
+.receiptRow small { color: var(--muted); }
+.receiptRow input { max-width: 180px; }
+.reconciliationList { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.reconciliationRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; color: var(--muted); }
+.reconciliationRow > span { flex: 1 1 240px; overflow-wrap: anywhere; }
+.reconciliationRow > small { flex-basis: 100%; }
+.inlineDetails { flex-basis: 100%; }
+.inlineDetails form { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin-top: 8px; }
+.inlineDetails form label { flex: 1 1 220px; }
+
+@media (max-width: 760px) {
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .formGrid { grid-template-columns: 1fr; }
+  .recordHeading { display: grid; gap: 8px; }
+  .amountList { grid-template-columns: 1fr; }
+  .receiptRow { align-items: flex-start; flex-direction: column; }
+  .receiptRow input { max-width: none; width: 100%; }
+  .actionForm > button { width: 100%; }
+}

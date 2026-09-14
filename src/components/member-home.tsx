@@ -219,12 +219,14 @@ export function MemberHome({
   identity,
   activeClub,
   blessingIouEnabled = false,
+  duesFinanceEnabled = false,
   messageCenterEnabled = false,
   lineOaOnboardingEnabled = false,
 }: {
   identity: Identity;
   activeClub: Pick<ClubContext, "clubId" | "clubCode" | "clubName">;
   blessingIouEnabled?: boolean;
+  duesFinanceEnabled?: boolean;
   messageCenterEnabled?: boolean;
   lineOaOnboardingEnabled?: boolean;
 }) {
@@ -269,6 +271,15 @@ export function MemberHome({
     >
       <span className={styles.blessingIcon} aria-hidden="true">♡</span>
       <span><strong>祝福 IOU</strong><small>分享祝福，也可以留下希望捐贈的金額</small></span>
+      <b aria-hidden="true">→</b>
+    </Link>}
+    {duesFinanceEnabled && <Link
+      className={styles.financeShortcut}
+      href={`/dues?clubId=${encodeURIComponent(activeClub.clubId)}&mode=member`}
+      prefetch={false}
+    >
+      <span className={styles.financeIcon} aria-hidden="true">$</span>
+      <span><strong>我的社費</strong><small>查看自己的應收、收款與代墊狀態</small></span>
       <b aria-hidden="true">→</b>
     </Link>}
   </div>;

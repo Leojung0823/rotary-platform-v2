@@ -166,6 +166,7 @@ export const productFeatures: ProductFeature[] = [
     category: "財務與營運",
     status: "developing",
     phase: "V0.9",
+    featureFlagKey: "dues_finance_v1",
   },
   {
     slug: "reports-and-exports",

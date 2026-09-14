@@ -2,6 +2,7 @@ export type ManagementToolFeatures = Readonly<{
   blessingIouEnabled: boolean;
   birthdayCollectionEnabled: boolean;
   archiveHandoverEnabled: boolean;
+  duesFinanceEnabled: boolean;
 }>;
 
 export type ManagementTool = Readonly<{
@@ -51,6 +52,12 @@ export function managementToolsForClub(
       title: "祝福 IOU",
       description: "查看祝福、承諾捐款與收款統計。",
       href: managementToolHref(clubId, "blessing-iou"),
+    } : null,
+    features.duesFinanceEnabled && hasPermission("finance.read") ? {
+      id: "dues-finance",
+      title: "社費與核銷",
+      description: "設定年度應收、登錄收款、處理代墊與核銷。",
+      href: managementToolHref(clubId, "dues"),
     } : null,
     features.birthdayCollectionEnabled && hasPermission("member.manage") ? {
       id: "birthday-collection",

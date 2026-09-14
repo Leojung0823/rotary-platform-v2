@@ -127,6 +127,62 @@ test("a manager cannot use another club id to open a management route", async ({
   await expect(page.getByRole("heading", { name: "建立活動草稿" })).toBeVisible();
 });
 
+test("an officer sees finance only in management mode and a member sees only their own ledger", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "officer-mode-1440", "This flow mutates shared local finance fixtures.");
+  test.setTimeout(120_000);
+
+  await login(page, officerEmail);
+  await page.goto(new URL("/dashboard?mode=management", baseURL).toString());
+  await page.getByTestId("management-card-dues-finance").click();
+  await expect(page).toHaveURL(new RegExp(`/clubs/${memberClubId}/dues\\?mode=management$`, "u"));
+  await expect(page.getByRole("heading", { name: "社費與核銷" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "每位社員的社費狀態" })).toBeVisible();
+  await expect(page.getByText("本機 E2E 收款")).toBeVisible();
+  await expect(page.getByText("本機財務頁面驗收代墊")).toBeVisible();
+
+  const downloads = [
+    ["下載 CSV", "text/csv", "csv"],
+    ["下載 Excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"],
+    ["下載 PDF", "application/pdf", "pdf"],
+  ];
+  for (const [label, contentType, format] of downloads) {
+    const link = page.getByRole("link", { name: label });
+    await expect(link).toBeVisible();
+    const href = await link.getAttribute("href");
+    expect(href).toContain(`format=${format}`);
+    const response = await page.request.get(new URL(href, baseURL).toString());
+    expect(response.status(), `${label} should return a protected finance download`).toBe(200);
+    expect(response.headers()["content-type"]).toContain(contentType);
+    expect(response.headers()["content-disposition"]).toContain("attachment");
+    expect(response.headers()["cache-control"]).toContain("no-store");
+    const body = await response.body();
+    if (format === "csv") {
+      const csv = body.toString("utf8");
+      expect(csv.codePointAt(0)).toBe(0xfeff);
+      expect(csv).toContain("一般社員");
+    } else if (format === "xlsx") {
+      expect(body.subarray(0, 2).toString("ascii")).toBe("PK");
+    } else {
+      expect(body.subarray(0, 5).toString("ascii")).toBe("%PDF-");
+    }
+  }
+
+  const memberContext = await page.context().browser().newContext({ baseURL });
+  const memberPage = await memberContext.newPage();
+  try {
+    await login(memberPage, ordinaryMemberEmail);
+    await memberPage.goto(new URL(`/dues?clubId=${memberClubId}&mode=member`, baseURL).toString());
+    await expect(memberPage.getByRole("heading", { name: "我的社費" })).toBeVisible();
+    await expect(memberPage.getByRole("heading", { name: "應收與收款" })).toBeVisible();
+    await expect(memberPage.getByText("每位社員的社費狀態")).toHaveCount(0);
+    await expect(memberPage.getByRole("heading", { name: "社費與核銷" })).toHaveCount(0);
+    await expect(memberPage.getByText("本機 E2E 收款")).toBeVisible();
+    await expect(memberPage.getByText("本機財務頁面驗收代墊")).toBeVisible();
+  } finally {
+    await memberContext.close();
+  }
+});
+
 test("an executive secretary reaches birthday management from the overview", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "officer-mode-1440", "This flow mutates shared local birthday fixtures.");
   test.setTimeout(90_000);

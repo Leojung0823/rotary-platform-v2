@@ -59,3 +59,5 @@ supabase/verification/line_oa_admin_env_keys_security.sql
 supabase/verification/birthday_collection_line_push_security.sql
 supabase/verification/club_join_link_security.sql
 supabase/verification/line_rich_menu_security.sql
+supabase/verification/dues_finance_v1_security.sql
+supabase/verification/dues_finance_read_projection_security.sql

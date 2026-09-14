@@ -115,7 +115,7 @@ export function resolveCurrentNavigationItemId(
   // area instead of consuming a first-level tab. Keep the overview selected
   // while one of those child routes is open, so the shell never looks blank.
   const managementOverview = items.find((item) => item.id === "overview");
-  if (managementOverview && /^\/clubs\/[^/]+\/(?:archives|birthday-collection|blessing-iou|identity|invitations|operators)(?:\/|$)/u.test(currentPath)) {
+  if (managementOverview && /^\/clubs\/[^/]+\/(?:archives|birthday-collection|blessing-iou|dues|identity|invitations|operators)(?:\/|$)/u.test(currentPath)) {
     return managementOverview.id;
   }
 
