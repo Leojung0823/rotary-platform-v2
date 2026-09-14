@@ -1,0 +1,4 @@
+# The geocode migration was merged with 20260914000400 but staging rejected
+# the release before it could be applied.  It is being moved after 00800 to
+# remove the collision with the already-applied dues migration.
+supabase/migrations/20260914000400_event_venue_geocode_gate.sql -> supabase/migrations/20260914000900_event_venue_geocode_gate.sql
