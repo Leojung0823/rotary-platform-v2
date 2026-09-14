@@ -52,7 +52,7 @@
 
 ## 目前已部署 staging 基準（2026-09-14）
 
-- 最新 staging runtime `/api/health` 回報 `status=ok`、`revision=585a0a16146c`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。Staging Release `34852620689` 與 Go-Live `34852722091` 都以 exact SHA `585a0a16146cfd57703bf9d05eb1ade500ec5a67` 完成；目前 staging 已與當時的 `main` 同步，並包含 #120、#122。
+- 最新 staging runtime `/api/health` 回報 `status=ok`、`revision=dddf1a51ab67`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。Staging Release `34856107965` 與 Go-Live `34856216706` 都以 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d` 完成；目前 staging 已與最新的 `main` 同步，並包含 #120、#122、#123。
 - Staging Release `34842549154` 的 dry-run 曾明確拒絕地點 migration，原因是遠端已有 `20260914000800`。#115 已把 `include_all` 做成預設關閉的明確 workflow input；#118 進一步把未套用的地點 migration 改為 `20260914000900`，消除 clean reset 的同號錯誤。
 - 目前 `main` 的 migration 版本已無重複；下一次 staging 發布應使用最新 `main` 的 exact SHA，並先確認 plan／Go-Live 的 migration 與 health 結果。
 - 本輪 Flex 的 Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均以同一個 `main` exact SHA `fbdc061dd702f453ab340bd595279223487d0838` 成功完成；這是前一個 staging 基準，後續旗標開啟與真人收訊已依 E-01 結案。
@@ -170,9 +170,9 @@ Phase 2 之後追加並完成的社務功能：
 
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
 - GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見 `TO-DO-LIST.md` 第 1 節。
-- staging 目前 runtime 是 `585a0a16146c`，`/api/health` 的 `issues` 與 `warnings` 都是空的；已部署 exact SHA `585a0a16146cfd57703bf9d05eb1ade500ec5a67`，已包含目前 `main` 在 Go-Live 時的變更（至 #122）。#123 在該次 Go-Live 後才合併，尚未部署到 staging；#124 尚未合併。閱讀本文件時仍應把 GitHub `main` 與 staging runtime 分開看。
+- staging 目前 runtime 是 `dddf1a51ab67`，`/api/health` 的 `issues` 與 `warnings` 都是空的；已部署 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d`，已包含目前 `main` 的變更（至 #123）。#124 尚未合併。閱讀本文件時仍應把 GitHub `main` 與 staging runtime 分開看。
 - Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
-- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `585a0a16146c`；生日旗標、Render scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。生日邀請真人送達與冪等重跑已由 scheduler `34695450977`／`34695655038` 驗收；follow identity pairing 仍依 E-03 待精確身份核對。
+- 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `dddf1a51ab67`；生日旗標、Render scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。生日邀請真人送達與冪等重跑已由 scheduler `34695450977`／`34695655038` 驗收；follow identity pairing 仍依 E-03 待精確身份核對。
 - 生日 scheduler 的環境隔離問題已修正：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護；secret 已同步。不可移除 staging 保護或把部署用 secrets 暴露給無審核 job。
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
@@ -457,4 +457,4 @@ PR-01c 不做：
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
 10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併 PR #107（merge `1164f763`），待 staging 發布、各社 OA 設定與真人驗收。
 
-目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。#124 在合併前不部署；#123 已合併，若要讓 staging 吃到它，需另跑下一次受保護 release／Go-Live。
+目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。#124 在合併前不部署；#123 已合併並已隨 `34856216706` 發布。

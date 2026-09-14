@@ -7,7 +7,7 @@
 
 本次以 GitHub `origin/main=dddf1a51ab67127bc4fed34876b696346eb0b29d` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`585a0a16146c`，已核對 `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`，production 沒有修改。
+`dddf1a51ab67`，已核對 `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`，production 沒有修改。
 
 - PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
 - PR #108 社費／收款／核銷／報表：已合併，merge `a52bfe7`；程式在 `main`，待 staging／hosted 驗收。
@@ -22,10 +22,10 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #120 活動封面統一裁切比例：已合併，merge `b57034d`；CI、Quality、Database、Browser Smoke 均通過。
 - PR #121 進度文件同步：已合併，merge `5bf0866`。
 - PR #122 UI design system：已合併，merge `585a0a1`；已部署至目前 staging。
-- PR #123 管理／社員層次與 header gutter：已合併，merge `dddf1a5`；CI、Quality、Database、Browser Smoke 均通過，尚未部署至 staging。
+- PR #123 管理／社員層次與 header gutter：已合併，merge `dddf1a5`；CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署至 staging。
 - PR #124 結構化年度服務計劃 V2：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過。
 
-目前只有 PR #124 尚未合併；#123 已合併但尚未進行下一次 staging release，這份交接筆記會在本輪再同步最新 SHA 與 staging 證據。
+目前只有 PR #124 尚未合併；#123 已合併並已完成 staging release，這份交接筆記已同步最新 SHA 與 staging 證據。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -72,11 +72,11 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 
 ## 本輪最新 staging 證據
 
-- Staging Release `34852620689` 與 Staging Go-Live `34852722091` 均成功，使用同一個 exact SHA
-  `585a0a16146cfd57703bf9d05eb1ade500ec5a67`。
+- Staging Release `34856107965` 與 Staging Go-Live `34856216706` 均成功，使用同一個 exact SHA
+  `dddf1a51ab67127bc4fed34876b696346eb0b29d`。
 - Go-Live 已套用目前 `main` 的 migration；`/api/health` 回報 `status=ok`、`configuration=true`、`database=true`、
-  `issues=[]`、`warnings=[]`，revision 為 `585a0a16146c`。
-- #123 是 Go-Live 後才合併到 `main` 的變更，目前不宣稱已部署 staging；#124 尚未合併，migration
+  `issues=[]`、`warnings=[]`，revision 為 `dddf1a51ab67`。
+- #123 已包含在這次 Go-Live；#124 尚未合併，migration
   `20260914001100_club_service_plan_v2.sql` 尚未部署。
 
 ## 前一輪已合併並部署的待辦收尾（2026-09-12）
@@ -537,11 +537,11 @@ staging health (historical)        status=ok; revision 244ac256c42d;
 ## 2026-09-14 最新核對補充
 
 - GitHub `origin/main` exact SHA：`dddf1a51ab67127bc4fed34876b696346eb0b29d`。
-- PR #123 已以一般 merge 合併，merge commit `dddf1a5`；CI、Quality、Database、Browser Smoke 均通過，尚未隨下一次 release 部署 staging。
+- PR #123 已以一般 merge 合併，merge commit `dddf1a5`；CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署 staging。
 - PR #124（結構化年度服務計劃 V2）仍為 open，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 均通過，migration
   `20260914001100_club_service_plan_v2.sql` 尚未部署。
-- Staging Release `34852620689` 與 Go-Live `34852722091` 已以 exact SHA
-  `585a0a16146cfd57703bf9d05eb1ade500ec5a67` 成功完成；目前 `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。
+- Staging Release `34856107965` 與 Go-Live `34856216706` 已以 exact SHA
+  `dddf1a51ab67127bc4fed34876b696346eb0b29d` 成功完成；目前 `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
 的 PL/pgSQL 變數；本輪沒有新增 warning。先前 Browser Smoke 的兩個失敗案例已在本機 Supabase 與

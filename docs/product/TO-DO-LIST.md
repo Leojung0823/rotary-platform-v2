@@ -11,8 +11,8 @@
 ## 2026-09-14 GitHub 開發狀態快照
 
 以下是本次掃描當下的 GitHub 狀態。**PR 尚未合併前，不算 `main` 完成；進入 `main` 也不代表已部署到 staging。**
-本次掃描的 `origin/main` 是 `585a0a16146cfd57703bf9d05eb1ade500ec5a67`；staging 目前健康，
-runtime 也是 `585a0a16146c`。本次已核對 `/api/health`：`status=ok`、`configuration=true`、
+本次掃描的 `origin/main` 是 `dddf1a51ab67127bc4fed34876b696346eb0b29d`；staging 目前健康，
+runtime 也是 `dddf1a51ab67`。本次已核對 `/api/health`：`status=ok`、`configuration=true`、
 `database=true`、`issues=[]`、`warnings=[]`。
 
 - `[>]` PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 發布與各社 OA 外部設定。
@@ -28,15 +28,15 @@ runtime 也是 `585a0a16146c`。本次已核對 `/api/health`：`status=ok`、`c
 - `[x]` PR #120 活動封面統一裁切比例：已合併，merge `b57034d`；CI、Quality、Database 與 Browser Smoke 均通過，並已隨目前 staging 發布。
 - `[x]` PR #121 進度文件同步：已合併，merge `5bf0866`；本次再依最新 main／staging 狀態修正三份文件。
 - `[x]` PR #122 UI design system：已合併，merge `585a0a1`；目前 staging 已部署同一個 exact SHA。
-- `[x]` PR #123 管理／社員層次與 header gutter：已合併，merge `dddf1a5`；CI、Quality、Database、Browser Smoke 全部通過，尚未隨下一次 release 部署 staging。
+- `[x]` PR #123 管理／社員層次與 header gutter：已合併，merge `dddf1a5`；CI、Quality、Database、Browser Smoke 全部通過，並已隨 Staging Go-Live `34856216706` 部署 staging。
 - `[>]` PR #124 結構化年度服務計劃 V2：尚未合併，HEAD `74180bf`；CI、Quality、Database、Browser Smoke 全部通過，等待合併後再部署與 hosted 角色驗收。
 
-目前 open PR 是 #124；#123 已於 2026-09-14 合併，但尚未隨下一次 staging release 發布。#124 的 migration
+目前 open PR 是 #124；#123 已於 2026-09-14 合併並隨 Staging Go-Live `34856216706` 發布。#124 的 migration
 `20260914001100_club_service_plan_v2.sql` 尚未部署 staging；本次文件更新不執行合併或部署。
 
 ## 2026-09-14 本輪主線交付
 
-本輪多個功能已進入 GitHub `main`，staging 已部署到 `585a0a16146c`；因此下面的 `[>]` 代表程式已完成、
+本輪多個功能已進入 GitHub `main`，staging 已部署到 `dddf1a51ab67`；因此下面的 `[>]` 代表程式已完成、
 尚待 staging／真人驗收，不把「已合併」誤寫成「已完成驗收」。
 
 ### 新功能
@@ -330,14 +330,14 @@ runtime 也是 `585a0a16146c`。本次已核對 `/api/health`：`status=ok`、`c
 自動化檢查也不能取代 E-06／E-07 的登入後效能量測與實機驗收。
 
 目前權威基準是 `origin/main=dddf1a51ab67127bc4fed34876b696346eb0b29d`。staging 目前健康，已部署版本是
-`585a0a16146c`；#107、#108、#109、#110、#111、#113、#115、#117、#118、#119、#120、#121、#122、#123
+`dddf1a51ab67`；#107、#108、#109、#110、#111、#113、#115、#117、#118、#119、#120、#121、#122、#123
 已進入 `main`，#124 仍在 PR 階段；production 沒有修改。
 
 本輪已補上的 repo 內缺口包括：生日設定 UX／預設公開且保留既有缺列私密語意、財務 PDF 繁中字型、
 社務資訊與年度服務計劃、Rich Menu、手機 Web App、社費／報表的獨立 PR、同頁模式導覽修正，以及 migration
 同號修復與全樹 collision guard。#107、#108、#109、#110、#113、#115、#117、#118、#119 已進入 `main`；
-程式進入 `main` 不代表每項都已完成 staging／真人／實機驗收。#123 已完成 GitHub 檢查並合併，
-但尚未隨下一次 staging release 發布；#124 的自動檢查全綠但尚未合併。
+程式進入 `main` 不代表每項都已完成 staging／真人／實機驗收。#123 已完成 GitHub 檢查、合併，
+並已隨 Staging Go-Live `34856216706` 發布；#124 的自動檢查全綠但尚未合併。
 
 前一輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
 Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS smoke 與 hosted member acceptance 均通過。
@@ -724,9 +724,9 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 - `origin/main` exact SHA 為 `dddf1a51ab67127bc4fed34876b696346eb0b29d`；#107、#108、#109、#110、#111、#113、#115、#117、#118、#119、#120、#121、#122、#123 已合併，
   #124 仍為 open PR。完整狀態與 base/head 關係見本文件開頭。
-- staging runtime revision 為 `585a0a16146c`，`/api/health` 為 `status=ok` 且 `issues=[]`、`warnings=[]`；
-  Staging Release `34852620689` 與 Go-Live `34852722091` 均以 exact SHA `585a0a16146cfd57703bf9d05eb1ade500ec5a67` 完成。
-  #123 是 Go-Live 後才合併到 `main` 的變更，尚未部署 staging；#124 尚未合併。
+- staging runtime revision 為 `dddf1a51ab67`，`/api/health` 為 `status=ok` 且 `issues=[]`、`warnings=[]`；
+  Staging Release `34856107965` 與 Go-Live `34856216706` 均以 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d` 完成。
+  #123 已包含在這次 Go-Live；#124 尚未合併。
 - Flex Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，核對同一個 exact SHA `fbdc061`。
 - staging `/api/health`：`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
 - staging Go-Live `34686702234` 以 exact SHA `fbdc061…` 成功；這是歷史基準，最新已部署 migration 是
