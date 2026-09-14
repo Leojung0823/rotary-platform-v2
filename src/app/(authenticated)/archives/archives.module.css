@@ -14,7 +14,7 @@
   align-items: center;
   color: var(--blue);
   cursor: pointer;
-  font-weight: 800;
+  font-weight: var(--weight-medium);
 }
 
 .managerPanel[open] summary,
@@ -70,8 +70,8 @@
   border-radius: 999px;
   color: #145c7e;
   background: #e6f4fa;
-  font-size: 12px;
-  font-weight: 750;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
 }
 
 .versionList {
@@ -149,7 +149,7 @@
 
 .confirmations span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-small);
 }
 
 .confirmButtons {

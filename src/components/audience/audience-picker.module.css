@@ -11,14 +11,14 @@
   border-radius: 10px;
   background: white;
   color: var(--muted);
-  font-weight: 750;
+  font-weight: var(--weight-medium);
   cursor: pointer;
 }
 .mode input:checked + span { border-color: var(--navy); background: var(--navy); color: white; }
 .mode input:focus-visible + span { outline: 2px solid var(--navy-2); outline-offset: 2px; }
 
 .summary { margin: 0; color: var(--ink); font-size: 14px; font-weight: 700; }
-.hint { margin: 0; color: var(--muted); font-size: 13px; }
+.hint { margin: 0; color: var(--muted); font-size: var(--text-small); }
 
 /* The gap between "addressed" and "actually reachable" is the thing an officer
    most needs to see before sending, so it is called out rather than folded
@@ -30,5 +30,5 @@
   border-radius: 10px;
   background: #fffdf7;
   color: #7a5a12;
-  font-size: 13px;
+  font-size: var(--text-small);
 }
