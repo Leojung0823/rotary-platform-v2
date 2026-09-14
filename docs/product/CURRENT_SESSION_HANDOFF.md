@@ -5,16 +5,16 @@
 
 ## 最新 GitHub 開發掃描（2026-09-14）
 
-本次以 GitHub `origin/main=6d559a68fbb60246f59a4f0706d8a6b2b09901eb` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=2d7839d2d6469fddb7a1141eaeb0abb8406f8216` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging 仍是前一個產品 runtime，production 沒有修改。
 
-- PR #107 Rich Menu：`1b839c6`，檢查已通過，等待合併與各社 OA 設定。
-- PR #108 社費／收款／核銷／報表：`ea2bf4e`，PDF 繁中字型缺檔已修正；application、database、validate、member Browser Smoke 均已通過，等待合併與 staging 驗收。
+- PR #107 Rich Menu：`9123104`，application、database、validate 已通過，Browser Smoke 執行中，等待合併與各社 OA 設定。
+- PR #108 社費／收款／核銷／報表：`ea2bf4e`，PDF 繁中字型缺檔已修正；上一輪 application、database、validate、member Browser Smoke 均已通過，目前需處理 #107 更新造成的 base 衝突。
 - PR #109 手機 Web App：`e29d1cc`，檢查已通過，等待合併與真實手機驗收。
-- PR #110 生日設定 UX：`aebed8b`，補上社員先切換目前社別的回歸測試，新的 database、application、validate、member Browser Smoke 正在 GitHub 執行。
-- PR #111 社務資訊／年度服務計劃：`b1895cc`，migration 已從撞號的 `20260914000300` 改為 `20260914000800`，application、database、validate、member Browser Smoke 均已通過。
+- PR #110 生日設定 UX：`c89c2f6`，修正切換社別測試會過早繼續的問題，新的 database、application、validate、member Browser Smoke 正在 GitHub 執行。
+- PR #111 社務資訊／年度服務計劃：已合併至 `main`，merge commit `2d7839d`；migration 為 `20260914000800`，待 staging／hosted 角色邊界驗收。
 
-合併依賴為 #107 → #108 → #110；#111 使用 `20260914000800`，可在這串 migration 後合併。
+合併依賴為先 #107、再更新 #108 的 base、之後處理 #110；#111 已合併。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
 

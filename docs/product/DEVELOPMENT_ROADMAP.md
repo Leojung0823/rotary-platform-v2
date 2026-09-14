@@ -6,12 +6,13 @@
 
 ## 目前基線
 
-目前 `main`（本次掃描的 `origin/main=6d559a68fbb60246f59a4f0706d8a6b2b09901eb`）已包含：
+目前 `main`（本次掃描的 `origin/main=2d7839d2d6469fddb7a1141eaeb0abb8406f8216`）已包含：
 
 - PR #59：Feature Flag、Rollback、Privacy-safe Telemetry 基礎。
 - PR #61：Canonical Attendance Domain Core。
 - PR #60：Server-authoritative ExperienceContext、角色脈絡與路由解析。
 - PR #62 / PR-01b：Member / Management / Platform 三套 Role-aware Shell、合法 mode switching、active-club preference、responsive 與 accessibility 基礎。
+- PR #111：社務資訊與年度服務計劃；migration `20260914000800_club_service_plan.sql` 已進入主線。
 
 自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威來源是 GitHub `main`；扶輪社名稱編輯、祝福 IOU、生日祝福 V2、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening 都已進入主線。
 
@@ -19,13 +20,13 @@
 
 下列功能已各自完成開發並開 PR，但**未合併前不算 `main` 完成，也不代表已部署 staging**：
 
-- PR #107 `codex/line-rich-menu-v1`：LINE Rich Menu；HEAD `1b839c6`，檢查已通過，等待合併與各社 OA 設定。
-- PR #108 `codex/dues-finance-v1`：社費、收款、核銷與報表；HEAD `ea2bf4e`，PDF 繁中字型問題已修正，application／database／validate／member Browser Smoke 均已通過，等待合併與 staging 驗收。
+- PR #107 `codex/line-rich-menu-v1`：LINE Rich Menu；HEAD `9123104`，application／database／validate 已通過，Browser Smoke 執行中，等待合併與各社 OA 設定。
+- PR #108 `codex/dues-finance-v1`：社費、收款、核銷與報表；HEAD `ea2bf4e`，PDF 繁中字型問題已修正，上一輪 application／database／validate／member Browser Smoke 均已通過；目前需處理因 #107 更新造成的 base 衝突。
 - PR #109 `codex/pwa-v1`：手機 Web App；HEAD `e29d1cc`，檢查已通過，等待合併與真實手機驗收。
-- PR #110 `codex/birthday-settings-ux-v1`：生日設定 UX、每社預設公開與錯誤提示；HEAD `aebed8b`，補上社員先切換目前社別的回歸測試，新的檢查執行中。
-- PR #111 `codex/club-affairs-and-service-plan-v2`：社務資訊與年度服務計劃；HEAD `b1895cc`，已把 migration 改為 `20260914000800` 避開撞號，application／database／validate／member Browser Smoke 均已通過。
+- PR #110 `codex/birthday-settings-ux-v1`：生日設定 UX、每社預設公開與錯誤提示；HEAD `c89c2f6`，修正切換社別測試的 Server Action cookie 等待，新的檢查執行中。
+- PR #111 已合併至 `main`（merge commit `2d7839d`）；其 `20260914000800_club_service_plan.sql` 已進入主線，待 staging／hosted 驗收。
 
-依賴順序：#107 → #108 → #110；#111 使用 `20260914000800`，可在這串 migration 之後合併。社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
+依賴順序：先完成 #107，再更新 #108 的 base，之後處理 #110；#111 已合併。社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
 
 ## 上一個已部署 staging 基準（2026-09-12）
 
@@ -154,7 +155,7 @@ Phase 2 之後追加並完成的社務功能：
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
 - **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
 - PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40 也已關閉，公告通知已在 `main` 實作；保留的舊分支不能直接合併。
-- `src/lib/product/features.ts` 的 `developing` 清單仍包含社費／收款／核銷、報表與匯出、正式部署完成度、LINE Rich Menu、手機 Web App、社務 AI 助理；其中前五項已有待合併 PR #107–#111 的對應程式，社務 AI 助理仍沒有可執行企劃，不能擅自開工。
+- `src/lib/product/features.ts` 的 `developing` 清單仍包含社費／收款／核銷、報表與匯出、正式部署完成度、LINE Rich Menu、手機 Web App、社務 AI 助理；其中社費／報表、Rich Menu、手機 Web App 已有 PR #107–#109，社務資訊與年度服務計劃已在 main（PR #111），社務 AI 助理仍沒有可執行企劃，不能擅自開工。
 
 ---
 
@@ -429,6 +430,6 @@ PR-01c 不做：
 7. **E-04／E-05：各社 OA 設定與額度政策** `[!]`：逐社確認 channel 與憑證；產品決定超額行為。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
-10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已在 PR #107，待合併後再做各社 OA 設定與真人驗收。
+10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式在 PR #107（HEAD `9123104`），待檢查與合併後再做各社 OA 設定與真人驗收。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。

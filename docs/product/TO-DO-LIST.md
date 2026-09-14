@@ -11,17 +11,17 @@
 ## 2026-09-14 GitHub 開發狀態快照
 
 以下是本次掃描當下的 GitHub 狀態。**PR 尚未合併前，不算 `main` 完成，也不代表已部署到 staging。**
-本次掃描的 `origin/main` 是 `6d559a68fbb60246f59a4f0706d8a6b2b09901eb`；staging 仍維持前一個已部署版本，
+本次掃描的 `origin/main` 是 `2d7839d2d6469fddb7a1141eaeb0abb8406f8216`；staging 仍維持前一個已部署版本，
 未因為下列 PR 自動發布。
 
-- `[>]` PR #107 Rich Menu：`codex/line-rich-menu-v1`，HEAD `1b839c6`，application、database、validate、Browser Smoke 均通過；等待合併與各社 OA 外部設定。
-- `[>]` PR #108 社費／收款／核銷與報表：`codex/dues-finance-v1`，HEAD `ea2bf4e`；PDF 缺少繁中字型的問題已修正，application、database、validate、member Browser Smoke 均已通過，等待合併與 staging 驗收。
+- `[>]` PR #107 Rich Menu：`codex/line-rich-menu-v1`，HEAD `9123104`；application、database、validate 已通過，Browser Smoke 正在 GitHub 執行，並等待合併與各社 OA 外部設定。
+- `[>]` PR #108 社費／收款／核銷與報表：`codex/dues-finance-v1`，HEAD `ea2bf4e`；PDF 缺少繁中字型的問題已修正，上一輪 application、database、validate、member Browser Smoke 均已通過；因 #107 分支更新目前需先處理 PR base 的衝突，再進行合併與 staging 驗收。
 - `[>]` PR #109 手機 Web App：`codex/pwa-v1`，HEAD `e29d1cc`，全部必要檢查已通過；等待合併與真實手機驗收。
-- `[>]` PR #110 生日設定 UX：`codex/birthday-settings-ux-v1`，HEAD `aebed8b`；補上社員先切換目前社別的回歸測試，新的 application、database、validate、member Browser Smoke 正在 GitHub 執行。
-- `[>]` PR #111 社務資訊／年度服務計劃：`codex/club-affairs-and-service-plan-v2`，HEAD `b1895cc`；已將 migration 改為 `20260914000800`，避開 #107 的 `20260914000300` 撞號，application、database、validate、member Browser Smoke 均已通過。
+- `[>]` PR #110 生日設定 UX：`codex/birthday-settings-ux-v1`，HEAD `c89c2f6`；修正切換社別測試會在 Server Action cookie 尚未套用前繼續執行的問題，新的 application、database、validate、member Browser Smoke 正在 GitHub 執行。
+- `[x]` PR #111 社務資訊／年度服務計劃：已合併至 `main`，merge commit `2d7839d`；migration `20260914000800_club_service_plan.sql` 已進入主線，但尚未部署 staging。
 
-合併順序要保留 migration 依賴：#107 → #108 → #110；#111 已使用 `20260914000800`，可在這串功能之後合併。
-目前沒有合併或部署動作；這一節只記錄程式與檢查狀態。
+合併順序要保留 migration 依賴：先處理 #107，再更新 #108 的 base；#111 已經合併，#110 依賴 #108 的最新狀態。
+目前沒有新的部署動作；這一節只記錄程式、合併與檢查狀態。
 
 ## 外部處理待辦（唯一清單）
 
@@ -228,10 +228,10 @@
 - `[>]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）已在 PR #108，待合併、部署與 hosted 驗收。
 - `[>]` LINE Rich Menu 與完整 OA 整合已在 PR #107，待合併與各社 OA 外部設定（見 E-11）。
 - `[>]` 手機 Web App（安裝、離線提示與推播準備）已在 PR #109，待合併與真實手機驗收。
-- `[>]` 社務資訊與年度服務計劃已在 PR #111，待合併與 hosted／角色邊界驗收。
+- `[>]` 社務資訊與年度服務計劃已合併至 `main`（PR #111），待 staging／hosted 與角色邊界驗收。
 - `[ ]` 社務 AI 助理（摘要、公告草稿、會議紀錄與授權查詢）；目前沒有可執行企劃或已授權的 AI 服務規格，不能直接開發。
 
-### 生日設定 UX 調整（產品決定 2026-09-12；PR #110 已完成開發，待合併）
+### 生日設定 UX 調整（產品決定 2026-09-12；PR #110 已推送修正版，待檢查與合併）
 
 實際操作 `/birthdays` 時提出，四項都已在 PR #110 實作；PR 尚未合併前不算 `main` 完成：
 
@@ -249,12 +249,12 @@
 `main` 或 staging 已完成。GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 依產品決定暫緩；
 自動化檢查也不能取代 E-06／E-07 的登入後效能量測與實機驗收。
 
-目前權威基準是 `origin/main=6d559a68fbb60246f59a4f0706d8a6b2b09901eb`。staging 仍是前一個已部署版本
-`fbdc061dd702`，本次 #107–#111 的任何 PR 都尚未自動發布；production 沒有修改。
+目前權威基準是 `origin/main=2d7839d2d6469fddb7a1141eaeb0abb8406f8216`。staging 仍是前一個已部署版本
+`fbdc061dd702`；#111 雖已合併但尚未自動發布，#107／#108／#109／#110 仍在 PR 階段；production 沒有修改。
 
 本輪已補上的 repo 內缺口包括：生日設定 UX／預設公開且保留既有缺列私密語意、財務 PDF 繁中字型、
-社務資訊與年度服務計劃，以及 Rich Menu、手機 Web App、社費／報表的獨立 PR。合併與 staging 驗收前，
-這些只能標成「程式完成、等待合併／外部驗收」。
+社務資訊與年度服務計劃，以及 Rich Menu、手機 Web App、社費／報表的獨立 PR。社務資訊已進入 `main`；
+其餘產品 PR 合併與 staging 驗收前，只能標成「程式完成、等待合併／外部驗收」。
 
 前一輪產品修補的完整 `CI` `34584379642`、`Browser Smoke` `34584379653` 均成功；Staging Release Plan `34586642034`、
 Staging Go-Live `34594381922` 也成功完成，Go-Live 的 migration、HTTPS smoke 與 hosted member acceptance 均通過。
@@ -280,8 +280,8 @@ fallback 給 HAPPY。剩下的是 follow 事件自動配對真人驗收，不是
 `68b12a5` 的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功，並已由 `34594381922` 部署到 staging；沒有待核准的同一輪 Go-Live。
 
 生日旗標與正確 Render staging service 的 scheduler secret 已同步；既有排程證據與本次 PR 狀態分開記錄，
-不能用舊的 `34673612440` 取代新的 hosted 驗收。production 沒有修改；目前有 #107–#111 五個 open PR，
-詳見本文件開頭的最新快照。
+不能用舊的 `34673612440` 取代新的 hosted 驗收。production 沒有修改；目前有四個產品 open PR（#107、#108、#109、#110），
+另有文件同步 PR #112；詳見本文件開頭的最新快照。
 
 ## 逐項狀態
 
@@ -639,7 +639,8 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 
 ## 最新掃描證據（2026-09-14；本輪開發掃描基準）
 
-- `origin/main` exact SHA 為 `6d559a68fbb60246f59a4f0706d8a6b2b09901eb`；目前有 open PR #107–#111，
+- `origin/main` exact SHA 為 `2d7839d2d6469fddb7a1141eaeb0abb8406f8216`；目前有產品 open PR #107、#108、#109、#110，
+  文件同步 PR #112 另列；
   完整狀態與 base/head 關係見本文件開頭，不能把它們當成已進入 `main`。
 - staging runtime revision 為 `fbdc061dd702`，已包含 Flex migration，但 `line_oa_flex_templates_v1` 尚未開啟。
 - Flex Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，核對同一個 exact SHA `fbdc061`。
