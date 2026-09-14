@@ -1,13 +1,13 @@
-# 交接筆記（持續更新；最新核對 2026-09-15，#137 合併後與 staging plan）
+# 交接筆記（持續更新；最新核對 2026-09-15，#139 合併後與 staging plan）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
 ## 最新 GitHub 開發掃描（2026-09-15；以最新 main 核對）
 
-本次以 GitHub `origin/main=8b970dc9dbefed10a8ba63a6ec9916261ac1454c` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=37b297f9dbaaa73d8781d7510a04d80ca31f7e2b` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`dddf1a51ab67`，已於 2026-09-15 02:28（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
+`dddf1a51ab67`，已於 2026-09-15 03:39（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
 `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
 
 - PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
@@ -33,8 +33,10 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #135 活動切換社團的公開網址修正：已合併，merge `d2106bc8`；application、database、validate 與 member-browser-smoke 均通過，沒有新增 migration，尚未部署 staging。
 - PR #136 進度文件同步：已合併，merge `6e895101`；純文件變更，記錄 #135 的實測根因與 staging 尚未部署狀態。
 - PR #137 staging plan 文件同步：已合併，merge `8b970dc9`；純文件變更，記錄 plan 與目前 `main` exact SHA 的差異及 rollback blocker。
+- PR #138 進度文件同步：已合併，merge `e5313907`；純文件變更。
+- PR #139 社務頁年度預設值修正：已合併，merge `37b297f9`；新增 forward-only migration `20260915000200_club_service_plan_year_cast.sql` 與 verification。
 
-目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135、#136、#137 已進入 `main`；其中 #137 只有文件變更，沒有讓 staging runtime 前進。#123 已合併並完成 staging release；#132 的 migration 與 #135 的 redirect 修正尚未部署。這份交接筆記正在補記 staging plan 的最新 SHA 與證據。
+目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135、#136、#137、#138、#139 已進入 `main`；其中 #137、#138 只有文件變更，沒有讓 staging runtime 前進。#123 已合併並完成 staging release；#132、#139 的 migration 與 #135 的 redirect 修正尚未部署。新的 Staging Release plan `34888099085` 仍等待 `staging` environment 核准。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -613,7 +615,7 @@ staging health (historical)        status=ok; revision 244ac256c42d;
 - #124、#126、#127、#130、#132、#135 目前都已進入 `main` 但未進 staging；E-03、E-06、E-07、E-10、
   各社 OA／額度、Rich Menu 與 staging rollback point 仍依 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 管理。
 
-## 2026-09-15 staging plan 核對補充（#137 合併後）
+## 歷史 staging plan 核對補充（2026-09-15；#137 合併後）
 
 - 文件同步 PR #137 已合併，最新 `origin/main` exact SHA 為
   `8b970dc9dbefed10a8ba63a6ec9916261ac1454c`；沒有 open PR，production 沒有修改。
@@ -628,3 +630,14 @@ staging health (historical)        status=ok; revision 244ac256c42d;
 - staging 仍是 `revision=dddf1a51ab67`，`/api/health` 為 `status=ok`、`configuration=true`、
   `database=true`、`issues=[]`、`warnings=[]`；因此 #124、#126、#127、#130、#132、#135、#136 尚未在
   staging 生效；#137 只有文件變更，不影響 runtime。
+
+## 2026-09-15 最新核對（#139 合併後）
+
+- `origin/main` exact SHA 是 `37b297f9dbaaa73d8781d7510a04d80ca31f7e2b`；PR #139 已一般 merge，沒有 open PR。
+- #139 的 PR checks 與合併後 main 的 CI／Browser Smoke 均成功。修正根因是 `get_club_affairs_page` 將日期型別的
+  `current_rotary_year_start()` 直接放入整數 `target_year`；p_start_year 為 null 時，staging 舊版社務頁因此顯示通用載入錯誤。
+- 新增 `20260915000200_club_service_plan_year_cast.sql`，從 PostgreSQL 現有函式定義只替換該宣告，並新增
+  `supabase/verification/club_service_plan_year_cast_security.sql`；沒有修改歷史 migration、資料表、RLS 或權限。
+- `Staging Release` run `34888099085` 對 `main@37b297f9` 已建立，目前等待 `staging` environment 人工核准，尚未完成遠端 dry-run；
+  staging `/api/health` 仍為 `status=ok`、`issues=[]`、`warnings=[]`、revision `dddf1a51ab67`。
+- `npm run verify:db` 本機曾因 Docker／Supabase 無回應中止，不能列為本機通過；GitHub database job 已成功。尚未執行 Staging Go-Live，production 沒有修改。
