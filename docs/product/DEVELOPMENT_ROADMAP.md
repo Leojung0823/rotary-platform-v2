@@ -53,6 +53,8 @@
 ## 目前已部署 staging 基準（2026-09-14）
 
 - 最新 staging runtime `/api/health` 回報 `status=ok`、`revision=dddf1a51ab67`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`。Staging Release `34856107965` 與 Go-Live `34856216706` 都以 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d` 完成；目前 staging 已與最新的 `main` 同步，並包含 #120、#122、#123。
+- #123 合併後主線 Browser Smoke `34855905727` 同樣使用 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d`，結果為 184 passed、38 skipped、1 failed；失敗集中在既有 LINE OA audience server-action 錯誤提示測試，待另開修補工作。
+- 主線 CI `34855905908` 的 database job 在設定 Supabase CLI 時遇到外部 HTTP 504；validate job 通過，不能把這次工具下載失敗當成程式檢查通過。
 - Staging Release `34842549154` 的 dry-run 曾明確拒絕地點 migration，原因是遠端已有 `20260914000800`。#115 已把 `include_all` 做成預設關閉的明確 workflow input；#118 進一步把未套用的地點 migration 改為 `20260914000900`，消除 clean reset 的同號錯誤。
 - 目前 `main` 的 migration 版本已無重複；下一次 staging 發布應使用最新 `main` 的 exact SHA，並先確認 plan／Go-Live 的 migration 與 health 結果。
 - 本輪 Flex 的 Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均以同一個 `main` exact SHA `fbdc061dd702f453ab340bd595279223487d0838` 成功完成；這是前一個 staging 基準，後續旗標開啟與真人收訊已依 E-01 結案。

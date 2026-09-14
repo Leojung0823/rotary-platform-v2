@@ -542,6 +542,10 @@ staging health (historical)        status=ok; revision 244ac256c42d;
   `20260914001100_club_service_plan_v2.sql` 尚未部署。
 - Staging Release `34856107965` 與 Go-Live `34856216706` 已以 exact SHA
   `dddf1a51ab67127bc4fed34876b696346eb0b29d` 成功完成；目前 `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。
+- #123 合併後主線 Browser Smoke `34855905727` 使用同一個 exact SHA，結果為 184 passed、38 skipped、1 failed；
+  失敗是既有 LINE OA audience 的 server-action 錯誤提示測試，日誌確認伺服器回傳 `audience_unreachable` redirect，
+  但瀏覽器沒有顯示預期文字。這是待另開修補工作的主線測試缺口，不是 staging Go-Live 失敗。
+- 主線 CI `34855905908` 的 database job 在安裝 Supabase CLI 時遇到外部 HTTP 504；validate job 通過，未把外部下載錯誤當成程式通過。
 
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
 的 PL/pgSQL 變數；本輪沒有新增 warning。先前 Browser Smoke 的兩個失敗案例已在本機 Supabase 與

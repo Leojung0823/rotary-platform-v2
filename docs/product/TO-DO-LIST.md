@@ -727,6 +727,10 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 - staging runtime revision 為 `dddf1a51ab67`，`/api/health` 為 `status=ok` 且 `issues=[]`、`warnings=[]`；
   Staging Release `34856107965` 與 Go-Live `34856216706` 均以 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d` 完成。
   #123 已包含在這次 Go-Live；#124 尚未合併。
+- #123 合併後主線 Browser Smoke `34855905727` 使用同一個 exact SHA，但結果為失敗：184 passed、38 skipped、1 failed；
+  唯一失敗是既有 `line-oa-audience.e2e.mjs` 的「無人完成 OA 配對時拒絕推播」測試，伺服器已回傳
+  `audience_unreachable` 的 server-action redirect，但瀏覽器未看到預期錯誤提示。這不等於 staging Go-Live 失敗，需另開修補工作處理測試／導覽行為。
+- 主線 CI `34855905908` 的 database job 在設定 Supabase CLI 時連續收到下載端 HTTP 504；validate job 通過。這是外部工具下載失敗，未把它誤判成程式測試通過，也不再無限重跑。
 - Flex Staging Release Plan `34686603765` 與 Go-Live `34686702234` 均成功，核對同一個 exact SHA `fbdc061`。
 - staging `/api/health`：`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
 - staging Go-Live `34686702234` 以 exact SHA `fbdc061…` 成功；這是歷史基準，最新已部署 migration 是
