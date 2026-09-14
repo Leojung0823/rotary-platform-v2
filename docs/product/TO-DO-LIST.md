@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-15（Asia/Taipei；#136 合併後核對）
+更新日期：2026-09-15（Asia/Taipei；#137 合併後核對）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
@@ -11,7 +11,7 @@
 ## 2026-09-15 GitHub 開發狀態快照
 
 以下是本次掃描當下的 GitHub 狀態。**PR 尚未合併前，不算 `main` 完成；進入 `main` 也不代表已部署到 staging。**
-本次掃描的 `origin/main` 是 `6e895101b3bffa9a8c9fd8e39314297de3243a34`；staging 目前健康，
+本次掃描的 `origin/main` 是 `8b970dc9dbefed10a8ba63a6ec9916261ac1454c`；staging 目前健康，
 runtime 是 `dddf1a51ab67`。本次已於 2026-09-15 02:28（Asia/Taipei）核對 `/api/health`：`status=ok`、`configuration=true`、
 `database=true`、`issues=[]`、`warnings=[]`。因此 `main` 已領先 staging，不能把 #124、#126、#127、#130、#132 或 #135
 寫成已上線；這些變更已進入 `main`，但尚未部署 staging。
@@ -37,8 +37,9 @@ runtime 是 `dddf1a51ab67`。本次已於 2026-09-15 02:28（Asia/Taipei）核�
 - `[x]` PR #132 活動推播版本契約修正：已合併，merge `4387ee5`；application、database、validate 與 Browser Smoke `34876325765` 均通過。新增 `20260915000100_event_push_version_contract.sql`，尚未部署 staging。
 - `[x]` PR #135 活動切換社團的公開網址修正：已合併，merge `d2106bc8`；application、database、validate 與 member-browser-smoke 均通過，沒有新增 migration，尚未部署 staging。
 - `[x]` PR #136 進度文件同步：已合併，merge `6e895101`；純文件變更，完整資料庫／member-browser jobs 依變更範圍規則跳過。
+- `[x]` PR #137 staging plan 文件同步：已合併，merge `8b970dc9`；純文件變更，完整資料庫／member-browser jobs 依變更範圍規則跳過。
 
-目前沒有 open PR；#123 已於 2026-09-14 合併並隨 Staging Go-Live `34856216706` 發布；#124、#126、#127、#130、#132、#135 已合併但尚未部署，#125、#136 文件同步也已合併。#124 的 migration
+目前沒有 open PR；#123 已於 2026-09-14 合併並隨 Staging Go-Live `34856216706` 發布；#124、#126、#127、#130、#132、#135 已合併但尚未部署，#125、#136、#137 文件同步也已合併。#124 的 migration
 `20260914001100_club_service_plan_v2.sql` 與 #132 的 `20260915000100_event_push_version_contract.sql` 已進入 main 但尚未部署 staging；#127、#130、#135、#125 與 #136 沒有其他資料表新增。本次文件更新不執行部署。
 
 ## 2026-09-15 本輪主線交付
@@ -356,9 +357,9 @@ runtime 是 `dddf1a51ab67`。本次已於 2026-09-15 02:28（Asia/Taipei）核�
 部署、真人／實機驗收分開記錄。GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 依產品決定暫緩；
 自動化檢查也不能取代 E-06／E-07 的登入後效能量測與實機驗收。
 
-目前權威基準是 `origin/main=6e895101b3bffa9a8c9fd8e39314297de3243a34`。staging 目前健康，已部署版本是
-`dddf1a51ab67`；#107、#108、#109、#110、#111、#113、#115、#117、#118、#119、#120、#121、#122、#123、#124、#125、#126、#127、#130、#132、#135、#136
-已進入 `main`，但 #124、#126、#127、#130、#132、#135、#136 尚未部署 staging；production 沒有修改。
+目前權威基準是 `origin/main=8b970dc9dbefed10a8ba63a6ec9916261ac1454c`。staging 目前健康，已部署版本是
+`dddf1a51ab67`；#107、#108、#109、#110、#111、#113、#115、#117、#118、#119、#120、#121、#122、#123、#124、#125、#126、#127、#130、#132、#135、#136、#137
+已進入 `main`，但 #124、#126、#127、#130、#132、#135、#136 尚未部署 staging；#137 只有文件變更，不影響 staging runtime；production 沒有修改。
 
 本輪已補上的 repo 內缺口包括：生日設定 UX／預設公開且保留既有缺列私密語意、財務 PDF 繁中字型、
 社務資訊與年度服務計劃、Rich Menu、手機 Web App、社費／報表的獨立 PR、同頁模式導覽修正，以及 migration
@@ -780,9 +781,10 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 - #118 已修正 `20260914000400` 的 migration collision，改為 `20260914000900`；CI database、Quality、Browser Smoke 與完整 migration reset 均通過。
 - production 沒有修改；所有需要外部平台、真人或產品決定的項目均已集中列在 E-01–E-12。
 
-## 最新掃描證據（2026-09-15；#136 合併後與 staging plan）
+## 最新掃描證據（2026-09-15；#137 合併後與 staging plan）
 
-- `Staging Release` run `34881790463` 已以 `main` exact SHA `6e895101b3bffa9a8c9fd8e39314297de3243a34` 完成；`include_all=false`，migration dry-run 成功，沒有套用資料庫變更，也沒有部署應用程式。
+- PR #137 已合併至 `main`，merge commit 為 `8b970dc9dbefed10a8ba63a6ec9916261ac1454c`；它只有文件變更，沒有新增或修改 migration，也沒有部署 staging。
+- `Staging Release` run `34881790463` 是在 PR #137 合併前，以前一個 `main` exact SHA `6e895101b3bffa9a8c9fd8e39314297de3243a34` 完成；`include_all=false`，migration dry-run 成功，沒有套用資料庫變更，也沒有部署應用程式。因 Go-Live 要求 plan 與目標 SHA 完全一致，這個 plan 不能直接套用到目前的 `8b970dc9`。
 - dry-run 顯示下一次 Go-Live 會處理 `20260914001000_update_club_event.sql`、`20260914001100_club_service_plan_v2.sql` 與 `20260915000100_event_push_version_contract.sql`。
 - `20260914001000_update_club_event.sql` 會更新既有 `line_push_logs` 資料；staging Supabase Free 方案沒有備份／PITR。因此在取得可驗證的 logical backup／rollback point 前，仍不能誠實輸入 `BACKUP-READY`，也不執行 Go-Live。
 - 目前應先由產品／平台管理員決定 staging 的 rollback 方案（升級備份能力或核准受控匯出），再進行 migration apply、部署與 hosted acceptance；不能用 `include_all` 繞過這個安全門檻。

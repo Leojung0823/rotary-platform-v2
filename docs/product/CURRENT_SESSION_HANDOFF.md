@@ -1,11 +1,11 @@
-# 交接筆記（持續更新；最新核對 2026-09-15，#136 合併後與 staging plan）
+# 交接筆記（持續更新；最新核對 2026-09-15，#137 合併後與 staging plan）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
 ## 最新 GitHub 開發掃描（2026-09-15；以最新 main 核對）
 
-本次以 GitHub `origin/main=6e895101b3bffa9a8c9fd8e39314297de3243a34` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=8b970dc9dbefed10a8ba63a6ec9916261ac1454c` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
 `dddf1a51ab67`，已於 2026-09-15 02:28（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
 `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
@@ -32,8 +32,9 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #132 活動推播版本契約修正：已合併，merge `4387ee5`；application、database、validate 與 Browser Smoke `34876325765` 均通過。新增 `20260915000100_event_push_version_contract.sql`，尚未部署 staging。
 - PR #135 活動切換社團的公開網址修正：已合併，merge `d2106bc8`；application、database、validate 與 member-browser-smoke 均通過，沒有新增 migration，尚未部署 staging。
 - PR #136 進度文件同步：已合併，merge `6e895101`；純文件變更，記錄 #135 的實測根因與 staging 尚未部署狀態。
+- PR #137 staging plan 文件同步：已合併，merge `8b970dc9`；純文件變更，記錄 plan 與目前 `main` exact SHA 的差異及 rollback blocker。
 
-目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135、#136 已進入 `main` 但尚未部署 staging；#123 已合併並完成 staging release。#132 的 migration 與 #135 的 redirect 修正尚未部署。這份交接筆記正在補記 staging plan 的最新 SHA 與證據。
+目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135、#136、#137 已進入 `main`；其中 #137 只有文件變更，沒有讓 staging runtime 前進。#123 已合併並完成 staging release；#132 的 migration 與 #135 的 redirect 修正尚未部署。這份交接筆記正在補記 staging plan 的最新 SHA 與證據。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -612,17 +613,18 @@ staging health (historical)        status=ok; revision 244ac256c42d;
 - #124、#126、#127、#130、#132、#135 目前都已進入 `main` 但未進 staging；E-03、E-06、E-07、E-10、
   各社 OA／額度、Rich Menu 與 staging rollback point 仍依 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 管理。
 
-## 2026-09-15 staging plan 核對補充
+## 2026-09-15 staging plan 核對補充（#137 合併後）
 
-- 文件同步 PR #136 已合併，最新 `origin/main` exact SHA 為
-  `6e895101b3bffa9a8c9fd8e39314297de3243a34`；沒有 open PR，production 沒有修改。
-- `Staging Release` run `34881790463` 已用這個 exact SHA 完成，`include_all=false`，只做 migration
+- 文件同步 PR #137 已合併，最新 `origin/main` exact SHA 為
+  `8b970dc9dbefed10a8ba63a6ec9916261ac1454c`；沒有 open PR，production 沒有修改。
+- `Staging Release` run `34881790463` 是在 PR #137 合併前，以前一個 exact SHA
+  `6e895101b3bffa9a8c9fd8e39314297de3243a34` 完成，`include_all=false`，只做 migration
   dry-run；結果顯示待處理 `20260914001000_update_club_event.sql`、
   `20260914001100_club_service_plan_v2.sql` 與 `20260915000100_event_push_version_contract.sql`，
-  沒有套用資料庫，也沒有部署應用程式。
+  沒有套用資料庫，也沒有部署應用程式。因 Go-Live 要求 plan 與目標 SHA 完全一致，這個 plan 不能直接套用到目前的 `8b970dc9`；若之後要發布，必須重新 plan。
 - 其中 `20260914001000_update_club_event.sql` 會更新既有 `line_push_logs` 資料；staging Supabase Free
   方案沒有 backup／PITR，所以不能以 `BACKUP-READY` 進 Go-Live。下一步必須先取得可驗證的 logical
   backup／rollback point，或取得產品／平台管理員對受控匯出方案的明確決定；不能用 `include_all` 繞過。
 - staging 仍是 `revision=dddf1a51ab67`，`/api/health` 為 `status=ok`、`configuration=true`、
-  `database=true`、`issues=[]`、`warnings=[]`；因此 #124、#126、#127、#130、#132、#135、#136
-  尚未在 staging 生效。
+  `database=true`、`issues=[]`、`warnings=[]`；因此 #124、#126、#127、#130、#132、#135、#136 尚未在
+  staging 生效；#137 只有文件變更，不影響 runtime。
