@@ -1,12 +1,12 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-15（Asia/Taipei；#130 合併後核對）
+更新日期：2026-09-15（Asia/Taipei；#132 合併後核對）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
 ## 目前基線
 
-目前 `main`（本次掃描的 `origin/main=675993430747bcaead27b60a4811651aab04f81d`）已包含：
+目前 `main`（本次掃描的 `origin/main=4387ee578bef8273a6a59079965f4c3ab2ea6aa9`）已包含：
 
 - PR #59：Feature Flag、Rollback、Privacy-safe Telemetry 基礎。
 - PR #61：Canonical Attendance Domain Core。
@@ -29,6 +29,7 @@
 - PR #127：手機／桌機共用設計系統第二輪；已合併，320px 動態 QR 頁面的橫向溢出已修正，尚未部署 staging。
 - PR #124：結構化年度服務計畫 V2；已合併，migration `20260914001100_club_service_plan_v2.sql` 已進入主線，尚未部署 staging。
 - PR #130：社員／社務管理模式邊界修正；已合併，管理路由與出席管理操作會保留 `mode=management`，沒有新增 migration，尚未部署 staging。
+- PR #132：活動推播版本契約修正；已合併，活動編輯傳遞剛儲存的版本號，移除舊推播 overload，新增 migration `20260915000100_event_push_version_contract.sql`，尚未部署 staging。
 
 自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威來源是 GitHub `main`；扶輪社名稱編輯、祝福 IOU、生日祝福 V2、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening 都已進入主線。
 
@@ -54,12 +55,14 @@
 - PR #125 `codex/sync-progress-20260914-current`：已合併，merge `9a77d7b`；進度文件已同步 #126／#127，本次文件更新再補正 #124 的合併狀態。
 - PR #127 `codex/ui-desktop-system`：已合併，merge `44456f8`；CI、Quality、Browser Smoke `34862992487` 均通過，前一輪 320px 橫向溢出已修正，尚未部署 staging。
 - PR #130 `codex/management-mode-boundary-20260915`：已合併，merge `6759934`；application、database、validate 與 Browser Smoke `34871617599` 均通過，沒有新增 migration，尚未部署 staging。
+- PR #132 `codex/event-push-version-contract-20260915`：已合併，merge `4387ee5`；application、database、validate 與 Browser Smoke `34876325765` 均通過，新增 migration `20260915000100_event_push_version_contract.sql`，尚未部署 staging。
 
-目前沒有尚未合併的產品 PR；#124、#126、#127、#130 已進入 `main` 但尚未部署 staging。社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
+目前沒有尚未合併的產品 PR；#124、#126、#127、#130、#132 已進入 `main` 但尚未部署 staging。社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
 
 ## 目前已部署 staging 基準（2026-09-15）
 
-- 最新 staging runtime `/api/health` 回報 `status=ok`、`revision=dddf1a51ab67`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`（2026-09-15 01:14 Asia/Taipei 核對）。Staging 目前仍是 #123 的 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d`；`main=67599343` 已再合併 #124、#126、#127、#130 與文件同步，因此 staging 落後 main。#130 沒有 migration，尚未部署不會造成資料庫版本落差。
+- 最新 staging runtime `/api/health` 回報 `status=ok`、`revision=dddf1a51ab67`、`configuration=true`、`database=true`，`issues=[]`、`warnings=[]`（2026-09-15 01:55 Asia/Taipei 核對）。Staging 目前仍是 #123 的 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d`；`main=4387ee57` 已再合併 #124、#126、#127、#130、#132 與文件同步，因此 staging 落後 main。#132 的 migration `20260915000100_event_push_version_contract.sql` 尚未部署。
+- 前一個 Staging Release plan `34874620524` 只對應舊 SHA `a0f3c3f69b5cd5facc718904a7ccca80a8d4eb66`；#132 合併後不可沿用，必須重新 plan。`20260914001000_update_club_event.sql` 含既有 `line_push_logs` 資料回填，而 staging Free 方案沒有備份／PITR，所以目前 Go-Live 仍等待可用 rollback point 或新的安全 migration 設計。
 - #123 合併後主線 Browser Smoke `34855905727` 使用 exact SHA `dddf1a51ab67127bc4fed34876b696346eb0b29d`，結果為 184 passed、38 skipped、1 failed；#127 的修正版已針對同一輪後續發現的 320px 橫向溢出補強，新的 Browser Smoke `34862992487` 已通過並已合併，但尚未部署。
 - 主線 CI `34855905908` 的 database job 在設定 Supabase CLI 時遇到外部 HTTP 504；validate job 通過，不能把這次工具下載失敗當成程式檢查通過。
 - Staging Release `34842549154` 的 dry-run 曾明確拒絕地點 migration，原因是遠端已有 `20260914000800`。#115 已把 `include_all` 做成預設關閉的明確 workflow input；#118 進一步把未套用的地點 migration 改為 `20260914000900`，消除 clean reset 的同號錯誤。

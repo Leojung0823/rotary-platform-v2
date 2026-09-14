@@ -1,13 +1,13 @@
-# 交接筆記（持續更新；最新核對 2026-09-15，#130 合併後）
+# 交接筆記（持續更新；最新核對 2026-09-15，#132 合併後）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
 ## 最新 GitHub 開發掃描（2026-09-15；以最新 main 核對）
 
-本次以 GitHub `origin/main=675993430747bcaead27b60a4811651aab04f81d` 及 open PR 逐一核對。
+本次以 GitHub `origin/main=4387ee578bef8273a6a59079965f4c3ab2ea6aa9` 及 open PR 逐一核對。
 PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`dddf1a51ab67`，已於 2026-09-15 01:14（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
+`dddf1a51ab67`，已於 2026-09-15 01:55（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
 `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
 
 - PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
@@ -29,8 +29,9 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #125 進度文件同步：已合併，merge `9a77d7b`；本次文件再補記 #124 合併後的最新主線狀態。
 - PR #127 手機／桌機共用設計系統第二輪：已合併，merge `44456f8`；CI、Quality 與 Browser Smoke `34862992487` 均通過，包含 320px 橫向溢出修正與 rollback，但尚未部署 staging。
 - PR #130 社員／社務管理模式邊界修正：已合併，merge `6759934`；application、database、validate 與 Browser Smoke `34871617599` 均通過，沒有新增 migration，尚未部署 staging。
+- PR #132 活動推播版本契約修正：已合併，merge `4387ee5`；application、database、validate 與 Browser Smoke `34876325765` 均通過。新增 `20260915000100_event_push_version_contract.sql`，尚未部署 staging。
 
-目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130 已進入 `main` 但尚未部署 staging；#123 已合併並完成 staging release。#130 沒有 migration，尚未部署不會造成資料庫版本落差。這份交接筆記正在補記 #130 合併後的最新 SHA 與 staging 證據。
+目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132 已進入 `main` 但尚未部署 staging；#123 已合併並完成 staging release。#132 的 migration 尚未部署。這份交接筆記正在補記 #132 合併後的最新 SHA 與 staging 證據。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
@@ -573,3 +574,18 @@ staging health (historical)        status=ok; revision 244ac256c42d;
 `verify:db` 的 schema lint 仍有 3 個既有 warning：兩個 STABLE/VOLATILE 標記不一致，以及一個未使用
 的 PL/pgSQL 變數；本輪沒有新增 warning。先前 Browser Smoke 的兩個失敗案例已在本機 Supabase 與
 `localhost:3000` 回歸通過，完整 Browser Smoke `33614549502` 亦已通過；本次 staging management acceptance `34577046356` 已通過，production 沒有修改。
+
+## 2026-09-15 #132 合併後核對補充
+
+- GitHub `origin/main` exact SHA：`4387ee578bef8273a6a59079965f4c3ab2ea6aa9`。
+- PR #132 `codex/event-push-version-contract-20260915` 已合併，merge commit 為
+  `4387ee578bef8273a6a59079965f4c3ab2ea6aa9`；application、database、validate 與 Browser Smoke
+  `34876325765` 均通過。此次修正活動推播必須帶活動版本，並移除未帶版本的舊函式權限。
+- 本機 `npm test`（145 files／967 tests）、typecheck、lint、build、migration／verification 檢查與
+  `git diff --check` 均通過；本機 `npm run verify:db` 因 Docker／Supabase 沒有回應而未完成，不能當成本機 DB reset 通過。
+- #132 新增的 `20260915000100_event_push_version_contract.sql` 尚未部署 staging。既有 staging plan
+  `34874620524` 是針對更早的 SHA `a0f3c3f`，不能沿用；必須以最新 main 重新產生 plan。
+- 目前待部署版本包含 `20260914001000_update_club_event.sql` 的既有資料回填。Free staging 沒有
+  backup／PITR，因此在取得可驗證的 logical backup／rollback point，或完成不回填既有資料的 migration
+  方案前，不能誠實標記 `BACKUP-READY`，也不能進行 Go-Live。
+- 目前沒有 open PR；#132 沒有修改 staging／production。
