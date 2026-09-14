@@ -4,39 +4,63 @@ set -euo pipefail
 base_ref="${GITHUB_BASE_REF:-feat/supabase-core-baseline}"
 git fetch origin "$base_ref" --quiet
 
-# A migration that has reached a deployed database is immutable.  The one
-# narrow exception below is for a migration that was merged with a colliding
-# timestamp but was rejected before it could be applied to staging.  Keep
-# every approved repair explicit and path-for-path; do not turn this into a
-# general rename allowance.
-repair_allowlist="scripts/migration-history-repair-allowlist.txt"
-is_allowed_repair() {
-  local old_path="$1"
-  local new_path="$2"
-  [[ -f "$repair_allowlist" ]] || return 1
-  grep -Fqx "$old_path -> $new_path" "$repair_allowlist"
-}
-
-violations=()
-while IFS=$'\t' read -r status old_path new_path; do
-  [[ -z "$status" ]] && continue
-  case "$status" in
-    A)
-      ;;
-    R*)
-      if ! is_allowed_repair "$old_path" "$new_path"; then
-        violations+=("$status\t$old_path\t$new_path")
-      fi
-      ;;
-    *)
-      violations+=("$status\t$old_path")
-      ;;
-  esac
-done < <(git diff --name-status --find-renames "origin/$base_ref"...HEAD -- supabase/migrations)
-
-if (( ${#violations[@]} > 0 )); then
-  echo "Historical migrations must not be modified, renamed, or deleted:"
-  printf '%b\n' "${violations[@]}"
+# 1. No two migrations may claim the same version number.
+#
+# Supabase keys supabase_migrations.schema_migrations on the version alone, not
+# the filename, so two files sharing a number are the same migration as far as
+# the database is concerned: the first applies and the second dies on a
+# duplicate primary key, taking the release with it and leaving the database
+# half-migrated. That is exactly what happened on 2026-09-14, when two agents
+# working the same day both reached for 20260914000400.
+#
+# This is checked over the whole directory rather than the diff, because the
+# collision is a property of the tree, and the branch that completes the pair is
+# usually not the branch that looks wrong.
+duplicates="$(
+  find supabase/migrations -name '*.sql' -type f -print0 2>/dev/null \
+    | xargs -0 -n1 basename 2>/dev/null \
+    | sed -E 's/^([0-9]+)_.*/\1/' \
+    | sort \
+    | uniq -d
+)"
+if [[ -n "$duplicates" ]]; then
+  echo "Two migrations cannot share a version number; Supabase keys on the number alone:"
+  while IFS= read -r version; do
+    [[ -z "$version" ]] && continue
+    find supabase/migrations -name "${version}_*.sql" -type f | sed 's/^/  /'
+  done <<< "$duplicates"
+  echo "Renumber one of them to a version later than every migration already on main."
   exit 1
 fi
+
+# 2. A migration that is already on the base branch may not be modified or
+# deleted -- with one exception, below.
+violations=""
+while IFS=$'\t' read -r status old new; do
+  [[ -z "$status" ]] && continue
+  [[ "$status" == "A" ]] && continue
+
+  # The exception: renumbering a file purely to escape a collision. Permitted
+  # only when the content is byte-identical (R100) and the version it is leaving
+  # is still claimed by a different migration -- that is, the rename exists to
+  # break a tie rather than to rewrite history. Anything else, including a
+  # rename that also edits the file, is still refused.
+  if [[ "$status" == "R100" && -n "${new:-}" ]]; then
+    old_version="$(basename "$old" | sed -E 's/^([0-9]+)_.*/\1/')"
+    still_claimed="$(find supabase/migrations -name "${old_version}_*.sql" -type f | head -1)"
+    if [[ -n "$still_claimed" ]]; then
+      echo "Allowing collision renumber: $old -> $new (version $old_version is still used by $(basename "$still_claimed"))"
+      continue
+    fi
+  fi
+
+  violations+="$status	$old	${new:-}"$'\n'
+done < <(git diff --name-status "origin/$base_ref"...HEAD -- supabase/migrations)
+
+if [[ -n "$violations" ]]; then
+  echo "Historical migrations must not be modified, renamed, or deleted:"
+  printf '%s' "$violations"
+  exit 1
+fi
+
 echo "Migration history guard passed; feature migrations are forward-only."
