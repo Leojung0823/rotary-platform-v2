@@ -21,9 +21,9 @@
 下列功能已各自完成開發並開 PR，但**未合併前不算 `main` 完成，也不代表已部署 staging**：
 
 - PR #107 `codex/line-rich-menu-v1`：LINE Rich Menu；HEAD `9123104`，application／database／validate／Browser Smoke 均已通過，PR 已恢復 clean／mergeable，等待合併與各社 OA 設定。
-- PR #108 `codex/dues-finance-v1`：社費、收款、核銷與報表；HEAD `42e61ed`，已用普通 merge 同步 #107 base；PDF 繁中字型與日期時區問題已修正，本機 908 項測試通過，新的 GitHub checks 執行中。
+- PR #108 `codex/dues-finance-v1`：社費、收款、核銷與報表；HEAD `42e61ed`，已用普通 merge 同步 #107 base；PDF 繁中字型與日期時區問題已修正，本機 908 項測試通過，GitHub application／database／validate／Browser Smoke 均已通過，PR 為 clean／mergeable，等待合併與 hosted 驗收。
 - PR #109 `codex/pwa-v1`：手機 Web App；HEAD `e29d1cc`，檢查已通過，等待合併與真實手機驗收。
-- PR #110 `codex/birthday-settings-ux-v1`：生日設定 UX、每社預設公開與錯誤提示；HEAD `c89c2f6`，修正切換社別測試的 Server Action cookie 等待，新的檢查執行中。
+- PR #110 `codex/birthday-settings-ux-v1`：生日設定 UX、每社預設公開與錯誤提示；HEAD `b99317e`，修正 local HTTP 使用 production build 時 active-club cookie 被錯誤標成 Secure 的問題並補回歸測試，新的檢查執行中。
 - PR #111 已合併至 `main`（merge commit `2d7839d`）；其 `20260914000800_club_service_plan.sql` 已進入主線，待 staging／hosted 驗收。
 
 依賴順序：先完成 #107，再更新 #108 的 base，之後處理 #110；#111 已合併。社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
