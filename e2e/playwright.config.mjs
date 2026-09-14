@@ -26,6 +26,7 @@ const blessingPrivacyTestMatch = /blessing-amount-privacy\.e2e\.mjs/;
 const memberTagsTestMatch = /member-tags\.e2e\.mjs/;
 const eventAudienceTestMatch = /event-audience\.e2e\.mjs/;
 const lineOaAudienceTestMatch = /line-oa-audience\.e2e\.mjs/;
+const pwaTestMatch = /pwa\.e2e\.mjs/;
 const lineRichMenuTestMatch = /line-rich-menu\.e2e\.mjs/;
 const boardAudienceTestMatch = /board-audience\.e2e\.mjs/;
 const eventDetailTestMatch = /event-detail\.e2e\.mjs/;
@@ -58,7 +59,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       use: { viewport: { width: 1440, height: 900 } },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|line-rich-menu\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|pwa\.e2e\.mjs|line-rich-menu\.e2e\.mjs/,
     },
     {
       name: "android-chromium",
@@ -68,7 +69,7 @@ export default defineConfig({
         hasTouch: true,
         deviceScaleFactor: 2.625,
       },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|line-rich-menu\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|pwa\.e2e\.mjs|line-rich-menu\.e2e\.mjs/,
     },
     {
       name: "role-shells-1440",
@@ -160,6 +161,11 @@ export default defineConfig({
     {
       name: "line-oa-audience-1440",
       testMatch: lineOaAudienceTestMatch,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "pwa-1440",
+      testMatch: pwaTestMatch,
       use: { viewport: { width: 1440, height: 900 } },
     },
     {
