@@ -87,6 +87,7 @@ describe("role-aware navigation", () => {
       "/events?mode=member",
       "/interact?mode=member",
       "/directory?mode=member",
+      "/club-affairs?mode=member",
       "/me?mode=member",
     ]);
     expect(roleShellNavigation(projected, "management", { managementPermissions: allManagementPermissions }).map((item) => item.href)).toEqual([
@@ -104,7 +105,7 @@ describe("role-aware navigation", () => {
   it("keeps a club-level manager at the same member destinations as anyone else", () => {
     const managerContext = context({ member: true, management: true, platform: false });
     expect(roleShellNavigation(managerContext, "member").map((item) => item.id)).toEqual([
-      "home", "events", "interact", "directory", "account",
+      "home", "events", "interact", "directory", "club-affairs", "account",
     ]);
     expect(roleShellNavigation(managerContext, "member").some((item) => item.id === "manage-club")).toBe(false);
   });
@@ -153,7 +154,7 @@ describe("role-aware navigation", () => {
     expect(member.some((item) => item.href.startsWith("/attendance"))).toBe(false);
 
     expect(member.map((item) => item.id))
-      .toEqual(["home", "events", "interact", "directory", "account"]);
+      .toEqual(["home", "events", "interact", "directory", "club-affairs", "account"]);
     expect(management.map((item) => item.id))
       .toEqual(["overview", "events", "attendance", "members"]);
   });
@@ -210,7 +211,7 @@ describe("message centre navigation", () => {
     expect(roleShellNavigation(projected, "member", {
       messageCenterEnabled: true,
       unreadMessageCount: 3,
-    })).toHaveLength(5);
+    })).toHaveLength(6);
   });
 
   it("keeps 我的 last in member navigation", () => {
