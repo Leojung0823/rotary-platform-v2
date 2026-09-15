@@ -19,7 +19,7 @@ const eventTypeLabels: Record<string, string> = {
 };
 
 type ManagedEvent = {
-  event_id: string;
+  id: string;
   version: number;
   status: string;
   event_type: string;
@@ -62,7 +62,10 @@ export default async function EditEventPage({
   if (eventsResult.error) return <Notice tone="error">您沒有管理這個社活動的權限。</Notice>;
 
   const events = ((eventsResult.data as { events?: ManagedEvent[] } | null)?.events ?? []);
-  const target = events.find((event) => event.event_id === eventId);
+  // `id`, not `event_id`: that is the key list_club_events emits. Looking for
+  // a field the row never had meant find() always returned undefined and this
+  // page answered 404 for every event, from the day it shipped.
+  const target = events.find((event) => event.id === eventId);
   if (!target) notFound();
 
   // The database refuses these too; refusing here saves the officer filling in
