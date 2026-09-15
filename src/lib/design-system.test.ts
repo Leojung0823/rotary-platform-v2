@@ -147,6 +147,26 @@ describe("design system floors", () => {
     expect(dangling.filter((entry) => !setInMarkup.some((name) => entry.endsWith(name)))).toEqual([]);
   });
 
+  it("never sets a grid track minimum the narrowest phone cannot hold", () => {
+    // 320px is the narrowest viewport this project supports, and a page keeps
+    // 16px of padding each side, so the content box is 288px. A bare
+    // minmax(320px, 1fr) cannot shrink below its minimum: the track stays
+    // 320px inside a 288px box and the whole page scrolls sideways -- which is
+    // what it did, by exactly the 16px of left padding. min(Npx, 100%) is a
+    // no-op wherever the container is already wide enough, so there is no cost
+    // to writing it every time.
+    const narrowestContentBox = 288;
+    const offenders: string[] = [];
+    for (const sheet of styleSheets("src")) {
+      for (const line of readFileSync(sheet, "utf8").split("\n")) {
+        for (const match of line.matchAll(/minmax\(\s*(\d+)px/gu)) {
+          if (Number(match[1]) > narrowestContentBox) offenders.push(`${sheet}: ${line.trim()}`);
+        }
+      }
+    }
+    expect(offenders, "wrap the minimum in min(Npx, 100%) so the track can shrink").toEqual([]);
+  });
+
   it("never places a grid child by counting the rows its siblings occupy", () => {
     // `grid-row: 1 / span 3` was written when a card had three children. Adding
     // one to the markup left the span pointing at the wrong place, so the

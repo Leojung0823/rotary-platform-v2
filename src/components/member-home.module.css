@@ -32,7 +32,7 @@
    which features the club has switched on, and a hard three-column grid leaves
    a hole when there are four. Every tile starts on the same line whatever its
    text does, because the row height comes from the tallest one. */
-.secondaryActions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); align-items: stretch; }
+.secondaryActions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: var(--space-4); align-items: stretch; }
 .secondaryAction { min-height: 76px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-4); border: 0; border-radius: var(--radius-card); color: var(--ink); background: var(--surface); box-shadow: var(--elevation-card); }
 /* No lift on hover. A card that jumps under the cursor draws attention to the
    pointer rather than to the card. */
@@ -152,7 +152,10 @@
 
 /* The bottom row. One column on a phone, side by side once there is room --
    and the grid is ready for the third and fourth card without changing. */
-.bottomGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-4); align-items: start; }
+/* min(320px, 100%), not 320px: a bare minimum larger than the viewport cannot
+   shrink, so at 320px the track stayed 320px wide inside a 288px box and the
+   page scrolled sideways by exactly the left padding. */
+.bottomGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--space-4); align-items: start; }
 
 .announcementList { display: grid; }
 .announcementRow {
