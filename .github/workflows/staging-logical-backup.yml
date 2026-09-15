@@ -101,39 +101,56 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          DUMP_FILE=/tmp/rotary-staging-public.sql
-          ENCRYPTED_FILE=/tmp/rotary-staging-public.sql.cms
-          trap 'rm -f "$DUMP_FILE" "$ENCRYPTED_FILE" /tmp/rotary-recipient-public.pem' EXIT
+          SCHEMA_FILE=/tmp/rotary-staging-public-schema.sql
+          DATA_FILE=/tmp/rotary-staging-public-data.sql
+          ARCHIVE_FILE=/tmp/rotary-staging-public.tar.gz
+          ENCRYPTED_FILE=/tmp/rotary-staging-public.tar.gz.cms
+          CHECKSUM_FILE=/tmp/rotary-staging-public.tar.gz.cms.sha256
+          trap 'rm -f "$SCHEMA_FILE" "$DATA_FILE" "$ARCHIVE_FILE" "$ENCRYPTED_FILE" "$CHECKSUM_FILE" /tmp/rotary-recipient-public.pem' EXIT
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase db dump \
             --linked \
             --schema public \
             --password "$SUPABASE_DB_PASSWORD" \
-            --file "$DUMP_FILE"
-          test -s "$DUMP_FILE"
-          rg -q 'line_push_logs' "$DUMP_FILE"
-          rg -q 'club_events' "$DUMP_FILE"
+            --file "$SCHEMA_FILE"
+          supabase db dump \
+            --linked \
+            --schema public \
+            --data-only \
+            --use-copy \
+            --password "$SUPABASE_DB_PASSWORD" \
+            --file "$DATA_FILE"
+          test -s "$SCHEMA_FILE"
+          test -s "$DATA_FILE"
+          grep -q 'line_push_logs' "$SCHEMA_FILE"
+          grep -q 'club_events' "$SCHEMA_FILE"
+          grep -q 'line_push_logs' "$DATA_FILE"
+          grep -q 'club_events' "$DATA_FILE"
+          tar -czf "$ARCHIVE_FILE" \
+            -C /tmp \
+            rotary-staging-public-schema.sql \
+            rotary-staging-public-data.sql
           openssl cms \
             -encrypt \
             -binary \
             -aes-256-cbc \
             -recip /tmp/rotary-recipient-public.pem \
-            -in "$DUMP_FILE" \
+            -in "$ARCHIVE_FILE" \
             -out "$ENCRYPTED_FILE" \
             -outform DER
           test -s "$ENCRYPTED_FILE"
-          sha256sum "$ENCRYPTED_FILE" > /tmp/rotary-staging-public.sql.cms.sha256
+          sha256sum "$ENCRYPTED_FILE" > "$CHECKSUM_FILE"
           echo "Public schema dump was encrypted on the runner; plaintext will not be uploaded."
           echo "Encrypted backup bytes: $(wc -c < "$ENCRYPTED_FILE" | tr -d ' ')"
-          echo "Encrypted backup SHA-256: $(awk '{print $1}' /tmp/rotary-staging-public.sql.cms.sha256)"
+          echo "Encrypted backup SHA-256: $(awk '{print $1}' "$CHECKSUM_FILE")"
 
       - name: Publish encrypted backup artifact for immediate local download
         uses: actions/upload-artifact@v4
         with:
           name: rotary-staging-logical-backup-${{ github.run_id }}
           path: |
-            /tmp/rotary-staging-public.sql.cms
-            /tmp/rotary-staging-public.sql.cms.sha256
+            /tmp/rotary-staging-public.tar.gz.cms
+            /tmp/rotary-staging-public.tar.gz.cms.sha256
           if-no-files-found: error
           retention-days: 1
 
