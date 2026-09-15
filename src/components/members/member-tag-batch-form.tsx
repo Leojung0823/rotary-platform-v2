@@ -44,7 +44,7 @@ export function MemberTagBatchForm({
 
   if (tags.length === 0) return <>{children}</>;
 
-  return <form action={applyMemberTagToSelectionAction} onChange={recount} ref={formRef}>
+  return <form action={applyMemberTagToSelectionAction} className={styles.form} onChange={recount} ref={formRef}>
     <input type="hidden" name="clubId" value={clubId} />
     <div className={styles.bar}>
       <div className={styles.selection}>

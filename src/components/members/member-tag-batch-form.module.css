@@ -1,3 +1,15 @@
+/* The roster's grid parent sizes this form, and a grid item's automatic minimum
+   size is its content -- which here is a table far wider than a phone. The
+   table was previously the grid item itself and escaped this, because
+   .table-wrap sets overflow-x: auto and an item that scrolls has an automatic
+   minimum size of zero. Wrapping it in a form put a visible-overflow box in
+   between and handed the table's min-content width back to the page: 232px of
+   horizontal overflow at 375px, which floats every fixed overlay over content
+   that has scrolled out from under it. */
+.form {
+  min-width: 0;
+}
+
 .bar {
   display: flex;
   flex-wrap: wrap;
