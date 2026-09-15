@@ -7,8 +7,8 @@ on:
         description: "Exact main commit this backup is being taken before"
         required: true
         type: string
-      recipient_public_key_b64:
-        description: "Base64-encoded local RSA public key; only encrypted output is uploaded"
+      recipient_certificate_b64:
+        description: "Base64-encoded local X.509 recipient certificate; only encrypted output is uploaded"
         required: true
         type: string
 
@@ -32,7 +32,7 @@ jobs:
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
       SOURCE_SHA: ${{ inputs.source_sha }}
-      RECIPIENT_PUBLIC_KEY_B64: ${{ inputs.recipient_public_key_b64 }}
+      RECIPIENT_CERTIFICATE_B64: ${{ inputs.recipient_certificate_b64 }}
 
     steps:
       - name: Check out the controlled backup workflow revision
@@ -67,14 +67,14 @@ jobs:
             echo "Refusing backup: source_sha must equal the dispatched main revision."
             exit 1
           }
-          [[ -n "$RECIPIENT_PUBLIC_KEY_B64" ]] || {
-            echo "Refusing backup: no recipient public key was supplied."
+          [[ -n "$RECIPIENT_CERTIFICATE_B64" ]] || {
+            echo "Refusing backup: no recipient certificate was supplied."
             exit 1
           }
           umask 077
-          printf '%s' "$RECIPIENT_PUBLIC_KEY_B64" | base64 --decode > /tmp/rotary-recipient-public.pem
-          openssl pkey -pubin -in /tmp/rotary-recipient-public.pem -noout
-          echo "Approved staging target, source commit and recipient public key validated."
+          printf '%s' "$RECIPIENT_CERTIFICATE_B64" | base64 --decode > /tmp/rotary-recipient-certificate.pem
+          openssl x509 -in /tmp/rotary-recipient-certificate.pem -noout -checkend 0
+          echo "Approved staging target, source commit and recipient certificate validated."
 
       - name: Verify protected staging credentials are present
         shell: bash
@@ -106,7 +106,7 @@ jobs:
           ARCHIVE_FILE=/tmp/rotary-staging-public.tar.gz
           ENCRYPTED_FILE=/tmp/rotary-staging-public.tar.gz.cms
           CHECKSUM_FILE=/tmp/rotary-staging-public.tar.gz.cms.sha256
-          trap 'rm -f "$SCHEMA_FILE" "$DATA_FILE" "$ARCHIVE_FILE" "$ENCRYPTED_FILE" "$CHECKSUM_FILE" /tmp/rotary-recipient-public.pem' EXIT
+          trap 'rm -f "$SCHEMA_FILE" "$DATA_FILE" "$ARCHIVE_FILE" "$ENCRYPTED_FILE" "$CHECKSUM_FILE" /tmp/rotary-recipient-certificate.pem' EXIT
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase db dump \
             --linked \
@@ -134,7 +134,7 @@ jobs:
             -encrypt \
             -binary \
             -aes-256-cbc \
-            -recip /tmp/rotary-recipient-public.pem \
+            -recip /tmp/rotary-recipient-certificate.pem \
             -in "$ARCHIVE_FILE" \
             -out "$ENCRYPTED_FILE" \
             -outform DER
@@ -161,7 +161,7 @@ jobs:
             echo "### Controlled staging logical backup"
             echo "- Source main commit: \`$SOURCE_SHA\`"
             echo "- Scope: \`public\` schema and data"
-            echo "- Encryption: local RSA recipient key, AES-256-CBC payload"
+            echo "- Encryption: local RSA recipient certificate, AES-256-CBC payload"
             echo "- Artifact: encrypted files only; retention is one day for download and deletion"
             echo "- Plaintext: never uploaded"
           } >> "$GITHUB_STEP_SUMMARY"
