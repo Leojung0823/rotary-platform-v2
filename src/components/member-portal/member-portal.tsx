@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { PortalIcon, type PortalIconName } from "./portal-icons";
 import {
-  featuredEventAction,
   registrationLabels,
   type PortalAnnouncement,
   type PortalEntry,
@@ -18,7 +17,10 @@ function Header({ member, today }: { member: PortalMember; today: { date: string
     <div className={styles.headerGreeting}>
       <p className={styles.eyebrow}>社員首頁</p>
       <h1 className={styles.pageTitle}>{member.displayName}，您好</h1>
-      <p className={styles.pageSubtitle}>今天與我有關的事情</p>
+      {/* A heading, styled small. It names what this page is for, and reading
+          by heading is how a screen reader user moves through it -- the same
+          mistake was made with the announcements card and fixed there. */}
+      <h2 className={styles.pageSubtitle}>今天與我有關的事情</h2>
     </div>
 
     <div className={styles.headerSide}>
@@ -57,7 +59,6 @@ function renderEventTitle(title: string) {
 }
 
 function HeroCard({ event }: { event: PortalFeaturedEvent }) {
-  const action = featuredEventAction(event.registration);
   return <section className={styles.hero} aria-labelledby="portal-hero-title">
     <div className={styles.heroHeading}>
       <span className={styles.heroSparkle} aria-hidden="true"><PortalIcon name="sparkle" size={18} /></span>
@@ -99,8 +100,8 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
           </div>
         </dl>
 
-        <Link className={styles.cta} href={action.href} prefetch={false}>
-          <span>{action.label}</span>
+        <Link className={styles.cta} href={event.action.href} prefetch={false}>
+          <span>{event.action.label}</span>
           <PortalIcon name="arrowRight" size={19} />
         </Link>
       </div>

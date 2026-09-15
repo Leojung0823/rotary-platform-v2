@@ -51,9 +51,12 @@ export function featuredEventFrom(
     startsAt: dateTime.format(new Date(event.startsAt)),
     venue: event.location || "地點待確認",
     venueAddress: "",
-    checkinNote: memberHomePrimaryAction(event).label === "前往簽到" ? "開放簽到" : "本活動不需簽到",
+    checkinNote: event.checkinState === "available" ? "開放簽到" : "本活動不需簽到",
     coverUrl: coverUrl ?? null,
     registration: heroRegistration(event),
+    // The projection's own rule, which knows about check-in as well as
+    // registration. The card must not work this out a second way.
+    action: memberHomePrimaryAction(event),
   };
 }
 
