@@ -21,37 +21,24 @@ export function EventManagementPanel({
   audienceTags: readonly EventManagementAudienceTag[];
   audienceMembers: readonly EventManagementAudienceMember[];
 }) {
-  return <div className="page-stack" data-testid="event-management">
-    <section className="card">
-      <div className="section-heading">
-        <div><p className="eyebrow">活動管理</p><h2>建立活動草稿</h2></div>
-        <span>{selectedClub.club_name}</span>
-      </div>
-      <EventCreateForm
-        clubId={selectedClub.club_id}
-        eventTypeLabels={eventTypeLabels}
-        tags={audienceTags}
-        members={audienceMembers}
-      />
-    </section>
+  const live = events.filter((event) => event.status !== "cancelled");
+  const cancelled = events.filter((event) => event.status === "cancelled");
 
-    <section>
-      <div className="section-heading">
-        <div><p className="eyebrow">目前社別</p><h2>{selectedClub.club_name}</h2></div>
-        <span>{events.length} 場活動</span>
-      </div>
-      {events.length === 0 ? <div className="empty">
-        <div className="empty-icon">日</div>
-        <h2>目前沒有活動</h2>
-        <p>可以先建立草稿，確認後再發布給社員。</p>
-      </div> : <div className="form-stack">
-        {events.map((event) => <article className="card" key={event.id}>
-          {event.cover_image_path && coverUrls.get(event.cover_image_path) && <img
-            className="event-cover"
-            src={coverUrls.get(event.cover_image_path)}
-            alt=""
-            loading="lazy"
-          />}
+  // One card, rendered for the live list and for the archive alike.
+  function eventCard(event: ClubEvent) {
+    return <article className="card" key={event.id}>
+          {/* Folded by default. An officer scanning this list wants to see
+              which event is which; a full-width poster on every card turns a
+              dozen events into a page of scrolling. */}
+          {event.cover_image_path && coverUrls.get(event.cover_image_path) && <details className="cover-fold">
+            <summary>活動主視覺</summary>
+            <img
+              className="event-cover"
+              src={coverUrls.get(event.cover_image_path)}
+              alt=""
+              loading="lazy"
+            />
+          </details>}
           <div className="section-heading">
             <div>
               <div className="status-pair">
@@ -113,7 +100,41 @@ export function EventManagementPanel({
             <span className="hint">取消後不可恢復，並會關閉 active 簽到 token、保留簽到歷史。</span>
             <button className="button button-danger" type="submit">取消活動</button>
           </form>}
-        </article>)}
+    </article>;
+  }
+
+  return <div className="page-stack" data-testid="event-management">
+    <section className="card">
+      <div className="section-heading">
+        <div><p className="eyebrow">活動管理</p><h2>建立活動草稿</h2></div>
+        <span>{selectedClub.club_name}</span>
+      </div>
+      <EventCreateForm
+        clubId={selectedClub.club_id}
+        eventTypeLabels={eventTypeLabels}
+        tags={audienceTags}
+        members={audienceMembers}
+      />
+    </section>
+
+    <section>
+      <div className="section-heading">
+        <div><p className="eyebrow">目前社別</p><h2>{selectedClub.club_name}</h2></div>
+        <span>{live.length} 場活動</span>
+      </div>
+      {events.length === 0 ? <div className="empty">
+        <div className="empty-icon">日</div>
+        <h2>目前沒有活動</h2>
+        <p>可以先建立草稿，確認後再發布給社員。</p>
+      </div> : <div className="form-stack">
+        {live.map(eventCard)}
+        {/* A cancelled event is still the officer's record of what was called
+            off, so it is filed rather than hidden -- but it is not what anyone
+            opened this page to read. */}
+        {cancelled.length > 0 && <details className="archive-fold">
+          <summary>已取消的活動（{cancelled.length}）</summary>
+          <div className="form-stack">{cancelled.map(eventCard)}</div>
+        </details>}
       </div>}
     </section>
   </div>;

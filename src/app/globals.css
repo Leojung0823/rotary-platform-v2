@@ -457,6 +457,38 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   td, th { padding: 13px; }
 }
 
+/* Two folds on the management list, both closed by default.
+   The poster, because an officer scanning a dozen events wants to see which is
+   which, and a full-width image on every card turns that into a page of
+   scrolling. The cancelled events, because they are still the record of what
+   was called off -- filed rather than hidden, but not what anyone opened the
+   page to read. */
+.cover-fold, .archive-fold { margin: 0; }
+.cover-fold > summary, .archive-fold > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--blue-ink);
+  cursor: pointer;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  list-style: none;
+}
+.cover-fold > summary::-webkit-details-marker,
+.archive-fold > summary::-webkit-details-marker { display: none; }
+.cover-fold > summary::before, .archive-fold > summary::before {
+  content: "▸";
+  transition: transform .15s ease;
+}
+.cover-fold[open] > summary::before, .archive-fold[open] > summary::before { transform: rotate(90deg); }
+.cover-fold > summary:focus-visible, .archive-fold > summary:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.archive-fold > summary { color: var(--muted); }
+.archive-fold > .form-stack { margin-top: var(--space-3); }
+
 /* Event cover: fixed aspect so a portrait phone photo cannot push the rest of
    the card off the screen, and so the list keeps a predictable rhythm.
 

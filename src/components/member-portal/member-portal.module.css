@@ -98,6 +98,23 @@
 .tagline { margin: 0; padding-bottom: 9px; color: var(--text-secondary); font-size: var(--type-meta); }
 .tagline { border-bottom: 2px solid var(--rotary-gold); border-image: linear-gradient(to left, var(--rotary-gold) 0 92px, transparent 92px) 0 0 2 0 / 0 0 2px 0; }
 
+/* Three spans, three lines. Without a rule here they are inline and run
+   together as "TOGETHERWE CREATEA BRIGHTER TOMORROW" -- the dead-code sweep
+   deleted this as unused when member-portal.tsx renders it. Brand micro-copy,
+   which is the one place the 14px floor does not apply. */
+.motto2 {
+  display: grid;
+  gap: 1px;
+  margin: 8px 0 0;
+  padding-top: 0;
+  color: #8fa0b6;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  line-height: 1.5;
+  text-align: right;
+}
+
 .hero {
   padding: 16px 20px 18px;
   border: 1px solid var(--border-subtle);

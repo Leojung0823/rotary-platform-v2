@@ -249,7 +249,7 @@ export function BlessingIouCollections({
             <option value="check">支票</option>
             <option value="other">其他</option>
           </select></label>
-          <label className={styles.noteField}><span>核對備註（選填）</span><input value={referenceNote} onChange={(event) => setReferenceNote(event.target.value)} maxLength={300} placeholder="例如：轉帳末五碼 12345" disabled={saving} /></label>
+          <label><span>核對備註（選填）</span><input value={referenceNote} onChange={(event) => setReferenceNote(event.target.value)} maxLength={300} placeholder="例如：轉帳末五碼 12345" disabled={saving} /></label>
         </div>
         <p>在下方一筆或多筆 IOU 填金額後，可一次登錄。少於未收金額就是部分收款。</p>
       </section>

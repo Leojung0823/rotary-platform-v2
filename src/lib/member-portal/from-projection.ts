@@ -39,6 +39,20 @@ function heroRegistration(event: MemberHomeEvent): PortalFeaturedEvent["registra
   }
 }
 
+/**
+ * Every state has its own sentence. "本活動不需簽到" used to stand in for all
+ * four of the others, which told a member waiting for check-in to open that
+ * there would never be any -- and once an event outside the attendance rate
+ * can take check-ins too, "not_available" stops being the common case.
+ */
+function checkinNoteFor(state: MemberHomeEvent["checkinState"]): string {
+  if (state === "available") return "開放簽到";
+  if (state === "checked_in") return "已完成簽到";
+  if (state === "not_open") return "簽到尚未開始";
+  if (state === "closed") return "簽到已結束";
+  return "本活動不需簽到";
+}
+
 export function featuredEventFrom(
   event: MemberHomeEvent,
   coverUrl: string | undefined,
@@ -51,7 +65,7 @@ export function featuredEventFrom(
     startsAt: dateTime.format(new Date(event.startsAt)),
     venue: event.location || "地點待確認",
     venueAddress: "",
-    checkinNote: event.checkinState === "available" ? "開放簽到" : "本活動不需簽到",
+    checkinNote: checkinNoteFor(event.checkinState),
     coverUrl: coverUrl ?? null,
     registration: heroRegistration(event),
     // The projection's own rule, which knows about check-in as well as

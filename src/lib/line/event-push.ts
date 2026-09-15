@@ -25,11 +25,23 @@ function formatStart(startsAt: string) {
 }
 
 /**
+ * The event's own page. A member reads this notice in LINE, so the only way
+ * they can act on it is a link they can tap -- telling them to "go to the
+ * events page" without one asks them to leave LINE, remember the address and
+ * find the event themselves.
+ */
+export function eventUrl(eventId: string) {
+  const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/+$/u, "");
+  return `${origin}/events/${encodeURIComponent(eventId)}`;
+}
+
+/**
  * A LINE message has no title and no link preview, so the announcement has to
  * read as a whole sentence on its own. Anything the member needs in order to
- * decide whether to go: what, when, where.
+ * decide whether to go: what, when, where -- and the way to say yes.
  */
 export function composeEventPushText(event: {
+  eventId: string;
   title: string;
   location?: string | null;
   startsAt: string;
@@ -39,7 +51,9 @@ export function composeEventPushText(event: {
   if (when) lines.push(`時間：${when}`);
   const location = (event.location ?? "").trim();
   if (location) lines.push(`地點：${location.slice(0, MAX_LOCATION)}`);
-  lines.push("", "詳細內容與報名請到活動頁面。");
+  // The URL goes on its own line: LINE only turns a link into something
+  // tappable when nothing else is crowding it.
+  lines.push("", "詳細內容與報名：", eventUrl(event.eventId));
   return lines.join("\n");
 }
 
@@ -102,6 +116,7 @@ export async function pushPublishedEventToLine({
   if (recipients.length === 0) return { status: "skipped", reason: "no_reachable_recipients" };
 
   const text = composeEventPushText({
+    eventId,
     title: projection.title,
     location: typeof projection.location === "string" ? projection.location : null,
     startsAt: projection.starts_at,
