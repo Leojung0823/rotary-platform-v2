@@ -106,7 +106,7 @@ jobs:
           ARCHIVE_FILE=/tmp/rotary-staging-public.tar.gz
           ENCRYPTED_FILE=/tmp/rotary-staging-public.tar.gz.cms
           CHECKSUM_FILE=/tmp/rotary-staging-public.tar.gz.cms.sha256
-          trap 'rm -f "$SCHEMA_FILE" "$DATA_FILE" "$ARCHIVE_FILE" "$ENCRYPTED_FILE" "$CHECKSUM_FILE" /tmp/rotary-recipient-certificate.pem' EXIT
+          trap 'rm -f "$SCHEMA_FILE" "$DATA_FILE" "$ARCHIVE_FILE" /tmp/rotary-recipient-certificate.pem' EXIT
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase db dump \
             --linked \
@@ -165,3 +165,17 @@ jobs:
             echo "- Artifact: encrypted files only; retention is one day for download and deletion"
             echo "- Plaintext: never uploaded"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove runner-local backup files
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            /tmp/rotary-staging-public-schema.sql \
+            /tmp/rotary-staging-public-data.sql \
+            /tmp/rotary-staging-public.tar.gz \
+            /tmp/rotary-staging-public.tar.gz.cms \
+            /tmp/rotary-staging-public.tar.gz.cms.sha256 \
+            /tmp/rotary-recipient-certificate.pem
+          echo "Runner-local plaintext, archive, encrypted file and certificate removed."
