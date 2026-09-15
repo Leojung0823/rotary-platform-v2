@@ -47,6 +47,14 @@ export type MemberHomeNotifications = Readonly<{
   items: readonly MemberHomeNotification[];
 }>;
 
+/** An event still to come, for the list beside the hero. */
+export type MemberHomeUpcomingEvent = Readonly<{
+  eventId: string;
+  title: string;
+  startsAt: string;
+  registrationState: "registered" | "open" | "closed";
+}>;
+
 /** An event this member has been asked about and has not answered. */
 export type MemberHomePendingTask = Readonly<{
   kind: "event_response";
@@ -61,6 +69,7 @@ export type MemberHomeProjection = Readonly<{
   primaryEvent: MemberHomeEvent | null;
   nextEvent: MemberHomeEvent | null;
   recentEvents: readonly MemberHomeRecentEvent[];
+  upcomingEvents: readonly MemberHomeUpcomingEvent[];
   pendingTasks: readonly MemberHomePendingTask[];
   notifications: MemberHomeNotifications;
 }>;
@@ -185,6 +194,37 @@ function parseNotification(value: unknown): MemberHomeNotification | null {
   };
 }
 
+const maximumUpcomingEvents = 4;
+const upcomingRegistrationStates = ["registered", "open", "closed"] as const;
+
+function parseUpcomingEvent(value: unknown): MemberHomeUpcomingEvent | null {
+  if (!isRecord(value)
+    || !hasExactKeys(value, ["event_id", "title", "starts_at", "registration_state"])
+    || typeof value.event_id !== "string"
+    || value.event_id.length === 0
+    || typeof value.title !== "string"
+    || value.title.length === 0
+    || value.title.length > maximumEventTextLength
+    || typeof value.starts_at !== "string"
+    || value.starts_at.length === 0
+    || typeof value.registration_state !== "string"
+    || !(upcomingRegistrationStates as readonly string[]).includes(value.registration_state)) return null;
+
+  return {
+    eventId: value.event_id,
+    title: value.title,
+    startsAt: value.starts_at,
+    registrationState: value.registration_state as MemberHomeUpcomingEvent["registrationState"],
+  };
+}
+
+function parseUpcomingEvents(value: unknown): readonly MemberHomeUpcomingEvent[] | null {
+  if (!Array.isArray(value) || value.length > maximumUpcomingEvents) return null;
+  const events = value.map(parseUpcomingEvent);
+  if (events.some((event) => event === null)) return null;
+  return events as MemberHomeUpcomingEvent[];
+}
+
 const maximumPendingTasks = 5;
 
 function parsePendingTask(value: unknown): MemberHomePendingTask | null {
@@ -235,7 +275,7 @@ function parseNotifications(value: unknown): MemberHomeNotifications | null {
 }
 
 export function parseMemberHomeProjection(value: unknown): MemberHomeProjection | null {
-  if (!isRecord(value) || !hasExactKeys(value, ["club", "primary_event", "next_event", "recent_events", "pending_tasks", "notifications"])
+  if (!isRecord(value) || !hasExactKeys(value, ["club", "primary_event", "next_event", "recent_events", "upcoming_events", "pending_tasks", "notifications"])
     || !isRecord(value.club)
     || !hasExactKeys(value.club, ["club_code", "club_name"])
     || typeof value.club.club_code !== "string"
@@ -252,6 +292,9 @@ export function parseMemberHomeProjection(value: unknown): MemberHomeProjection 
 
   const recentEvents = parseRecentEvents(value.recent_events);
   if (recentEvents === null) return null;
+  const upcomingEvents = parseUpcomingEvents(value.upcoming_events);
+  if (upcomingEvents === null) return null;
+
   const pendingTasks = parsePendingTasks(value.pending_tasks);
   if (pendingTasks === null) return null;
 
@@ -263,6 +306,7 @@ export function parseMemberHomeProjection(value: unknown): MemberHomeProjection 
     primaryEvent,
     nextEvent,
     recentEvents,
+    upcomingEvents,
     pendingTasks,
     notifications,
   };

@@ -123,6 +123,7 @@
   font-weight: 500;
 }
 .navItem:hover { background: rgba(22, 104, 220, .06); }
+.navLabelShort { display: none; }
 .navItemCurrent {
   background: var(--rotary-blue-light);
   color: var(--rotary-blue);
@@ -424,8 +425,159 @@
 .taskIcon_chevron { background: #e8f0fd; color: var(--rotary-blue); }
 
 .noticeDot { width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; }
-.noticeDot_green { background: #2fae74; }
-.noticeDot_blue { background: #2b7cf0; }
-.noticeDot_amber { background: #efa02a; }
 .noticeRow .rowText small { color: #9aa9bd; font-size: var(--type-meta); }
 .noticeRow .rowText strong { font-size: var(--type-meta); font-weight: 600; }
+
+/* ---- states the real data brings that a fixed sample never did -------- */
+
+/* No poster: the card drops the column rather than framing a blank. */
+.heroBodyNoCover { grid-template-columns: minmax(0, 1fr); }
+
+.heroEmpty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--background-card);
+  box-shadow: var(--shadow-card);
+}
+.heroEmpty p { flex: 1 1 auto; margin: 0; font-size: var(--type-card-title); font-weight: 700; }
+.heroEmptyLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--rotary-blue);
+  font-size: var(--type-meta);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.panelEmpty { margin: 0; padding: 14px 0 18px; color: var(--text-secondary); font-size: var(--type-meta); }
+
+/* Rows are links now. */
+.taskRow, .noticeRow { color: inherit; text-decoration: none; border-radius: 10px; }
+.taskRow:hover, .noticeRow:hover { background: #f6f9fd; }
+
+/* Read state, said twice: the dot and the weight of the title. */
+.noticeDot { background: #d6dde7; }
+.noticeRowUnread .noticeDot { background: var(--rotary-blue); }
+.noticeRowUnread .rowText strong { font-weight: 700; }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- phone ------------------------------------------------------------
+   Members reach this from LINE's in-app browser, so the phone layout is the
+   one most of them will ever see. The rail becomes a header and a bottom bar:
+   a 254px sidebar has nowhere to go on a 320px screen, and the navigation is
+   what a member needs within thumb reach. */
+@media (max-width: 900px) {
+  .portal {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 12px 16px calc(78px + env(safe-area-inset-bottom));
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    min-height: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    /* No backdrop-filter here. A filtered element becomes the containing block
+       for any position:fixed descendant, so the bottom bar inside it was
+       pinned to the bottom of this header rather than to the viewport -- it
+       rendered at the top of the page, covering the brand and the club.
+       And above .main, because the bar lives inside this element: its own
+       z-index only orders it within this stacking context, so with both at 1
+       the later sibling simply painted over it and the bar was invisible
+       despite being in the right place. */
+    z-index: 3;
+    backdrop-filter: none;
+  }
+  .sidebarLabel, .motto { display: none; }
+  .brand { flex: 0 0 auto; }
+  .brandName { font-size: var(--type-body); }
+  .clubSelector { flex: 1 1 auto; min-width: 0; min-height: 44px; }
+  .clubSelector span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .accountCard { width: auto; flex: 0 0 auto; margin: 0; padding: 6px; }
+  .accountText, .accountCard svg { display: none; }
+
+  /* The navigation leaves the panel and becomes the bottom bar. */
+  .nav {
+    position: fixed;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+    padding: 6px max(6px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-right));
+    border-top: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, .97);
+    backdrop-filter: blur(12px);
+  }
+  .navItem {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 0 2px;
+    font-size: var(--type-meta);
+    text-align: center;
+  }
+  .navLabelFull { display: none; }
+  .navLabelShort { display: block; }
+  .navItem span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
+  .navItemCurrent { background: none; }
+  /* The current tab is carried by a lozenge behind the icon as well as by
+     colour, because colour may not be the only signal. */
+  .navItemCurrent svg { border-radius: var(--radius-pill); background: var(--rotary-blue-light); box-shadow: 0 0 0 7px var(--rotary-blue-light); }
+
+  /* Header: greeting first, tools under it. The search box is the widest
+     thing here and gets the row to itself. */
+  .header { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 0; }
+  .headerGreeting { padding-left: 2px; }
+  .pageTitle { font-size: 30px; }
+  .headerSide { justify-items: stretch; gap: 8px; }
+  .headerTools { gap: 10px; }
+  .search { flex: 1 1 auto; width: auto; }
+  /* One avatar, not two. The account is already reachable from the header row
+     at the top of the page, so the copy beside the search box is redundant. */
+  .headerAvatar { display: none; }
+  .today { order: -1; margin: 0; }
+  .tagline, .motto2 { display: none; }
+
+  /* Hero: one column, poster first. */
+  .hero { padding: 14px 14px 16px; }
+  .heroBody { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .heroTitle { font-size: 20px; }
+  .cta { align-self: stretch; width: 100%; min-width: 0; margin-top: 16px; }
+
+  /* Three columns become three cards. */
+  .dashboard { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
+
+/* The backdrop's ridges sit behind the header on a phone, where there is far
+   less of it, so they are pulled in and lightened further. */
+@media (max-width: 900px) {
+  .backdrop::after {
+    background-size: 190% auto;
+    -webkit-mask-image: radial-gradient(150% 70% at 76% 0%, #000 4%, rgba(0,0,0,.42) 34%, transparent 70%);
+    mask-image: radial-gradient(150% 70% at 76% 0%, #000 4%, rgba(0,0,0,.42) 34%, transparent 70%);
+  }
+}
