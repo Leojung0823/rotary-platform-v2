@@ -72,11 +72,12 @@ begin
     raise exception 'draft event opened dynamic session';
   exception when invalid_parameter_value then null;
   end;
-  begin
-    perform public.open_dynamic_event_checkin('57000000-0000-4000-8000-000000000001', '87000000-0000-4000-8000-000000000003');
-    raise exception 'attendance-disabled event opened dynamic session';
-  exception when invalid_parameter_value then null;
-  end;
+  -- An event outside the attendance rate now opens a session like any other:
+  -- counts_for_attendance says whether it counts, not whether check-in exists.
+  -- This used to be asserted as a refusal; a club could not record who came to
+  -- its own board meeting.
+  perform public.open_dynamic_event_checkin('57000000-0000-4000-8000-000000000001', '87000000-0000-4000-8000-000000000003');
+  perform public.close_event_checkin('57000000-0000-4000-8000-000000000001', '87000000-0000-4000-8000-000000000003', '測試結束');
   begin
     perform public.open_dynamic_event_checkin('57000000-0000-4000-8000-000000000002', '87000000-0000-4000-8000-000000000004');
     raise exception 'cross-club manager opened dynamic session';
