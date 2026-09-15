@@ -9,6 +9,13 @@
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr);
   gap: 36px;
+  /* Capped at the width every proportion here was calibrated against. Past
+     that the layout holds its shape and centres rather than stretching: a
+     1920px screen was pulling the poster and the three columns wider than the
+     design, which is the same page but not the same design. The backdrop is
+     fixed to the window, so the atmosphere still fills the screen behind it. */
+  max-width: 1536px;
+  margin: 0 auto;
   padding: 20px 20px 24px;
   color: var(--text-primary);
 }
