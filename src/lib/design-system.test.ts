@@ -129,4 +129,16 @@ describe("design system floors", () => {
     const setInMarkup = ["--nav-count", "--bar-width"];
     expect(dangling.filter((entry) => !setInMarkup.some((name) => entry.endsWith(name)))).toEqual([]);
   });
+
+  it("keeps build and environment labels out of the brand", () => {
+    // Asked for twice: once in the desktop spec, once directly. "ROTARY V2" is
+    // an internal version name and "STAGING" is a deployment detail; neither is
+    // something a club member has any use for, and both sat on the brand where
+    // they read as part of the product's name.
+    for (const shell of ["src/components/role-aware-app-shell.tsx", "src/components/app-shell.tsx", "src/components/app-shell-loading.tsx"]) {
+      const source = readFileSync(shell, "utf8");
+      expect(source, `${shell} still shows a build label`).not.toContain("ROTARY V2");
+      expect(source, `${shell} still shows an environment label`).not.toMatch(/environmentLabel/u);
+    }
+  });
 });

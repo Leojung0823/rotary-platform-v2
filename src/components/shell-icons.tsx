@@ -20,9 +20,19 @@ export type ShellIconName =
   | "arrowLeft"
   | "building"
   | "plus"
-  | "bell";
+  | "bell"
+  | "pin"
+  | "check";
 
 const paths: Record<ShellIconName, ReactNode> = {
+  pin: <>
+    <path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" />
+    <circle cx="12" cy="10" r="2.6" />
+  </>,
+  check: <>
+    <circle cx="12" cy="12" r="8.6" />
+    <path d="M8.4 12.2l2.5 2.5 4.7-4.9" />
+  </>,
   bell: <>
     <path d="M12 3.4a5.6 5.6 0 0 0-5.6 5.6c0 4.2-1.3 5.6-2 6.4h15.2c-.7-.8-2-2.2-2-6.4A5.6 5.6 0 0 0 12 3.4Z" />
     <path d="M10.1 18.4a2 2 0 0 0 3.8 0" />

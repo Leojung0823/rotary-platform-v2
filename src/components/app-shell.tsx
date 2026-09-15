@@ -6,14 +6,6 @@ import styles from "./app-shell.module.css";
 
 type ManageableClub = { club_id: string; club_name: string; permission_level: string };
 
-function environmentLabel() {
-  // Production shows nothing: the tag exists so nobody mistakes a test system
-  // for the real one, and on the real one there is nothing to mistake.
-  if (process.env.APP_ENV === "production") return "";
-  if (process.env.APP_ENV === "staging") return "STAGING";
-  return "LOCAL";
-}
-
 export async function LegacyAppShell({
   identity,
   children,
@@ -40,7 +32,7 @@ export async function LegacyAppShell({
 
   return <div className="shell">
     <aside className="sidebar">
-      <Link href="/dashboard" className="brand"><span className="brand-mark">R</span><span>扶輪管理平台{environmentLabel() && <small>{environmentLabel()}</small>}</span></Link>
+      <Link href="/dashboard" className="brand"><span className="brand-mark">R</span><span>扶輪管理平台</span></Link>
       <nav aria-label="主要導覽">
         <Link href="/dashboard">總覽</Link>
         {isPlatform && <Link href="/features">功能總覽</Link>}

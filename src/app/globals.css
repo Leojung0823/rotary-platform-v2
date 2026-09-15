@@ -166,7 +166,14 @@ h3 { margin-bottom: var(--space-1); font-size: var(--text-subtitle); font-weight
 p { color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
 /* Muted rather than blue, and one weight lighter: the eyebrow is orientation,
    not a headline competing with the title under it. */
-.eyebrow { margin: 0 0 var(--space-2); color: var(--muted); font-size: var(--text-micro); font-weight: var(--weight-medium); letter-spacing: .16em; text-transform: uppercase; }
+/* The plan said eyebrows keep wide tracking because they are latin capitals.
+   On the real pages they are almost all Chinese -- 「優先處理」at .16em renders
+   as 優 先 處 理, four characters drifting apart. CJK glyphs are already fixed
+   cells and need no help separating. .04em keeps a trace of the effect for a
+   latin eyebrow without pulling the Chinese apart.
+   14px, not 12px: an eyebrow names the section, which makes it something a
+   member reads, not brand micro-copy -- and the floor for that is 14. */
+.eyebrow { margin: 0 0 var(--space-2); color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); letter-spacing: .04em; text-transform: uppercase; }
 /* The system's only ornament: a short gold rule above a page title. Rotary is
    navy and gold, and gold appeared nowhere but the brand mark. Once per screen,
    and never as text -- #d5a92e on white is about 2.2:1 and would fail contrast
@@ -389,7 +396,13 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   .mobile-nav::-webkit-scrollbar { display: none; }
   .mobile-nav a { flex: 0 0 auto; min-width: 64px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; color: var(--navy); text-align: center; white-space: nowrap; font-weight: var(--weight-strong); }
   .mobile-nav .loading-nav-item { flex: 0 0 auto; min-width: 64px; padding: 8px 12px; color: var(--muted); text-align: center; white-space: nowrap; font-weight: var(--weight-strong); }
-  .page-header { flex-direction: column; }
+  /* Stacking the header was not enough: the base rule's align-items keeps every
+     child shrink-to-fit, so the action row took its width from the hint beside
+     it and the buttons ended up floating mid-screen, aligned to nothing. On a
+     phone a page action is full width. */
+  .page-header { flex-direction: column; align-items: stretch; }
+  .header-actions { width: 100%; justify-items: stretch; }
+  .form-actions { width: 100%; }
   .form-grid, .inline-form { grid-template-columns: 1fr; }
   .auth-page { grid-template-columns: 1fr; }
   .auth-panel { min-height: 100vh; }
