@@ -79,15 +79,7 @@
   background: rgba(255, 255, 255, .78);
   color: #55657d;
   cursor: pointer;
-}
-.bellDot {
-  position: absolute;
-  top: 9px;
-  right: 10px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #e5484d;
+  text-decoration: none;
 }
 .headerAvatar {
   display: grid;

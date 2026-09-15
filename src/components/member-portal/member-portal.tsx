@@ -12,7 +12,14 @@ import {
 } from "@/lib/member-portal/types";
 import styles from "./member-portal.module.css";
 
-function Header({ member, today }: { member: PortalMember; today: { date: string; weekday: string } }) {
+function Header({
+  member, today, messagesHref,
+}: {
+  member: PortalMember;
+  today: { date: string; weekday: string };
+  /** Where the bell goes, or null when this club has no message centre. */
+  messagesHref: string | null;
+}) {
   return <header className={styles.header}>
     <div className={styles.headerGreeting}>
       <p className={styles.eyebrow}>社員首頁</p>
@@ -29,10 +36,13 @@ function Header({ member, today }: { member: PortalMember; today: { date: string
           <PortalIcon name="search" size={19} />
           <input type="search" placeholder="搜尋活動、社員或公告..." aria-label="搜尋活動、社員或公告" />
         </div>
-        <button type="button" className={styles.bell} aria-label="通知">
+        {/* A link, because it went nowhere before, and with no dot, because the
+            dot was painted on always -- it said "you have something waiting"
+            every single time, which is not a signal. Unread is still shown
+            where it can be true or false: on the announcements themselves. */}
+        {messagesHref !== null && <Link className={styles.bell} href={messagesHref} prefetch={false} aria-label="社內訊息">
           <PortalIcon name="bell" size={21} />
-          <span className={styles.bellDot} aria-hidden="true" />
-        </button>
+        </Link>}
         <span className={styles.headerAvatar} aria-hidden="true">{member.initial}</span>
       </div>
       <p className={styles.today}><strong>{today.date}</strong><span>{today.weekday}</span></p>
@@ -151,12 +161,13 @@ export type MemberPortalContentProps = {
  */
 /** The greeting, which needs no data and so need not wait for any. */
 export function MemberPortalHeader({
-  member, today,
+  member, today, messagesHref,
 }: {
   member: PortalMember;
   today: { date: string; weekday: string };
+  messagesHref: string | null;
 }) {
-  return <Header member={member} today={today} />;
+  return <Header member={member} today={today} messagesHref={messagesHref} />;
 }
 
 /** What the page can only draw once the projection has arrived. */

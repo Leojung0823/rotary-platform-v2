@@ -78,6 +78,11 @@ export function MemberPortalHome({
     <MemberPortalHeader
       member={{ displayName: identity.display_name, initial: identity.display_name.slice(0, 1) }}
       today={{ date: todayDate.format(now), weekday: todayWeekday.format(now) }}
+      // No message centre for this club means no bell: a control that leads
+      // nowhere is worse than an empty corner.
+      messagesHref={features.messageCentre
+        ? `/messages?clubId=${encodeURIComponent(activeClub.clubId)}&mode=member`
+        : null}
     />
     <Suspense fallback={<MemberPortalBodyLoading />}>
       <PortalBody activeClub={activeClub} features={features} />
