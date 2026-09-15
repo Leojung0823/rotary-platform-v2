@@ -64,3 +64,4 @@ supabase/verification/dues_finance_v1_security.sql
 supabase/verification/dues_finance_read_projection_security.sql
 supabase/verification/club_service_plan_security.sql
 supabase/verification/club_service_plan_year_cast_security.sql
+supabase/verification/checkin_without_attendance.sql
