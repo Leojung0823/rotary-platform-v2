@@ -55,6 +55,7 @@ export default async function ClubAffairsPage({
   const supabase = await createClient();
   const resolution = await resolveExperienceContext(null);
   const activeClubId = resolution.ok ? resolution.context.activeClubId : null;
+  const canManage = resolution.ok && resolution.context.canManage;
 
   if (!activeClubId) {
     return <Notice tone="error">目前沒有有效社籍，無法查看社務資訊。</Notice>;
@@ -173,5 +174,17 @@ export default async function ClubAffairsPage({
       <p>章程、會議紀錄、年度成果與交接文件都收在這裡。</p>
       <Link className="card-link" href={`/archives?clubId=${encodeURIComponent(club.club_id)}&mode=member`}>開啟文件中心 →</Link>
     </Card>
+
+    {/* Tags decide who an event or a post is addressed to, so officers come
+        looking for them from 社務 rather than from the roster, which is where
+        they actually live. The link is shown to anyone who can manage a club;
+        the RPCs behind it still require member.manage on their own. */}
+    {canManage && <Card>
+      <div className="section-heading">
+        <div><p className="eyebrow">分眾</p><h2>社員標籤</h2></div>
+      </div>
+      <p>標籤用來指定活動與訊息的對象，例如理事會、新社員。可以一次勾選多位社員，貼上同一個標籤。</p>
+      <Link className="card-link" href={`/clubs/${encodeURIComponent(club.club_id)}/members?mode=management#member-tags`} prefetch={false}>管理社員標籤 →</Link>
+    </Card>}
   </div>;
 }
