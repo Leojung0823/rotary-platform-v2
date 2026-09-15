@@ -1,4 +1,9 @@
 .shell {
+  /* One number for the account avatar. The row that must clear it and the
+     gutter that must not be written over both read it from here, so a change
+     to its size cannot leave either of them behind -- which is what happened
+     when a 40px avatar was pinned over a row the brand mark made 30px tall. */
+  --shell-avatar: 40px;
   /* The member accent is the design system's interaction blue, so a member
      sees the same colour in the rail that every button on the page uses. The
      two management accents stay distinct: telling the modes apart at a glance
@@ -102,7 +107,7 @@
 .accountMenu summary { display: flex; align-items: center; gap: var(--space-3); min-height: 60px; padding: 0 var(--space-2); border-radius: var(--radius-control); cursor: pointer; list-style: none; }
 .accountMenu summary:hover { background: rgba(16, 35, 61, .045); }
 .accountMenu summary::-webkit-details-marker { display: none; }
-.avatar { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--radius-control); color: #8a6a12; background: rgba(244, 185, 66, .22); font-weight: var(--weight-strong); }
+.avatar { display: grid; place-items: center; width: var(--shell-avatar); height: var(--shell-avatar); flex: 0 0 auto; border-radius: var(--radius-control); color: #8a6a12; background: rgba(244, 185, 66, .22); font-weight: var(--weight-strong); }
 .accountSummary { min-width: 0; }
 .accountSummary strong, .accountSummary small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .accountSummary strong { font-size: 15px; font-weight: var(--weight-strong); }
@@ -124,17 +129,27 @@
      52px early with nothing in the gap. Only the row the avatar actually sits
      in needs to clear it. */
   .rail { position: relative; height: auto; min-height: 0; display: block; padding: var(--space-2) var(--space-4); border-right: 0; border-bottom: 1px solid var(--line); }
-  .header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
-  .brand { flex: 0 1 auto; min-width: 0; padding-right: 44px; font-size: var(--text-small); }
+  .header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-right: calc(var(--shell-avatar) + 8px); }
+  .brand { flex: 0 0 auto; min-width: 0; min-height: var(--shell-avatar); padding-right: 0; font-size: var(--text-small); }
+  /* The name is in the club switcher beside it now; the mark alone identifies
+     the product and leaves the width to the control that needs it. */
+  .brand > span:last-child { display: none; }
   .brand small { display: none; }
   .brandMark { width: 30px; height: 30px; font-size: 18px; }
   .modeName { display: none; }
-  .mobileContext { flex: 1 1 calc(100% - 50px); display: block; overflow: hidden; margin: 0; padding-right: 44px; color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+  .mobileContext { flex: 1 0 100%; order: 5; display: block; overflow: hidden; margin: 0; padding-right: 0; color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
   .modeSwitcher { flex: 1 0 100%; order: 3; }
   .modeSwitcher .controlLabel { display: none; }
   .modeOptions { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
   .modeOption, .modeOptionCurrent { flex: 0 0 auto; min-height: 48px; }
-  .clubSwitcher, .scopeLabel { flex: 1 0 100%; order: 4; }
+  /* On the brand row rather than a row of its own. A full-width block for one
+     control cost a whole line of a phone screen, and the row it shares already
+     reserves the avatar's height. */
+  .clubSwitcher { flex: 1 1 auto; min-width: 0; order: 0; }
+  .clubSwitcher summary { min-height: var(--shell-avatar); padding: 6px 10px; }
+  .clubSwitcher summary strong { font-size: var(--text-small); }
+  .clubSwitcher .controlLabel { display: none; }
+  .scopeLabel { flex: 1 0 100%; order: 4; }
   .clubSwitcher { display: block; }
   /* Anchored under the control that opened it. Pinning this to the bottom
      of the screen put the list of clubs nowhere near the box that was
@@ -145,7 +160,9 @@
      corner of the header. The 60px the desktop block gives it for a comfortable
      sidebar row makes it reach 12px further down here, over the top of the club
      switcher beneath it. Size it to the avatar it actually contains. */
-  .accountMenu { position: absolute; top: 10px; right: 16px; margin: 0; padding: 0; border: 0; }
+  /* Centred in the row that now reserves its height, rather than hanging
+     below it onto the club switcher. */
+  .accountMenu { position: absolute; top: var(--space-2); right: var(--space-4); margin: 0; padding: 0; border: 0; }
   .accountMenu summary { min-height: 40px; padding: 0; }
   .accountMenu summary:hover { background: none; }
   .accountSummary { display: none; }
