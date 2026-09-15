@@ -211,11 +211,11 @@ p { color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
 .section-heading > * { min-width: 0; }
 .section-heading h2 { margin: 0; }
 .section-heading span { color: var(--muted); font-size: var(--text-small); }
-.club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 16px; }
 .club-card { min-height: 180px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius-card); background: white; box-shadow: var(--shadow); transition: transform .2s, border-color .2s; }
 .club-card:hover { transform: translateY(-3px); border-color: #a8c7d8; }
 .club-code { color: var(--muted); font-size: var(--text-micro); font-weight: var(--weight-medium); letter-spacing: .12em; }
-.directory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.directory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 14px; }
 .directory-card { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid var(--line); border-radius: var(--radius-card); background: white; box-shadow: var(--shadow); transition: transform .2s, border-color .2s; }
 .directory-card:hover { transform: translateY(-2px); border-color: #a8c7d8; }
 .directory-avatar { position: relative; display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto; overflow: hidden; border-radius: 50%; background: rgba(213,169,46,.18); color: #8a6a2f; font-weight: var(--weight-strong); font-size: 16px; }
@@ -229,13 +229,14 @@ p { color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
 .card-link { margin-top: auto; color: var(--blue-ink); font-size: var(--text-small); font-weight: var(--weight-medium); }
 /* A badge carries status, and the standard forbids colour as the only state
    indicator -- which makes this text load-bearing, not decoration. */
-/* 32px tall: at 24px a pill beside a 26px title read as a footnote to it
-   rather than as the event's state. The height is what makes it read as a
-   status, so the height is what it gets -- the horizontal padding stays at
+/* 28px tall: at 24px a pill beside a 26px title read as a footnote to it, and
+   at 32px it competed with the title. The text stays at 14px -- the floor this
+   project set for itself does not move for a status. The height is what makes
+   it read as a status, so the height is what it gets -- the horizontal padding stays at
    12px, because a badge is nowrap and the longest one ("有效至" plus a full
    timestamp) already sat within 2px of the edge at 320px. Widening it there
    pushed the page into horizontal scroll. */
-.badge { display: inline-flex; align-items: center; width: fit-content; min-height: 32px; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; }
+.badge { display: inline-flex; align-items: center; width: fit-content; min-height: 28px; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; }
 .badge-neutral { color: #556274; background: #eef1f4; }
 .badge-success { color: #166a48; background: #e3f5ec; }
 .badge-warning { color: #805c0d; background: #fff2cc; }
@@ -374,7 +375,7 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 .activity-list li:last-child { border-bottom: 0; }
 .activity-list small { color: var(--muted); }
 
-.auth-page { min-height: 100vh; display: grid; grid-template-columns: minmax(420px, 560px) 1fr; background: white; }
+.auth-page { min-height: 100vh; display: grid; grid-template-columns: minmax(min(420px, 100%), 560px) 1fr; background: white; }
 .auth-panel { padding: clamp(28px, 6vw, 76px); display: flex; flex-direction: column; justify-content: center; }
 .auth-panel .brand { margin-bottom: 70px; }
 .auth-copy h1 { font-size: 46px; }

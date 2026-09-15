@@ -32,7 +32,7 @@
    which features the club has switched on, and a hard three-column grid leaves
    a hole when there are four. Every tile starts on the same line whatever its
    text does, because the row height comes from the tallest one. */
-.secondaryActions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); align-items: stretch; }
+.secondaryActions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: var(--space-4); align-items: stretch; }
 .secondaryAction { min-height: 76px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-4); border: 0; border-radius: var(--radius-card); color: var(--ink); background: var(--surface); box-shadow: var(--elevation-card); }
 /* No lift on hover. A card that jumps under the cursor draws attention to the
    pointer rather than to the card. */
@@ -73,25 +73,33 @@
 .primaryCard { background: var(--surface); }
 .primaryCard :global(.badge) { gap: var(--space-1); padding-left: var(--space-2); }
 .primaryCard :global(.badge) svg { width: 18px; height: 18px; }
-/* Label and "see all" on one row above the poster. */
-.cardTop { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+/* The header every card on this page shares: a label, and the way out. */
+.cardTop { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .cardTop .eyebrow { margin: 0; }
-.eventHeading { display: flex; gap: var(--space-4); align-items: flex-start; justify-content: space-between; }
+/* Not .card-link: that carries margin-top:auto for cards that push their link
+   to the bottom, which in this row shoved it to the bottom of the box. */
+.cardTopLink { flex: 0 0 auto; color: var(--blue-ink); font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; }
+.cardBody { display: grid; gap: var(--space-4); align-content: start; min-width: 0; }
+.cardBody :global(.badge) { justify-self: start; align-self: start; }
+/* Kept for the h2 rules below; the wrapper element itself is gone. */
 /* `anywhere` let the last character drop to a line of its own -- it permits a
    break at any position, including one that leaves an orphan. `break-word`
    only breaks a run that genuinely cannot fit, and `pretty` asks the browser
    to avoid the orphan outright. */
-.eventHeading h2 { margin: 0; overflow-wrap: break-word; text-wrap: pretty; }
+.eventTitle { margin: 0; overflow-wrap: break-word; text-wrap: pretty; }
 /* The title of the thing you have to act on today is the largest text on the
    page after your own name. */
-.primaryCard .eventHeading h2 { font-size: 26px; line-height: 1.35; }
+.primaryCard .eventTitle { font-size: 26px; line-height: 1.35; }
 .eventDetails { display: grid; gap: 0; margin: 0; }
 /* One row per fact, divided by a hairline: at a glance it is a list of facts
    about one event, not three unrelated columns. */
 .eventDetails > div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: center; min-width: 0; padding: var(--space-3) 0; }
 .eventDetails > div + div { border-top: 1px solid var(--hairline); }
 .eventDetails > div > div { min-width: 0; }
-.detailIcon { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: var(--radius-control); background: var(--blue-soft); color: var(--blue-ink); }
+/* A tinted 38px tile was heavier than the value beside it and pulled the eye
+   to the icon rather than to the time. It marks the row; it is not the row. */
+.detailIcon { display: grid; place-items: center; width: 22px; height: 22px; flex: 0 0 auto; color: var(--subtle-ink); }
+.detailIcon svg { width: 20px; height: 20px; }
 .eventDetails dt { color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); }
 .eventDetails dd { margin: 2px 0 0; overflow-wrap: break-word; font-size: var(--text-body); font-weight: var(--weight-medium); }
 .primaryCard .button, .emptyCard .button { width: fit-content; min-height: 48px; }
@@ -100,30 +108,6 @@
 .recentItem > div { min-width: 0; }
 .recentItem strong { display: block; overflow-wrap: anywhere; }
 .recentItem small { color: var(--muted); }
-.notificationHeading { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
-.notificationHeading .eyebrow { width: 100%; }
-.notificationHeading h2 { margin: 0; }
-.notificationList { display: grid; gap: var(--space-3); }
-/* A notice, not a warning. The amber wash made every routine club message
-   look like something had gone wrong. */
-.notificationItem { padding: var(--space-4) var(--space-5); border: 1px solid var(--hairline); border-left: 3px solid var(--gold); border-radius: var(--radius-control); background: var(--surface); }
-.notificationTitle { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.notificationItem p { margin: var(--space-2) 0; color: var(--ink); overflow-wrap: anywhere; }
-.notificationItem small { color: var(--muted); }
-.notificationLink {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  color: inherit;
-  text-decoration: none;
-}
-.notificationLink:hover { background: var(--surface-sunken); }
-/* --accent is not defined anywhere, and an unresolved var() invalidates the
-   whole declaration -- so this focus ring never painted. Keyboard users had
-   no visible focus on the notification links. */
-.notificationLink:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.notificationChevron { color: var(--muted); font-size: 22px; line-height: 1; flex: none; }
 .blessingShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; min-height: 76px; padding: var(--space-4) var(--space-5); border: 0; border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); color: var(--ink); text-decoration: none; }
 .blessingShortcut:hover { background: var(--surface-sunken); }
 .blessingShortcut > span:not(.blessingIcon) { display: grid; gap: 2px; min-width: 0; }
@@ -139,33 +123,73 @@
    whole card fits on the first screen. Guarded by :has() -- with no cover there
    is no second column to make, and the card stays a single stack. */
 @media (min-width: 960px) {
+  /* Three children, placed once each. The previous version addressed every
+     child of the card individually, so adding one to the markup rearranged the
+     desktop layout without anything failing -- which is exactly what happened:
+     the badge became a grid item, grid stretched it to the row height, and a
+     999px radius on a 120px box drew a large green ellipse. */
   .primaryCard:has(.eventCover) {
-    grid-template-columns: 60% minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
     column-gap: var(--space-7);
-    align-content: start;
+    align-items: start;
   }
-  .primaryCard:has(.eventCover) .eventCover {
-    grid-column: 1;
-    grid-row: 1 / span 3;
-    height: 100%;
-    align-self: stretch;
-  }
-  .primaryCard:has(.eventCover) .eventHeading,
-  .primaryCard:has(.eventCover) .eventDetails,
-  .primaryCard:has(.eventCover) :global(.button) { grid-column: 2; }
-  .primaryCard:has(.eventCover) .cardTop,
-  .primaryCard:has(.eventCover) :global(.badge) { grid-column: 2; }
-  .primaryCard:has(.eventCover) :global(.button) { align-self: start; }
+  .primaryCard:has(.eventCover) .cardTop { grid-column: 1 / -1; }
+  .primaryCard:has(.eventCover) .eventCover { grid-column: 1; align-self: start; }
+  .primaryCard:has(.eventCover) .cardBody { grid-column: 2; }
+  .primaryCard:has(.eventCover) :global(.button) { justify-self: start; }
 }
 
 @media (max-width: 640px) {
   .secondaryActions { grid-template-columns: 1fr; }
   .secondaryAction { min-height: 64px; }
-  .eventHeading { display: grid; gap: var(--space-3); }
   .eventDetails { grid-template-columns: 1fr; gap: var(--space-3); }
   .primaryCard .button, .emptyCard .button { width: 100%; }
-  .primaryCard .eventHeading h2 { font-size: 22px; }
+  .primaryCard .eventTitle { font-size: 22px; }
   .eventDetails { grid-template-columns: minmax(0, 1fr); }
   .blessingShortcut { min-height: 80px; padding: var(--space-4); }
   .financeShortcut { min-height: 80px; padding: var(--space-4); }
 }
+
+/* The bottom row. One column on a phone, side by side once there is room --
+   and the grid is ready for the third and fourth card without changing. */
+/* min(320px, 100%), not 320px: a bare minimum larger than the viewport cannot
+   shrink, so at 320px the track stayed 320px wide inside a 288px box and the
+   page scrolled sideways by exactly the left padding. */
+.bottomGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--space-4); align-items: start; }
+
+.announcementList { display: grid; }
+.announcementRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  min-height: 48px;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-control);
+  color: inherit;
+  text-decoration: none;
+}
+.announcementRow + .announcementRow { border-top: 1px solid var(--hairline); }
+.announcementRow:hover { background: var(--surface-sunken); }
+.announcementRow:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+/* Read and unread, told twice: the dot and the weight of the title. The rule
+   this project set for itself is that colour may not be the only signal. */
+.announcementDot { width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background: var(--line); }
+.announcementUnread .announcementDot { background: var(--blue); }
+.announcementText { display: grid; gap: 2px; min-width: 0; }
+.announcementText small { color: var(--subtle-ink); font-size: var(--text-small); }
+.announcementText strong { overflow-wrap: break-word; font-size: var(--text-body); font-weight: var(--weight-medium); }
+.announcementUnread .announcementText strong { font-weight: var(--weight-strong); }
+/* Two lines of the body, then stop: the card is a list of what happened, and
+   the message centre is where you go to read one. */
+.announcementText > span {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: var(--muted);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+.announcementEmpty { margin: 0; padding: var(--space-3) var(--space-2); color: var(--muted); font-size: var(--text-small); }

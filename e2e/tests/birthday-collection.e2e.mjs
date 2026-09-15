@@ -205,7 +205,8 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
       await expect(birthdayClubChoice).toBeVisible();
       await birthdayClubChoice.click();
       await expect(memberPage).toHaveURL(/\/dashboard(?:\?mode=member)?$/u);
-      await expect(memberPage.getByRole("heading", { name: "最新通知" })).toBeVisible();
+      // The block kept its data and its landmark; it is called 社團公告 now.
+      await expect(memberPage.getByRole("heading", { name: "社團公告" })).toBeVisible();
       await expect(memberPage.getByText("有位社友的生日快到了", { exact: true })).toBeVisible();
       await memberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
       const content = `瀏覽器生日徵集驗收 ${Date.now()}`;

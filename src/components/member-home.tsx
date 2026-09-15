@@ -18,6 +18,7 @@ import {
 } from "@/lib/member-home";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { resolveMemberHomeProjection } from "@/lib/member-home.server";
+import { APP_TIME_ZONE } from "@/lib/time";
 import { ShellIcon } from "./shell-icons";
 import styles from "./member-home.module.css";
 
@@ -38,7 +39,7 @@ const checkinLabels: Record<MemberHomeCheckinState, string> = {
 };
 
 const memberHomeDateTimeFormatter = new Intl.DateTimeFormat("zh-TW", {
-  timeZone: "Asia/Taipei",
+  timeZone: APP_TIME_ZONE,
   month: "long",
   day: "numeric",
   weekday: "short",
@@ -46,6 +47,17 @@ const memberHomeDateTimeFormatter = new Intl.DateTimeFormat("zh-TW", {
   minute: "2-digit",
   hour12: false,
 });
+
+const memberHomeDateFormatter = new Intl.DateTimeFormat("zh-TW", {
+  timeZone: APP_TIME_ZONE,
+  month: "long",
+  day: "numeric",
+});
+
+// An announcement is filed by the day it went out; the minute never matters.
+function formatDate(value: string) {
+  return memberHomeDateFormatter.format(new Date(value));
+}
 
 function formatDateTime(value: string) {
   return memberHomeDateTimeFormatter.format(new Date(value));
@@ -67,7 +79,7 @@ function EventSummary({
         as a caption for the picture; above it, it says what the whole card is. */}
     <div className={styles.cardTop}>
       <p className="eyebrow">{primary ? "優先處理" : "接下來"}</p>
-      <Link className="card-link" href="/events" prefetch={false}>查看全部 ›</Link>
+      <Link className={styles.cardTopLink} href="/events" prefetch={false}>查看全部 ›</Link>
     </div>
     {coverUrl && <Image
       className={styles.eventCover}
@@ -78,33 +90,36 @@ function EventSummary({
       sizes="(max-width: 720px) 100vw, 720px"
       unoptimized
     />}
-    <div className={styles.eventHeading}>
-      <h2>{event.title}</h2>
+    {/* Everything except the poster lives in one column, so the desktop grid
+        has three children to place rather than six. The previous version
+        addressed each child by grid-column, which meant a change to the card's
+        markup silently rearranged the desktop layout -- and did. */}
+    <div className={styles.cardBody}>
+      <h2 className={styles.eventTitle}>{event.title}</h2>
+      <Badge tone={registered ? "success" : "neutral"}>
+        {registered && <ShellIcon name="check" />}
+        {registrationLabels[event.registrationState]}
+      </Badge>
+      {/* Icon, label, value -- the same three-part row for each fact, so the
+          eye finds the time in the same place on every card. */}
+      <dl className={styles.eventDetails}>
+        <div>
+          <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="calendar" /></span>
+          <div><dt>時間</dt><dd>{formatDateTime(event.startsAt)}</dd></div>
+        </div>
+        <div>
+          <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="pin" /></span>
+          <div><dt>地點</dt><dd>{event.location || "地點待確認"}</dd></div>
+        </div>
+        {primary && <div>
+          <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="check" /></span>
+          <div><dt>簽到</dt><dd>{checkinLabels[event.checkinState]}</dd></div>
+        </div>}
+      </dl>
+      {primary && event.checkinState !== "checked_in" && <Link className="button" href={action.href} prefetch={false}>
+        {action.label}
+      </Link>}
     </div>
-    <Badge tone={registered ? "success" : "neutral"}>
-      {registered && <ShellIcon name="check" />}
-      {registrationLabels[event.registrationState]}
-    </Badge>
-    {/* Icon, label, value -- the same three-part row for each fact, so the eye
-        finds the time in the same place on every card instead of counting
-        columns. */}
-    <dl className={styles.eventDetails}>
-      <div>
-        <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="calendar" /></span>
-        <div><dt>時間</dt><dd>{formatDateTime(event.startsAt)}</dd></div>
-      </div>
-      <div>
-        <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="pin" /></span>
-        <div><dt>地點</dt><dd>{event.location || "地點待確認"}</dd></div>
-      </div>
-      {primary && <div>
-        <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="check" /></span>
-        <div><dt>簽到</dt><dd>{checkinLabels[event.checkinState]}</dd></div>
-      </div>}
-    </dl>
-    {primary && event.checkinState !== "checked_in" && <Link className="button" href={action.href} prefetch={false}>
-      {action.label}
-    </Link>}
   </Card>;
 }
 
@@ -131,20 +146,24 @@ function NotificationRow({
   const href = notification.actionPath
     ?? `/messages?clubId=${encodeURIComponent(clubId)}`;
 
+  // The dot says read or unread, which is the one thing about an announcement
+  // a member cannot work out by looking. A colour alone would not be allowed to
+  // carry that, so the unread title is also bold and the state is spelled out
+  // for a screen reader.
   return <Link
-    className={`${styles.notificationItem} ${styles.notificationLink}`}
+    className={`${styles.announcementRow} ${notification.unread ? styles.announcementUnread : ""}`}
     href={href}
     prefetch={false}
   >
-    <div>
-      <span className={styles.notificationTitle}>
-        <strong>{notification.title}</strong>
-        {notification.unread && <Badge tone="warning">未讀</Badge>}
-      </span>
-      <p>{notification.bodyPreview}</p>
-      <small>{formatDateTime(notification.publishedAt)}</small>
-    </div>
-    <span className={styles.notificationChevron} aria-hidden="true">›</span>
+    <span className={styles.announcementDot} aria-hidden="true" />
+    <span className={styles.announcementText}>
+      <small>
+        {formatDate(notification.publishedAt)}
+        {notification.unread && <span className="sr-only">（未讀）</span>}
+      </small>
+      <strong>{notification.title}</strong>
+      <span>{notification.bodyPreview}</span>
+    </span>
   </Link>;
 }
 
@@ -173,6 +192,8 @@ async function MemberHomeContent({
   }
 
   const { projection } = resolution;
+  const showAnnouncements = messageCenterEnabled
+    && (projection.notifications.unreadCount > 0 || projection.notifications.items.length > 0);
 
   // One signing round trip for both cards. The bucket is private, so the page
   // hands the browser a short-lived URL rather than a path it could not fetch.
@@ -182,26 +203,6 @@ async function MemberHomeContent({
   ]);
 
   return <>
-    {messageCenterEnabled && (projection.notifications.unreadCount > 0 || projection.notifications.items.length > 0) && <section aria-labelledby="member-home-notifications">
-      <div className="section-heading">
-        <div className={styles.notificationHeading}>
-          <p className="eyebrow">社內通知</p>
-          <h2 id="member-home-notifications">最新通知</h2>
-          {projection.notifications.unreadCount > 0 && <Badge tone="warning">{projection.notifications.unreadCount} 則未讀</Badge>}
-        </div>
-        <Link className="card-link" href={`/messages?clubId=${encodeURIComponent(activeClubId)}`} prefetch={false}>查看全部通知 →</Link>
-      </div>
-      <div className={styles.notificationList}>
-        {projection.notifications.items.length > 0
-          ? projection.notifications.items.map((notification, index) => <NotificationRow
-            key={`${notification.publishedAt}-${index}`}
-            notification={notification}
-            clubId={activeClubId}
-          />)
-          : <p>目前沒有可顯示的通知內容。</p>}
-      </div>
-    </section>}
-
     {projection.primaryEvent ? <EventSummary
       event={projection.primaryEvent}
       coverUrl={coverUrls.get(projection.primaryEvent.coverImagePath ?? "")}
@@ -224,15 +225,39 @@ async function MemberHomeContent({
       <EventSummary event={projection.nextEvent} />
     </section>}
 
-    {projection.recentEvents.length > 0 && <section aria-labelledby="member-home-recent-events">
-      <div className="section-heading">
-        <div><p className="eyebrow">回顧</p><h2 id="member-home-recent-events">近期社團回顧</h2></div>
-        <Link className="card-link" href="/events" prefetch={false}>查看全部活動 →</Link>
-      </div>
-      <div className={styles.recentList}>
-        {projection.recentEvents.map((event, index) => <RecentEventRow key={`${event.title}-${index}`} event={event} />)}
-      </div>
-    </section>}
+    {(projection.recentEvents.length > 0 || showAnnouncements) && <div className={styles.bottomGrid}>
+      {showAnnouncements && <Card className={styles.announcements} aria-labelledby="member-home-notifications">
+        {/* The same header shape every card on this page uses: a label on the
+            left and the way out on the right. Repeating one row is what makes
+            a page of different things read as one product. */}
+        <div className={styles.cardTop}>
+          {/* A heading, styled as an eyebrow. It names the card in the document
+              outline as well as on screen -- reading by heading is how a screen
+              reader user moves between the blocks of this page. */}
+          <h2 className="eyebrow" id="member-home-notifications">社團公告</h2>
+          <Link className={styles.cardTopLink} href={`/messages?clubId=${encodeURIComponent(activeClubId)}`} prefetch={false}>查看全部 ›</Link>
+        </div>
+        <div className={styles.announcementList}>
+          {projection.notifications.items.length > 0
+            ? projection.notifications.items.map((notification, index) => <NotificationRow
+              key={`${notification.publishedAt}-${index}`}
+              notification={notification}
+              clubId={activeClubId}
+            />)
+            : <p className={styles.announcementEmpty}>目前沒有社團公告。</p>}
+        </div>
+      </Card>}
+
+      {projection.recentEvents.length > 0 && <Card aria-labelledby="member-home-recent-events">
+        <div className={styles.cardTop}>
+          <h2 className="eyebrow" id="member-home-recent-events">近期社團回顧</h2>
+          <Link className={styles.cardTopLink} href="/events" prefetch={false}>查看全部 ›</Link>
+        </div>
+        <div className={styles.recentList}>
+          {projection.recentEvents.map((event, index) => <RecentEventRow key={`${event.title}-${index}`} event={event} />)}
+        </div>
+      </Card>}
+    </div>}
   </>;
 }
 
