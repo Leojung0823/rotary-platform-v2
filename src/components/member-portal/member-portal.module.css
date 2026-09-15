@@ -1,32 +1,5 @@
-/* Desktop member portal, built to the 1536x1024 reference. Every value here
-   comes from measuring that image rather than from a framework default; the
-   colours, radii, shadows and spacing all read from the portal tokens. */
 
-.portal {
-  position: relative;
-  isolation: isolate;
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 254px minmax(0, 1fr);
-  gap: 36px;
-  /* Capped at the width every proportion here was calibrated against. Past
-     that the layout holds its shape and centres rather than stretching: a
-     1920px screen was pulling the poster and the three columns wider than the
-     design, which is the same page but not the same design. The backdrop is
-     fixed to the window, so the atmosphere still fills the screen behind it. */
-  max-width: 1536px;
-  margin: 0 auto;
-  padding: 20px 20px 24px;
-  color: var(--text-primary);
-}
 
-/* ---- background atmosphere ------------------------------------------- */
-/* A wash, not a banner: a pale blue gradient with the ridges barely present
-   at the top right, which is where the reference puts them. */
-/* Not z-index:-1: the document body paints an opaque background of its own,
-   and a negative index puts this behind it, which is why the ridges did not
-   appear at all. It sits at the bottom of the portal's own stacking context
-   instead, with the sidebar and main content above it. */
 .backdrop {
   position: fixed;
   z-index: 0;
@@ -52,132 +25,6 @@
   mask-image: radial-gradient(128% 104% at 84% 0%, #000 8%, rgba(0,0,0,.58) 40%, transparent 74%);
 }
 
-/* ---- sidebar ---------------------------------------------------------- */
-.sidebar {
-  position: sticky;
-  z-index: 1;
-  top: 20px;
-  align-self: start;
-  min-height: 868px;
-  display: flex;
-  flex-direction: column;
-  padding: 22px 16px 18px;
-  border: 1px solid rgba(255, 255, 255, .8);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, .72);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(18px);
-}
-
-.brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
-.brandMark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: radial-gradient(circle at 34% 28%, #ffd873, var(--rotary-gold) 62%, #d99a12);
-  color: #4a3103;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 20px;
-  font-weight: 700;
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .45);
-}
-.brandName { font-size: var(--type-card-title); font-weight: 700; letter-spacing: .01em; }
-
-.sidebarLabel {
-  margin: 20px 0 8px;
-  padding: 0 6px;
-  color: var(--text-secondary);
-  font-size: var(--type-meta);
-  font-weight: 500;
-}
-
-.clubSelector {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  min-height: 50px;
-  padding: 0 14px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  background: var(--background-card);
-  color: var(--text-primary);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--type-body);
-  font-weight: 600;
-  text-align: left;
-}
-.clubSelector svg { color: var(--text-secondary); }
-
-.nav { display: grid; gap: 2px; margin-top: 18px; }
-.navItem {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 46px;
-  padding: 0 14px;
-  border-radius: 14px;
-  color: #40506a;
-  font-size: var(--type-body);
-  font-weight: 500;
-}
-.navItem:hover { background: rgba(22, 104, 220, .06); }
-.navLabelShort { display: none; }
-.navItemCurrent {
-  background: var(--rotary-blue-light);
-  color: var(--rotary-blue);
-  font-weight: 700;
-}
-
-.accountCard {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  margin-top: auto;
-  padding: 10px 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  background: var(--background-card);
-  color: var(--text-primary);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-}
-.accountAvatar {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: #dfe6ef;
-  color: #58687f;
-  font-size: var(--type-meta);
-  font-weight: 600;
-}
-.accountText { display: grid; gap: 1px; min-width: 0; flex: 1 1 auto; }
-.accountText strong { font-size: var(--type-meta); font-weight: 700; }
-.accountText small { color: var(--text-secondary); font-size: var(--type-meta); }
-.accountCard svg { color: var(--text-secondary); }
-
-.motto {
-  display: grid;
-  gap: 3px;
-  margin: 18px 0 2px;
-  color: #9aa9bd;
-  text-align: center;
-}
-.motto span:first-child { font-size: 13px; font-weight: 600; letter-spacing: .04em; }
-.motto span:last-child { font-size: 12px; letter-spacing: .32em; }
-
-/* The page on its own, inside the shell that already carries the navigation.
-   It takes no padding of its own: the shell's content column provides it. */
 .contentOnly {
   position: relative;
   isolation: isolate;
@@ -185,13 +32,7 @@
   margin: 0 auto;
   color: var(--text-primary);
 }
-/* Inside the full portal the grid already places this, so the wrapper must not
-   introduce a second measure. */
-.portal .contentOnly { max-width: none; margin: 0; }
-
-/* ---- main ------------------------------------------------------------- */
 .main { position: relative; z-index: 1; min-width: 0; display: grid; align-content: start; gap: 14px; }
-
 .header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; padding: 2px 0 0; }
 .headerGreeting { min-width: 0; padding-left: 24px; }
 .eyebrow { margin: 0; color: var(--text-secondary); font-size: var(--type-meta); font-weight: 500; }
@@ -203,10 +44,8 @@
   line-height: 1.2;
 }
 .pageSubtitle { margin: 6px 0 0; color: var(--text-secondary); font-size: var(--type-body); }
-
 .headerSide { display: grid; justify-items: end; gap: 4px; }
 .headerTools { display: flex; align-items: center; gap: 14px; }
-
 .search {
   display: flex;
   align-items: center;
@@ -229,7 +68,6 @@
   outline: none;
 }
 .search input::placeholder { color: #9aa9bd; }
-
 .bell {
   position: relative;
   display: grid;
@@ -262,28 +100,12 @@
   font-size: var(--type-meta);
   font-weight: 600;
 }
-
 .today { display: flex; align-items: baseline; gap: 10px; margin: 8px 0 0; color: var(--text-primary); line-height: 1.2; }
 .today strong { font-size: 17px; font-weight: 700; letter-spacing: .04em; }
 .today span { font-size: 15px; font-weight: 600; }
 .tagline { margin: 0; padding-bottom: 9px; color: var(--text-secondary); font-size: var(--type-meta); }
-/* A short rule under the tagline, not a full-width underline beneath the
-   three lines of latin -- in the reference it is a brand mark, not a divider. */
 .tagline { border-bottom: 2px solid var(--rotary-gold); border-image: linear-gradient(to left, var(--rotary-gold) 0 92px, transparent 92px) 0 0 2 0 / 0 0 2px 0; }
-.motto2 {
-  display: grid;
-  gap: 1px;
-  margin: 8px 0 0;
-  padding-top: 0;
-  color: #8fa0b6;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .22em;
-  line-height: 1.5;
-  text-align: right;
-}
 
-/* ---- hero ------------------------------------------------------------- */
 .hero {
   padding: 16px 20px 18px;
   border: 1px solid var(--border-subtle);
@@ -294,14 +116,9 @@
 .heroHeading { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .heroSparkle { display: grid; place-items: center; color: var(--rotary-gold); }
 .sectionTitle { margin: 0; font-size: var(--type-card-title); font-weight: 700; }
-
 .heroBody { display: grid; grid-template-columns: 60fr 40fr; gap: 26px; align-items: stretch; }
 .heroCover { overflow: hidden; border-radius: 14px; background: #eef2f7; }
-/* The ratio comes from the token, not from this file: the same poster appears
-   on the events list too, and two hard-coded ratios is how they drifted apart
-   before. */
 .heroCover img { display: block; width: 100%; aspect-ratio: var(--event-cover-aspect); object-fit: cover; }
-
 .heroInfo { display: flex; flex-direction: column; min-width: 0; padding-top: 2px; }
 .heroInfoTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .metaLabel { color: var(--text-secondary); font-size: var(--type-meta); }
@@ -318,19 +135,14 @@
   font-weight: 600;
   white-space: nowrap;
 }
-
 .heroTitle { margin: 10px 0 0; font-size: 26px; font-weight: 700; line-height: 1.32; }
 .heroTitleTail { display: block; }
 .heroSummary { margin: 8px 0 0; color: var(--text-secondary); font-size: var(--type-meta); line-height: 1.55; }
-
-/* Icon and information, not a labelled form: no rules between the rows and no
-   label column, which is what made the previous version read as a data sheet. */
 .heroFacts { display: grid; gap: 9px; margin: 13px 0 0; }
 .heroFacts > div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: start; }
 .heroFacts dt { display: grid; place-items: center; padding-top: 1px; color: #90a0b6; }
 .heroFacts dd { margin: 0; display: grid; gap: 2px; min-width: 0; font-size: var(--type-body); }
 .heroFacts dd small { color: var(--text-secondary); font-size: var(--type-meta); }
-
 .cta {
   display: inline-flex;
   align-items: center;
@@ -353,10 +165,7 @@
   transition: transform .15s ease, box-shadow .15s ease;
 }
 .cta:hover { box-shadow: 0 8px 22px rgba(22, 104, 220, .34); transform: translateY(-1px); }
-
-/* ---- dashboard -------------------------------------------------------- */
 .dashboard { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
-
 .panel {
   display: grid;
   align-content: start;
@@ -381,9 +190,7 @@
   font-weight: 500;
   white-space: nowrap;
 }
-
 .panelRows { display: grid; }
-
 .eventRow, .taskRow, .noticeRow {
   display: grid;
   align-items: center;
@@ -396,7 +203,6 @@
 .eventRow { grid-template-columns: auto minmax(0, 1fr) auto; }
 .taskRow { grid-template-columns: auto minmax(0, 1fr) auto; }
 .noticeRow { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
-
 .dateCard {
   display: grid;
   place-items: center;
@@ -409,7 +215,6 @@
 }
 .dateCard small { font-size: var(--type-meta); font-weight: 600; }
 .dateCard strong { font-size: 19px; font-weight: 700; }
-
 .rowText { display: grid; gap: 2px; min-width: 0; }
 .rowText strong { overflow: hidden; font-size: var(--type-meta); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .rowText small { color: var(--text-secondary); font-size: var(--type-meta); }
@@ -422,7 +227,6 @@
   color: var(--text-secondary);
   font-size: var(--type-meta);
 }
-
 .rowPill {
   display: inline-flex;
   align-items: center;
@@ -438,21 +242,14 @@
 .rowPillOpen { background: #e4f6ec; color: #1b8a5a; }
 .rowPillDanger { background: #fdecec; color: #d0343a; }
 .rowChevron { color: #a9b6c7; }
-
 .taskIcon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; }
 .taskIcon_danger { background: #fdecec; color: #d0343a; }
 .taskIcon_neutral { background: #eef2f7; color: #5f7086; }
 .taskIcon_chevron { background: #e8f0fd; color: var(--rotary-blue); }
-
 .noticeDot { width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; }
 .noticeRow .rowText small { color: #9aa9bd; font-size: var(--type-meta); }
 .noticeRow .rowText strong { font-size: var(--type-meta); font-weight: 600; }
-
-/* ---- states the real data brings that a fixed sample never did -------- */
-
-/* No poster: the card drops the column rather than framing a blank. */
 .heroBodyNoCover { grid-template-columns: minmax(0, 1fr); }
-
 .heroEmpty {
   display: flex;
   align-items: center;
@@ -473,18 +270,12 @@
   font-weight: 600;
   white-space: nowrap;
 }
-
 .panelEmpty { margin: 0; padding: 14px 0 18px; color: var(--text-secondary); font-size: var(--type-meta); }
-
-/* Rows are links now. */
 .taskRow, .noticeRow { color: inherit; text-decoration: none; border-radius: 10px; }
 .taskRow:hover, .noticeRow:hover { background: #f6f9fd; }
-
-/* Read state, said twice: the dot and the weight of the title. */
 .noticeDot { background: #d6dde7; }
 .noticeRowUnread .noticeDot { background: var(--rotary-blue); }
 .noticeRowUnread .rowText strong { font-weight: 700; }
-
 .srOnly {
   position: absolute;
   width: 1px;
@@ -496,104 +287,25 @@
   white-space: nowrap;
   border: 0;
 }
-
-/* ---- phone ------------------------------------------------------------
-   Members reach this from LINE's in-app browser, so the phone layout is the
-   one most of them will ever see. The rail becomes a header and a bottom bar:
-   a 254px sidebar has nowhere to go on a 320px screen, and the navigation is
-   what a member needs within thumb reach. */
 @media (max-width: 900px) {
-  .portal {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-    padding: 12px 16px calc(78px + env(safe-area-inset-bottom));
-  }
-
-  .sidebar {
-    position: static;
-    height: auto;
-    min-height: 0;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    /* No backdrop-filter here. A filtered element becomes the containing block
-       for any position:fixed descendant, so the bottom bar inside it was
-       pinned to the bottom of this header rather than to the viewport -- it
-       rendered at the top of the page, covering the brand and the club.
-       And above .main, because the bar lives inside this element: its own
-       z-index only orders it within this stacking context, so with both at 1
-       the later sibling simply painted over it and the bar was invisible
-       despite being in the right place. */
-    z-index: 3;
-    backdrop-filter: none;
-  }
-  .sidebarLabel, .motto { display: none; }
-  .brand { flex: 0 0 auto; }
-  .brandName { font-size: var(--type-body); }
-  .clubSelector { flex: 1 1 auto; min-width: 0; min-height: 44px; }
-  .clubSelector span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .accountCard { width: auto; flex: 0 0 auto; margin: 0; padding: 6px; }
-  .accountText, .accountCard svg { display: none; }
-
-  /* The navigation leaves the panel and becomes the bottom bar. */
-  .nav {
-    position: fixed;
-    z-index: 20;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0;
-    margin: 0;
-    padding: 6px max(6px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-right));
-    border-top: 1px solid var(--border-subtle);
-    background: rgba(255, 255, 255, .97);
-    backdrop-filter: blur(12px);
-  }
-  .navItem {
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-    min-height: 52px;
-    padding: 0 2px;
-    font-size: var(--type-meta);
-    text-align: center;
-  }
-  .navLabelFull { display: none; }
-  .navLabelShort { display: block; }
-  .navItem span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
-  .navItemCurrent { background: none; }
-  /* The current tab is carried by a lozenge behind the icon as well as by
-     colour, because colour may not be the only signal. */
-  .navItemCurrent svg { border-radius: var(--radius-pill); background: var(--rotary-blue-light); box-shadow: 0 0 0 7px var(--rotary-blue-light); }
-
-  /* Header: greeting first, tools under it. The search box is the widest
-     thing here and gets the row to itself. */
   .header { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 0; }
   .headerGreeting { padding-left: 2px; }
   .pageTitle { font-size: 30px; }
   .headerSide { justify-items: stretch; gap: 8px; }
   .headerTools { gap: 10px; }
   .search { flex: 1 1 auto; width: auto; }
-  /* One avatar, not two. The account is already reachable from the header row
-     at the top of the page, so the copy beside the search box is redundant. */
   .headerAvatar { display: none; }
   .today { order: -1; margin: 0; }
   .tagline, .motto2 { display: none; }
-
-  /* Hero: one column, poster first. */
   .hero { padding: 14px 14px 16px; }
   .heroBody { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .heroTitle { font-size: 20px; }
   .cta { align-self: stretch; width: 100%; min-width: 0; margin-top: 16px; }
-
-  /* Three columns become three cards. */
   .dashboard { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
 
-/* The backdrop's ridges sit behind the header on a phone, where there is far
-   less of it, so they are pulled in and lightened further. */
+/* The ridges sit behind the header on a phone, where there is far less of it,
+   so they are pulled in and lightened further. */
 @media (max-width: 900px) {
   .backdrop::after {
     background-size: 190% auto;
@@ -602,10 +314,6 @@
   }
 }
 
-/* ---- entry points ------------------------------------------------------
-   Not in the reference design. Kept because the home page is the only route a
-   member has to these, and a mockup that omits a feature is not a decision to
-   remove it. */
 .entries { display: grid; gap: 10px; }
 .entriesHeading { margin: 4px 0 0; color: var(--text-secondary); font-size: var(--type-meta); font-weight: 600; }
 .entryGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px; }

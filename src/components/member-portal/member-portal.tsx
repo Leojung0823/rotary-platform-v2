@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { PortalIcon, type PortalIconName } from "./portal-icons";
 import {
-  featuredEventAction,
   registrationLabels,
   type PortalAnnouncement,
   type PortalEntry,
-  type PortalClub,
+
   type PortalFeaturedEvent,
   type PortalMember,
   type PortalTask,
@@ -13,73 +12,15 @@ import {
 } from "@/lib/member-portal/types";
 import styles from "./member-portal.module.css";
 
-// Two labels per destination, as the rest of this product already does: the
-// sidebar has room for the full name, the bottom bar on a 320px phone gives
-// each of six tabs about 53px. Shortening the label is what keeps the text at
-// the 14px floor instead of shrinking it to fit.
-const navigation: readonly {
-  href: string;
-  label: string;
-  shortLabel: string;
-  icon: PortalIconName;
-}[] = [
-  { href: "/dashboard", label: "首頁", shortLabel: "首頁", icon: "home" },
-  { href: "/events", label: "活動", shortLabel: "活動", icon: "calendar" },
-  { href: "/interact", label: "社內互動", shortLabel: "互動", icon: "chat" },
-  { href: "/directory", label: "社員名錄", shortLabel: "社員", icon: "users" },
-  { href: "/club-affairs", label: "社務", shortLabel: "社務", icon: "building" },
-  { href: "/me", label: "我的", shortLabel: "我的", icon: "user" },
-];
-
-function Sidebar({ member, club, current }: { member: PortalMember; club: PortalClub; current: string }) {
-  return <aside className={styles.sidebar}>
-    <div className={styles.brand}>
-      <span className={styles.brandMark} aria-hidden="true">R</span>
-      <span className={styles.brandName}>扶輪管理平台</span>
-    </div>
-
-    <p className={styles.sidebarLabel}>所屬社團</p>
-    <button type="button" className={styles.clubSelector}>
-      <span>{club.name}</span>
-      <PortalIcon name="chevronDown" size={18} />
-    </button>
-
-    <nav className={styles.nav} aria-label="主要導覽">
-      {navigation.map((item) => <Link
-        key={item.href}
-        href={item.href}
-        prefetch={false}
-        className={item.href === current ? `${styles.navItem} ${styles.navItemCurrent}` : styles.navItem}
-        aria-current={item.href === current ? "page" : undefined}
-      >
-        <PortalIcon name={item.icon} size={21} />
-        <span className={styles.navLabelFull}>{item.label}</span>
-        <span className={styles.navLabelShort}>{item.shortLabel}</span>
-      </Link>)}
-    </nav>
-
-    <button type="button" className={styles.accountCard}>
-      <span className={styles.accountAvatar} aria-hidden="true">{member.initial}</span>
-      <span className={styles.accountText}>
-        <strong>{member.displayName}</strong>
-        <small>帳號選單</small>
-      </span>
-      <PortalIcon name="chevronRight" size={18} />
-    </button>
-
-    <p className={styles.motto}>
-      <span>Service Above Self</span>
-      <span>超 我 服 務</span>
-    </p>
-  </aside>;
-}
-
 function Header({ member, today }: { member: PortalMember; today: { date: string; weekday: string } }) {
   return <header className={styles.header}>
     <div className={styles.headerGreeting}>
       <p className={styles.eyebrow}>社員首頁</p>
       <h1 className={styles.pageTitle}>{member.displayName}，您好</h1>
-      <p className={styles.pageSubtitle}>今天與我有關的事情</p>
+      {/* A heading, styled small. It names what this page is for, and reading
+          by heading is how a screen reader user moves through it -- the same
+          mistake was made with the announcements card and fixed there. */}
+      <h2 className={styles.pageSubtitle}>今天與我有關的事情</h2>
     </div>
 
     <div className={styles.headerSide}>
@@ -118,7 +59,6 @@ function renderEventTitle(title: string) {
 }
 
 function HeroCard({ event }: { event: PortalFeaturedEvent }) {
-  const action = featuredEventAction(event.registration);
   return <section className={styles.hero} aria-labelledby="portal-hero-title">
     <div className={styles.heroHeading}>
       <span className={styles.heroSparkle} aria-hidden="true"><PortalIcon name="sparkle" size={18} /></span>
@@ -160,8 +100,8 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
           </div>
         </dl>
 
-        <Link className={styles.cta} href={action.href} prefetch={false}>
-          <span>{action.label}</span>
+        <Link className={styles.cta} href={event.action.href} prefetch={false}>
+          <span>{event.action.label}</span>
           <PortalIcon name="arrowRight" size={19} />
         </Link>
       </div>
@@ -314,24 +254,5 @@ export function MemberPortalShell({ children }: { children: React.ReactNode }) {
   return <div className={styles.contentOnly}>
     <div className={styles.backdrop} aria-hidden="true" />
     <main className={styles.main}>{children}</main>
-  </div>;
-}
-
-export function MemberPortalContent({
-  member, today, ...body
-}: MemberPortalContentProps) {
-  return <MemberPortalShell>
-    <MemberPortalHeader member={member} today={today} />
-    <MemberPortalBody {...body} />
-  </MemberPortalShell>;
-}
-
-export function MemberPortal({
-  member, club, ...content
-}: MemberPortalContentProps & { club: PortalClub }) {
-  return <div className={styles.portal}>
-    <div className={styles.backdrop} aria-hidden="true" />
-    <Sidebar member={member} club={club} current="/dashboard" />
-    <MemberPortalContent member={member} {...content} />
   </div>;
 }

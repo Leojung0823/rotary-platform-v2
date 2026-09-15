@@ -160,6 +160,28 @@ describe("design system floors", () => {
     expect(dangling.filter((entry) => !setInMarkup.some((name) => entry.endsWith(name)))).toEqual([]);
   });
 
+  it("leaves every stylesheet syntactically whole", () => {
+    // Nothing else checks this. typecheck, lint and every unit test read CSS
+    // as text, so a stylesheet can be left with an unclosed block and the
+    // whole suite still passes -- only the build fails, and only once someone
+    // runs it. An editing script ate two closing braces off a pair of media
+    // queries and 981 tests stayed green.
+    const unbalanced: string[] = [];
+    for (const sheet of styleSheets("src")) {
+      // Strings and comments cannot contain braces here, and none in this
+      // project do; counting is enough to catch a truncated rule.
+      const text = readFileSync(sheet, "utf8").replace(/\/\*[\s\S]*?\*\//gu, "");
+      let depth = 0;
+      for (const character of text) {
+        if (character === "{") depth += 1;
+        else if (character === "}") depth -= 1;
+        if (depth < 0) break;
+      }
+      if (depth !== 0) unbalanced.push(`${sheet}: ${depth > 0 ? `${depth} unclosed` : "unopened"} block`);
+    }
+    expect(unbalanced).toEqual([]);
+  });
+
   it("declares each token once", () => {
     // A second declaration of the same name in the same block silently wins.
     // That is how a --radius-card added for one page changed every card in the

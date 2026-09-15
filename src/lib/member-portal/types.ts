@@ -16,6 +16,12 @@ export type PortalFeaturedEvent = Readonly<{
   checkinNote: string;
   coverUrl: string | null;
   registration: PortalRegistrationState;
+  /**
+   * Where the card sends a member, worked out from their own state -- which
+   * includes whether check-in is open. Deriving it from the registration state
+   * alone loses that, and with it the only way home offers to check in.
+   */
+  action: Readonly<{ label: string; href: string }>;
 }>;
 
 export type PortalUpcomingEvent = Readonly<{
@@ -50,13 +56,6 @@ export const registrationLabels: Record<PortalRegistrationState, string> = {
   open: "開放報名",
   closed: "報名截止",
 };
-
-/** The call to action follows the member's own state, never a fixed string. */
-export function featuredEventAction(state: PortalRegistrationState): { label: string; href: string } {
-  return state === "not_registered" || state === "open"
-    ? { label: "立即報名", href: "/events" }
-    : { label: "查看活動", href: "/events" };
-}
 
 /**
  * A way into a feature that the home page is the only route to. The reference
