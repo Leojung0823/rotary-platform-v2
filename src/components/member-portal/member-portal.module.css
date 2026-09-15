@@ -31,6 +31,10 @@
   position: fixed;
   z-index: 0;
   inset: 0;
+  /* Decoration must never take a click. This element covers the whole
+     viewport, so without this it swallowed every press on the shell's own
+     navigation -- the account menu simply stopped opening. */
+  pointer-events: none;
   background:
     linear-gradient(180deg, #f2f7fd 0%, var(--background-primary) 38%, #e9f1fa 100%);
 }
