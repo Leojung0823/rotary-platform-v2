@@ -21,6 +21,11 @@
 
 .rail {
   position: sticky;
+  /* Above the content column. Both were at z-index auto, so DOM order decided
+     and the content painted over the navigation -- which is the wrong way
+     round for chrome, and became visible the moment a page put a full-bleed
+     backdrop in its own column. */
+  z-index: 2;
   top: 0;
   height: 100vh;
   display: flex;

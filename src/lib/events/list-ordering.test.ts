@@ -52,7 +52,7 @@ describe("event cover framing", () => {
   it("crops the same poster the same way wherever it appears", () => {
     // The home card and the events list had drifted to 8/3 and 16/9, so one
     // image was cut two different ways depending on where a member looked.
-    const home = readFileSync("src/components/member-home.module.css", "utf8");
+    const home = readFileSync("src/components/member-portal/member-portal.module.css", "utf8");
     // What matters is that there is exactly one ratio and both places read it,
     // not which ratio it happens to be -- pinning the number here meant a
     // deliberate change to the framing looked like a regression.

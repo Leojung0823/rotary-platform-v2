@@ -34,16 +34,25 @@ describe("performance-first navigation boundaries", () => {
   });
 
   it("streams member-home activity after the verified account and club heading", () => {
-    const memberHome = source("src/components/member-home.tsx");
-    expect(memberHome).toContain("<Suspense fallback={<MemberHomeContentLoading />}>");
-    expect(memberHome).toContain("<MemberHomeContent activeClubId={activeClub.clubId} messageCenterEnabled={messageCenterEnabled} />");
+    // The greeting needs no data, so it must not wait for any: this is the
+    // first page after signing in, and blocking all of it on one database
+    // round trip delays every pixel.
+    const source_ = source("src/components/member-portal/member-portal-home.tsx");
+    // Inside MemberPortalHome, not anywhere in the file: there is a second
+    // Suspense further up for the LINE pairing prompt, and indexOf found that
+    // one instead -- the first draft of this passed for the wrong reason.
+    const start = source_.indexOf("export function MemberPortalHome");
+    expect(start, "MemberPortalHome is gone").toBeGreaterThan(-1);
+    const home = source_.slice(start);
+    expect(home).toContain("<Suspense fallback={<MemberPortalBodyLoading />}>");
+    expect(home.indexOf("<MemberPortalHeader")).toBeLessThan(home.indexOf("<Suspense"));
   });
 
   it("does not eagerly prefetch authenticated homepage destinations", () => {
     const shell = source("src/components/role-aware-app-shell.tsx");
-    const memberHome = source("src/components/member-home.tsx");
+    const portal = source("src/components/member-portal/member-portal.tsx");
     expect(shell.match(/<Link/gu)?.length).toBe(shell.match(/prefetch=\{false\}/gu)?.length);
-    expect(memberHome.match(/<Link/gu)?.length).toBe(memberHome.match(/prefetch=\{false\}/gu)?.length);
+    expect(portal.match(/<Link/gu)?.length).toBe(portal.match(/prefetch=\{false\}/gu)?.length);
   });
 
   it("does not wait for diagnostic writes before rendering the homepage", () => {

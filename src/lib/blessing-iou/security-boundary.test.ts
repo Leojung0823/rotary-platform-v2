@@ -49,7 +49,7 @@ describe("blessing IOU API boundary", () => {
 
 describe("blessing IOU homepage performance boundary", () => {
   const dashboard = source("src/app/(authenticated)/dashboard/page.tsx");
-  const memberHome = source("src/components/member-home.tsx");
+  const memberHome = source("src/lib/member-portal/from-projection.ts");
 
   it("adds only a static link and does not load blessing data on the homepage", () => {
     expect(memberHome).toContain("/blessings?clubId=");
