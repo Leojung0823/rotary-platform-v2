@@ -2,6 +2,28 @@
    with grey either side. It now takes the page width and spends it sideways:
    the event banner beside its details, the entry points in a row. */
 .memberHome { max-width: none; }
+/* A backdrop, not a picture: the ridges are the palest thing on the page and
+   fade out entirely before the first card. It is decorative, so it is drawn by
+   CSS and carries no alt text -- nothing is lost if it never loads.
+   Measured: the darkest pixel in the image is #aabdce, which is 8.2:1 against
+   the greeting. The supporting text is lighter, so the mask keeps the ridges
+   below it rather than behind it. */
+.memberHome::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 420px;
+  background: url("/hero-mountains.webp") no-repeat center top / cover;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.85) 0%, rgba(0,0,0,.85) 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.85) 0%, rgba(0,0,0,.85) 45%, transparent 100%);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .memberHome::before { transition: opacity .3s ease; }
+}
 /* A supporting line under the greeting, not a second heading competing with it. */
 .todayHeading { margin: 2px 0 0; color: var(--muted); font-size: 15px; font-weight: var(--weight-medium); }
 .secondarySection { display: grid; gap: var(--space-3); }
@@ -11,7 +33,7 @@
    a hole when there are four. Every tile starts on the same line whatever its
    text does, because the row height comes from the tallest one. */
 .secondaryActions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); align-items: stretch; }
-.secondaryAction { min-height: 76px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card); color: var(--ink); background: var(--surface); box-shadow: var(--elevation-card); }
+.secondaryAction { min-height: 76px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-4); border: 0; border-radius: var(--radius-card); color: var(--ink); background: var(--surface); box-shadow: var(--elevation-card); }
 /* No lift on hover. A card that jumps under the cursor draws attention to the
    pointer rather than to the card. */
 .secondaryAction:hover { border-color: var(--line); background: var(--surface-sunken); }
@@ -48,7 +70,7 @@
 /* No gold rule across the top. The target design carries the card on its own
    edge and shadow, and one more coloured line was decoration that had stopped
    meaning anything once every card had it. */
-.primaryCard { border-color: var(--hairline); background: var(--surface); }
+.primaryCard { background: var(--surface); }
 .primaryCard :global(.badge) { gap: var(--space-1); padding-left: var(--space-2); }
 .primaryCard :global(.badge) svg { width: 18px; height: 18px; }
 /* Label and "see all" on one row above the poster. */
@@ -102,12 +124,12 @@
    no visible focus on the notification links. */
 .notificationLink:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .notificationChevron { color: var(--muted); font-size: 22px; line-height: 1; flex: none; }
-.blessingShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; min-height: 76px; padding: var(--space-4) var(--space-5); border: 1px solid var(--hairline); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); color: var(--ink); text-decoration: none; }
+.blessingShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; min-height: 76px; padding: var(--space-4) var(--space-5); border: 0; border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); color: var(--ink); text-decoration: none; }
 .blessingShortcut:hover { background: var(--surface-sunken); }
 .blessingShortcut > span:not(.blessingIcon) { display: grid; gap: 2px; min-width: 0; }
 .blessingShortcut small { color: var(--muted); overflow-wrap: anywhere; }
 .blessingIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: rgba(244, 185, 66, .22); font-size: 24px; }
-.financeShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; min-height: 76px; padding: var(--space-4) var(--space-5); border: 1px solid var(--hairline); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); color: var(--ink); text-decoration: none; }
+.financeShortcut { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; min-height: 76px; padding: var(--space-4) var(--space-5); border: 0; border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); color: var(--ink); text-decoration: none; }
 .financeShortcut:hover { background: var(--surface-sunken); }
 .financeShortcut > span:not(.financeIcon) { display: grid; gap: 2px; min-width: 0; }
 .financeShortcut small { color: var(--muted); overflow-wrap: anywhere; }

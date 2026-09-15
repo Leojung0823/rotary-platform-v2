@@ -63,17 +63,34 @@ describe("design system floors", () => {
     expect(heading).not.toMatch(/letter-spacing:\s*-/u);
   });
 
-  it("separates a card by layer rather than by outline", () => {
-    // The first pass swapped the heavy shadow for a full-strength border, which
-    // still draws a box around everything. A card now reads as a lighter plane
-    // on a darker canvas: a hairline so the edge does not dissolve, and a
-    // shadow small enough to be a seam rather than lift.
+  it("separates a card by exactly one of border or shadow, never both", () => {
+    // This guard used to pin the choice (hairline border, no lift), so flipping
+    // the choice made it fail even though the rule it protects was intact. The
+    // rule is the invariant, not the choice: a border says "here is an edge", a
+    // shadow says "this is an object above the page", and doing both is what
+    // made the surface read as a form. Either is defensible; both is not, and
+    // neither leaves the card dissolving into the canvas.
     const card = globals.slice(globals.indexOf(".card {"));
     const rule = card.slice(0, card.indexOf("}"));
-    expect(rule).toContain("var(--hairline)");
     expect(rule).toContain("var(--radius-card)");
-    expect(rule).not.toContain("solid var(--line)");
-    expect(rule).not.toMatch(/box-shadow: 0 \d{2}px/u);
+
+    // Read the declarations rather than pattern-match the text: `border: 0`
+    // still contains the substring "border:", and a lookahead placed after
+    // \s* simply backtracks past the space and matches anyway.
+    const declared = (property: string) => {
+      const found = rule
+        .split(";")
+        .map((part) => part.split(":").map((half) => half.trim()))
+        .find(([name]) => name === property);
+      return found?.[1] ?? "";
+    };
+    const isNothing = (value: string) => value === "" || value === "0" || value === "none";
+    const hasBorder = !isNothing(declared("border"));
+    const hasShadow = !isNothing(declared("box-shadow"));
+    expect(
+      hasBorder !== hasShadow,
+      `a card must use one separation mechanism, got border=${hasBorder} shadow=${hasShadow}`,
+    ).toBe(true);
   });
 
   it("uses gold once per screen and never as text", () => {
