@@ -107,7 +107,10 @@
 .accountPanel a, .accountPanel button { min-height: 48px; padding: var(--space-2); border: 0; border-radius: var(--radius-control); color: var(--navy); background: var(--surface-sunken); cursor: pointer; font-weight: var(--weight-medium); text-align: left; }
 .accountPanel button { width: 100%; color: var(--danger); }
 
-.content { min-width: 0; padding: var(--space-7) clamp(var(--space-7), 3.5vw, var(--space-9)) 80px; }
+/* Positioned so a page can paint a full-bleed backdrop behind its own header
+   without reaching for 100vw -- that measure includes the scrollbar, and a page
+   that is exactly as wide as the viewport plus a scrollbar scrolls sideways. */
+.content { position: relative; min-width: 0; padding: var(--space-7) clamp(var(--space-7), 3.5vw, var(--space-9)) 80px; }
 
 @media (max-width: 840px) {
   .shell { display: block; }

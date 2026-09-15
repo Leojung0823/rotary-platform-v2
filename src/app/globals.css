@@ -6,7 +6,11 @@
      layout uses too. */
   --ink: #10233d;
   --muted: #62748a;
-  --subtle-ink: #8795a8;
+  /* #8795a8 was 3.05:1 on white -- it never met the 4.5:1 this project sets
+     for text, on any surface it was used on. #626f7e clears it on all three
+     (white 5.13, canvas 4.82, sunken 4.56) and is still lighter than --muted,
+     which is the distinction the token exists to make. */
+  --subtle-ink: #626f7e;
   --line: #e3e9f0;
   --canvas: #f6f8fb;
   --surface: #ffffff;
@@ -65,12 +69,17 @@
      does not dissolve on a very light screen. */
   --surface-sunken: #eef2f7;
   --hairline: rgba(18, 48, 74, .08);
-  --elevation-card: 0 8px 28px rgba(15, 35, 60, .04);
+  /* Two layers: a tight one that seats the card on the page and a wide soft
+     one that lifts it off. At 4% the old single shadow was invisible against
+     the canvas, so the card was really being drawn by its border -- which is
+     the "border and shadow at once" this design system's own rule forbids,
+     and it is what made the surface read as a form rather than an object. */
+  --elevation-card: 0 1px 2px rgba(16, 35, 61, .04), 0 10px 30px rgba(16, 35, 61, .07);
   --elevation-raised: 0 12px 32px rgba(18, 48, 74, .14);
 
   /* Larger, consistent radii. A small radius on a large surface reads as
      cheap; one generous value everywhere reads as deliberate. */
-  --radius-card: 20px;
+  --radius-card: 24px;
   --radius-control: 14px;
   --radius-pill: 999px;
   --shadow: none;
@@ -190,7 +199,9 @@ p { color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
 .subtle, .hint { color: var(--muted); font-size: var(--text-small); line-height: 1.6; }
 .back-link { display: inline-block; margin-bottom: var(--space-6); color: var(--blue-ink); font-weight: var(--weight-medium); font-size: var(--text-small); }
 /* A lighter plane on a slightly darker canvas rather than an outlined box. */
-.card { padding: var(--space-5); border: 1px solid var(--hairline); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); }
+/* No border. A 1px rule says "here is an edge"; a shadow says "this is an
+   object above the page", and only one of those reads as finished. */
+.card { padding: var(--space-5); border: 0; border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--elevation-card); }
 .identity-ledger-card { min-width: 0; }
 .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .metric-label { display: block; color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); }
