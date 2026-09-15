@@ -9,16 +9,25 @@ import {
   type PortalMember,
   type PortalTask,
   type PortalUpcomingEvent,
-} from "@/lib/member-portal/mock";
+} from "@/lib/member-portal/types";
 import styles from "./member-portal.module.css";
 
-const navigation: readonly { href: string; label: string; icon: PortalIconName }[] = [
-  { href: "/dashboard", label: "首頁", icon: "home" },
-  { href: "/events", label: "活動", icon: "calendar" },
-  { href: "/interact", label: "社內互動", icon: "chat" },
-  { href: "/directory", label: "社員名錄", icon: "users" },
-  { href: "/club-affairs", label: "社務", icon: "building" },
-  { href: "/me", label: "我的", icon: "user" },
+// Two labels per destination, as the rest of this product already does: the
+// sidebar has room for the full name, the bottom bar on a 320px phone gives
+// each of six tabs about 53px. Shortening the label is what keeps the text at
+// the 14px floor instead of shrinking it to fit.
+const navigation: readonly {
+  href: string;
+  label: string;
+  shortLabel: string;
+  icon: PortalIconName;
+}[] = [
+  { href: "/dashboard", label: "首頁", shortLabel: "首頁", icon: "home" },
+  { href: "/events", label: "活動", shortLabel: "活動", icon: "calendar" },
+  { href: "/interact", label: "社內互動", shortLabel: "互動", icon: "chat" },
+  { href: "/directory", label: "社員名錄", shortLabel: "社員", icon: "users" },
+  { href: "/club-affairs", label: "社務", shortLabel: "社務", icon: "building" },
+  { href: "/me", label: "我的", shortLabel: "我的", icon: "user" },
 ];
 
 function Sidebar({ member, club, current }: { member: PortalMember; club: PortalClub; current: string }) {
@@ -42,7 +51,8 @@ function Sidebar({ member, club, current }: { member: PortalMember; club: Portal
         aria-current={item.href === current ? "page" : undefined}
       >
         <PortalIcon name={item.icon} size={21} />
-        <span>{item.label}</span>
+        <span className={styles.navLabelFull}>{item.label}</span>
+        <span className={styles.navLabelShort}>{item.shortLabel}</span>
       </Link>)}
     </nav>
 
@@ -113,13 +123,13 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
       <h2 className={styles.sectionTitle}>精選活動</h2>
     </div>
 
-    <div className={styles.heroBody}>
-      <div className={styles.heroCover}>
-        {/* Plain img: the cover is a fixed sample in stage one and next/image
-            would only add a loader in front of a static file. */}
+    <div className={event.coverUrl === null ? `${styles.heroBody} ${styles.heroBodyNoCover}` : styles.heroBody}>
+      {/* An event with no poster gets no empty frame: the card drops the
+          column and gives the width to the details. */}
+      {event.coverUrl !== null && <div className={styles.heroCover}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={event.coverUrl} alt="" />
-      </div>
+      </div>}
 
       <div className={styles.heroInfo}>
         <div className={styles.heroInfoTop}>
@@ -128,7 +138,7 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
         </div>
 
         <h3 className={styles.heroTitle} id="portal-hero-title">{renderEventTitle(event.title)}</h3>
-        <p className={styles.heroSummary}>{event.summary}</p>
+        {event.summary !== "" && <p className={styles.heroSummary}>{event.summary}</p>}
 
         <dl className={styles.heroFacts}>
           <div>
@@ -139,7 +149,7 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
             <dt aria-hidden="true"><PortalIcon name="pin" size={19} /></dt>
             <dd>
               <span>{event.venue}</span>
-              <small>{event.venueAddress}</small>
+              {event.venueAddress !== "" && <small>{event.venueAddress}</small>}
             </dd>
           </div>
           <div>
@@ -158,11 +168,12 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
 }
 
 function DashboardCard({
-  icon, title, tone, children,
+  icon, title, tone, empty, children,
 }: {
   icon: PortalIconName;
   title: string;
   tone: "blue" | "green" | "amber";
+  empty: string | null;
   children: React.ReactNode;
 }) {
   return <section className={styles.panel}>
@@ -175,7 +186,7 @@ function DashboardCard({
         查看全部 <PortalIcon name="chevronRight" size={16} />
       </Link>
     </div>
-    <div className={styles.panelRows}>{children}</div>
+    <div className={styles.panelRows}>{empty === null ? children : <p className={styles.panelEmpty}>{empty}</p>}</div>
   </section>;
 }
 
@@ -185,7 +196,7 @@ export function MemberPortal({
   member: PortalMember;
   club: PortalClub;
   today: { date: string; weekday: string };
-  featuredEvent: PortalFeaturedEvent;
+  featuredEvent: PortalFeaturedEvent | null;
   upcomingEvents: readonly PortalUpcomingEvent[];
   tasks: readonly PortalTask[];
   announcements: readonly PortalAnnouncement[];
@@ -195,10 +206,18 @@ export function MemberPortal({
     <Sidebar member={member} club={club} current="/dashboard" />
     <main className={styles.main}>
       <Header member={member} today={today} />
-      <HeroCard event={featuredEvent} />
+      {/* Nothing to do today is the common case, and it says so in one line
+          rather than spending the first screen on an absence. */}
+      {featuredEvent === null
+        ? <section className={styles.heroEmpty}>
+          <span className={styles.heroSparkle} aria-hidden="true"><PortalIcon name="sparkle" size={18} /></span>
+          <p>目前沒有需要處理的活動</p>
+          <Link className={styles.heroEmptyLink} href="/events">查看活動 <PortalIcon name="chevronRight" size={16} /></Link>
+        </section>
+        : <HeroCard event={featuredEvent} />}
 
       <div className={styles.dashboard}>
-        <DashboardCard icon="calendar" title="近期活動" tone="blue">
+        <DashboardCard icon="calendar" title="近期活動" tone="blue" empty={upcomingEvents.length === 0 ? "近期沒有活動" : null}>
           {upcomingEvents.map((event) => <div className={styles.eventRow} key={event.title}>
             <span className={styles.dateCard}>
               <small>{event.month}</small>
@@ -214,8 +233,8 @@ export function MemberPortal({
           </div>)}
         </DashboardCard>
 
-        <DashboardCard icon="checkSquare" title="待辦提醒" tone="green">
-          {tasks.map((task) => <div className={styles.taskRow} key={task.title}>
+        <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" empty={tasks.length === 0 ? "目前沒有待辦事項" : null}>
+          {tasks.map((task) => <Link className={styles.taskRow} key={`${task.title}-${task.detail}`} href={task.href} prefetch={false}>
             <span className={`${styles.taskIcon} ${styles[`taskIcon_${task.tone}`]}`} aria-hidden="true">
               <PortalIcon name={task.icon === "bell" ? "bell" : task.icon === "document" ? "document" : "users"} size={19} />
             </span>
@@ -226,18 +245,28 @@ export function MemberPortal({
             {task.status
               ? <span className={`${styles.rowPill} ${task.tone === "danger" ? styles.rowPillDanger : ""}`}>{task.status}</span>
               : <span className={styles.rowChevron} aria-hidden="true"><PortalIcon name="chevronRight" size={17} /></span>}
-          </div>)}
+          </Link>)}
         </DashboardCard>
 
-        <DashboardCard icon="megaphone" title="社團公告" tone="amber">
-          {announcements.map((item) => <div className={styles.noticeRow} key={item.title}>
-            <span className={`${styles.noticeDot} ${styles[`noticeDot_${item.dot}`]}`} aria-hidden="true" />
+        <DashboardCard icon="megaphone" title="社團公告" tone="amber" empty={announcements.length === 0 ? "目前沒有社團公告" : null}>
+          {announcements.map((item) => <Link
+            className={item.unread ? `${styles.noticeRow} ${styles.noticeRowUnread}` : styles.noticeRow}
+            key={`${item.date}-${item.title}`}
+            href={item.href}
+            prefetch={false}
+          >
+            {/* The dot is read state, not a category colour: a green, blue or
+                amber category tells a member nothing they can act on, while
+                unread is the one thing they cannot work out by looking. It is
+                said twice -- the dot and the weight -- because colour may not
+                be the only signal. */}
+            <span className={styles.noticeDot} aria-hidden="true" />
             <span className={styles.rowText}>
-              <small>{item.date}</small>
+              <small>{item.date}{item.unread && <span className={styles.srOnly}>（未讀）</span>}</small>
               <strong>{item.title}</strong>
               <span>{item.summary}</span>
             </span>
-          </div>)}
+          </Link>)}
         </DashboardCard>
       </div>
     </main>

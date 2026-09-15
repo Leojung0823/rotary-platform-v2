@@ -10,6 +10,7 @@ describe("member-home server boundary", () => {
   it("records one bounded projection round trip on success", () => {
     expect(memberHomeTelemetryEvent({ ok: true, projection: {
       club: { clubCode: "A", clubName: "A 社" }, primaryEvent: null, nextEvent: null, recentEvents: [],
+      upcomingEvents: [],
       pendingTasks: [],
       notifications: { unreadCount: 0, items: [] },
     } }, 120_001)).toEqual({
