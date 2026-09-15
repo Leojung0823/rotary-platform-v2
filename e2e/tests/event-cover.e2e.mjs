@@ -62,6 +62,13 @@ test("a manager uploads a cover, and the browser shrinks it first", async ({ pag
   await expect(page.getByText("圖片已更新。").first()).toBeVisible({ timeout: 30_000 });
 
   await page.reload();
+  // The poster is folded away on the management list so an officer can scan a
+  // dozen events without scrolling past a dozen full-width images. It is still
+  // there, and opening the fold is what an officer does to look at it.
+  const fold = page.locator("details.cover-fold").first();
+  await expect(fold).toBeAttached();
+  await fold.locator("summary").click();
+
   const cover = page.locator("img.event-cover").first();
   await expect(cover).toBeAttached();
   // The card carries loading="lazy", so the picture only fetches once it is
