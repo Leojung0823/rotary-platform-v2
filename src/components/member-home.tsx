@@ -18,6 +18,7 @@ import {
 } from "@/lib/member-home";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { resolveMemberHomeProjection } from "@/lib/member-home.server";
+import { ShellIcon } from "./shell-icons";
 import styles from "./member-home.module.css";
 
 const registrationLabels: Record<MemberHomeRegistrationState, string> = {
@@ -60,7 +61,14 @@ function EventSummary({
   primary?: boolean;
 }) {
   const action = memberHomePrimaryAction(event);
+  const registered = event.registrationState === "registered";
   return <Card className={primary ? styles.primaryCard : styles.nextCard}>
+    {/* The label sits above the poster, not under it. Under the image it read
+        as a caption for the picture; above it, it says what the whole card is. */}
+    <div className={styles.cardTop}>
+      <p className="eyebrow">{primary ? "優先處理" : "接下來"}</p>
+      <Link className="card-link" href="/events" prefetch={false}>查看全部 ›</Link>
+    </div>
     {coverUrl && <Image
       className={styles.eventCover}
       src={coverUrl}
@@ -71,18 +79,28 @@ function EventSummary({
       unoptimized
     />}
     <div className={styles.eventHeading}>
-      <div>
-        <p className="eyebrow">{primary ? "優先處理" : "接下來"}</p>
-        <h2>{event.title}</h2>
-      </div>
-      <Badge tone={event.registrationState === "registered" ? "success" : "neutral"}>
-        {registrationLabels[event.registrationState]}
-      </Badge>
+      <h2>{event.title}</h2>
     </div>
+    <Badge tone={registered ? "success" : "neutral"}>
+      {registered && <ShellIcon name="check" />}
+      {registrationLabels[event.registrationState]}
+    </Badge>
+    {/* Icon, label, value -- the same three-part row for each fact, so the eye
+        finds the time in the same place on every card instead of counting
+        columns. */}
     <dl className={styles.eventDetails}>
-      <div><dt>時間</dt><dd>{formatDateTime(event.startsAt)}</dd></div>
-      <div><dt>地點</dt><dd>{event.location || "地點待確認"}</dd></div>
-      {primary && <div><dt>簽到</dt><dd>{checkinLabels[event.checkinState]}</dd></div>}
+      <div>
+        <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="calendar" /></span>
+        <div><dt>時間</dt><dd>{formatDateTime(event.startsAt)}</dd></div>
+      </div>
+      <div>
+        <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="pin" /></span>
+        <div><dt>地點</dt><dd>{event.location || "地點待確認"}</dd></div>
+      </div>
+      {primary && <div>
+        <span className={styles.detailIcon} aria-hidden="true"><ShellIcon name="check" /></span>
+        <div><dt>簽到</dt><dd>{checkinLabels[event.checkinState]}</dd></div>
+      </div>}
     </dl>
     {primary && event.checkinState !== "checked_in" && <Link className="button" href={action.href} prefetch={false}>
       {action.label}

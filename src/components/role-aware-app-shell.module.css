@@ -133,7 +133,13 @@
      tapped, which reads as an unrelated sheet appearing. */
   .clubPanel { position: absolute; z-index: 40; top: calc(100% + 8px); right: 0; bottom: auto; left: 0; width: auto; max-height: min(420px, 62vh); }
   .scopeLabel { display: block; }
+  /* On a phone this is not a row in a rail -- it is the avatar pinned to the
+     corner of the header. The 60px the desktop block gives it for a comfortable
+     sidebar row makes it reach 12px further down here, over the top of the club
+     switcher beneath it. Size it to the avatar it actually contains. */
   .accountMenu { position: absolute; top: 10px; right: 16px; margin: 0; padding: 0; border: 0; }
+  .accountMenu summary { min-height: 40px; padding: 0; }
+  .accountMenu summary:hover { background: none; }
   .accountSummary { display: none; }
   .accountPanel { position: fixed; z-index: 40; top: 66px; right: 12px; bottom: auto; left: auto; }
   .navigation { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; margin: 0; padding: 8px max(8px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right)); border-top: 1px solid var(--line); background: rgba(255,255,255,.96); box-shadow: 0 -8px 24px rgba(18,48,74,.08); backdrop-filter: blur(12px); }
@@ -160,6 +166,18 @@
   .navigation a[aria-current="page"]:focus,
   .navigation a[aria-current="page"]:active { color: var(--shell-accent-ink, #0a5fc4); background: none; }
   .navigationIcon { height: 20px; font-size: 18px; }
+  /* The current tab is carried by colour alone, which is the one thing the
+     project's own accessibility rule says a state may not rely on. A tinted
+     lozenge behind the icon says it a second way, and is what the target
+     design does. */
+  .navigation a[aria-current="page"] .navigationIcon {
+    width: 46px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    background: var(--blue-soft);
+  }
+  .shellManagement .navigation a[aria-current="page"] .navigationIcon { background: rgba(168, 111, 22, .12); }
+  .shellPlatform .navigation a[aria-current="page"] .navigationIcon { background: rgba(123, 76, 163, .12); }
   .navigationIcon svg { display: block; color: inherit; stroke: currentColor; }
   .navigation a { position: relative; }
   .navigationBadge { position: absolute; top: 3px; left: 50%; margin-left: 3px; min-width: 18px; line-height: 17px; }

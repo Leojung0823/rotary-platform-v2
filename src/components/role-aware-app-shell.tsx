@@ -28,14 +28,6 @@ import styles from "./role-aware-app-shell.module.css";
 
 const activeClubPreferenceActionPath = "/api/preferences/active-club";
 
-function environmentLabel() {
-  // Production shows nothing: the tag exists so nobody mistakes a test system
-  // for the real one, and on the real one there is nothing to mistake.
-  if (process.env.APP_ENV === "production") return "";
-  if (process.env.APP_ENV === "staging") return "STAGING";
-  return "LOCAL";
-}
-
 function featureFlagFailureReason(evaluation: FeatureFlagEvaluation) {
   if (evaluation.reason === "missing_configuration") return "missing_configuration";
   if (evaluation.reason === "database_read_error") return "evaluation_error";
@@ -253,13 +245,7 @@ export function RoleAwareAppShell({
       <header className={styles.header}>
         <Link href={modeHref(mode)} prefetch={false} className={styles.brand}>
           <span className={styles.brandMark} aria-hidden="true">R</span>
-          <span>
-            扶輪管理平台
-            {/* An environment tag earns its place only where mistaking one
-                for the other is possible. In production it is noise on the
-                brand. */}
-            {environmentLabel() && <small>{environmentLabel()}</small>}
-          </span>
+          <span>扶輪管理平台</span>
         </Link>
         <p className={styles.modeName}>{roleShellModeLabels[mode]}</p>
         {context.hasPlatformAccess && <>

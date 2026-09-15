@@ -45,17 +45,33 @@
    same surface as every other card, marked by a single gold edge -- the one
    place the brand colour is allowed to carry meaning, because it carries no
    text. */
-.primaryCard { position: relative; overflow: hidden; border-color: var(--hairline); background: var(--surface); }
-.primaryCard::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--gold); }
+/* No gold rule across the top. The target design carries the card on its own
+   edge and shadow, and one more coloured line was decoration that had stopped
+   meaning anything once every card had it. */
+.primaryCard { border-color: var(--hairline); background: var(--surface); }
+.primaryCard :global(.badge) { gap: var(--space-1); padding-left: var(--space-2); }
+.primaryCard :global(.badge) svg { width: 18px; height: 18px; }
+/* Label and "see all" on one row above the poster. */
+.cardTop { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.cardTop .eyebrow { margin: 0; }
 .eventHeading { display: flex; gap: var(--space-4); align-items: flex-start; justify-content: space-between; }
-.eventHeading h2 { margin: 4px 0 0; overflow-wrap: anywhere; }
+/* `anywhere` let the last character drop to a line of its own -- it permits a
+   break at any position, including one that leaves an orphan. `break-word`
+   only breaks a run that genuinely cannot fit, and `pretty` asks the browser
+   to avoid the orphan outright. */
+.eventHeading h2 { margin: 0; overflow-wrap: break-word; text-wrap: pretty; }
 /* The title of the thing you have to act on today is the largest text on the
    page after your own name. */
 .primaryCard .eventHeading h2 { font-size: 26px; line-height: 1.35; }
-.eventDetails { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin: 0; }
-.eventDetails div { min-width: 0; }
+.eventDetails { display: grid; gap: 0; margin: 0; }
+/* One row per fact, divided by a hairline: at a glance it is a list of facts
+   about one event, not three unrelated columns. */
+.eventDetails > div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: center; min-width: 0; padding: var(--space-3) 0; }
+.eventDetails > div + div { border-top: 1px solid var(--hairline); }
+.eventDetails > div > div { min-width: 0; }
+.detailIcon { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: var(--radius-control); background: var(--blue-soft); color: var(--blue-ink); }
 .eventDetails dt { color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); }
-.eventDetails dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: var(--text-body); font-weight: var(--weight-medium); }
+.eventDetails dd { margin: 2px 0 0; overflow-wrap: break-word; font-size: var(--text-body); font-weight: var(--weight-medium); }
 .primaryCard .button, .emptyCard .button { width: fit-content; min-height: 48px; }
 .recentList { display: grid; gap: var(--space-3); }
 .recentItem { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-5); border: 1px solid var(--hairline); border-radius: var(--radius-control); background: var(--surface); }
@@ -115,8 +131,8 @@
   .primaryCard:has(.eventCover) .eventHeading,
   .primaryCard:has(.eventCover) .eventDetails,
   .primaryCard:has(.eventCover) :global(.button) { grid-column: 2; }
-  /* In a 40% column three side-by-side fields wrap to two words each. */
-  .primaryCard:has(.eventCover) .eventDetails { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+  .primaryCard:has(.eventCover) .cardTop,
+  .primaryCard:has(.eventCover) :global(.badge) { grid-column: 2; }
   .primaryCard:has(.eventCover) :global(.button) { align-self: start; }
 }
 
@@ -127,6 +143,7 @@
   .eventDetails { grid-template-columns: 1fr; gap: var(--space-3); }
   .primaryCard .button, .emptyCard .button { width: 100%; }
   .primaryCard .eventHeading h2 { font-size: 22px; }
+  .eventDetails { grid-template-columns: minmax(0, 1fr); }
   .blessingShortcut { min-height: 80px; padding: var(--space-4); }
   .financeShortcut { min-height: 80px; padding: var(--space-4); }
 }
