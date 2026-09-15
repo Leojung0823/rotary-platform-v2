@@ -120,6 +120,7 @@ describe("event publish LINE push", () => {
 describe("event push text", () => {
   it("carries what a member needs to decide whether to go", () => {
     const text = composeEventPushText({
+      eventId: "a1000000-0000-4000-8000-000000000001",
       title: "九月例會", location: "台北國賓飯店", startsAt: "2026-09-10T11:30:00.000Z",
     });
     expect(text).toContain("九月例會");
@@ -130,12 +131,27 @@ describe("event push text", () => {
   });
 
   it("omits an empty location instead of printing a blank line", () => {
-    const text = composeEventPushText({ title: "爐邊會談", location: "", startsAt: "2026-09-10T11:30:00.000Z" });
+    const text = composeEventPushText({ eventId: "a1000000-0000-4000-8000-000000000002", title: "爐邊會談", location: "", startsAt: "2026-09-10T11:30:00.000Z" });
     expect(text).not.toContain("地點：");
   });
 
+  it("gives the member a link they can tap", () => {
+    // The notice is read inside LINE. Telling someone to "go to the events
+    // page" without an address asks them to leave the app, remember the
+    // hostname and find the event themselves.
+    const text = composeEventPushText({
+      eventId: "a1000000-0000-4000-8000-000000000004",
+      title: "九月理事會",
+      location: "大拙匠人",
+      startsAt: "2026-09-17T10:30:00.000Z",
+    });
+    expect(text).toContain("/events/a1000000-0000-4000-8000-000000000004");
+    // On its own line: LINE only makes a URL tappable when nothing crowds it.
+    expect(text.split("\n").some((line) => line.startsWith("http") && line.endsWith("000000000004"))).toBe(true);
+  });
+
   it("survives an unparseable start time without printing Invalid Date", () => {
-    const text = composeEventPushText({ title: "活動", location: null, startsAt: "not-a-date" });
+    const text = composeEventPushText({ eventId: "a1000000-0000-4000-8000-000000000003", title: "活動", location: null, startsAt: "not-a-date" });
     expect(text).not.toContain("Invalid");
     expect(text).toContain("活動");
   });
