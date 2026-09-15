@@ -63,6 +63,35 @@ test("the same officer still gets the full management view in management mode", 
   await expect(page.getByRole("link", { name: "管理簽到" }).first()).toBeVisible();
 });
 
+/**
+ * The document must not be wider than the window.
+ *
+ * A wide table is fine -- .table-wrap scrolls it. What is not fine is the table
+ * widening the page itself, which puts every fixed overlay (the account menu,
+ * the bottom navigation) over content that has scrolled out from under it.
+ */
+async function expectNoHorizontalOverflow(page) {
+  const overflow = await page.evaluate(() => Math.max(
+    document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    document.body.scrollWidth - document.body.clientWidth,
+  ));
+  expect(overflow, "the page is wider than the phone it is on").toBeLessThanOrEqual(1);
+}
+
+test("the member roster fits the phone it is read on", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "officer-mode-375", "a width question");
+  await login(page, officerEmail);
+  // The roster is the widest table in management mode and the page the account
+  // menu's 進入社務管理 lands on, so an overflow here is felt immediately.
+  await page.goto(new URL(`/clubs/${memberClubId}/members?mode=management`, baseURL).toString());
+  await expect(page.getByRole("heading", { name: "社員", level: 1 })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  // And it still fits once the roster has rows in it.
+  await expect(page.getByRole("table").last()).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("an officer can leave management mode again", async ({ page }) => {
   await login(page, officerEmail);
   await page.goto(new URL("/dashboard?mode=member", baseURL).toString());
