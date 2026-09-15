@@ -62,7 +62,7 @@ insert into public.club_events (
   );
 
 set local role authenticated;
-set local request.jwt.claims = '{"sub": "1c000000-0000-0000-0000-000000000001", "role": "authenticated"}';
+select set_config('request.jwt.claim.sub', '1c000000-0000-0000-0000-000000000001', true);
 
 -- The whole point: opening check-in on an event that does not count used to
 -- raise event_not_checkin_eligible.
@@ -141,7 +141,7 @@ set event_status = 'cancelled', cancelled_at = now(), cancellation_reason = '測
 where id = '8c000000-0000-4000-8000-000000000001';
 
 set local role authenticated;
-set local request.jwt.claims = '{"sub": "1c000000-0000-0000-0000-000000000001", "role": "authenticated"}';
+select set_config('request.jwt.claim.sub', '1c000000-0000-0000-0000-000000000001', true);
 
 do $$
 begin
