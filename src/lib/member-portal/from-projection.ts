@@ -9,6 +9,7 @@ import type {
 } from "@/lib/member-home";
 import type {
   PortalAnnouncement,
+  PortalEntry,
   PortalFeaturedEvent,
   PortalTask,
   PortalUpcomingEvent,
@@ -98,4 +99,27 @@ export function announcementsFrom(
     unread: item.unread,
     href: item.actionPath ?? `/messages?clubId=${encodeURIComponent(clubId)}`,
   }));
+}
+
+/**
+ * The ways into features the home page is the only route to, each behind the
+ * same flag that gated it before. A member whose club has a feature switched
+ * off does not see a door to it.
+ */
+export function entriesFrom(
+  clubId: string,
+  features: Readonly<{ messageCentre: boolean; blessingIou: boolean; duesFinance: boolean }>,
+): readonly PortalEntry[] {
+  const club = encodeURIComponent(clubId);
+  const entries: PortalEntry[] = [];
+  if (features.messageCentre) {
+    entries.push({ icon: "chat", title: "訊息中心", detail: "查看幹部發送給您的社內訊息", href: "/messages?mode=member" });
+  }
+  if (features.blessingIou) {
+    entries.push({ icon: "heart", title: "祝福 IOU", detail: "分享祝福，也可以留下希望捐贈的金額", href: `/blessings?clubId=${club}&mode=member` });
+  }
+  if (features.duesFinance) {
+    entries.push({ icon: "coins", title: "我的社費", detail: "查看自己的應收、收款與代墊狀態", href: `/dues?clubId=${club}&mode=member` });
+  }
+  return entries;
 }

@@ -1,0 +1,97 @@
+import { Suspense } from "react";
+import { Notice } from "@/components/ui";
+import { MemberLineOaOnboarding, MemberLineOaOnboardingLoading } from "@/components/member-line-oa-onboarding";
+import { signCoverImageUrls } from "@/lib/events/cover-image.server";
+import { resolveMemberHomeProjection } from "@/lib/member-home.server";
+import { APP_TIME_ZONE } from "@/lib/time";
+import type { Identity } from "@/lib/auth";
+import type { ClubContext } from "@/lib/experience-context";
+import {
+  announcementsFrom,
+  entriesFrom,
+  featuredEventFrom,
+  tasksFrom,
+  upcomingEventsFrom,
+} from "@/lib/member-portal/from-projection";
+import { MemberPortalBody, MemberPortalHeader, MemberPortalShell } from "./member-portal";
+
+const todayDate = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, month: "long", day: "numeric" });
+const todayWeekday = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, weekday: "long" });
+
+type Features = Readonly<{
+  messageCentre: boolean;
+  blessingIou: boolean;
+  duesFinance: boolean;
+  lineOaOnboarding: boolean;
+}>;
+
+/** Everything that has to wait for the projection. */
+async function PortalBody({
+  activeClub,
+  features,
+}: {
+  activeClub: Pick<ClubContext, "clubId" | "clubName">;
+  features: Features;
+}) {
+  const resolution = await resolveMemberHomeProjection(activeClub.clubId);
+  if (!resolution.ok) {
+    return <Notice tone="error">目前無法載入社員首頁資料，請稍後重新整理。</Notice>;
+  }
+
+  const { projection } = resolution;
+  const covers = await signCoverImageUrls([projection.primaryEvent?.coverImagePath]);
+
+  return <MemberPortalBody
+    featuredEvent={projection.primaryEvent === null
+      ? null
+      : featuredEventFrom(projection.primaryEvent, covers.get(projection.primaryEvent.coverImagePath ?? ""))}
+    upcomingEvents={upcomingEventsFrom(projection.upcomingEvents)}
+    tasks={tasksFrom(projection.pendingTasks)}
+    announcements={features.messageCentre ? announcementsFrom(projection, activeClub.clubId) : []}
+    entries={entriesFrom(activeClub.clubId, features)}
+  >
+    {features.lineOaOnboarding && <Suspense fallback={<MemberLineOaOnboardingLoading />}>
+      <MemberLineOaOnboarding clubId={activeClub.clubId} />
+    </Suspense>}
+  </MemberPortalBody>;
+}
+
+/**
+ * The member home. The greeting needs no data, so it is painted first and the
+ * rest streams in behind it -- this is the first page after signing in, and
+ * blocking all of it on one database round trip delays every pixel.
+ *
+ * The application shell already provides the navigation, so this renders the
+ * page and nothing around it.
+ */
+export function MemberPortalHome({
+  identity,
+  activeClub,
+  features,
+}: {
+  identity: Identity;
+  activeClub: Pick<ClubContext, "clubId" | "clubName">;
+  features: Features;
+}) {
+  const now = new Date();
+  return <MemberPortalShell>
+    <MemberPortalHeader
+      member={{ displayName: identity.display_name, initial: identity.display_name.slice(0, 1) }}
+      today={{ date: todayDate.format(now), weekday: todayWeekday.format(now) }}
+    />
+    <Suspense fallback={<MemberPortalBodyLoading />}>
+      <PortalBody activeClub={activeClub} features={features} />
+    </Suspense>
+  </MemberPortalShell>;
+}
+
+function MemberPortalBodyLoading() {
+  return <section aria-busy="true" aria-live="polite">
+    <span className="sr-only">正在載入今天的活動</span>
+    <div className="skeleton-card">
+      <span className="skeleton skeleton-eyebrow" />
+      <span className="skeleton skeleton-card-title" />
+      <span className="skeleton skeleton-copy skeleton-copy-wide" />
+    </div>
+  </section>;
+}

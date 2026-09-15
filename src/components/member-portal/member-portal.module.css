@@ -172,6 +172,19 @@
 .motto span:first-child { font-size: 13px; font-weight: 600; letter-spacing: .04em; }
 .motto span:last-child { font-size: 12px; letter-spacing: .32em; }
 
+/* The page on its own, inside the shell that already carries the navigation.
+   It takes no padding of its own: the shell's content column provides it. */
+.contentOnly {
+  position: relative;
+  isolation: isolate;
+  max-width: 1242px;
+  margin: 0 auto;
+  color: var(--text-primary);
+}
+/* Inside the full portal the grid already places this, so the wrapper must not
+   introduce a second measure. */
+.portal .contentOnly { max-width: none; margin: 0; }
+
 /* ---- main ------------------------------------------------------------- */
 .main { position: relative; z-index: 1; min-width: 0; display: grid; align-content: start; gap: 14px; }
 
@@ -280,7 +293,10 @@
 
 .heroBody { display: grid; grid-template-columns: 60fr 40fr; gap: 26px; align-items: stretch; }
 .heroCover { overflow: hidden; border-radius: 14px; background: #eef2f7; }
-.heroCover img { display: block; width: 100%; aspect-ratio: 682 / 297; object-fit: cover; }
+/* The ratio comes from the token, not from this file: the same poster appears
+   on the events list too, and two hard-coded ratios is how they drifted apart
+   before. */
+.heroCover img { display: block; width: 100%; aspect-ratio: var(--event-cover-aspect); object-fit: cover; }
 
 .heroInfo { display: flex; flex-direction: column; min-width: 0; padding-top: 2px; }
 .heroInfoTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -580,4 +596,37 @@
     -webkit-mask-image: radial-gradient(150% 70% at 76% 0%, #000 4%, rgba(0,0,0,.42) 34%, transparent 70%);
     mask-image: radial-gradient(150% 70% at 76% 0%, #000 4%, rgba(0,0,0,.42) 34%, transparent 70%);
   }
+}
+
+/* ---- entry points ------------------------------------------------------
+   Not in the reference design. Kept because the home page is the only route a
+   member has to these, and a mockup that omits a feature is not a decision to
+   remove it. */
+.entries { display: grid; gap: 10px; }
+.entriesHeading { margin: 4px 0 0; color: var(--text-secondary); font-size: var(--type-meta); font-weight: 600; }
+.entryGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px; }
+.entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 64px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--background-card);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.entry:hover { background: #f6f9fd; }
+.entry > svg:last-child { color: #a9b6c7; }
+.entryIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--rotary-blue-light);
+  color: var(--rotary-blue);
 }

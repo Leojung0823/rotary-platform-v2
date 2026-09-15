@@ -60,12 +60,11 @@ describe("senior-friendly UX guardrails", () => {
   });
 
   it("keeps important home work ahead of secondary links", () => {
-    const memberHome = read("src/components/member-home.tsx");
-    expect(memberHome.indexOf("<MemberHomeContent activeClubId")).toBeGreaterThan(
-      memberHome.indexOf('<header className="page-header">'),
-    );
-    expect(memberHome.indexOf("secondarySection")).toBeGreaterThan(
-      memberHome.indexOf("<MemberHomeContent activeClubId"),
-    );
+    // The event that needs attention comes before the ways into other
+    // features, not after them.
+    const portal = read("src/components/member-portal/member-portal.tsx");
+    expect(portal.indexOf("HeroCard")).toBeLessThan(portal.indexOf("styles.entries"));
+    expect(portal.indexOf("styles.dashboard")).toBeLessThan(portal.indexOf("styles.entries"));
   });
+
 });

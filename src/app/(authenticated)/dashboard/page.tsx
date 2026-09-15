@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Badge, Card, EmptyState, Notice } from "@/components/ui";
 import { ExperienceContextResolver } from "@/components/experience-context-resolver";
 import { ContextUnavailableScreen } from "@/components/context-unavailable";
-import { MemberHome } from "@/components/member-home";
+import { MemberPortalHome } from "@/components/member-portal/member-portal-home";
 import { RoleAwareDashboardLanding } from "@/components/role-aware-dashboard";
 import { resolveDashboardRoleContext } from "@/lib/dashboard-role-context";
 import { hasPlatformAccess, requireIdentity, type Identity } from "@/lib/auth";
@@ -236,13 +236,17 @@ export default async function DashboardPage({
         void recordMemberHomeFlagFailure(memberHomeEvaluation);
       } else {
         const activeClub = activeClubForMode(context.context, "member");
-        if (activeClub) return <MemberHome
+        // The portal replaces the member home. It reads the same projection,
+        // so the flag that gates the member home still gates this.
+        if (activeClub) return <MemberPortalHome
           identity={identity}
           activeClub={activeClub}
-          blessingIouEnabled={blessingIouEvaluation.enabled}
-          duesFinanceEnabled={duesFinanceEvaluation.enabled}
-          messageCenterEnabled={messageCenterEvaluation.enabled}
-          lineOaOnboardingEnabled={lineOaOnboardingEvaluation.enabled}
+          features={{
+            messageCentre: messageCenterEvaluation.enabled,
+            blessingIou: blessingIouEvaluation.enabled,
+            duesFinance: duesFinanceEvaluation.enabled,
+            lineOaOnboarding: lineOaOnboardingEvaluation.enabled,
+          }}
         />;
       }
     }

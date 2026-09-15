@@ -4,6 +4,7 @@ import {
   featuredEventAction,
   registrationLabels,
   type PortalAnnouncement,
+  type PortalEntry,
   type PortalClub,
   type PortalFeaturedEvent,
   type PortalMember,
@@ -47,6 +48,7 @@ function Sidebar({ member, club, current }: { member: PortalMember; club: Portal
       {navigation.map((item) => <Link
         key={item.href}
         href={item.href}
+        prefetch={false}
         className={item.href === current ? `${styles.navItem} ${styles.navItemCurrent}` : styles.navItem}
         aria-current={item.href === current ? "page" : undefined}
       >
@@ -158,7 +160,7 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
           </div>
         </dl>
 
-        <Link className={styles.cta} href={action.href}>
+        <Link className={styles.cta} href={action.href} prefetch={false}>
           <span>{action.label}</span>
           <PortalIcon name="arrowRight" size={19} />
         </Link>
@@ -182,7 +184,7 @@ function DashboardCard({
         <PortalIcon name={icon} size={20} />
       </span>
       <h2 className={styles.cardTitle}>{title}</h2>
-      <Link className={styles.panelLink} href="/events">
+      <Link className={styles.panelLink} href="/events" prefetch={false}>
         查看全部 <PortalIcon name="chevronRight" size={16} />
       </Link>
     </div>
@@ -190,29 +192,45 @@ function DashboardCard({
   </section>;
 }
 
-export function MemberPortal({
-  member, club, today, featuredEvent, upcomingEvents, tasks, announcements,
-}: {
+export type MemberPortalContentProps = {
   member: PortalMember;
-  club: PortalClub;
   today: { date: string; weekday: string };
   featuredEvent: PortalFeaturedEvent | null;
   upcomingEvents: readonly PortalUpcomingEvent[];
   tasks: readonly PortalTask[];
   announcements: readonly PortalAnnouncement[];
+  /** Ways into features the home page is the only route to. */
+  entries: readonly PortalEntry[];
+  /** Anything the home must still carry, such as the LINE pairing prompt. */
+  children?: React.ReactNode;
+};
+
+/**
+ * The page without its own navigation, for use inside the application shell
+ * that already provides one. The full portal below adds the rail around it.
+ */
+/** The greeting, which needs no data and so need not wait for any. */
+export function MemberPortalHeader({
+  member, today,
+}: {
+  member: PortalMember;
+  today: { date: string; weekday: string };
 }) {
-  return <div className={styles.portal}>
-    <div className={styles.backdrop} aria-hidden="true" />
-    <Sidebar member={member} club={club} current="/dashboard" />
-    <main className={styles.main}>
-      <Header member={member} today={today} />
+  return <Header member={member} today={today} />;
+}
+
+/** What the page can only draw once the projection has arrived. */
+export function MemberPortalBody({
+  featuredEvent, upcomingEvents, tasks, announcements, entries, children,
+}: Omit<MemberPortalContentProps, "member" | "today">) {
+  return <>
       {/* Nothing to do today is the common case, and it says so in one line
           rather than spending the first screen on an absence. */}
       {featuredEvent === null
         ? <section className={styles.heroEmpty}>
           <span className={styles.heroSparkle} aria-hidden="true"><PortalIcon name="sparkle" size={18} /></span>
           <p>目前沒有需要處理的活動</p>
-          <Link className={styles.heroEmptyLink} href="/events">查看活動 <PortalIcon name="chevronRight" size={16} /></Link>
+          <Link className={styles.heroEmptyLink} href="/events" prefetch={false}>查看活動 <PortalIcon name="chevronRight" size={16} /></Link>
         </section>
         : <HeroCard event={featuredEvent} />}
 
@@ -269,6 +287,51 @@ export function MemberPortal({
           </Link>)}
         </DashboardCard>
       </div>
-    </main>
+
+      {children}
+
+      {/* The reference design shows no such row. It is here because removing
+          it would remove the only way a member reaches the message centre,
+          their dues or the blessing board from this page. */}
+      {entries.length > 0 && <section className={styles.entries} aria-labelledby="portal-entries">
+        <h2 className={styles.entriesHeading} id="portal-entries">常用入口</h2>
+        <div className={styles.entryGrid}>
+          {entries.map((entry) => <Link className={styles.entry} key={entry.href} href={entry.href} prefetch={false}>
+            <span className={styles.entryIcon} aria-hidden="true"><PortalIcon name={entry.icon} size={20} /></span>
+            <span className={styles.rowText}>
+              <strong>{entry.title}</strong>
+              <small>{entry.detail}</small>
+            </span>
+            <PortalIcon name="chevronRight" size={17} />
+          </Link>)}
+        </div>
+      </section>}
+  </>;
+}
+
+/** The page's own frame, inside the shell that carries the navigation. */
+export function MemberPortalShell({ children }: { children: React.ReactNode }) {
+  return <div className={styles.contentOnly}>
+    <div className={styles.backdrop} aria-hidden="true" />
+    <main className={styles.main}>{children}</main>
+  </div>;
+}
+
+export function MemberPortalContent({
+  member, today, ...body
+}: MemberPortalContentProps) {
+  return <MemberPortalShell>
+    <MemberPortalHeader member={member} today={today} />
+    <MemberPortalBody {...body} />
+  </MemberPortalShell>;
+}
+
+export function MemberPortal({
+  member, club, ...content
+}: MemberPortalContentProps & { club: PortalClub }) {
+  return <div className={styles.portal}>
+    <div className={styles.backdrop} aria-hidden="true" />
+    <Sidebar member={member} club={club} current="/dashboard" />
+    <MemberPortalContent member={member} {...content} />
   </div>;
 }

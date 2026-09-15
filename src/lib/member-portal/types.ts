@@ -57,3 +57,16 @@ export function featuredEventAction(state: PortalRegistrationState): { label: st
     ? { label: "立即報名", href: "/events" }
     : { label: "查看活動", href: "/events" };
 }
+
+/**
+ * A way into a feature that the home page is the only route to. The reference
+ * design does not show these, but a design omitting them is not a reason to
+ * remove the only path a member has to the message centre, their dues or the
+ * blessing board.
+ */
+export type PortalEntry = Readonly<{
+  icon: "chat" | "heart" | "coins";
+  title: string;
+  detail: string;
+  href: string;
+}>;
