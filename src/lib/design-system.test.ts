@@ -14,7 +14,11 @@ function styleSheets(dir: string): string[] {
 
 // The three places the floor does not apply: an "or" rule, a monospace token
 // string, and a chevron glyph. None of them is prose a member has to read.
-const microExemptions = [".divider", ".token-value", ".clubChevron"];
+// The motto is the club's own words in latin capitals -- the brand micro-copy
+// the standard explicitly allows below the floor, and not something a member
+// reads for information.
+const microExemptions = [".divider", ".token-value", ".clubChevron", ".motto"];
+
 
 describe("design system floors", () => {
   it("keeps supporting text at or above 14px", () => {
@@ -24,9 +28,18 @@ describe("design system floors", () => {
     const offenders: string[] = [];
     for (const sheet of styleSheets("src")) {
       const text = readFileSync(sheet, "utf8");
+      // Track which rule each declaration belongs to. Matching the exemption
+      // against the line alone only ever worked for single-line rules: in a
+      // rule written over several lines the `font-size` line carries no
+      // selector, so nothing could be exempted there however it was named.
+      let selector = "";
       for (const line of text.split("\n")) {
+        const opening = /^\s*([.#:][^{]*)\{/u.exec(line);
+        if (opening) selector = opening[1];
+        if (/^\s*\}/u.test(line)) selector = "";
         if (!/font-size:\s*1[0-3]px/u.test(line)) continue;
-        if (microExemptions.some((selector) => line.includes(selector))) continue;
+        const context = `${selector} ${line}`;
+        if (microExemptions.some((name) => context.includes(name))) continue;
         offenders.push(`${sheet}: ${line.trim()}`);
       }
     }
@@ -145,6 +158,21 @@ describe("design system floors", () => {
     // Properties set from TSX style props are the one legitimate exception.
     const setInMarkup = ["--nav-count", "--bar-width"];
     expect(dangling.filter((entry) => !setInMarkup.some((name) => entry.endsWith(name)))).toEqual([]);
+  });
+
+  it("declares each token once", () => {
+    // A second declaration of the same name in the same block silently wins.
+    // That is how a --radius-card added for one page changed every card in the
+    // project, and how an earlier .page-stack max-width was written twice and
+    // the first one never applied to anything.
+    const block = globals.slice(globals.indexOf(":root {"));
+    const root = block.slice(0, block.indexOf("\n}"));
+    const counts = new Map<string, number>();
+    for (const match of root.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gmu)) {
+      counts.set(match[1], (counts.get(match[1]) ?? 0) + 1);
+    }
+    const duplicated = [...counts].filter(([, count]) => count > 1).map(([name]) => name);
+    expect(duplicated, "a token declared twice hides the first declaration").toEqual([]);
   });
 
   it("never sets a grid track minimum the narrowest phone cannot hold", () => {
