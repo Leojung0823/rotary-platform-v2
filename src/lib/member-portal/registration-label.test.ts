@@ -3,7 +3,7 @@ import { memberHomeRegistrationStates } from "@/lib/member-home";
 import { featuredEventFrom } from "./from-projection";
 import { registrationLabels, type PortalRegistrationState } from "./types";
 
-function featuredWith(registrationState: string) {
+function featuredWith(registrationState: string, registrationOpen = true) {
   return featuredEventFrom({
     eventType: "regular_meeting",
     coverImagePath: null,
@@ -12,6 +12,7 @@ function featuredWith(registrationState: string) {
     startsAt: "2026-09-17T10:30:00.000Z",
     endsAt: "2026-09-17T12:30:00.000Z",
     registrationState: registrationState as never,
+    registrationOpen,
     checkinState: "not_open",
   }, undefined);
 }
