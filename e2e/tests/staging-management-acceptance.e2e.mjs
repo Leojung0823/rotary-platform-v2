@@ -229,6 +229,10 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
       return await page.locator("article.card").filter({ hasText: eventTitle }).locator("img.event-cover").count();
     }, { timeout: 30_000, intervals: [500, 1_000, 2_000] }).toBe(1);
     eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
+    // The poster is folded away on the management list so an officer can scan
+    // the events without scrolling past a full-width image for each. Opening
+    // the fold is what an officer does to look at one.
+    await eventCard.locator("details.cover-fold > summary").first().click();
     const cover = eventCard.locator("img.event-cover").first();
     await cover.scrollIntoViewIfNeeded();
     await expect(cover).toBeVisible();
