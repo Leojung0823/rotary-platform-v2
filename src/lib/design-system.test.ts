@@ -147,6 +147,21 @@ describe("design system floors", () => {
     expect(dangling.filter((entry) => !setInMarkup.some((name) => entry.endsWith(name)))).toEqual([]);
   });
 
+  it("never places a grid child by counting the rows its siblings occupy", () => {
+    // `grid-row: 1 / span 3` was written when a card had three children. Adding
+    // one to the markup left the span pointing at the wrong place, so the
+    // desktop layout came apart while every test stayed green -- the rule is
+    // valid CSS, it just no longer describes the markup. Placing children by
+    // name survives a change to the markup; counting them does not.
+    const offenders: string[] = [];
+    for (const sheet of styleSheets("src")) {
+      for (const line of readFileSync(sheet, "utf8").split("\n")) {
+        if (/grid-(row|column):[^;]*\bspan\s+\d/u.test(line)) offenders.push(`${sheet}: ${line.trim()}`);
+      }
+    }
+    expect(offenders, "place grid children by name, not by counting siblings").toEqual([]);
+  });
+
   it("keeps build and environment labels out of the brand", () => {
     // Asked for twice: once in the desktop spec, once directly. "ROTARY V2" is
     // an internal version name and "STAGING" is a deployment detail; neither is
