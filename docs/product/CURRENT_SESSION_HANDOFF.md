@@ -1,20 +1,20 @@
-# 交接筆記（持續更新；最新核對 2026-09-15，#141 合併後與 staging plan）
+# 交接筆記（持續更新；最新核對 2026-09-15，#147 合併後、staging Go-Live 完成）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 最新 GitHub 開發掃描（2026-09-15；以最新 main 核對）
+## 最新 GitHub 開發掃描（2026-09-15；#147 與 staging Go-Live）
 
-本次以 GitHub `origin/main=feebd5902e59d71d073433b7f64557d23a853f00` 及 open PR 逐一核對。
-PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 staging runtime 是
-`dddf1a51ab67`，已於 2026-09-15 03:52（Asia/Taipei）核對 `/api/health` 為 `status=ok`、
-`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
+本次 staging release 以 GitHub `main=93d341c3fd7818783bd6779b1466162baf86548b` 為 exact source SHA，當時沒有 open PR。
+Staging Release plan `34912834525` 與 Go-Live `34912921064` 使用同一個 SHA 並成功完成；目前 staging runtime revision 為
+`93d341c3fd78`。`/api/health` 回報 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，
+production 沒有修改。若後續只合併文件，main 會前進但不需要重新部署 staging。
 
-- PR #107 Rich Menu：已合併，merge `1164f763`；程式在 `main`，待 staging 與各社 OA 設定。
-- PR #108 社費／收款／核銷／報表：已合併，merge `a52bfe7`；程式在 `main`，待 staging／hosted 驗收。
-- PR #109 手機 Web App：已合併，merge `694c961`；GitHub 檢查已通過，待 iOS／Android 實機驗收。
-- PR #110 生日設定 UX：已合併，merge `493c5a1`；程式在 `main`，待 staging／hosted 驗收。
-- PR #111 社務資訊／年度服務計劃：已合併，merge `2d7839d`；原版社務頁已隨目前 staging 發布。
+- PR #107 Rich Menu：已合併，merge `1164f763`；已部署 staging，待各社 OA 設定與真人驗收。
+- PR #108 社費／收款／核銷／報表：已合併，merge `a52bfe7`；已部署 staging，待 hosted／角色邊界驗收。
+- PR #109 手機 Web App：已合併，merge `694c961`；已部署 staging，待 iOS／Android 實機驗收。
+- PR #110 生日設定 UX：已合併，merge `493c5a1`；已部署 staging，待 hosted／真人驗收。
+- PR #111 社務資訊／年度服務計劃：已合併，merge `2d7839d`；已部署 staging，待 hosted／角色邊界驗收。
 - PR #113 活動地址查座標：已合併，merge `0989a2b`；原 migration 順序問題已由 #118 修正。
 - PR #115 staging migration 順序處理：已合併，merge `6260191`；`include_all` 預設關閉。
 - PR #117 同頁模式導覽修正：已合併，merge `8a424b2`；CI、Quality、Database 與 Browser Smoke 均通過。
@@ -24,24 +24,36 @@ PR 尚未合併前不算 `main` 完成，也不代表已部署 staging；目前 
 - PR #121 進度文件同步：已合併，merge `5bf0866`。
 - PR #122 UI design system：已合併，merge `585a0a1`；已部署至目前 staging。
 - PR #123 UI 層次與 header gutter：已合併，merge `dddf1a5`；PR 自身的 CI、Quality、Database、Browser Smoke 均通過，並已隨 Staging Go-Live `34856216706` 部署至 staging。它不包含整套社員／社務管理模式邊界；合併後 main 的 Browser Smoke 另有 1 個 LINE OA audience 失敗，見本輪補充。
-- PR #126 已發佈活動編輯：已合併，merge `5f50c31`；CI、Quality、Database、Browser Smoke 均通過，尚未部署 staging。
-- PR #124 結構化年度服務計劃 V2：已合併，merge `691beb6`；CI、Quality、Database、Browser Smoke 均通過，尚未部署 staging，仍待 hosted 角色與草稿隔離驗收。
+- PR #126 已發佈活動編輯：已合併，merge `5f50c31`；CI、Quality、Database、Browser Smoke 均通過，已部署 staging。
+- PR #124 結構化年度服務計劃 V2：已合併，merge `691beb6`；CI、Quality、Database、Browser Smoke 均通過，已部署 staging，仍待 hosted 角色與草稿隔離驗收。
 - PR #125 進度文件同步：已合併，merge `9a77d7b`；本次文件再補記 #124 合併後的最新主線狀態。
-- PR #127 手機／桌機共用設計系統第二輪：已合併，merge `44456f8`；CI、Quality 與 Browser Smoke `34862992487` 均通過，包含 320px 橫向溢出修正與 rollback，但尚未部署 staging。
-- PR #130 社員／社務管理模式邊界修正：已合併，merge `6759934`；application、database、validate 與 Browser Smoke `34871617599` 均通過，沒有新增 migration，尚未部署 staging。
-- PR #132 活動推播版本契約修正：已合併，merge `4387ee5`；application、database、validate 與 Browser Smoke `34876325765` 均通過。新增 `20260915000100_event_push_version_contract.sql`，尚未部署 staging。
-- PR #135 活動切換社團的公開網址修正：已合併，merge `d2106bc8`；application、database、validate 與 member-browser-smoke 均通過，沒有新增 migration，尚未部署 staging。
+- PR #127 手機／桌機共用設計系統第二輪：已合併，merge `44456f8`；CI、Quality 與 Browser Smoke `34862992487` 均通過，包含 320px 橫向溢出修正與 rollback，已部署 staging。
+- PR #130 社員／社務管理模式邊界修正：已合併，merge `6759934`；application、database、validate 與 Browser Smoke `34871617599` 均通過，沒有新增 migration，已部署 staging。
+- PR #132 活動推播版本契約修正：已合併，merge `4387ee5`；application、database、validate 與 Browser Smoke `34876325765` 均通過。新增 `20260915000100_event_push_version_contract.sql`，已部署 staging。
+- PR #135 活動切換社團的公開網址修正：已合併，merge `d2106bc8`；application、database、validate 與 member-browser-smoke 均通過，沒有新增 migration，已部署 staging。
 - PR #136 進度文件同步：已合併，merge `6e895101`；純文件變更，記錄 #135 的實測根因與 staging 尚未部署狀態。
 - PR #137 staging plan 文件同步：已合併，merge `8b970dc9`；純文件變更，記錄 plan 與目前 `main` exact SHA 的差異及 rollback blocker。
 - PR #138 進度文件同步：已合併，merge `e5313907`；純文件變更。
-- PR #139 社務頁年度預設值修正：已合併，merge `37b297f9`；新增 forward-only migration `20260915000200_club_service_plan_year_cast.sql` 與 verification。
+- PR #139 社務頁年度預設值修正：已合併，merge `37b297f9`；新增 forward-only migration `20260915000200_club_service_plan_year_cast.sql` 與 verification，已部署 staging。
 - PR #140 進度文件同步：已合併；純文件變更，更新 #139 合併後的主線／staging 落差。
 - PR #141 LINE OA rollout 決策同步：已合併，merge `feebd590`；純文件變更，記錄本次只使用 `PANCHIAO-ELITE`，HAPPY 不納入 rollout。
+- PR #143／#144／#146／#147 staging 受控 logical backup workflow：已合併；最後一版保證加密檔在 upload 完成後才清理，不新增資料庫結構。
+- PR #145 首頁卡片對齊修正：已合併，已隨本次 Go-Live 發布。
 
-目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135、#136、#137、#138、#139、#140、#141 已進入 `main`；其中 #136–#141 的文件變更沒有讓 staging runtime 前進。#123 已合併並完成 staging release；#132、#139 的 migration 與 #135 的 redirect 修正尚未部署。針對舊 SHA 的 Staging Release plans 已取消，本次文件快照合併後才建立對應最新 `main` 的新 plan。
+目前沒有尚未合併的產品功能 PR。#124、#126、#127、#130、#132、#135、#139 與 #145 已隨 Go-Live `34912921064` 發布；#136–#141 與 #143／#144／#146／#147 是文件／發布工具變更。
 #118 已讓完整 migration reset 恢復正常。
 社務 AI 助理仍沒有可執行企劃，不能自行擴張成實作；外部真人、LINE、Render、效能與實機工作仍以
 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準。
+
+## 2026-09-15 受控備份與 staging Go-Live 收尾
+
+- 使用者已授權受控 logical export；備份只保留本機加密檔，明文沒有提交 repo，也沒有長期保留在 GitHub。
+- 最終 backup run `34912448897` 成功，使用 `public` schema 與 data-only dump；加密 artifact `10374966439` 已下載本機，
+  checksum 與本機解密驗證成功，確認 archive 含 schema／資料及 `club_events`、`line_push_logs`。
+- 驗證後已刪除明文驗證檔與 GitHub artifact，並確認 artifact 不存在。本機只保留加密 payload、checksum，以及權限為 `600` 的
+  private key／recipient certificate，位置為 `~/Documents/Rotary-Staging-Backups/2026-09-15/`。
+- Go-Live `34912921064` 使用 `plan_run_id=34912834525`、`backup_confirmation=BACKUP-READY` 與同一個 exact SHA；
+  migration apply、部署、health、HTTPS smoke、hosted member acceptance 全部成功。production 沒有修改。
 
 ## 本輪進度（2026-09-12；Flex 卡片模板）
 
@@ -81,9 +93,11 @@ JSON、按鈕 action 或遠端圖片。新增 migration `20260912000200_line_oa_
 - production 沒有修改；staging 最新 migration 是 `20260912000200_line_oa_flex_templates_flag.sql`；Flex Go-Live `34686702234` 已成功，下一步是開啟 staging 旗標並做真人收訊。
 - `68b12a5` 的自動 `CI` `34584379642` 與 `Browser Smoke` `34584379653` 均已成功（含完整流程與 rollback 檢查），並已由前一輪 Go-Live `34594381922` 部署到 staging；本輪 Flex migration 已由 Go-Live `34686702234` 部署。
 
-外部處理的唯一清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12，涵蓋 Flex staging、生日邀請送達、follow 配對、各社 OA、額度政策、效能量測、實機／M1、雙重社籍、production 準備、暫緩的 recovery email、Rich Menu 與 staging 備份決策。
+外部處理的唯一清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12；E-01、E-02、E-04、E-12 已完成，
+目前仍待 E-03 follow 配對真人核對、E-05 額度政策、E-06 效能量測、E-07 實機／M1、E-08 production 決策、E-09 暫緩的
+recovery email、E-10 雙重社籍驗收，以及 E-11 各社 Rich Menu／OA 外部設定。
 
-## 本輪最新 staging 證據
+## 歷史 staging 證據（2026-09-15；#123 基準，已被後續 Go-Live 取代）
 
 - Staging Release `34856107965` 與 Staging Go-Live `34856216706` 均成功，使用同一個 exact SHA
   `dddf1a51ab67127bc4fed34876b696346eb0b29d`。
