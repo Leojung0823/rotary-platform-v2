@@ -231,7 +231,10 @@ async function MemberHomeContent({
             left and the way out on the right. Repeating one row is what makes
             a page of different things read as one product. */}
         <div className={styles.cardTop}>
-          <p className="eyebrow" id="member-home-notifications">社團公告</p>
+          {/* A heading, styled as an eyebrow. It names the card in the document
+              outline as well as on screen -- reading by heading is how a screen
+              reader user moves between the blocks of this page. */}
+          <h2 className="eyebrow" id="member-home-notifications">社團公告</h2>
           <Link className={styles.cardTopLink} href={`/messages?clubId=${encodeURIComponent(activeClubId)}`} prefetch={false}>查看全部 ›</Link>
         </div>
         <div className={styles.announcementList}>
@@ -247,7 +250,7 @@ async function MemberHomeContent({
 
       {projection.recentEvents.length > 0 && <Card aria-labelledby="member-home-recent-events">
         <div className={styles.cardTop}>
-          <p className="eyebrow" id="member-home-recent-events">近期社團回顧</p>
+          <h2 className="eyebrow" id="member-home-recent-events">近期社團回顧</h2>
           <Link className={styles.cardTopLink} href="/events" prefetch={false}>查看全部 ›</Link>
         </div>
         <div className={styles.recentList}>
