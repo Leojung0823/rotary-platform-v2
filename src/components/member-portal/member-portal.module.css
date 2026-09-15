@@ -288,11 +288,15 @@
   border: 0;
 }
 @media (max-width: 900px) {
-  .header { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 0; }
+  /* The date moves up beside the greeting rather than taking a line of its
+     own: the space to the right of a two-word name was empty, and a phone
+     screen has no lines to spare. */
+  .header { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 0; }
   .headerGreeting { padding-left: 2px; }
   .pageTitle { font-size: 30px; }
-  .headerSide { justify-items: stretch; gap: 8px; }
-  .headerTools { gap: 10px; }
+  .headerSide { display: contents; }
+  .today { grid-column: 2; align-self: start; justify-self: end; margin-top: 6px; text-align: right; }
+  .headerTools { grid-column: 1 / -1; gap: 10px; }
   .search { flex: 1 1 auto; width: auto; }
   .headerAvatar { display: none; }
   .today { order: -1; margin: 0; }

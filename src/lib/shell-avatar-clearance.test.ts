@@ -37,9 +37,9 @@ describe("the account avatar and the row it sits over", () => {
 
   it("reserves the avatar's own width in the gutter beside it", () => {
     // A hard-coded 44px gutter beside a 40px avatar is right only by accident.
-    for (const selector of ["\\.brand", "\\.mobileContext"]) {
-      expect(declaration(selector, "padding-right", phone)).toContain("var(--shell-avatar)");
-    }
+    // Reserved once on the row, rather than separately on each thing sharing
+    // it -- two copies of the same number is how they drift.
+    expect(declaration("\\.header", "padding-right", phone)).toContain("var(--shell-avatar)");
   });
 
   it("declares that size once", () => {
