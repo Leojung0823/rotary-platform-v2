@@ -1,0 +1,40 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--rotary-blue-light);
+}
+
+.selection,
+.apply {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.selection strong {
+  margin-right: var(--space-1);
+  font-size: var(--text-small);
+}
+
+/* The picker needs room for a real tag name but must not push the buttons off
+   a phone screen, so it grows only until the row would wrap. */
+.apply select {
+  min-width: 10rem;
+}
+
+@media (max-width: 640px) {
+  .apply {
+    width: 100%;
+  }
+
+  .apply select {
+    flex: 1 1 100%;
+  }
+}

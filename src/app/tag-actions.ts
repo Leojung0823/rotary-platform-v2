@@ -33,6 +33,7 @@ function tagErrorCode(message: string | undefined) {
   if (message?.includes("member_manage_required")) return "forbidden";
   if (message?.includes("invalid_member_tag")) return "invalid_input";
   if (message?.includes("member_tag_not_available")) return "tag_missing";
+  if (message?.includes("membership_not_available")) return "member_missing";
   return "unexpected";
 }
 
@@ -108,4 +109,49 @@ export async function setMembershipTagsAction(formData: FormData) {
 
   revalidatePath(`/clubs/${clubId}/members/${membershipId}`);
   redirect(memberPath(clubId, membershipId, "success", "tags_saved"));
+}
+
+/**
+ * One tag onto a selection of members. The roster form posts the whole
+ * selection, so the officer makes the decision once instead of visiting each
+ * member page in turn.
+ */
+export async function applyMemberTagToSelectionAction(formData: FormData) {
+  let clubId: string;
+  let tagId: string;
+  let membershipIds: string[];
+  try {
+    clubId = parseUuid(formData.get("clubId"));
+    tagId = parseUuid(formData.get("tagId"));
+    membershipIds = parseUuidList(formData, "membershipIds");
+  } catch {
+    redirect("/dashboard");
+  }
+
+  const mode = String(formData.get("mode") ?? "assign");
+  if (mode !== "assign" && mode !== "remove") {
+    redirect(membersPath(clubId, "error", "invalid_input"));
+  }
+  if (membershipIds.length === 0) {
+    redirect(membersPath(clubId, "error", "no_members_selected"));
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("apply_member_tag_to_memberships", {
+    p_club_id: clubId,
+    p_tag_id: tagId,
+    p_membership_ids: membershipIds,
+    p_mode: mode,
+  });
+  if (error) redirect(membersPath(clubId, "error", tagErrorCode(error.message)));
+
+  const affected = (data as { affected_count?: number } | null)?.affected_count ?? 0;
+  revalidatePath(`/clubs/${clubId}/members`);
+  // The count travels in the URL because the officer selected a group and the
+  // useful answer is how many of them actually changed -- re-tagging someone
+  // who already had the tag is a no-op, not a failure.
+  redirect(
+    `${membersPath(clubId, "success", mode === "assign" ? "tags_batch_assigned" : "tags_batch_removed")}`
+    + `&count=${encodeURIComponent(String(affected))}`,
+  );
 }
