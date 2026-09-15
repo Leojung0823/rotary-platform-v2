@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { latestDefinition } from "@/lib/attendance/latest-definition";
 
 function source(path: string) {
   return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
@@ -68,8 +69,10 @@ describe("GPS check-in database boundary", () => {
   });
 
   it("verifies membership, tenancy and event eligibility before measuring distance", () => {
-    const rpc = gps.split("create or replace function public.check_in_to_event_by_location")[1]
-      ?.split("revoke all on function")[0] ?? "";
+    // Read from wherever the function is currently defined: this assertion was
+    // anchored on the migration that introduced it, which stopped describing
+    // the live function the first time it was replaced.
+    const rpc = latestDefinition("check_in_to_event_by_location");
     expect(rpc).toContain("active_membership_required");
     expect(rpc).toContain("checkin_session_not_active");
     expect(rpc).toContain("event_not_checkin_eligible");
