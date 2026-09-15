@@ -4,7 +4,7 @@
 export type PortalMember = Readonly<{ displayName: string; initial: string }>;
 export type PortalClub = Readonly<{ name: string }>;
 
-export type PortalRegistrationState = "not_registered" | "registered" | "open" | "closed";
+export type PortalRegistrationState = "not_registered" | "registered" | "declined" | "open" | "closed";
 
 export type PortalFeaturedEvent = Readonly<{
   title: string;
@@ -53,6 +53,10 @@ export type PortalAnnouncement = Readonly<{
 export const registrationLabels: Record<PortalRegistrationState, string> = {
   not_registered: "尚未報名",
   registered: "已報名",
+  // A member who answered 不參加 was folded in with "報名截止", which told them
+  // the event had closed when it had not -- and that they could not change
+  // their mind when they could. Declining is an answer, not a deadline.
+  declined: "已婉拒",
   open: "開放報名",
   closed: "報名截止",
 };
