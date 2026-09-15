@@ -7,7 +7,7 @@
   isolation: isolate;
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr);
+  grid-template-columns: 254px minmax(0, 1fr);
   gap: 36px;
   /* Capped at the width every proportion here was calibrated against. Past
      that the layout holds its shape and centres rather than stretching: a
@@ -37,14 +37,15 @@
 .backdrop::after {
   content: "";
   position: absolute;
-  top: -30px;
-  right: -60px;
-  width: 68%;
-  height: 78%;
+  inset: 0;
   opacity: 1;
-  background: url("/hero-mountains.webp") no-repeat right top / 118% auto;
-  -webkit-mask-image: linear-gradient(192deg, #000 0%, rgba(0,0,0,.72) 34%, transparent 82%);
-  mask-image: linear-gradient(192deg, #000 0%, rgba(0,0,0,.72) 34%, transparent 82%);
+  background: url("/hero-mountains.webp") no-repeat right -40px top -18px / 76% auto;
+  /* Radial, centred beyond the top right corner: it fades in every direction
+     at once, so the ridges have no edge anywhere. A rectangle with a linear
+     mask fades downwards but keeps a hard left edge, and that edge read as a
+     pale blue panel ending in the middle of the header. */
+  -webkit-mask-image: radial-gradient(128% 104% at 84% 0%, #000 8%, rgba(0,0,0,.58) 40%, transparent 74%);
+  mask-image: radial-gradient(128% 104% at 84% 0%, #000 8%, rgba(0,0,0,.58) 40%, transparent 74%);
 }
 
 /* ---- sidebar ---------------------------------------------------------- */
@@ -95,7 +96,7 @@
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  min-height: 46px;
+  min-height: 50px;
   padding: 0 14px;
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
