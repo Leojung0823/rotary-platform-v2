@@ -4,21 +4,18 @@ import type { ReactNode } from "react";
 // currentColor. The specification forbids mixing styles, so every glyph the
 // page needs lives here rather than being reached for from elsewhere.
 export type PortalIconName =
-  | "home" | "calendar" | "chat" | "users" | "building" | "user"
-  | "search" | "bell" | "chevronDown" | "chevronRight" | "arrowRight"
+  | "calendar" | "chat" | "users" | "user"
+  | "search" | "bell" | "chevronRight" | "arrowRight"
   | "sparkle" | "pin" | "clipboard" | "document" | "megaphone" | "checkSquare"
   | "heart" | "coins";
 
 const paths: Record<PortalIconName, ReactNode> = {
-  home: <><path d="M4 10.5 12 4l8 6.5" /><path d="M6 9.8V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.8" /></>,
   calendar: <><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3.4v3.2M16 3.4v3.2" /></>,
   chat: <><path d="M4 5.8A1.8 1.8 0 0 1 5.8 4h12.4A1.8 1.8 0 0 1 20 5.8v8.4a1.8 1.8 0 0 1-1.8 1.8H9l-5 4Z" /></>,
   users: <><circle cx="9" cy="8.4" r="3.2" /><path d="M3.4 19.4c.6-3 2.9-4.7 5.6-4.7s5 1.7 5.6 4.7" /><path d="M16 5.6a3.2 3.2 0 0 1 0 6.1M17.6 14.9c2.1.5 3.4 2 3.9 4.5" /></>,
-  building: <><rect x="4.5" y="3.6" width="15" height="16.8" rx="2" /><path d="M8.6 7.6h2M13.4 7.6h2M8.6 11.6h2M13.4 11.6h2M10 20.4v-4h4v4" /></>,
   user: <><circle cx="12" cy="8" r="3.6" /><path d="M4.8 20c.7-3.6 3.6-5.6 7.2-5.6s6.5 2 7.2 5.6" /></>,
   search: <><circle cx="11" cy="11" r="6.4" /><path d="m15.8 15.8 4 4" /></>,
   bell: <><path d="M12 3.6a5.5 5.5 0 0 0-5.5 5.5c0 4.1-1.2 5.5-2 6.3h15c-.8-.8-2-2.2-2-6.3A5.5 5.5 0 0 0 12 3.6Z" /><path d="M10.2 18.4a2 2 0 0 0 3.6 0" /></>,
-  chevronDown: <path d="m7 10 5 5 5-5" />,
   chevronRight: <path d="m10 7 5 5-5 5" />,
   arrowRight: <><path d="M5 12h13" /><path d="m12.5 6 6 6-6 6" /></>,
   sparkle: <path d="M12 3.4 13.7 9l5.6 1.7-5.6 1.7L12 18l-1.7-5.6L4.7 10.7 10.3 9Z" />,
