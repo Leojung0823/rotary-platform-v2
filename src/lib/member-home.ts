@@ -47,11 +47,21 @@ export type MemberHomeNotifications = Readonly<{
   items: readonly MemberHomeNotification[];
 }>;
 
+/** An event this member has been asked about and has not answered. */
+export type MemberHomePendingTask = Readonly<{
+  kind: "event_response";
+  title: string;
+  eventId: string;
+  deadline: string;
+  hoursRemaining: number;
+}>;
+
 export type MemberHomeProjection = Readonly<{
   club: Readonly<{ clubCode: string; clubName: string }>;
   primaryEvent: MemberHomeEvent | null;
   nextEvent: MemberHomeEvent | null;
   recentEvents: readonly MemberHomeRecentEvent[];
+  pendingTasks: readonly MemberHomePendingTask[];
   notifications: MemberHomeNotifications;
 }>;
 
@@ -175,6 +185,41 @@ function parseNotification(value: unknown): MemberHomeNotification | null {
   };
 }
 
+const maximumPendingTasks = 5;
+
+function parsePendingTask(value: unknown): MemberHomePendingTask | null {
+  if (!isRecord(value)
+    || !hasExactKeys(value, ["kind", "title", "event_id", "deadline", "hours_remaining"])
+    || value.kind !== "event_response"
+    || typeof value.title !== "string"
+    || value.title.length === 0
+    || value.title.length > maximumEventTextLength
+    || typeof value.event_id !== "string"
+    || value.event_id.length === 0
+    || typeof value.deadline !== "string"
+    || value.deadline.length === 0
+    || typeof value.hours_remaining !== "number"
+    || !Number.isSafeInteger(value.hours_remaining)
+    // The row is filtered to deadlines still ahead, so a negative here means
+    // the projection and this parser disagree about what it contains.
+    || value.hours_remaining < 0) return null;
+
+  return {
+    kind: "event_response",
+    title: value.title,
+    eventId: value.event_id,
+    deadline: value.deadline,
+    hoursRemaining: value.hours_remaining,
+  };
+}
+
+function parsePendingTasks(value: unknown): readonly MemberHomePendingTask[] | null {
+  if (!Array.isArray(value) || value.length > maximumPendingTasks) return null;
+  const tasks = value.map(parsePendingTask);
+  if (tasks.some((task) => task === null)) return null;
+  return tasks as MemberHomePendingTask[];
+}
+
 function parseNotifications(value: unknown): MemberHomeNotifications | null {
   if (!isRecord(value)
     || !hasExactKeys(value, ["unread_count", "items"])
@@ -190,7 +235,7 @@ function parseNotifications(value: unknown): MemberHomeNotifications | null {
 }
 
 export function parseMemberHomeProjection(value: unknown): MemberHomeProjection | null {
-  if (!isRecord(value) || !hasExactKeys(value, ["club", "primary_event", "next_event", "recent_events", "notifications"])
+  if (!isRecord(value) || !hasExactKeys(value, ["club", "primary_event", "next_event", "recent_events", "pending_tasks", "notifications"])
     || !isRecord(value.club)
     || !hasExactKeys(value.club, ["club_code", "club_name"])
     || typeof value.club.club_code !== "string"
@@ -207,6 +252,9 @@ export function parseMemberHomeProjection(value: unknown): MemberHomeProjection 
 
   const recentEvents = parseRecentEvents(value.recent_events);
   if (recentEvents === null) return null;
+  const pendingTasks = parsePendingTasks(value.pending_tasks);
+  if (pendingTasks === null) return null;
+
   const notifications = parseNotifications(value.notifications);
   if (notifications === null) return null;
 
@@ -215,6 +263,7 @@ export function parseMemberHomeProjection(value: unknown): MemberHomeProjection 
     primaryEvent,
     nextEvent,
     recentEvents,
+    pendingTasks,
     notifications,
   };
 }

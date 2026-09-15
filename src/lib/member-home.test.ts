@@ -38,6 +38,7 @@ function projection(overrides: Record<string, unknown> = {}) {
     primary_event: event,
     next_event: null,
     recent_events: [],
+    pending_tasks: [],
     notifications: { unread_count: 0, items: [] },
     ...overrides,
   };
@@ -59,6 +60,7 @@ describe("member-home projection contract", () => {
       },
       nextEvent: null,
       recentEvents: [],
+      pendingTasks: [],
       notifications: { unreadCount: 0, items: [] },
     });
   });
@@ -81,7 +83,8 @@ describe("member-home projection contract", () => {
 
   it("accepts a bounded recipient-only notification summary", () => {
     const parsed = parseMemberHomeProjection(projection({
-      notifications: { unread_count: 4, items: [notification] },
+      pending_tasks: [],
+    notifications: { unread_count: 4, items: [notification] },
     }));
     expect(parsed?.notifications).toEqual({
       unreadCount: 4,
