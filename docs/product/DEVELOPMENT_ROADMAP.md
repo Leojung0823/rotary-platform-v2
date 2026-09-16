@@ -13,6 +13,8 @@
   生日徵集日期／關閉、follower 批次配對、手機表格卡片寬度修正與測試 fixture race 修正。
   另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已在前一個 Staging Go-Live `35083792540` 套用，
   目前 staging 仍包含它；本輪 `bd8a8e9` 沒有新增 migration。
+- `origin/main` 在產品程式提交 `bd8a8e9` 之後只有進度文件同步；目前最新文件提交為 `7c92fe6`。
+  舊的 Staging Release `35084851997` 已取消，但它使用的是舊 head，沒有回滾或改變目前 staging runtime。
 - PR #188、#189、#190 都已正常合併；本輪效能修正 `bd8a8e9` 的自動 CI `35100760020` 與 Browser Smoke `35100760034` 均成功，
   並已由 Staging Release `35102157586`／Go-Live `35102495571` 發布產品程式。
 - 最新主線只有文件同步，尚未重新部署；下一個開發順序是處理 E-03、E-10、E-06、E-07、E-05、E-11；
@@ -24,6 +26,8 @@
   仍為 LCP `167 ms`、FCP `168 ms`、TTFB `104 ms`。完整條件見
   [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。Rich Menu 圖片已在本機準備成
   `2500×1686`、小於 1 MB 的 JPEG，但尚未開旗標、上傳或發布。
+- E-03 目前不能用 LEO 的既有配對當作乾淨真人證據：Audit Log 同時出現 `line_oa.auto_paired`、後續
+  `line_oa.bulk_paired`，以及 LEO 的 `line_identity.unbound`／社籍狀態變更。下一次必須使用未經人工批次配對或解除綁定污染的測試帳號，並由真人核對後台姓名與實際 LINE Login 身份一致。
 
 ## 歷史產品基線（2026-09-15；非目前 `main`）
 
