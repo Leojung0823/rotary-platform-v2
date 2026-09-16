@@ -145,12 +145,44 @@ begin
     raise exception 'the unread reminder did not count: %', tasks;
   end if;
 
-  -- The profile row names what is missing, and this member is missing both.
-  if not (tasks @> '[{"kind": "profile_incomplete", "detail": "缺聯絡電話與生日"}]'::jsonb) then
+  -- The profile row names what is missing. This member keeps an email and no
+  -- phone -- which is exactly what /me tells a member is enough -- so the only
+  -- gap is the birthday. The first version of this reminder asked for a phone
+  -- specifically and told them 缺聯絡電話與生日: a reminder they could not
+  -- clear by doing everything the page asked of them.
+  if not (tasks @> '[{"kind": "profile_incomplete", "detail": "缺生日"}]'::jsonb) then
     raise exception 'the profile reminder did not say what is missing: %', tasks;
+  end if;
+  if tasks::text like '%聯絡方式%' then
+    raise exception 'a member with an email was told nobody can reach them: %', tasks;
   end if;
 end;
 $$;
+
+-- And someone the club genuinely cannot reach is still told so. Not "delete
+-- the reminder": this is who it was for.
+update public.people set primary_email = null
+where id = '4b000000-0000-0000-0000-000000000001';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '4a000000-0000-0000-0000-000000000001', true);
+insert into public.task_test_state (key, value)
+values ('unreachable', public.get_my_member_home_projection('4d000000-0000-4000-8000-000000000001'));
+reset role;
+
+do $$
+declare
+  tasks jsonb;
+begin
+  select value -> 'pending_tasks' into tasks from public.task_test_state where key = 'unreachable';
+  if not (tasks @> '[{"kind": "profile_incomplete", "detail": "缺聯絡方式與生日"}]'::jsonb) then
+    raise exception 'a member with neither a phone nor an email was not reminded: %', tasks;
+  end if;
+end;
+$$;
+
+update public.people set primary_email = 'tasks-member@example.test'
+where id = '4b000000-0000-0000-0000-000000000001';
 
 -- A member who owes nothing gets none of them.
 update public.people
