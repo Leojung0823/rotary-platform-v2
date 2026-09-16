@@ -7,33 +7,31 @@
 
 這次以 GitHub `origin/main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 重新核對：
 
-- 本次文件同步前的 `main`／`origin/main` 為 `4e1a8ed368c6d1b1b30821643976627fa22ff0f5`；本文件提交後請以
-  `git rev-parse origin/main` 現場核對；staging revision 為
-  `36f32f8a44e1`。health 為 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、
-  `warnings=[]`；production 沒有修改。
-- Staging Release `35121647301` 與 Go-Live `35121777337` 使用同一個 exact SHA 並成功；本輪沒有新增 migration。
-  自動 CI `35121629076`／Browser Smoke `35121629061` 的唯一失敗已由 `965abc8` 修正：撤銷／停權／退社帳號各用
-  獨立瀏覽器 context。本機六個 role-shell 尺寸共 `18 passed`；自動 CI `35123956529` 與 Browser Smoke `35123956508`
-  均成功，且沒有手動重跑流程。
-- `36f32f8` 修正社員首頁 hero 圖片的 hosted 重複 preload：已登入 LEO 社員頁 `/dashboard?mode=member` 重新載入後，
+- 本次程式修正已在 staging Go-Live 以 exact SHA `3e955553d7ee62dc02d33ea584006b9424704dad` 發布；本文件提交後請以
+  `git rev-parse origin/main` 現場核對。staging revision 為 `3e955553d7ee`。health 為 `status=ok`、`configuration=true`、
+  `database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- Staging Release `35130111743` 與 Go-Live `35130278609` 使用同一個 exact SHA 並成功；新增 migration
+  `20260917000100_club_affairs_member_read_access.sql` 與 verification 已通過，Go-Live 的 migration、部署、exact revision、
+  HTTPS smoke 與 hosted member acceptance 全部成功。
+- `3e955553` 修正社員首頁 hero 圖片的 hosted 重複 preload：已登入 LEO 社員頁 `/dashboard?mode=member` 重新載入後，
   `/hero-mountains.webp` 的圖片 DOM 為 `1` 張、preload 為 `1` 個（body 1、head 0）。修正使用 `next/image`、`preload`
   與 `unoptimized` 直出小型靜態檔，沒有改登入、權限、社團隔離或登入後首頁公開快取。
-- 本機完整 typecheck、lint、Vitest `181` 檔／`1346` 測試、build、verify:db、verification、migration guard、manifest、
+- 本機完整 typecheck、lint、Vitest `181` 檔／`1347` 測試、build、verify:db、verification、migration guard、manifest、
   `git diff --check` 均通過；`member-home-1440` 為 `3 passed`。
 - 這輪只完成圖片提示的程式與 hosted DOM 修正；同一 runtime／快取條件下的 LCP、FCP、TTFB、INP 前後比較仍未量測，E-06 仍是待辦。
-- `965abc8` 只修正 E2E 測試的 session 隔離，不含產品程式或 migration；因此沒有重新部署 staging，staging 仍是 `36f32f8a44e1`。
+- `965abc8` 只修正 E2E 測試的 session 隔離，不含產品程式或 migration；本輪 Go-Live 已另外部署 `15bfd0a` 所含的產品修正。
 - 2026-09-17 唯讀驗收補充：社員模式只有社員導覽；社務管理模式有 8 項管理功能。服務計劃管理端仍是草稿，社員端顯示尚未發布；
   社費直連回 404（`dues_finance_v1` 關閉），Rich Menu 管理區未顯示（`line_rich_menu_v1` 關閉）。這是模式／草稿隔離證據，不是完整真人驗收。
 - 本輪 DevTools MCP 頁面實際都是平台管理員身份，沒有把它們的 trace 當成社員效能數據；已登入社員 CUA 頁可做畫面驗收，
   但無法取得有效 Performance API，E-06 本次 runtime 的 FCP／TTFB／LCP／INP 仍未量測。
-- 舊的 Staging Release `35084851997` 已取消，使用舊 head，沒有回滾也不影響這次 `36f32f8` staging。後續文件同步不需手動觸發 CI／Browser Smoke。
+- 舊的 Staging Release `35084851997` 已取消，使用舊 head，沒有回滾也不影響目前 `3e955553d7ee` staging。後續文件同步不需手動觸發 CI／Browser Smoke。
 - 目前仍需外部條件的待辦：E-03 follow 自動配對真人核對、E-05 額度政策、E-06 可比效能量測、E-07 實機／M1、E-08 production 決策、
   E-10 多社／角色邊界真人驗收、E-11 各社 Rich Menu／OA 外部設定；E-09 recovery email 依產品決定暫緩。
 
 ## 2026-09-17 本輪開發修正（最新）
 
-- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`；文件更新後 main 會再前進，請以 `git rev-parse origin/main` 現場核對。
-  本輪沒有部署 staging，staging 仍為 `36f32f8a44e1`，production 沒有修改。
+- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`，已隨 Go-Live `35130278609` 發布 staging；文件更新後 main 會再前進，
+  請以 `git rev-parse origin/main` 現場核對。production 沒有修改。
 - 真正發現的問題是多社社員切換到第二社團後，`/club-affairs?mode=member` 的內容仍回到第一社團；shell 顯示的社團與頁面資料不一致。
   根因是社務頁呼叫 `resolveExperienceContext(null)`，沒有讀 `rotary_active_club_v1`。
 - 已修正 `src/app/(authenticated)/club-affairs/page.tsx`，以既有 `readActiveClubPreference` 驗證 cookie 後傳入 context resolver；
@@ -42,8 +40,8 @@
   active membership 讀取這支公開社務投影，不擴大角色權限。`supabase/verification/club_affairs_member_access.sql` 覆蓋 active member、outsider、suspended。
 - 本機驗證：typecheck、lint、Vitest `181` 檔／`1347` tests、build、完整 verify:db、migration guard、verification manifest、diff check 均通過；
   production-build 本機 `member-home-1440` `3 passed`。
-- Push 自動建立 CI `35129357577`／Browser Smoke `35129357651`；已提出取消要求，沒有手動觸發或重跑。若它們稍後完成，仍不取代本機結果。
-- 下一步是下一次受控 staging release 後重新做 hosted 多社社員驗收；在那之前不要把這個修正寫成 staging 已生效。
+- Push 自動建立 CI `35129357577`／Browser Smoke `35129357651`；已依規則取消，沒有手動觸發或重跑。Go-Live `35130278609` 已完成發布。
+- 下一步是在已發布的 staging 上重新做 hosted 多社社員「切換社團 → 開社務」驗收；在該真人流程完成前，不把 E-10 標成結案。
 
 ## 歷史：2026-09-16 最新狀態（已被 9/17 取代）
 

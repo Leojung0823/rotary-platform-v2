@@ -6,23 +6,20 @@
 
 ## 2026-09-17 最新基線（覆蓋下面的 2026-09-16／2026-09-15 快照）
 
-- 本次文件同步前 GitHub `origin/main` 為 `4e1a8ed368c6d1b1b30821643976627fa22ff0f5`；本文件提交後請以
+- 本次程式修正已在 staging Go-Live 以 exact SHA `3e955553d7ee62dc02d33ea584006b9424704dad` 發布；本文件提交後請以
   `git rev-parse origin/main` 現場核對，本節固定記錄產品與 staging 版本，避免把兩者混為一談。
-- staging 產品程式目前為已部署版本 `36f32f8a44e1`；`/api/health` 為 `status=ok`、
-  `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- staging 產品程式目前為已部署版本 `3e955553d7ee`；`/api/health` 為 `status=ok`、`configuration=true`、`database=true`、
+  `issues=[]`、`warnings=[]`；production 沒有修改。
 - 主線已包含 9/16 的首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、
   生日徵集日期／關閉、follower 批次配對、手機表格卡片寬度修正與測試 fixture race 修正。
   另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已在前一個 Staging Go-Live `35083792540` 套用，
-  目前 staging 仍包含它；本輪 `36f32f8` 沒有新增 migration，只修正社員首頁圖片 preload。
-- 文件同步前最新提交 `4e1a8ed368c6d1b1b30821643976627fa22ff0f5` 是記錄 role-shell 負向登入測試修正後狀態的文件同步提交；前一個提交
-  `965abc8` 才是該測試的獨立 context 隔離修正。產品程式仍以 staging 已部署的 `36f32f8a44e1` 為準，沒有重新部署。下一次文件同步仍應以現場的
+  目前 staging 仍包含它；本輪新增 `20260917000100_club_affairs_member_read_access.sql` 也已由 Go-Live `35130278609` 套用。
+- `15bfd0a` 的社務頁 active-club cookie 與一般社員公開投影修正已部署；下一次文件同步仍應以現場的
   `git rev-parse origin/main` 核對，避免文件提交後再次過期。
   舊的 Staging Release `35084851997` 已取消，但它使用的是舊 head，沒有回滾或改變目前 staging runtime。
-- PR #188、#189、#190 都已正常合併；`36f32f8` 的自動 CI `35121629076` 已成功，Staging Release
-  `35121647301`／Go-Live `35121777337` 使用同一個 exact SHA 並成功發布產品程式。自動 Browser Smoke `35121629061`
-  最後為 `189 passed`、`57 skipped`、`1 failed`；唯一失敗是 role-shell 負向登入測試的密碼輸入框被串流重繪卸載，
-  沒有手動重跑。後續 `965abc8` 將三個負向帳號分到獨立瀏覽器 context，本機六尺寸 `18 passed`，自動 CI
-  `35123956529` 與 Browser Smoke `35123956508` 均成功；因為只改測試檔，不需重新部署 staging。
+- PR #188、#189、#190 都已正常合併；本輪 Staging Release `35130111743` 與 Go-Live `35130278609` 使用同一個 exact SHA
+  並成功發布產品程式與 migration。程式 push 的自動 CI／Browser Smoke 已依規則取消；文件 push 後的自動 CI `35129653090`
+  與 Browser Smoke `35129653326` 最後成功，沒有手動 dispatch／重跑。
 - 最新主線已包含 Next Image preload 修正；下一個開發順序仍是處理 E-03、E-10、E-06、E-07、E-05、E-11；
   E-08 production 與 E-09 recovery email 仍是另行決策，不混入一般 staging 開發。
 - 9/16 已完成登入後頁面效能基線：同一個已登入 Chrome session 下，管理頁 LCP `1,777 ms`／FCP `760 ms`／
@@ -38,8 +35,8 @@
 
 ## 2026-09-17 本輪開發修正（最新）
 
-- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`；文件更新後 main 會再前進，請以 `git rev-parse origin/main` 現場核對。
-  staging 尚未發布這個 SHA，仍是 `36f32f8a44e1`，production 沒有修改。
+- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`，已隨 Go-Live `35130278609` 發布在 staging；文件更新後 main
+  會再前進，請以 `git rev-parse origin/main` 現場核對。production 沒有修改。
 - 本輪修正一個跨社資料顯示缺口：多社社員切換 active club 後，社務頁原本忽略 `rotary_active_club_v1`，會把內容落回第一個候選社團。
   社務頁現在沿用 shell 的已驗證 active-club preference；回歸測試確認切換後只顯示所選社團。
 - 本輪同時修正一般 active 社員無法閱讀社務公開投影的權限缺口：新增 `20260917000100_club_affairs_member_read_access.sql`，
@@ -47,7 +44,8 @@
 - 本機完整驗證均通過：typecheck、lint、Vitest `181` 檔／`1347` tests、build、完整 verify:db、migration guard、verification manifest、
   `git diff --check`，以及 production-build `member-home-1440` `3 passed`。
 - Push 後的自動 CI `35129357577`／Browser Smoke `35129357651` 已要求取消；這不是手動 dispatch／重跑，且不把它們當作本輪驗收證據。
-- 路線圖下一步：受控發布這個 exact SHA 後，重新驗收「多社切換 → 社務」的 hosted 行為；E-03、E-05、E-06、E-07、E-08、E-10、E-11 等外部待辦仍照原狀管理。
+- 路線圖下一步：在已發布的 staging 上重新驗收「多社切換 → 社務」的 hosted 行為；E-03、E-05、E-06、E-07、E-08、E-10、E-11
+  等外部待辦仍照原狀管理。
 
 ## 歷史產品基線（2026-09-15；非目前 `main`）
 

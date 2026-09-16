@@ -12,19 +12,20 @@
 
 本次以 GitHub `main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 交叉核對：
 
-- 本次文件同步前的 `main`／`origin/main` 為 `4e1a8ed368c6d1b1b30821643976627fa22ff0f5`；本文件提交後請以
-  `git rev-parse origin/main` 現場核對；staging 目前 revision 為
-  `36f32f8a44e1`。`/api/health` 回報 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、
-  `warnings=[]`；production 沒有修改。
-- Staging Release `35121647301` 與 Go-Live `35121777337` 使用同一個 exact SHA 並成功；本次沒有新增 migration。
-  自動 CI `35121629076`／Browser Smoke `35121629061` 的舊測試競態已由 `965abc8` 修正：每個撤銷／停權／退社帳號
-  改用獨立瀏覽器 context。本機六個 role-shell 尺寸 `18 passed`；自動 CI `35123956529` 與 Browser Smoke
-  `35123956508` 均成功。這次只改測試檔，沒有重新部署 staging。
+- 本次程式修正包含在 staging Go-Live 的 exact SHA `3e955553d7ee62dc02d33ea584006b9424704dad`；Staging Release
+  `35130111743` 與 Go-Live `35130278609` 使用同一個 SHA 並成功。staging `/api/health` 回報 `status=ok`、
+  `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，revision 為 `3e955553d7ee`；production 沒有修改。
+- 本輪新增 migration `20260917000100_club_affairs_member_read_access.sql` 已在 Go-Live 套用，新增 verification 也通過；
+  一般 active 社員可以讀自己的社務公開投影，外社與停權社員仍被拒絕。Go-Live 的 migration、部署、exact revision、HTTPS smoke
+  與 hosted member acceptance 全部成功。
+- 本輪程式提交 `15bfd0af2919bc8f45f401266e1855569f106ecb` 修正多社社員切換後社務頁仍顯示第一社的問題；文件提交後的主線 SHA
+  請以 `git rev-parse origin/main` 現場核對。自動 CI／Browser Smoke 沒有手動觸發或重跑；程式 push 的兩個自動 run 已取消，
+  後續文件 push 的自動 run `35129653090`／`35129653326` 最後成功。
 - 真實登入 LEO 社員頁 `/dashboard?mode=member` 重新載入後，`/hero-mountains.webp` 圖片 DOM 為 `1` 張、preload 為
-  `1` 個（body 1、head 0）。`36f32f8` 使用 `next/image` 單一元件管理 preload，並以 `unoptimized` 直接載入小型靜態檔；
+  `1` 個（body 1、head 0）。目前 staging 使用 `next/image` 單一元件管理 preload，並以 `unoptimized` 直接載入小型靜態檔；
   沒有改登入、角色、權限、社團隔離或登入後首頁公開快取。
 - 本機完整品質／資料庫驗證與 `member-home-1440` `3 passed` 均通過。舊 Staging Release `35084851997` 的取消只影響舊 head，
-  不影響這次 `36f32f8` 的 staging。
+  不影響目前 `3e955553d7ee` 的 staging。
 - 2026-09-17 再用已登入 staging 測試帳號做唯讀驗收：社員模式只有社員導覽；社務管理模式顯示 8 項管理功能。
   服務計劃在管理端仍是草稿，社員端顯示「尚未發布」；直接開啟社費管理頁回 404，與 `dues_finance_v1` 關閉相符；
   Rich Menu 管理區也未顯示，與 `line_rich_menu_v1` 關閉相符。這補強模式邊界與草稿隔離，但不等於 E-03／E-07／E-10／E-11 已結案。
@@ -35,8 +36,9 @@
 
 ## 2026-09-17 本輪開發修正（最新）
 
-- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`；文件更新後 main 會再前進，請以 `git rev-parse origin/main` 現場核對。
-  本輪沒有修改 production，也沒有部署 staging，所以 staging 仍是 `36f32f8a44e1`。
+- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`，已包含在 staging Go-Live exact SHA
+  `3e955553d7ee62dc02d33ea584006b9424704dad`；文件更新後 main 會再前進，請以 `git rev-parse origin/main` 現場核對。
+  本輪沒有修改 production。
 - 實際驗收發現：多社社員切換到第二個社團後，社員導覽的「社務」頁仍用第一個社團；原因是該頁沒有讀取 shell 使用的
   `rotary_active_club_v1` cookie，而是把 `resolveExperienceContext(null)` 當成第一個候選社團。這是頁面顯示錯社的資料隔離缺口。
 - 已修正 `src/app/(authenticated)/club-affairs/page.tsx`：讀取並驗證 active-club cookie，再把同一個社團偏好傳給 context resolver；同時保留
@@ -45,9 +47,9 @@
   不會因此取得廣義 `member.read`；外社使用者與停權社員仍被拒絕。新增驗證 `club_affairs_member_access.sql` 並加入 manifest。
 - 本機已通過：`npm run typecheck`、`npm run lint`、`npm test`（181 檔／1347 tests）、`npm run build`、完整 `npm run verify:db`、
   `npm run check:migrations`、`npm run check:db-verifications`、`git diff --check`；本機 `member-home-1440` 為 `3 passed`。
-- Push 後自動建立 CI `35129357577` 與 Browser Smoke `35129357651`；依「後續開發不手動跑 CI」規則已提出取消要求，沒有手動 dispatch／重跑。
-  這兩個 run 的最後狀態仍以 GitHub 現場查詢為準，不能當成本輪驗證證據。
-- 這次修正仍待下一次受控 staging release 後，使用多社社員在 hosted 環境做同一條「切換社團 → 開社務」驗收；目前不自行部署。
+- Push 後自動建立 CI `35129357577` 與 Browser Smoke `35129357651`；依「後續開發不手動跑 CI」規則已取消，沒有手動 dispatch／重跑。
+  這兩個 run 不作為本輪驗收證據。Go-Live `35130278609` 已完成發布，下一步只剩使用多社社員在 hosted 環境做同一條
+  「切換社團 → 開社務」驗收。
 
 ### 2026-09-16 本機角色回歸補充
 
