@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { openEveryEventDetails } from "./member-event-list.mjs";
 
 const password = process.env.E2E_ROLE_PASSWORD;
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
@@ -100,10 +99,10 @@ test("an ordinary member sees the cover but is offered no way to change it", asy
 
   await expect(page.getByRole("heading", { name: "活動" }).first()).toBeVisible();
 
-  // The cover moved behind the card's disclosure with the rest of the detail,
-  // so the test opens it -- otherwise "sees the cover" is a claim this test
-  // stopped making without anyone noticing.
-  await openEveryEventDetails(page);
+  // The cover stays outside the card's disclosure, so it is visible without
+  // opening anything. This test never actually asserted it before -- it only
+  // checked that the upload buttons were absent -- so the claim in its name
+  // went unchecked.
   await expect(page.locator("img.event-cover").first()).toBeVisible();
 
   await expect(page.getByRole("button", { name: "上傳圖片" })).toHaveCount(0);

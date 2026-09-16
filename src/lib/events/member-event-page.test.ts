@@ -74,6 +74,13 @@ describe("each event starts collapsed", () => {
     expect(summary, "the time must stay visible").toContain("formatEventTimeRange");
     expect(summary, "the status must stay visible").toContain("statusLabels[event.status]");
   });
+
+  it("keeps the cover visible without opening anything", () => {
+    // It is how a member recognises an event at a glance, which is the choice
+    // the collapsed list exists to help them make.
+    const beforeFold = list.slice(list.indexOf("{events.map("), list.indexOf('<details className="event-fold">'));
+    expect(beforeFold).toContain('className="event-cover"');
+  });
 });
 
 describe("the answer and the guest count are one row", () => {

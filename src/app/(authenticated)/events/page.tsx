@@ -267,6 +267,18 @@ export default async function EventsPage({
               event to look at, and a list where every card is already expanded
               is a list you scroll past rather than read. The summary keeps what
               the choice is made on: what it is, what it is called, and when. */}
+          {/* Outside the fold: the cover is how a member recognises an event at
+              a glance, which is the choice the collapsed list exists to help
+              them make. Plain <img> rather than next/image -- the URL is
+              signed and expires, so the optimizer cannot cache it, and
+              optimizing on a 0.1 CPU instance would cost more than it saves.
+              The browser already resized the picture before uploading it. */}
+          {event.cover_image_path && coverUrls.get(event.cover_image_path) && <img
+            className="event-cover"
+            src={coverUrls.get(event.cover_image_path)}
+            alt=""
+            loading="lazy"
+          />}
           <details className="event-fold">
             <summary>
               <div className="status-pair">
@@ -283,16 +295,6 @@ export default async function EventsPage({
               </p>
             </summary>
 
-          {/* Plain <img> rather than next/image: the URL is signed and
-              expires, so the optimizer cannot cache it, and optimizing on a
-              0.1 CPU instance would cost more than it saves. The browser
-              already resized the picture before uploading it. */}
-          {event.cover_image_path && coverUrls.get(event.cover_image_path) && <img
-            className="event-cover"
-            src={coverUrls.get(event.cover_image_path)}
-            alt=""
-            loading="lazy"
-          />}
           <div className="section-heading">
             <div>
               <h3><Link href={`/events/${encodeURIComponent(event.id)}`}>查看活動詳情</Link></h3>
