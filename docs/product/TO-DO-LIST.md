@@ -14,6 +14,9 @@
 - 本機 `line-oa-rich-menu-1440`：1 passed。已涵蓋 mock OA 的 Rich Menu 發布與停用；這不是 staging OA 或真人手機驗收證據。
 - 本機 `role-shells-1440` 新增退社 fixture 後，撤銷管理者、停權社員、退社社員的 role-shell 負向測試通過；這是本機後端路由證據，不能取代 staging 真人驗收。
 - 本機安全邊界測試：4 檔、20 tests passed，涵蓋管理模式、社費旗標、Rich Menu 旗標與首頁效能邊界。
+- 自動 Browser Smoke `35116581323`（head `09477c2`）已完成但非全綠：`188 passed`、`57 skipped`、`1 failed`、`1 flaky`。
+  失敗是 role-shell 負向登入測試填密碼時輸入框被串流重繪卸載；GPS 到場簽到測試為 flaky。它早於本輪 `c58a90c`，沒有手動重跑，
+  不能當成本輪效能修正的 staging 結果。
 - Staging Release `35084851997` 已取消；它的 head 是舊版 `857b9dc54a4cc98e67f86b264d2014c91b4f38c1`，不影響目前 staging，也沒有因取消而回滾程式。
 - 以 Chrome DevTools 重新量測真實 LEO 社員首頁：LCP `1.30 s`、CLS `0.01`，LCP 元素為首頁 hero `<img>`；FCP／TTFB／INP 未量測。
   這次 runtime 為 `bd8a8e9d0205`、快取未停用，不能直接宣稱相較舊 runtime 的因果改善。
@@ -24,8 +27,8 @@
 本次以 GitHub `Leojung0823/rotary-platform-v2` 的 `origin/main`、GitHub Actions 與 staging
 實際健康檢查交叉核對；舊的 2026-09-15 段落保留作為歷史紀錄，不再當作目前狀態。
 
-- `origin/main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；本輪產品程式提交為
-  `bd8a8e9d0205b6c70b4f4dbc9228fc090c007b57`。
+- `origin/main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；本輪最新效能程式提交為
+  `c58a90ccdd0a2fcc1e1b7290bfd70c6c081e617f`。
 - staging `/api/health`：`status=ok`、`revision=bd8a8e9d0205`、`configuration=true`、
   `database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - 9/16 已進入主線並部署至 staging 的修正／功能包括：首頁待辦完成後移除生日提醒、社費提醒連到實際應付年度、
@@ -39,9 +42,9 @@
 
 ### 這次掃描後的實際結論
 
-1. 不是「主線沒有更新」：主線已包含 `bd8a8e9` 的效能修正，產品程式 staging 已到 `bd8a8e9`。
+1. 不是「主線沒有更新」：主線已包含 `c58a90c` 的 preload 修正，產品程式 staging 仍在上一版 `bd8a8e9`。
 2. 不是「所有待辦都完成」：E-03、E-05、E-06、E-07、E-08、E-10、E-11 仍需要真人、效能工具、產品決策或外部 OA 設定。
-3. #188／#189／#190 已合併、檢查已通過並發布至 staging；本輪效能修正也已發布，下一步是完成剩餘真人／外部驗收。
+3. #188／#189／#190 已合併、檢查已通過並發布至 staging；本輪 `c58a90c` 效能修正已在本機驗證但尚未發布，下一步是完成剩餘真人／外部驗收。
 
 ## 2026-09-15 GitHub 開發狀態快照（#147 合併後）
 

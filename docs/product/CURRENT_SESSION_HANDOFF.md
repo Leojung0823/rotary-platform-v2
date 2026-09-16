@@ -7,8 +7,8 @@
 
 這次以 GitHub `origin/main`、GitHub Actions 和 staging `/api/health` 重新核對：
 
-- `origin/main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；本輪產品程式提交為
-  `bd8a8e9d0205b6c70b4f4dbc9228fc090c007b57`。若本輪再提交文件，`main` 會比 staging runtime 多一個純文件 commit。
+- `origin/main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；本輪最新效能程式提交為
+  `c58a90ccdd0a2fcc1e1b7290bfd70c6c081e617f`，目前 staging 尚未包含它。
 - staging revision：`bd8a8e9d0205`；health 為 `status=ok`、`configuration=true`、`database=true`、
   `issues=[]`、`warnings=[]`。production 沒有修改。
 - 9/16 主線新增／修正首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、生日徵集日期／關閉、
@@ -29,6 +29,12 @@
 - staging 實際社員頁驗收：圖片 DOM 為 `1` 張；hosted React／Next 仍產生 `2` 個相同的普通 preload 提示（head／body）。
   本輪再以真實 LEO 社員頁和 Chrome DevTools 重新載入，取得 LCP `1.30 s`／CLS `0.01`，LCP 元素為首頁 hero `<img>`；FCP／TTFB／INP 未量測。
   這次 runtime 為 `bd8a8e9d0205` 且快取未停用，和修改前基線條件不同，因此只能算有效觀測，不能宣稱因果改善；E-06 仍未結案。
+- `c58a90c` 已把社員首頁的 hero preload 改用 React DOM `preload()` resource hint API；本機 production-build E2E 六種尺寸為
+  `8 passed`、`10 skipped`，桌面確認 hero 圖片 `1` 張／preload `1` 個，管理頁不載入 hero。這只證明目前程式與本機行為，
+  staging 仍在 `bd8a8e9`，部署後要重新做 hosted DOM 與同條件效能量測。
+- 既有自動 Browser Smoke `35116581323`（head `09477c2`，早於 `c58a90c`）已完成但非全綠：`188 passed`、`57 skipped`、
+  `1 failed`、`1 flaky`。失敗是 role-shell 負向登入測試填密碼時輸入框被串流重繪卸載；GPS 到場簽到測試為 flaky。
+  這輪沒有手動重跑，不能把它當成 `c58a90c` 的 staging 結果。
   完整條件記在 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)，效能修改前先讀該文件。
 - 真正仍需外部條件的主線待辦，依 [`TO-DO-LIST.md`](./TO-DO-LIST.md) E-03、E-05、E-06、E-07、E-08、E-10、E-11；
   E-09 目前維持產品決定的暫緩。
