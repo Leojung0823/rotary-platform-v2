@@ -135,6 +135,6 @@ export function EventCoverUpload({
     {message && <p className={state === "error" ? "field-error" : "hint"} role={state === "error" ? "alert" : "status"}>
       {message}
     </p>}
-    <p className="hint">圖片會在手機上先縮圖再上傳（長邊 {COVER_MAX_EDGE}px），節省流量與儲存空間；只有同社社員看得到。</p>
+    <p className="hint">圖片只有同社社員看得到；手機上會先縮到長邊 {COVER_MAX_EDGE}px 再上傳。</p>
   </div>;
 }

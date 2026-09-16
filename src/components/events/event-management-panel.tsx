@@ -51,28 +51,25 @@ export function EventManagementPanel({
                 <span className={statusBadge(event.status)}>{statusLabels[event.status]}</span>
                 <span className="badge badge-neutral">{eventTypeLabels[event.event_type] ?? "其他"}</span>
                 {event.counts_for_attendance && <span className="badge badge-neutral">計入出席</span>}
+                {event.my_response && <span className="badge badge-success">我的狀態：{responseLabels[event.my_response]}</span>}
               </div>
               <h2><a href={`/events/${encodeURIComponent(event.id)}?clubId=${encodeURIComponent(selectedClub.club_id)}&mode=member`}>{event.title}</a></h2>
             </div>
             <span>版本 {event.version}</span>
           </div>
 
-          <div className="two-column">
-            <div>
-              <p><strong>時間：</strong>{formatDateTime(event.starts_at)}－{formatDateTime(event.ends_at)}</p>
-              <p><strong>地點：</strong>{event.location || "尚未填寫"}</p>
-              <p><strong>報名截止：</strong>{event.registration_deadline === null
-                ? "不設截止，活動結束前都可報名"
-                : formatDateTime(event.registration_deadline)}</p>
-              {event.description && <p>{event.description}</p>}
-            </div>
-            <div className="card">
-              <span className="metric-label">目前參加</span>
-              <strong className="metric-value metric-text">{event.attending_members} 人</strong>
-              <p>{event.attending_spots} 個名額已使用{event.capacity === null ? " · 不限名額" : ` · 剩餘 ${event.remaining_spots ?? 0}`}</p>
-              {event.my_response && <span className="badge badge-success">我的狀態：{responseLabels[event.my_response]}</span>}
-            </div>
-          </div>
+          {/* One wrapping line of labelled facts. These were three paragraphs
+              and a boxed metric in a side column: a card that said very little
+              was 480px tall, and a dozen of them made the list unreadable. */}
+          <dl className="event-facts">
+            <div><dt>時間</dt><dd>{formatDateTime(event.starts_at)}－{formatDateTime(event.ends_at)}</dd></div>
+            <div><dt>地點</dt><dd>{event.location || "尚未填寫"}</dd></div>
+            <div><dt>報名截止</dt><dd>{event.registration_deadline === null
+              ? "不設截止，活動結束前都可報名"
+              : formatDateTime(event.registration_deadline)}</dd></div>
+            <div><dt>目前參加</dt><dd>{event.attending_members} 人 · {event.attending_spots} 個名額已使用{event.capacity === null ? " · 不限名額" : ` · 剩餘 ${event.remaining_spots ?? 0}`}</dd></div>
+          </dl>
+          {event.description && <p className="event-description">{event.description}</p>}
 
           {event.status === "published" && <EventRegistrationRoster
             clubId={selectedClub.club_id}
@@ -80,40 +77,52 @@ export function EventManagementPanel({
             entries={rosters.get(event.id) ?? []}
           />}
 
-          {event.status === "published" && event.counts_for_attendance && <div className="form-actions">
-            <Link className="button" href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}&mode=management`}>管理簽到</Link>
-          </div>}
+          {/* Every action on one row. Each of these used to be its own
+              block-level strip -- 管理簽到, 上傳圖片 and its explanation,
+              編輯活動, 發布活動 -- four rows of chrome for four buttons. */}
+          <div className="event-actions">
+            {/* Editing is offered for exactly the states the database will
+                accept, so the link never lands on a refusal. */}
+            {(event.status === "draft" || event.status === "published") && <Link
+              className="button button-secondary"
+              href={`/clubs/${selectedClub.club_id}/events/${event.id}/edit`}
+            >編輯活動</Link>}
 
-          {event.status !== "cancelled" && <EventCoverUpload
-            clubId={selectedClub.club_id}
-            eventId={event.id}
-            hasCover={Boolean(event.cover_image_path)}
-          />}
+            {event.status !== "cancelled" && <EventCoverUpload
+              clubId={selectedClub.club_id}
+              eventId={event.id}
+              hasCover={Boolean(event.cover_image_path)}
+            />}
 
-          {/* Editing is offered for exactly the states the database will accept,
-              so the link never lands on a refusal. */}
-          {(event.status === "draft" || event.status === "published") && <Link
-            className="button button-secondary"
-            href={`/clubs/${selectedClub.club_id}/events/${event.id}/edit`}
-          >編輯活動</Link>}
+            {event.status === "published" && event.counts_for_attendance && <Link
+              className="button"
+              href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}&mode=management`}
+            >管理簽到</Link>}
 
-          {event.status === "draft" && <form action={publishEventAction} className="form-actions">
-            <input type="hidden" name="clubId" value={selectedClub.club_id} />
-            <input type="hidden" name="eventId" value={event.id} />
-            <input type="hidden" name="mode" value="management" />
-            <button className="button" type="submit">發布活動</button>
-          </form>}
+            {event.status === "draft" && <form action={publishEventAction}>
+              <input type="hidden" name="clubId" value={selectedClub.club_id} />
+              <input type="hidden" name="eventId" value={event.id} />
+              <input type="hidden" name="mode" value="management" />
+              <button className="button" type="submit">發布活動</button>
+            </form>}
+          </div>
 
-          {event.status !== "cancelled" && event.status !== "completed" && <form action={cancelEventAction} className="inline-form">
-            <input type="hidden" name="clubId" value={selectedClub.club_id} />
-            <input type="hidden" name="eventId" value={event.id} />
-            <input type="hidden" name="mode" value="management" />
-            <label className="field"><span className="label">取消原因</span>
-              <input className="input" name="reason" maxLength={500} required />
-            </label>
-            <span className="hint">取消後不可恢復，並會關閉 active 簽到 token、保留簽到歷史。</span>
-            <button className="button button-danger" type="submit">取消活動</button>
-          </form>}
+          {/* Folded. A destructive action with a required free-text reason sat
+              permanently open at the foot of every live event, which is the
+              opposite of how prominent it should be. */}
+          {event.status !== "cancelled" && event.status !== "completed" && <details className="event-danger">
+            <summary>取消活動</summary>
+            <form action={cancelEventAction} className="inline-form">
+              <input type="hidden" name="clubId" value={selectedClub.club_id} />
+              <input type="hidden" name="eventId" value={event.id} />
+              <input type="hidden" name="mode" value="management" />
+              <label className="field"><span className="label">取消原因</span>
+                <input className="input" name="reason" maxLength={500} required />
+              </label>
+              <span className="hint">取消後不可恢復，並會關閉 active 簽到 token、保留簽到歷史。</span>
+              <button className="button button-danger" type="submit">取消活動</button>
+            </form>
+          </details>}
     </article>;
   }
 

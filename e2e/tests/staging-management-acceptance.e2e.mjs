@@ -247,7 +247,12 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
     await expect(eventCard.getByText("已發布", { exact: true })).toBeVisible();
 
-    const cancelForm = eventCard.locator("form.inline-form");
+    // 取消 is folded away now: a destructive action with a required reason no
+    // longer sits open at the foot of every live event.
+    const cancelFold = eventCard.locator("details.event-danger");
+    await cancelFold.locator("summary").click();
+    const cancelForm = cancelFold.locator("form.inline-form");
+    await expect(cancelForm).toBeVisible();
     await cancelForm.getByLabel("取消原因").fill("staging 活動驗收完成，保留為可回收測試資料。");
     await cancelForm.getByRole("button", { name: "取消活動" }).click();
     await expect(page).toHaveURL(/success=event_cancelled/u, { timeout: 30_000 });
