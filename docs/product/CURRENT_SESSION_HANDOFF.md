@@ -11,7 +11,8 @@
   `36f32f8a44e1`。health 為 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、
   `warnings=[]`；production 沒有修改。
 - Staging Release `35121647301` 與 Go-Live `35121777337` 使用同一個 exact SHA 並成功；本輪沒有新增 migration。
-  自動 CI `35121629076` 成功；Browser Smoke `35121629061` 在本次交接更新時仍執行中，沒有手動重跑。
+  自動 CI `35121629076` 成功；Browser Smoke `35121629061` 最後為 `189 passed`、`57 skipped`、`1 failed`，
+  唯一失敗是 role-shell 負向登入測試填密碼時輸入框被串流重繪卸載；沒有手動重跑。
 - `36f32f8` 修正社員首頁 hero 圖片的 hosted 重複 preload：已登入 LEO 社員頁 `/dashboard?mode=member` 重新載入後，
   `/hero-mountains.webp` 的圖片 DOM 為 `1` 張、preload 為 `1` 個（body 1、head 0）。修正使用 `next/image`、`preload`
   與 `unoptimized` 直出小型靜態檔，沒有改登入、權限、社團隔離或登入後首頁公開快取。

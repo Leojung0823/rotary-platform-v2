@@ -55,7 +55,9 @@ Chrome 登入 session 量到社員首頁與社務管理頁（條件與限制見�
 本機同一輪已通過 typecheck、lint、Vitest `181` 檔／`1346` 測試、build、verify:db、全部 73 份
 verification、migration guard、verification manifest、`git diff --check`；`member-home-1440`
 目標 E2E 為 `3 passed`。自動 CI `35121629076` 已成功；自動 Browser Smoke `35121629061`
-在本紀錄更新時仍為 `in_progress`，不先宣稱結果。
+最後為 `189 passed`、`57 skipped`、`1 failed`。唯一失敗是 `role-shells.e2e.mjs:245` 的負向登入測試，
+在 `role-shells.e2e.mjs:253` 填密碼時輸入框被串流重繪卸載，兩次都在 30 秒逾時；它不是 hero 圖片測試，
+也不改變本輪 `member-home-1440` 的本機與 hosted DOM 證據。本輪沒有手動重跑 Browser Smoke。
 
 ### 2026-09-16 已登入 staging 基線
 
@@ -166,8 +168,9 @@ guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `P
 - 真實登入 LEO 社員頁重新載入後，hero 圖片 DOM 為 `1` 張、preload 為 `1` 個（body 1、head 0）；使用
   `next/image` 的 `preload` 與 `unoptimized`，直接載入 `/hero-mountains.webp`。先前 React preload 方案的 hosted
   重複已被這次部署的 DOM 證據取代。
-- 本機完整品質與資料庫驗證均通過，`member-home-1440` 為 `3 passed`；CI `35121629076` 成功，Browser Smoke
-  `35121629061` 在更新當時仍執行中。這次沒有手動觸發 CI／Browser Smoke。
+- 本機完整品質與資料庫驗證均通過，`member-home-1440` 為 `3 passed`；CI `35121629076` 成功。Browser Smoke
+  `35121629061` 最後為 `189 passed`、`57 skipped`、`1 failed`，失敗是 role-shell 負向登入測試的密碼輸入框
+  被串流重繪卸載而逾時；這次沒有手動觸發或重跑 CI／Browser Smoke。
 - 最新社員首頁／管理頁 CWV 前後比較：未量測；保留 2026-09-16 數字作為不同條件的歷史基線，不宣稱因果改善。
 
 ### 2026-09-16

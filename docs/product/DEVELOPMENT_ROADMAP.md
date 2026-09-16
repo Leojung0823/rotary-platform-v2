@@ -18,7 +18,8 @@
   舊的 Staging Release `35084851997` 已取消，但它使用的是舊 head，沒有回滾或改變目前 staging runtime。
 - PR #188、#189、#190 都已正常合併；`36f32f8` 的自動 CI `35121629076` 已成功，Staging Release
   `35121647301`／Go-Live `35121777337` 使用同一個 exact SHA 並成功發布產品程式。自動 Browser Smoke `35121629061`
-  在本次更新時仍執行中，沒有手動重跑。
+  最後為 `189 passed`、`57 skipped`、`1 failed`；唯一失敗是 role-shell 負向登入測試的密碼輸入框被串流重繪卸載，
+  沒有手動重跑。
 - 最新主線已包含 Next Image preload 修正；下一個開發順序仍是處理 E-03、E-10、E-06、E-07、E-05、E-11；
   E-08 production 與 E-09 recovery email 仍是另行決策，不混入一般 staging 開發。
 - 9/16 已完成登入後頁面效能基線：同一個已登入 Chrome session 下，管理頁 LCP `1,777 ms`／FCP `760 ms`／
@@ -117,7 +118,7 @@ Staging Go-Live `35083792540` 已發布產品程式 `1ef38bb`。後續主線只�
   這次只改載入提示與靜態圖片元件，沒有改登入、權限、社團隔離或公開快取。
 - 本機完整 typecheck、lint、Vitest `181` 檔／`1346` 測試、build、verify:db、verification、migration guard、manifest、
   `git diff --check` 均通過；`member-home-1440` 為 `3 passed`。自動 CI `35121629076` 成功；Browser Smoke
-  `35121629061` 的結果以 GitHub 現場狀態為準，本次更新時尚未完成。
+  `35121629061` 為 `189 passed`、`57 skipped`、`1 failed`，失敗是 role-shell 負向登入測試的串流重繪逾時。
 
 ## 歷史：目前已部署 staging 基準（2026-09-16；已被 9/17 取代）
 
