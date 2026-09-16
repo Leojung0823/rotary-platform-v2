@@ -2,6 +2,7 @@ import {
   configureLineOaAction,
   disableLineOaAction,
   pairLineOaAction,
+  repairLineOaFollowersAction,
   unpairLineOaAction,
 } from "@/app/actions";
 import { sendLineOaAction } from "@/app/line-oa-actions";
@@ -68,7 +69,14 @@ export default async function LineOaPage({
   searchParams,
 }: {
   params: Promise<{ clubId: string }>;
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    success?: string;
+    paired?: string;
+    unmatched?: string;
+    conflicted?: string;
+    blocked?: string;
+  }>;
 }) {
   const { clubId } = await params;
   const query = await searchParams;
@@ -149,6 +157,25 @@ export default async function LineOaPage({
     rich_menu_published: "社員 Rich Menu 已發布給本社 LINE OA 好友。",
     rich_menu_disabled: "社員 Rich Menu 已停用；LINE OA 仍可正常接收訊息。",
   };
+
+  // A bulk run reports what it did. "0 paired, 12 unmatched" is a different
+  // situation from "12 paired", and an officer who cannot tell them apart will
+  // press the button again.
+  const bulkPairedMessage = () => {
+    const paired = Number.parseInt(query.paired ?? "0", 10) || 0;
+    const unmatched = Number.parseInt(query.unmatched ?? "0", 10) || 0;
+    const conflicted = Number.parseInt(query.conflicted ?? "0", 10) || 0;
+    if (query.blocked === "1") {
+      return "自動配對目前沒有開啟，這次沒有配對任何人。請先開啟 line_oa_auto_pairing_v1。";
+    }
+    const parts = [`已配對 ${paired} 位`];
+    if (unmatched > 0) {
+      // Not a failure of the run: nobody holds an id that matches them.
+      parts.push(`${unmatched} 位對不上（尚未綁定 LINE Login，或不是本社有效社員）`);
+    }
+    if (conflicted > 0) parts.push(`${conflicted} 位有重複配對，需要人工確認`);
+    return `${parts.join("；")}。`;
+  };
   return (
     <div className="page-stack">
       <header>
@@ -163,7 +190,9 @@ export default async function LineOaPage({
         </Notice>
       )}
       {query.success && (
-        <Notice tone="success">{success[query.success]}</Notice>
+        <Notice tone="success">
+          {query.success === "bulk_paired" ? bulkPairedMessage() : success[query.success]}
+        </Notice>
       )}
       <div className="two-column">
         <Card>
@@ -376,6 +405,17 @@ export default async function LineOaPage({
           加入官方帳號的人會自動出現在這裡（需先設定
           webhook）。未配對的列可以直接選社員完成配對，不需要另外查 OA userId。
         </p>
+        {/* Auto-pairing runs on the follow event, so everyone who added the OA
+            before it was switched on stays unpaired. This is that backlog,
+            cleared with the same match rather than a second one. */}
+        <form action={repairLineOaFollowersAction} className="form-actions">
+          <input type="hidden" name="clubId" value={clubId} />
+          <Button className="button-secondary" type="submit">一次配對所有未配對的 follower</Button>
+          <span className="hint">
+            用的是自動配對同一條規則：社員 LINE Login 的使用者 ID 對上 follower 的
+            ID。對不上的人不會被猜測，會留在清單裡。
+          </span>
+        </form>
         <div className="table-wrap" data-mobile-cards>
           <table>
             <thead>
