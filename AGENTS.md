@@ -53,6 +53,12 @@
 
 不要憑記憶重打整個函式。用程式化方式從原始 migration 擷取，只改要改的那一行。曾經發生過重寫時漏掉「授予 member 角色」「建立通知設定」等關鍵步驟。
 
+**「原始」不等於「目前」。** 同一支函式可能被 `create or replace` 取代、被 `drop` 後用 `create function` 重新宣告（改簽章時必須如此），或是被一支修補 migration 用 `pg_get_functiondef` 就地重寫——第三種**完全不會出現在任何宣告裡**。挑錯基礎的重述會把別人的修正靜靜倒回去，而且本機全綠。用 `src/lib/attendance/latest-definition.ts` 解析，不要用眼睛挑檔案；重述後做逐字比對。
+
+### 反覆踩到的坑
+
+`docs/development/COMMON_PITFALLS.md` 收錄了這個 repo 真的發生過、而且**當下所有本機檢查都是綠的**那些錯誤：函式重述的基礎、空洞的守則、SQL 到 CI 才會解析、分眾規則要在每條路徑重複套用、`gh pr checks` 的聚合、migration 亂序、**PR 有衝突時 CI 根本不會跑**、grid 版面的 `min-width: 0`、被當死碼刪掉的 CSS 類名、**改一個可見字串會打斷把它當選擇器的 e2e** 等。寫新守則或改可見文字前先讀一次。
+
 ## 4. 每次 commit 前必須跑
 
 ```bash
