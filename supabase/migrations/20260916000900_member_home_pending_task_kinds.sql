@@ -158,7 +158,13 @@ begin
     select
       receivable.id,
       (projected.value ->> 'outstanding_amount')::numeric as outstanding,
-      projected.value ->> 'currency_code' as currency_code
+      -- From the receivable itself, which declares it not null. The finance
+      -- projection has never carried a currency_code, so ->> answered null
+      -- here, and a null anywhere in a || makes the whole concatenation null:
+      -- the detail below became null, the parser rejected the row, and
+      -- rejecting one row rejects the entire projection -- the member home
+      -- went blank for everyone who still owed the club anything.
+      receivable.currency_code
     from public.club_finance_receivables as receivable
     join public.club_memberships as membership
       on membership.id = receivable.membership_id
@@ -350,6 +356,12 @@ begin
       -- are only ever "when you get a moment".
       select coalesce(jsonb_agg(entry order by sort_rank, deadline nulls last, label), '[]'::jsonb)
       from (
+        -- The parser refuses a list longer than it agreed to carry, and refusing
+        -- the list blanks the page. The branches below have their own limits --
+        -- five events, twenty receivables, five wishes -- which say how much each
+        -- kind may contribute, not how long the list may be. This is the length.
+        select sort_rank, deadline, label, entry
+        from (
         select
           1 as sort_rank,
           public.event_registration_closes_at(task.registration_deadline, task.ends_at) as deadline,
@@ -383,7 +395,13 @@ begin
           jsonb_build_object(
             'kind', 'dues_outstanding',
             'title', '社費未繳',
-            'detail', dues.currency_code || ' ' || trim(to_char(dues.outstanding, 'FM999999990')),
+            -- concat_ws, not ||. Every value in a task row has to be non-null or
+            -- the parser rejects the row, and || is the one thing here that
+            -- manufactures a null out of code that reads as though it cannot:
+            -- one null operand and the entire string is null. concat_ws drops
+            -- a missing piece instead, so the worst case is a plainer label
+            -- rather than no home page at all.
+            'detail', concat_ws(' ', dues.currency_code, trim(to_char(dues.outstanding, 'FM999999990'))),
             'action_path', '/me/finance',
             -- A receivable carries no due date of its own, so this reminder
             -- has none either. Inventing one would put a countdown on a date
@@ -403,10 +421,24 @@ begin
             'title', '生日祝福待填寫',
             'detail', wish.recipient_name,
             'action_path', '/birthday-collection',
-            'deadline', wish.birthday_date::timestamptz,
-            'hours_remaining', floor(extract(epoch from (
-              wish.birthday_date::timestamptz - now()
-            )) / 3600)::integer,
+            -- Only while the day is still ahead. A campaign left collecting
+            -- past the birthday still owes a wish -- that is the whole point
+            -- of it still being open -- but the countdown to it is negative,
+            -- and a negative countdown is rejected along with the row and the
+            -- projection around it. Past the day it is a reminder without a
+            -- deadline, like the other two.
+            'deadline', case
+              when wish.birthday_date::timestamptz > now()
+                then wish.birthday_date::timestamptz
+              else null
+            end,
+            'hours_remaining', case
+              when wish.birthday_date::timestamptz > now()
+                then floor(extract(epoch from (
+                  wish.birthday_date::timestamptz - now()
+                )) / 3600)::integer
+              else null
+            end,
             'count', null
           )
         from birthday_wishes_to_write as wish
@@ -453,6 +485,9 @@ begin
           )
         from profile_gaps as gaps
         where gaps.phone_missing or gaps.birthday_missing
+        ) as candidate
+        order by sort_rank, deadline nulls last, label
+        limit 5
       ) as task
     ),
     'notifications', jsonb_build_object(

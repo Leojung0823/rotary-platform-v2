@@ -176,3 +176,107 @@ describe("the two that can only ever be 'when you get a moment' sort last", () =
     }
   });
 });
+
+// The pending_tasks list, from the aggregate down to its closing alias. Every
+// rule below is about what this block may contain, because everything in it
+// has to survive parsePendingTask -- and one row that does not takes the whole
+// page with it.
+const pendingTasksBlock = (() => {
+  const from = projection.indexOf("'pending_tasks'");
+  const to = projection.indexOf("'notifications'", from);
+  expect(from, "pending_tasks is not in the projection").toBeGreaterThan(-1);
+  expect(to, "notifications no longer follows pending_tasks").toBeGreaterThan(from);
+  return projection.slice(from, to);
+})();
+
+describe("一個 null 就足以讓整頁消失", () => {
+  // 社費未繳 read its currency from project_dues_receivable, which has never
+  // carried one, so ->> answered null -- and null anywhere in a || makes the
+  // whole concatenation null. detail arrived as null, the parser rejected the
+  // row, and rejecting one row rejects the projection: every member who still
+  // owed the club anything got 目前無法載入社員首頁資料 instead of a home page.
+  // Four browser tests went red three layers away from the cause.
+
+  it("builds no string with ||, which turns one null into a null row", () => {
+    // Every value in a task row has to be non-null or the parser rejects the
+    // row -- and rejecting one row rejects the projection. || is the one
+    // operator here that manufactures a null out of code that reads as though
+    // it cannot: 'TWD' came from a ->> whose key did not exist, so it was null,
+    // so `null || ' ' || '3000'` was null, so detail was null, so every member
+    // who owed the club anything got 目前無法載入社員首頁資料. concat_ws drops a
+    // missing piece instead of erasing the whole string, so use that.
+    const concatenations = pendingTasksBlock.split("\n")
+      .map((line) => line.trim())
+      .filter((line) => !line.startsWith("--") && line.includes("||"));
+    expect(concatenations, "|| inside pending_tasks; use concat_ws").toEqual([]);
+  });
+
+  it("takes the currency from the column that declares it not null", () => {
+    expect(pendingTasksBlock).toContain("dues.currency_code");
+    const from = projection.indexOf("dues_outstanding as (");
+    const cte = projection.slice(from, projection.indexOf("), birthday_wishes_to_write", from));
+    expect(cte, "the CTE was not found where this guard expects it").toContain("limit 20");
+    expect(cte, "the currency is read back out of a jsonb projection that never carried one")
+      .not.toContain("'currency_code'");
+  });
+
+  it("rejects the row a null detail would have produced", () => {
+    // The consequence, pinned: this is what the browser was actually seeing.
+    expect(parsedTasks([task({ kind: "dues_outstanding", detail: null, deadline: null, hours_remaining: null })]))
+      .toBeNull();
+  });
+});
+
+describe("清單有長度上限，而上限是 parser 說了算", () => {
+  // Each branch limits how much its own kind may contribute -- five events,
+  // twenty receivables, five wishes. None of them limits the list, and the
+  // parser refuses a list longer than it agreed to carry. A member with six
+  // reminders had no home page.
+  const longestAccepted = (() => {
+    const row = () => task({ kind: "dues_outstanding", deadline: null, hours_remaining: null });
+    for (let length = 1; length <= 64; length += 1) {
+      if (parsedTasks(Array.from({ length }, row)) === null) return length - 1;
+    }
+    throw new Error("the parser accepts any length; this guard has nothing to check");
+  })();
+
+  it("refuses more rows than it agreed to carry", () => {
+    expect(longestAccepted).toBeGreaterThan(0);
+    expect(parsedTasks(Array.from(
+      { length: longestAccepted + 1 },
+      () => task({ kind: "dues_outstanding", deadline: null, hours_remaining: null }),
+    ))).toBeNull();
+  });
+
+  it("limits the aggregate to exactly that many", () => {
+    const limited = new RegExp(`order by sort_rank[^;]*?\\blimit ${longestAccepted}\\b`, "u");
+    expect(limited.test(pendingTasksBlock),
+      `the projection may emit more than ${longestAccepted} tasks, which the parser rejects outright`)
+      .toBe(true);
+  });
+});
+
+describe("生日已經過了，提醒還在，倒數不在", () => {
+  // A campaign left collecting past the birthday still owes a wish -- that is
+  // why it is still open -- but the countdown to that day is negative, and a
+  // negative countdown is rejected along with the row and the page.
+  const branch = (() => {
+    const at = pendingTasksBlock.indexOf("'kind', 'birthday_wish'");
+    return pendingTasksBlock.slice(at, pendingTasksBlock.indexOf("'count',", at));
+  })();
+
+  it("only carries the day while it is still ahead", () => {
+    expect(branch).toMatch(/'deadline',\s*case\s*\n\s*when wish\.birthday_date::timestamptz > now\(\)/u);
+  });
+
+  it("and only counts down while it is still ahead", () => {
+    expect(branch).toMatch(/'hours_remaining',\s*case\s*\n\s*when wish\.birthday_date::timestamptz > now\(\)/u);
+  });
+
+  it("still reminds after the day, with no deadline at all", () => {
+    const wishes = projection.slice(projection.indexOf("birthday_wishes_to_write as ("));
+    expect(wishes.slice(0, wishes.indexOf("), profile_gaps")),
+      "the reminder stops at the birthday; nobody is told they still owe the wish")
+      .not.toMatch(/birthday_date\s*>=?\s*(now\(\)|current_date)/u);
+  });
+});
