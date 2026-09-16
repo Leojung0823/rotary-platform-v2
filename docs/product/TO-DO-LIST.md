@@ -25,6 +25,11 @@
   沒有改登入、角色、權限、社團隔離或登入後首頁公開快取。
 - 本機完整品質／資料庫驗證與 `member-home-1440` `3 passed` 均通過。舊 Staging Release `35084851997` 的取消只影響舊 head，
   不影響這次 `36f32f8` 的 staging。
+- 2026-09-17 再用已登入 staging 測試帳號做唯讀驗收：社員模式只有社員導覽；社務管理模式顯示 8 項管理功能。
+  服務計劃在管理端仍是草稿，社員端顯示「尚未發布」；直接開啟社費管理頁回 404，與 `dues_finance_v1` 關閉相符；
+  Rich Menu 管理區也未顯示，與 `line_rich_menu_v1` 關閉相符。這補強模式邊界與草稿隔離，但不等於 E-03／E-07／E-10／E-11 已結案。
+- 本輪 Chrome DevTools MCP 的兩個頁面雖帶有社員／管理 query，實際身份都解析成平台管理員，因此沒有採用其效能數字；
+  已登入社員頁的 CUA 瀏覽器可以做畫面驗收，但無法取得 Performance API 的有效資料。E-06 的本次 runtime FCP／TTFB／LCP／INP 仍是未量測。
 - E-06 的「重複 preload」已完成程式修正與 hosted DOM 驗收；同一 runtime／快取條件下的 LCP、FCP、TTFB、INP 前後比較仍未量測，
   因此 E-06 仍維持 `[>]`。
 

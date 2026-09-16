@@ -22,6 +22,10 @@
   `git diff --check` 均通過；`member-home-1440` 為 `3 passed`。
 - 這輪只完成圖片提示的程式與 hosted DOM 修正；同一 runtime／快取條件下的 LCP、FCP、TTFB、INP 前後比較仍未量測，E-06 仍是待辦。
 - `965abc8` 只修正 E2E 測試的 session 隔離，不含產品程式或 migration；因此沒有重新部署 staging，staging 仍是 `36f32f8a44e1`。
+- 2026-09-17 唯讀驗收補充：社員模式只有社員導覽；社務管理模式有 8 項管理功能。服務計劃管理端仍是草稿，社員端顯示尚未發布；
+  社費直連回 404（`dues_finance_v1` 關閉），Rich Menu 管理區未顯示（`line_rich_menu_v1` 關閉）。這是模式／草稿隔離證據，不是完整真人驗收。
+- 本輪 DevTools MCP 頁面實際都是平台管理員身份，沒有把它們的 trace 當成社員效能數據；已登入社員 CUA 頁可做畫面驗收，
+  但無法取得有效 Performance API，E-06 本次 runtime 的 FCP／TTFB／LCP／INP 仍未量測。
 - 舊的 Staging Release `35084851997` 已取消，使用舊 head，沒有回滾也不影響這次 `36f32f8` staging。後續文件同步不需手動觸發 CI／Browser Smoke。
 - 目前仍需外部條件的待辦：E-03 follow 自動配對真人核對、E-05 額度政策、E-06 可比效能量測、E-07 實機／M1、E-08 production 決策、
   E-10 多社／角色邊界真人驗收、E-11 各社 Rich Menu／OA 外部設定；E-09 recovery email 依產品決定暫緩。

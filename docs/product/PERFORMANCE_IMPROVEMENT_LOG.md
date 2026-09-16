@@ -65,6 +65,13 @@ verification、migration guard、verification manifest、`git diff --check`；`m
 本機六個 role-shell 尺寸共 `18 passed`；自動 CI `35123956529` 與 Browser Smoke `35123956508` 均成功。
 這是測試檔修正，沒有新增 migration，因此沒有重新部署 staging；目前 staging 產品 runtime 仍是 `36f32f8a44e1`。
 
+### 2026-09-17 量測身份與工具限制補充
+
+- Chrome DevTools MCP 目前可見的兩個 staging 頁面，雖然 URL 分別帶有 `mode=member` 與 `mode=management`，
+  但頁面實際都顯示「平台管理模式」與平台管理員導覽；因此本輪不採用這兩頁的 LCP／FCP／TTFB 數字作為社員或社務管理基準。
+- 另一個已登入社員的 Chrome session 已用來確認社員／管理模式、草稿隔離與旗標關閉狀態；該瀏覽器介面無法提供有效的
+  `PerformanceNavigationTiming`／Paint 資料。故本輪沒有新增可比的登入後 CWV，E-06 仍維持「未量測／待正確 DevTools 身份」。
+
 ### 2026-09-16 已登入 staging 基線
 
 同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未設定網路限速；
