@@ -207,8 +207,14 @@ test.describe("生日祝福徵集瀏覽器回歸", () => {
       await expect(memberPage).toHaveURL(/\/dashboard(?:\?mode=member)?$/u);
       // The block kept its data and its landmark through two renames; what
       // this test is here for is the notice inside it, not the heading above.
-      await expect(memberPage.getByRole("heading", { name: "社團訊息" })).toBeVisible();
-      await expect(memberPage.getByText("有位社友的生日快到了", { exact: true })).toBeVisible();
+      const noticesCard = memberPage.locator("section").filter({
+        has: memberPage.getByRole("heading", { name: "社團訊息" }),
+      }).first();
+      await expect(noticesCard.getByRole("heading", { name: "社團訊息" })).toBeVisible();
+      // Scoped to the card: the bell popover renders the same notices, so an
+      // unscoped text match now resolves to two elements and strict mode
+      // refuses before it ever asks about visibility.
+      await expect(noticesCard.getByText("有位社友的生日快到了", { exact: true })).toBeVisible();
       await memberPage.goto(new URL(`/birthday-collection?clubId=${clubId}`, baseURL).toString());
       const content = `瀏覽器生日徵集驗收 ${Date.now()}`;
       await assignment.fill(content);
