@@ -59,9 +59,11 @@ describe("performance-first navigation boundaries", () => {
     const portal = source("src/components/member-portal/member-portal.tsx");
     const authenticatedLayout = source("src/app/(authenticated)/layout.tsx");
 
+    expect(portal).toContain('import { preload } from "react-dom";');
     expect(portal).toContain(
-      '<link rel="preload" as="image" href="/hero-mountains.webp" fetchPriority="high" />',
+      'preload("/hero-mountains.webp", { as: "image", fetchPriority: "high" });',
     );
+    expect(portal).not.toContain('<link rel="preload" as="image" href="/hero-mountains.webp"');
     expect(authenticatedLayout).not.toContain("hero-mountains.webp");
   });
 
