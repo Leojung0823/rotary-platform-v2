@@ -184,3 +184,48 @@ module.css 有一條**頂層**規則。刻意只在 media query 裡定義的，�
 **收斂時不要順手「簡化」語意。** `now() <= deadline and now() < starts_at`
 寫成 `now() < least(deadline, starts_at)` 看起來更漂亮，但會讓每一場已設截止
 的活動都提早一瞬關閉。要保留的就逐字保留，並把原因寫在旁邊。
+
+
+---
+
+## 12. PR 跟 `main` 衝突時，CI 不會跑，而且不會說
+
+`on: pull_request` 的 workflow 是跑在 GitHub 算出來的**合併 commit** 上。算不出來（也就是 PR 有衝突）時，GitHub **不建立任何 run**——沒有紅字、沒有「skipped」，就是空的。
+
+曾經因此以為 CI 壞了：推了新 commit、關掉再打開 PR、推空 commit，三種都沒有觸發，而同一時間別的分支跑得好好的。
+
+**怎麼做**：看到「推了卻沒有 run」，第一件事是問有沒有衝突。
+
+```bash
+gh pr view <n> --json mergeable,mergeStateStatus
+```
+
+`CONFLICTING` / `DIRTY` 就是它。合併 `main` 進分支、解掉，run 自己會出現。
+
+同時開多個 PR 時這會反覆發生，而且**每合併一個就可能讓其他幾個變成衝突**。常見的兩個來源：`scripts/database-verification-files.txt`（兩邊各加一行）與 `src/app/globals.css`（兩邊在同一個位置各加規則）——兩者的解法都是**兩邊都留**。
+
+---
+
+## 13. 改一個 UI 字串，要看它有沒有被 e2e 當成選擇器
+
+把「報名截止（台北）」改成「報名截止（台北，選填）」，三處 `getByLabel()` 一起失效。其中一處在 `staging-management-acceptance.e2e.mjs`——**那支是 Go-Live 時跑的，沒改會擋下部署本身**，而不只是 PR 的 CI。
+
+同一類的還有：改標題文字（「社團公告」→「社團訊息」）讓別的檔案的 `getByRole("heading")` 失效；把內容折疊起來讓 `toBeVisible()` 失效；讓同一份資料在頁面上出現兩次（卡片＋泡泡）讓沒有範圍的 `getByText()` 撞上 strict mode。
+
+**怎麼做**：改任何可見字串或可見性之前，先搜一次。
+
+```bash
+grep -rn "那段文字" e2e/ src/ | grep -v node_modules
+```
+
+e2e 斷言要儘量**收斂範圍**（`card.getByText(...)` 而不是 `page.getByText(...)`），不然頁面上多一份相同的資料就會撞。
+
+---
+
+## 14. 測試不要比 fixture 能提供的更強
+
+替「社員看得到封面」加斷言時，我寫成「一定找得到 `img.event-cover`」——但那個社的 fixture 活動根本沒有封面，於是紅的是測試不是程式。
+
+另一版挑「管理頁第一張卡」再去社員頁找同一個標題，而第一張剛好是**分眾活動**，社員從來沒被指定到。
+
+**怎麼做**：斷言那個改動真正主張的事。封面那件的主張是「封面在折疊之外」，不是「有封面」——所以測的是「折疊區內不得有任何封面」。需要特定資料時，**從看得到它的那一端開始挑**（先在社員頁挑一個活動，再回管理頁對那一場操作），不要假設排序。
