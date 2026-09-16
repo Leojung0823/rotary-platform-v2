@@ -16,6 +16,9 @@ const successMessages: Record<string, string> = {
   generation_failed: "題庫不足，本次沒有部分派發；請先補充可用題目。",
   published: "生日祝福已發布。",
   hidden: "這則祝福已隱藏；原作者可以重新送出新的內容。",
+  campaign_closed: "徵集已結束，指派給社員的待辦也一併消失。",
+  campaign_hidden: "徵集已隱藏，壽星不會再看到這批祝福。",
+  campaign_date_updated: "生日日期已更新。",
 };
 
 const errorMessages: Record<string, string> = {
@@ -30,6 +33,8 @@ const errorMessages: Record<string, string> = {
   forbidden: "您目前沒有執行這項操作的權限。",
   feature_disabled: "生日祝福徵集目前尚未開放。",
   notification_failed: "任務已建立，但通知沒有完成；請稍後重試通知。",
+  reason_required: "結束這個徵集時必須寫下原因，最多 200 字。",
+  already_ended: "這個徵集已經結束或隱藏，不需要再處理一次。",
   unexpected: "操作沒有完成，請稍後再試。",
 };
 

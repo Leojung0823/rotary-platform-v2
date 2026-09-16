@@ -321,3 +321,67 @@ export async function runBirthdayCollectionMonthAction(formData: FormData) {
 
   redirectCollectionResult(clubId, "success", "generation_failed", true);
 }
+
+/**
+ * End a campaign that should not have been created, or that is no longer
+ * wanted.
+ *
+ * Nothing could undo create_birthday_wish_campaign since the module shipped:
+ * an officer who ran the month with the wrong date, or for someone who has
+ * since left, had the task on the page for good -- and the members assigned to
+ * it kept being reminded about it.
+ */
+export async function closeBirthdayCampaignAction(formData: FormData) {
+  let clubId: string;
+  let campaignId: string;
+  try {
+    clubId = uuid(formData, "clubId");
+    campaignId = uuid(formData, "campaignId");
+  } catch {
+    redirect(managementInvalidInputPath(formData));
+  }
+  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled", true));
+
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (reason.length === 0 || reason.length > 200) {
+    redirectCollectionResult(clubId, "error", "reason_required", true);
+  }
+
+  const { data, error } = await (await createClient()).rpc("close_birthday_wish_campaign", {
+    p_club_id: clubId,
+    p_campaign_id: campaignId,
+    p_reason: reason,
+  });
+  if (error) redirectCollectionResult(clubId, "error", birthdayCollectionRpcErrorCode(error.message), true);
+
+  // The two endings undo different things and the officer should be told which
+  // one happened: a draft simply stops, a published one is taken back.
+  const status = (data as { campaign_status?: unknown } | null)?.campaign_status;
+  redirectCollectionResult(clubId, "success", status === "hidden" ? "campaign_hidden" : "campaign_closed", true);
+}
+
+/** Correct the date a campaign is collecting for, while it is still open. */
+export async function updateBirthdayCampaignDateAction(formData: FormData) {
+  let clubId: string;
+  let campaignId: string;
+  try {
+    clubId = uuid(formData, "clubId");
+    campaignId = uuid(formData, "campaignId");
+  } catch {
+    redirect(managementInvalidInputPath(formData));
+  }
+  if (!await requireCollectionFlag()) redirect(collectionPath(clubId, "error", "feature_disabled", true));
+
+  const birthdayDate = String(formData.get("birthdayDate") ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(birthdayDate)) {
+    redirectCollectionResult(clubId, "error", "invalid_input", true);
+  }
+
+  const { error } = await (await createClient()).rpc("update_birthday_wish_campaign_date", {
+    p_club_id: clubId,
+    p_campaign_id: campaignId,
+    p_birthday_date: birthdayDate,
+  });
+  if (error) redirectCollectionResult(clubId, "error", birthdayCollectionRpcErrorCode(error.message), true);
+  redirectCollectionResult(clubId, "success", "campaign_date_updated", true);
+}
