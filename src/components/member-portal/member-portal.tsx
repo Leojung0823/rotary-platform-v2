@@ -34,10 +34,19 @@ function Header({
 
     <div className={styles.headerSide}>
       <div className={styles.headerTools}>
-        <div className={styles.search}>
+        {/* A real form, submitting with GET. The box did nothing before -- it
+            looked like a search and answered nothing, which is worse than no
+            box. A plain form also means it works with scripting off. */}
+        <form action="/search" className={styles.search} method="get" role="search">
           <PortalIcon name="search" size={19} />
-          <input type="search" placeholder="搜尋活動、社員或公告..." aria-label="搜尋活動、社員或公告" />
-        </div>
+          <input
+            aria-label="搜尋活動、社員或訊息"
+            name="q"
+            placeholder="搜尋活動、社員或訊息..."
+            type="search"
+          />
+          <button className="sr-only" type="submit">搜尋</button>
+        </form>
         {/* A popover, not a link: the bell is about a handful of lines, and
             leaving the page to read them means coming back when there was
             nothing. No dot is painted -- it used to be painted always, which
