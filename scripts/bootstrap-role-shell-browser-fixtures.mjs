@@ -658,6 +658,7 @@ const fixtures = Object.fromEntries(await Promise.all([
   ["platform", "e2e-shell-platform@example.test", "純平台管理者"],
   ["platformMember", "e2e-shell-platform-member@example.test", "平台社員"],
   ["allModes", "e2e-shell-all-modes@example.test", "三模式使用者"],
+  ["crossClubSecretary", "e2e-shell-cross-club-secretary@example.test", "跨社執行秘書"],
   ["revoked", "e2e-shell-revoked@example.test", "已撤銷管理者"],
   ["suspended", "e2e-shell-suspended@example.test", "停權社員"],
   ["ended", "e2e-shell-ended@example.test", "退社社員"],
@@ -686,6 +687,8 @@ await addPlatformRole({ account: fixtures.platformMember, createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.allModes, createdBy });
 await addClubManagementRole({ clubId: memberClub.id, account: fixtures.allModes, createdBy });
 await addPlatformRole({ account: fixtures.allModes, createdBy });
+await addMembership({ clubId: memberClub.id, account: fixtures.crossClubSecretary, createdBy });
+await addOperator({ clubId: managedClub.id, account: fixtures.crossClubSecretary, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.revoked, status: "revoked", createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.suspended, status: "suspended", createdBy });
 await addEndedMembership({ clubId: memberClub.id, account: fixtures.ended, createdBy });

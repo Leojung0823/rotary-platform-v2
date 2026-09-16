@@ -13,6 +13,7 @@ const accounts = {
   platform: { email: "e2e-shell-platform@example.test", mode: "平台管理模式" },
   platformMember: { email: "e2e-shell-platform-member@example.test", mode: "社員模式" },
   allModes: { email: "e2e-shell-all-modes@example.test", mode: "社員模式" },
+  crossClubSecretary: { email: "e2e-shell-cross-club-secretary@example.test", mode: "社員模式" },
 };
 
 function requireCredentials() {
@@ -139,6 +140,19 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     await expect(modeNavigation.getByRole("link", { name: "社務管理模式" })).toBeVisible();
     await expect(modeNavigation.getByRole("link", { name: "平台管理模式" })).toBeVisible();
     await allModesContext.close();
+
+    const crossClubSecretaryContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const crossClubSecretaryPage = await crossClubSecretaryContext.newPage();
+    await login(crossClubSecretaryPage, accounts.crossClubSecretary.email);
+    await expectShell(crossClubSecretaryPage, "社員模式");
+    await expect(crossClubSecretaryPage.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "社團管理" })).toHaveCount(0);
+    await crossClubSecretaryPage.getByLabel("帳號選單").click();
+    await crossClubSecretaryPage.getByRole("link", { name: "進入社務管理" }).click();
+    await expect(crossClubSecretaryPage).toHaveURL(new RegExp(`/clubs/${managedClubId}/members\\?mode=management$`, "u"));
+    await expectShell(crossClubSecretaryPage, "社務管理模式");
+    await crossClubSecretaryPage.goto(new URL(`/clubs/${secondMemberClubId}/events?mode=management`, baseURL).toString());
+    await expect(crossClubSecretaryPage).toHaveURL(/\/access-denied(?:\?|$)/u);
+    await crossClubSecretaryContext.close();
     return;
   }
 
