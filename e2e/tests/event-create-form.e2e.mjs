@@ -69,3 +69,40 @@ test("recoverable event-create failure retains the form and exposes an accessibl
     await expectNoHorizontalOverflow(page);
   }
 });
+
+test("報名截止留空，真的存得進去", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "event-create-1440", "One creation per run is enough.");
+  // The field has said 「選填」 since #172 and the column has been nullable
+  // since #172, but both writers still carried `or p_registration_deadline is
+  // null` in their reject lists -- so leaving it blank, exactly as the label
+  // invites, answered 「輸入資料不正確」.
+  //
+  // Nothing caught it because every test that touches this field fills it in.
+  // This one does not.
+  await login(page);
+  const title = `本機留空截止活動 ${Date.now()}`;
+  const future = new Date(Date.now() + 40 * 24 * 60 * 60_000);
+  const at = (hour) => `${future.toISOString().slice(0, 10)}T${String(hour).padStart(2, "0")}:00`;
+
+  await page.getByLabel("活動類型").selectOption("regular_meeting");
+  await page.getByLabel("活動名稱").fill(title);
+  await page.getByLabel("開始時間（台北）").fill(at(18));
+  await page.getByLabel("結束時間（台北）").fill(at(20));
+  await page.getByLabel("地點").fill("本機留空截止會館");
+  // 報名截止 is deliberately left untouched.
+  await expect(page.getByLabel("報名截止（台北，選填）")).toHaveValue("");
+  await page.getByRole("button", { name: "建立草稿" }).click();
+
+  await expect(page).toHaveURL(/success=event_created/u, { timeout: 30_000 });
+  const card = page.locator("article.card").filter({ hasText: title }).first();
+  await expect(card).toBeVisible();
+  // And the card says what a blank means rather than showing an empty field.
+  await expect(card).toContainText("不設截止，活動結束前都可報名");
+
+  // Publishing is the other writer that used to compare the deadline itself.
+  await card.getByRole("button", { name: "發布活動" }).click();
+  await expect(page).toHaveURL(/success=event_published/u, { timeout: 30_000 });
+  await expect(
+    page.locator("article.card").filter({ hasText: title }).first().getByText("已發布", { exact: true }),
+  ).toBeVisible();
+});
