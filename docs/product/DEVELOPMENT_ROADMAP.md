@@ -1,19 +1,19 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-16（Asia/Taipei；以 GitHub `main=857b9dc` 核對）
+更新日期：2026-09-16（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
 ## 2026-09-16 最新基線（覆蓋下面的 2026-09-15 快照）
 
-- GitHub `origin/main` exact SHA：`857b9dc54a4cc98e67f86b264d2014c91b4f38c1`。
+- GitHub `origin/main` 的最新 SHA 請以 `git rev-parse origin/main` 現場核對；本節固定記錄產品與 staging 版本，避免文件提交後自我過期。
 - staging 產品程式目前為已部署版本 `1ef38bb50407`；`/api/health` 為 `status=ok`、
   `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
 - 主線已包含 9/16 的首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、
   生日徵集日期／關閉、follower 批次配對、手機表格卡片寬度修正與測試 fixture race 修正。
   另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已由 Staging Go-Live `35083792540` 套用。
 - PR #188、#189、#190 都已正常合併；`main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，並已由 Staging Release `35083682035`／Go-Live `35083792540` 發布產品程式。
-- 最新 `main=857b9dc` 只有文件同步，尚未重新部署；下一個開發順序是處理 E-03、E-10、E-06、E-07、E-05、E-11；
+- 最新主線只有文件同步，尚未重新部署；下一個開發順序是處理 E-03、E-10、E-06、E-07、E-05、E-11；
   E-08 production 與 E-09 recovery email 仍是另行決策，不混入一般 staging 開發。
 
 ## 目前基線
@@ -87,7 +87,7 @@
 - PR #141：已合併，merge `feebd590`；純文件同步，記錄 E-04 的 PANCHIAO-ELITE rollout 決策，完整 database／member-browser jobs 依變更範圍規則跳過。
 
 目前沒有尚未合併的 PR；#188、#189、#190 已進入 `main`。合併後 CI 與 Browser Smoke 均已成功，
-Staging Go-Live `35083792540` 已發布產品程式 `1ef38bb`。最新 `main=857b9dc` 只有文件同步，尚未重新部署。
+Staging Go-Live `35083792540` 已發布產品程式 `1ef38bb`。後續主線只有文件同步，尚未重新部署。
 社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
 
 ## 目前已部署 staging 基準（2026-09-16；產品程式）

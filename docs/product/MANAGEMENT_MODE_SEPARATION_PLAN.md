@@ -4,7 +4,7 @@
 修訂：v2.1.7，2026-09-16（同步目前 main／staging 狀態）
 狀態：`[>]` 程式搬遷、本機資料庫驗證、GitHub CI／Browser Smoke、一般 staging Go-Live，以及執行秘書的生日／文件／活動／活動封面成功流程 hosted acceptance 已完成；不可逆交接確認與上傳失敗清理仍未在 staging 執行
 程式權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`
-本次產品狀態核對基準：`main@857b9dc54a4cc98e67f86b264d2014c91b4f38c1`；產品程式 staging runtime `1ef38bb50407`。主線與 staging 的管理模式產品程式與 migration 已同步；目前差異是 9/16 文件同步 commit 尚未重新部署。
+本次產品狀態核對基準：主線最新 SHA 請以 `git rev-parse origin/main` 現場核對；產品程式 staging runtime `1ef38bb50407`。主線與 staging 的管理模式產品程式與 migration 已同步；目前差異是後續文件同步尚未重新部署。
 
 截至 2026-09-16，staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。Staging Go-Live `35083792540` 已以 `1ef38bb504075d7a197e99c2364db8b087cea22e` 完成 migration／部署／HTTPS smoke／hosted member acceptance；管理驗收 run `34577046356` 已涵蓋活動建立／發布／取消與活動封面上傳成功流程；不可逆交接與上傳失敗清理仍不能因 runtime 健康而標成已完成。
 
@@ -213,7 +213,7 @@ staging 已驗收建立／編輯／上傳成功流程；失敗清理與不可逆
 - `[x]` staging health：`status=ok`、`environment=staging`、revision `1ef38bb50407`、`issues=[]`、`warnings=[]`。這只代表服務健康；活動／活動封面成功流程另由 `34577046356` 驗收。
 - `[x]` 執行秘書專項 hosted acceptance：workflow `34577046356` 以當時的 exact SHA `a8c1e55e7f88262c629ebd232a54b4cfd0dcbde7` 通過。無社籍、非平台管理員的 staging operator 已完成生日重跑、文件建立／上傳／編輯，以及活動建立／發布／取消與活動封面上傳；沒有執行不可逆交接確認，亦未把上傳失敗清理當成 hosted 通過。
 
-`main` 目前已前進到文件同步 commit `857b9dc54a4cc98e67f86b264d2014c91b4f38c1`；產品程式已發布至 staging 的 `1ef38bb`，文件同步 commit 尚未重新部署，不影響產品程式版本。
+`main` 目前包含後續文件同步；產品程式已發布至 staging 的 `1ef38bb`，文件同步尚未重新部署，不影響產品程式版本。
 
 本項的安全驗收流程已寫入 [`STAGING_MANAGEMENT_ACCEPTANCE.md`](../deployment/STAGING_MANAGEMENT_ACCEPTANCE.md) 與
 `.github/workflows/staging-management-acceptance.yml`。它只拿 staging operator 登入帳密，不拿 Supabase access token、資料庫密碼或 service-role；建立的年度、文件與版本是可回收測試資料，不會執行不可逆交接確認。

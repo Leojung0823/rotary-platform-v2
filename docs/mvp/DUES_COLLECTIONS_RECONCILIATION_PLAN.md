@@ -4,7 +4,7 @@
 
 ## 2026-09-16 最新狀態（優先於下方歷史實作紀錄）
 
-- GitHub `main` exact SHA：`857b9dc54a4cc98e67f86b264d2014c91b4f38c1`；產品程式 staging runtime：`1ef38bb50407`（目前 `main` 的文件同步 commit 尚未重新部署）。
+- GitHub `main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；產品程式 staging runtime：`1ef38bb50407`（目前主線的文件同步尚未重新部署）。
 - `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`；production 沒有修改。
 - 社費／收款／核銷的程式、報表 RPC、匯出 Route 與 migration `20260914000400`–`20260914000900` 已包含在目前 staging runtime。
 - `dues_finance_v1` 仍須以受保護方式確認旗標狀態；在旗標與 hosted 驗收完成前，不把管理財務頁公開給社員。
