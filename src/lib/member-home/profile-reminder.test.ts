@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { latestDefinition } from "@/lib/attendance/latest-definition";
 
 const projection = latestDefinition("get_my_member_home_projection");
+/**
+ * The same definition with its `--` comments removed.
+ *
+ * 「this projection never emits X」 is a claim about what it emits. Asserted
+ * against the raw text, a comment explaining why X was removed is enough to
+ * fail it -- which teaches the next person to stop writing the comment rather
+ * than to keep the behaviour. (member-event-page.test.ts draws the same line.)
+ */
+const emitted = projection.replace(/--[^\n]*/gu, "");
 const profileGaps = (() => {
   const from = projection.indexOf("profile_gaps as (");
   expect(from, "profile_gaps is gone from the projection").toBeGreaterThan(-1);
@@ -49,8 +58,9 @@ describe("一個清不掉的提醒比沒有提醒更糟", () => {
   it("says 聯絡方式 rather than 聯絡電話", () => {
     // The wording has to follow the rule, or the reminder names something the
     // member is not actually required to provide.
-    expect(projection).toContain("缺聯絡方式");
-    expect(projection).not.toContain("缺聯絡電話");
+    expect(emitted).toContain("缺聯絡方式");
+    expect(emitted, "the reminder still names something /me does not require")
+      .not.toContain("缺聯絡電話");
   });
 
   it("still reminds someone the club genuinely cannot reach", () => {
