@@ -15,8 +15,11 @@
 - PR #188、#189、#190 都已正常合併；`main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，並已由 Staging Release `35083682035`／Go-Live `35083792540` 發布產品程式。
 - 最新主線只有文件同步，尚未重新部署；下一個開發順序是處理 E-03、E-10、E-06、E-07、E-05、E-11；
   E-08 production 與 E-09 recovery email 仍是另行決策，不混入一般 staging 開發。
+- 9/16 後續只做了進度／效能／Rich Menu 素材文件同步；登入頁最新 trace 為 LCP `167 ms`、FCP `168 ms`、
+  TTFB `104 ms`，已登入管理頁仍未量測。Rich Menu 圖片已在本機準備成 `2500×1686`、小於 1 MB 的 JPEG，
+  但尚未開旗標、上傳或發布。
 
-## 目前基線
+## 歷史產品基線（2026-09-15；非目前 `main`）
 
 本次 staging release 所依據的 `main` exact SHA 是 `93d341c3fd7818783bd6779b1466162baf86548b`；當時沒有 open PR。
 此 SHA 已包含：
