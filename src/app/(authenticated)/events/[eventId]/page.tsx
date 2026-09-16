@@ -5,7 +5,9 @@ import { registerEventAction } from "@/app/event-actions";
 import { ShellIcon } from "@/components/shell-icons";
 import { Badge, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
+import { EventDescription } from "@/components/events/event-description";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
+import { formatEventClockRange } from "@/lib/events/event-time";
 import { currentExperienceMode } from "@/lib/experience-mode.server";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./event-detail.module.css";
@@ -59,15 +61,7 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function formatTimeRange(startsAt: string, endsAt: string) {
-  const time = new Intl.DateTimeFormat("zh-TW", {
-    timeZone: "Asia/Taipei",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  return `${time.format(new Date(startsAt))} – ${time.format(new Date(endsAt))}`;
-}
+
 
 export default async function EventDetailPage({
   params,
@@ -123,7 +117,7 @@ export default async function EventDetailPage({
           {isPast && <Badge tone="neutral">已過去</Badge>}
         </div>
         <h1>{event.title}</h1>
-        {event.description && <p className={styles.description}>{event.description}</p>}
+        {event.description && <EventDescription className={styles.description} text={event.description} />}
       </header>
 
       <div className={styles.facts}>
@@ -133,7 +127,7 @@ export default async function EventDetailPage({
         </div>
         <div className={styles.fact}>
           <span className={styles.factIcon}><ShellIcon name="chart" /></span>
-          <div><strong>時間</strong><span>{formatTimeRange(event.starts_at, event.ends_at)}</span></div>
+          <div><strong>時間</strong><span>{formatEventClockRange(event.starts_at, event.ends_at)}</span></div>
         </div>
         <div className={`${styles.fact} ${styles.factWide}`}>
           <span className={styles.factIcon}><ShellIcon name="home" /></span>
@@ -161,7 +155,7 @@ export default async function EventDetailPage({
       {event.status === "published" && event.registration_open && <form action={registerEventAction} className="form-stack">
         <input type="hidden" name="clubId" value={payload.club_id} />
         <input type="hidden" name="eventId" value={event.id} />
-        <div className="form-grid">
+        <div className="response-grid">
           <label className="field"><span className="label">我的回覆</span>
             <select className="input" name="response" defaultValue={event.my_response ?? "pending"}>
               <option value="pending">待確認</option>
@@ -183,7 +177,10 @@ export default async function EventDetailPage({
         報名已截止，或活動已經開始。
       </Notice>}
 
-      {event.can_manage && <p className="hint">
+      {/* Only in management mode. An officer reading this page as a member is
+          reading it as a member; the way into management is the shell's mode
+          switch, not a link buried under the registration form. */}
+      {managementView && event.can_manage && <p className="hint">
         管理這場活動請回到<a href={`/clubs/${encodeURIComponent(payload.club_id)}/events?mode=management`}>活動管理</a>。
       </p>}
     </article>
