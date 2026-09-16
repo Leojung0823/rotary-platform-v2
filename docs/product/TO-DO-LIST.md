@@ -1,12 +1,29 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-16（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-17（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
 的舊掃描結果；那份檔案屬於獨立 worktree，不是權威 repo 的版本。
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
+
+## 2026-09-17 最新掃描（本節覆蓋下面的歷史快照）
+
+本次以 GitHub `main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 交叉核對：
+
+- `main` 與 `origin/main` 目前為 `36f32f8a44e121689d7a01836d75dcbd99e4a5ee`；staging 目前 revision 為
+  `36f32f8a44e1`。`/api/health` 回報 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、
+  `warnings=[]`；production 沒有修改。
+- Staging Release `35121647301` 與 Go-Live `35121777337` 使用同一個 exact SHA 並成功；本次沒有新增 migration。
+  自動 CI `35121629076` 已成功；Browser Smoke `35121629061` 在本次文件更新時仍為 `in_progress`，沒有手動重跑。
+- 真實登入 LEO 社員頁 `/dashboard?mode=member` 重新載入後，`/hero-mountains.webp` 圖片 DOM 為 `1` 張、preload 為
+  `1` 個（body 1、head 0）。`36f32f8` 使用 `next/image` 單一元件管理 preload，並以 `unoptimized` 直接載入小型靜態檔；
+  沒有改登入、角色、權限、社團隔離或登入後首頁公開快取。
+- 本機完整品質／資料庫驗證與 `member-home-1440` `3 passed` 均通過。舊 Staging Release `35084851997` 的取消只影響舊 head，
+  不影響這次 `36f32f8` 的 staging。
+- E-06 的「重複 preload」已完成程式修正與 hosted DOM 驗收；同一 runtime／快取條件下的 LCP、FCP、TTFB、INP 前後比較仍未量測，
+  因此 E-06 仍維持 `[>]`。
 
 ### 2026-09-16 本機角色回歸補充
 
@@ -375,21 +392,20 @@ production 沒有修改。
 
 ### E-06 登入後管理頁效能量測 `[>]`
 
-- **2026-09-16 已建立登入後基線**：同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未限速；量測當時 staging runtime `1ef38bb50407`，目前已部署 runtime 為 `bd8a8e9d0205`。
+- **2026-09-16 已建立登入後基線**：同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未限速；量測當時 staging runtime `1ef38bb50407`，目前已部署 runtime 為 `36f32f8a44e1`。
   管理頁 LCP `1,777 ms`、FCP `760 ms`、LCP TTFB `637 ms`、CLS `0.00`；社員首頁 LCP `1,929 ms`、FCP `562 ms`、
   LCP TTFB `452 ms`、CLS `0.01`。兩頁 INP 均為「未量測」。
 - **目前真正找到的改善方向**：社員首頁的 LCP 圖片 `/hero-mountains.webp` 藏在 CSS background，資源發現延遲
-  `1,319 ms`；管理頁另有文件請求延遲洞察估算 `532 ms`。上一個 staging runtime `bd8a8e9d0205` 已把社員首頁限定的
-  hero 改成 `<img>`，但 hosted DOM 仍有兩個相同 preload；目前工作樹已改用 React `preload()` API 並在本機確認為單一提示，
-  待部署後重測 staging。管理頁後續仍要拆出文件等待與 render pipeline。
-- **staging 實際 DOM 驗收**：社員頁圖片 DOM 為 `1` 張，但 hosted React／Next 仍產生 `2` 個相同的普通 preload 提示（head／body）。
-  本機目前工作樹社員首頁 E2E 六種尺寸為 `8 passed`、`10 skipped`，桌面確認圖片 `1` 張／preload `1` 個與管理模式不載入圖片；
-  修正尚未部署，不能把本機結果當成 hosted 完成證據。
+  `1,319 ms`；管理頁另有文件請求延遲洞察估算 `532 ms`。`bd8a8e9` 先把 hero 改成社員首頁限定的 `<img>`，但 hosted
+  DOM 曾有兩個相同 preload；`36f32f8` 改用 `next/image` 單一元件管理 preload，最新 staging 已核對為單一提示。管理頁後續仍要拆出
+  文件等待與 render pipeline。
+- **staging 最新 DOM 驗收**：社員頁圖片 DOM `1` 張、preload `1` 個（body 1、head 0）。本機完整檢查與 `member-home-1440` `3 passed`；
+  這只證明圖片提示修正已部署，不代表整體 CWV 前後比較完成。
 - **2026-09-16 修改後補測**：真實 LEO 社員頁在同一個 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、
   未限速下，DevTools 顯示 LCP `1.30 s`、CLS `0.01`，LCP 元素為 `img.member-portal-module__wpzd3a__backdropImage`；FCP、TTFB、INP 未量測。
   DevTools「停用網路快取」未勾選，且測量 runtime `bd8a8e9d0205` 不同於修改前基線 `1ef38bb50407`，所以不能宣稱因果改善。
-- **尚未結案原因**：目前工作樹的單一 preload 修正尚未部署；還缺同一 runtime／快取條件下的 FCP、TTFB，並需再測管理頁；
-  也不能宣稱 staging 已消除所有 preload。
+- **尚未結案原因**：單一 preload 修正已部署且 hosted DOM 已驗證；還缺同一 runtime／快取條件下的 FCP、TTFB、LCP 前後比較，並需再測管理頁，
+  所以不能把 DOM 修正直接當成整體效能完成。
 - **完成證據**：同一帳號、同一社、同一網路條件，取得修改前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。完整條件與限制見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
 
 ### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
@@ -847,8 +863,8 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 2. **E-02：生日邀請 LINE 實際送達** `[x]`：2026-09-12 完成。`PANCHIAO-ELITE` 的邀請實際送達 `Michael` 的 LINE，重跑 `jobCount=0` 不重送；負向情境（取消追蹤、關閉通知）未另做對照測試。
 3. **E-03：follow 自動配對真人驗收** `[>]`：2026-09-14 暫緩解除——公開加入連結帶來真實流量，audit log 已有 `line_oa.auto_paired`。仍缺的是「配對到的是正確的人」這一半，需要人核對姓名；負向情境（多社／外社／停權）也未驗。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
-5. **E-06：登入後管理頁效能量測** `[>]`：社員首頁圖片發現修正已部署至 `bd8a8e9`；目前工作樹再改用 React `preload()` API，
-   本機已確認 preload 單一但尚未部署。先發布後補同條件前後量測，再拆管理頁文件等待與 render pipeline。
+5. **E-06：登入後管理頁效能量測** `[>]`：社員首頁 `36f32f8` 已用 `next/image` 修正 hosted 重複 preload，staging DOM 已確認圖片 1 張／preload 1 個；
+   仍要在相同 runtime／快取條件下補齊社員首頁與管理頁的 LCP、FCP、TTFB、INP，再拆管理頁文件等待與 render pipeline。
 6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
 7. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次只啟用 PANCHIAO-ELITE，已結案。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。

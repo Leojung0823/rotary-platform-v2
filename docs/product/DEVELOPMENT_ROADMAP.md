@@ -1,30 +1,31 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-16（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-17（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
-## 2026-09-16 最新基線（覆蓋下面的 2026-09-15 快照）
+## 2026-09-17 最新基線（覆蓋下面的 2026-09-16／2026-09-15 快照）
 
 - GitHub `origin/main` 的最新 SHA 請以 `git rev-parse origin/main` 現場核對；本節固定記錄產品與 staging 版本，避免文件提交後自我過期。
-- staging 產品程式目前為已部署版本 `bd8a8e9d0205`；`/api/health` 為 `status=ok`、
+- staging 產品程式目前為已部署版本 `36f32f8a44e1`；`/api/health` 為 `status=ok`、
   `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
 - 主線已包含 9/16 的首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、
   生日徵集日期／關閉、follower 批次配對、手機表格卡片寬度修正與測試 fixture race 修正。
   另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已在前一個 Staging Go-Live `35083792540` 套用，
-  目前 staging 仍包含它；本輪 `bd8a8e9` 沒有新增 migration。
-- `origin/main` 在產品程式提交 `bd8a8e9` 之後只有進度文件同步；最新主線 SHA 必須以現場的
-  `git rev-parse origin/main` 核對，不在這裡寫死，避免下一次文件同步後再次過期。
+  目前 staging 仍包含它；本輪 `36f32f8` 沒有新增 migration，只修正社員首頁圖片 preload。
+- `origin/main` 最新產品程式提交為 `36f32f8a44e121689d7a01836d75dcbd99e4a5ee`；下一次文件同步仍應以現場的
+  `git rev-parse origin/main` 核對，避免文件提交後再次過期。
   舊的 Staging Release `35084851997` 已取消，但它使用的是舊 head，沒有回滾或改變目前 staging runtime。
-- PR #188、#189、#190 都已正常合併；本輪效能修正 `bd8a8e9` 的自動 CI `35100760020` 與 Browser Smoke `35100760034` 均成功，
-  並已由 Staging Release `35102157586`／Go-Live `35102495571` 發布產品程式。
-- 最新主線只有文件同步，尚未重新部署；下一個開發順序是處理 E-03、E-10、E-06、E-07、E-05、E-11；
+- PR #188、#189、#190 都已正常合併；`36f32f8` 的自動 CI `35121629076` 已成功，Staging Release
+  `35121647301`／Go-Live `35121777337` 使用同一個 exact SHA 並成功發布產品程式。自動 Browser Smoke `35121629061`
+  在本次更新時仍執行中，沒有手動重跑。
+- 最新主線已包含 Next Image preload 修正；下一個開發順序仍是處理 E-03、E-10、E-06、E-07、E-05、E-11；
   E-08 production 與 E-09 recovery email 仍是另行決策，不混入一般 staging 開發。
 - 9/16 已完成登入後頁面效能基線：同一個已登入 Chrome session 下，管理頁 LCP `1,777 ms`／FCP `760 ms`／
   LCP TTFB `637 ms`／CLS `0.00`；社員首頁 LCP `1,929 ms`／FCP `562 ms`／LCP TTFB `452 ms`／CLS `0.01`。
-  本輪 `bd8a8e9` 已把社員首頁 LCP 圖片改成首頁限定的 eager `<img>` 並部署；實際社員頁確認圖片 `1` 張，但 hosted
-  React／Next 仍有 `2` 個普通 preload 提示。後續用真實 LEO 社員頁重新載入取得 LCP `1.30 s`／CLS `0.01`，但 FCP／TTFB／INP 未量測；
-  runtime 不同且快取未停用，不能宣稱因果改善。未登入 `/login` 的 trace
+  先前 `bd8a8e9` 已把社員首頁 LCP 圖片改成首頁限定的 eager `<img>`，但 hosted React／Next 曾有 `2` 個普通 preload 提示；
+  `36f32f8` 改用 `next/image` 單一元件管理 preload，真實 LEO 社員頁重新載入後確認圖片 `1` 張、preload `1` 個（body 1、head 0）。
+  本輪沒有取得可比條件的新的 LCP／FCP／TTFB／INP，不能宣稱整體因果改善；未登入 `/login` 的 trace
   仍為 LCP `167 ms`、FCP `168 ms`、TTFB `104 ms`。完整條件見
   [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。Rich Menu 圖片已在本機準備成
   `2500×1686`、小於 1 MB 的 JPEG，但尚未開旗標、上傳或發布。
@@ -105,7 +106,20 @@
 Staging Go-Live `35083792540` 已發布產品程式 `1ef38bb`。後續主線只有文件同步，尚未重新部署。
 社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
 
-## 目前已部署 staging 基準（2026-09-16；產品程式）
+## 2026-09-17 已部署 staging 基準（產品程式）
+
+- Staging Release plan `35121647301` 與 Go-Live `35121777337` 使用同一個 `main` exact SHA
+  `36f32f8a44e121689d7a01836d75dcbd99e4a5ee`，均通過 staging environment 人工核准並成功完成。
+- 本次沒有新增 migration；Go-Live 已確認 migration apply、部署、health 與 HTTPS smoke 成功，production 沒有修改。
+- staging `/api/health` 回報 `status=ok`、`revision=36f32f8a44e1`、`configuration=true`、`database=true`、
+  `issues=[]`、`warnings=[]`。
+- 真實登入 LEO 社員頁 `/dashboard?mode=member` 的 DOM 驗收確認 `/hero-mountains.webp` 圖片 1 張、preload 1 個；
+  這次只改載入提示與靜態圖片元件，沒有改登入、權限、社團隔離或公開快取。
+- 本機完整 typecheck、lint、Vitest `181` 檔／`1346` 測試、build、verify:db、verification、migration guard、manifest、
+  `git diff --check` 均通過；`member-home-1440` 為 `3 passed`。自動 CI `35121629076` 成功；Browser Smoke
+  `35121629061` 的結果以 GitHub 現場狀態為準，本次更新時尚未完成。
+
+## 歷史：目前已部署 staging 基準（2026-09-16；已被 9/17 取代）
 
 - Staging Release plan `35083682035` 與 Go-Live `35083792540` 使用同一個 `main` exact SHA
   `1ef38bb504075d7a197e99c2364db8b087cea22e`，均通過 staging environment 人工核准並成功完成。

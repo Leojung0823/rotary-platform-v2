@@ -1,6 +1,6 @@
 # Rotary Platform V2 效能改善紀錄
 
-更新日期：2026-09-16（Asia/Taipei）
+更新日期：2026-09-17（Asia/Taipei）
 
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
@@ -10,7 +10,7 @@
 | 項目 | 結果 |
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
-| 目前 staging runtime | `bd8a8e9d0205` |
+| 目前 staging runtime | `36f32f8a44e1` |
 | 本次 `/login` 量測時 runtime | `1ef38bb50407`（由相鄰時間的 `/api/health` 核對；trace 本身未暴露 revision） |
 | 量測頁面 | `/login`（未登入） |
 | 工具 | Chrome DevTools Performance trace + `PerformanceNavigationTiming` |
@@ -30,6 +30,32 @@
 這組數字只代表未登入 `/login`，不能拿來代替登入後頁面。2026-09-16 已再用使用者自己的
 Chrome 登入 session 量到社員首頁與社務管理頁（條件與限制見下表）。這次沒有證據支持把登入頁或
 登入後首頁改成公開快取。
+
+### 2026-09-17 Next Image 修正後 staging DOM 驗收
+
+這次部署的是 `main` exact SHA `36f32f8a44e121689d7a01836d75dcbd99e4a5ee`；Staging Release
+`35121647301` 與 Staging Go-Live `35121777337` 均成功。相鄰 staging `/api/health` 核對為
+`status=ok`、`revision=36f32f8a44e1`、`configuration=true`、`database=true`、`issues=[]`、
+`warnings=[]`；production 沒有修改。
+
+用已登入的 LEO 社員 session 重新載入 `/dashboard?mode=member` 後，實際 DOM 核對結果如下：
+
+| 項目 | 結果 |
+|---|---:|
+| hero `<img src="/hero-mountains.webp">` | 1 張 |
+| hero preload | 1 個 |
+| preload 所在位置 | body 1 個；head 0 個 |
+| 圖片請求形式 | 直接 `/hero-mountains.webp`，沒有 `/_next/image` 轉換請求 |
+
+這次把社員首頁的 hero 改由 `next/image` 單一元件管理 preload，並使用 `unoptimized` 保留小型靜態檔案
+直出；沒有修改登入狀態、角色、權限、社團隔離、資料庫結構或登入後頁面的公開快取設定。這個結果已
+證明先前 hosted head／body 重複 preload 的問題在目前 staging revision 消失，但不等於整體 LCP 已完成
+前後因果量測。
+
+本機同一輪已通過 typecheck、lint、Vitest `181` 檔／`1346` 測試、build、verify:db、全部 73 份
+verification、migration guard、verification manifest、`git diff --check`；`member-home-1440`
+目標 E2E 為 `3 passed`。自動 CI `35121629076` 已成功；自動 Browser Smoke `35121629061`
+在本紀錄更新時仍為 `in_progress`，不先宣稱結果。
 
 ### 2026-09-16 已登入 staging 基線
 
@@ -71,16 +97,18 @@ Chrome DevTools Performance 的「記錄並重新載入」完成後，回到即�
 LCP 觀測值比前一個 runtime 的基線 `1.929 s` 低約 `629 ms`，但 runtime 不同且快取未停用，這只能記為方向性觀察，
 不能當成修正造成的因果改善。要結案仍須在相同 runtime、相同快取條件下補齊 FCP 與 TTFB，並至少重測一次管理頁。
 
-### 2026-09-16 本機重現與修正驗證（尚未部署）
+### 2026-09-16 本機重現與修正驗證（歷史；React preload 方案已被取代）
 
 在本機 production build 重現了 hosted 的重複提示：社員首頁的單一 hero `<img>` 仍會出現兩個相同的
 `link[rel="preload"][as="image"]`。原因不是圖片 DOM 重複，也不是登入後整頁公開快取；是串流中的 literal
 `<link>` 可能在 head／body 各產生一次。
 
-目前工作樹改用 React DOM 的 `preload()` resource hint API，並保留社員首頁自己的普通 `<img>`；React 會合併同一個
-資源提示，管理頁仍不會載入 `/hero-mountains.webp`。本機會員首頁 Playwright production-build 測試結果為：
+當時工作樹先改用 React DOM 的 `preload()` resource hint API，並保留社員首頁自己的普通 `<img>`；本機
+production-build 測試可得到單一提示，但部署到 staging 後仍看到 hosted head／body 兩個提示，因此這個方案
+沒有作為最終修法。之後改用 `next/image`，才在目前 staging 以 DOM 驗證單一提示；管理頁仍不會載入
+`/hero-mountains.webp`。本機會員首頁 Playwright production-build 測試結果為：
 `member-home-1440`、`1024`、`768`、`412`、`375`、`320` 共 `8 passed`、`10 skipped`（後 10 項是測試設計只在桌面執行的互動案例）。
-桌面測試實際確認圖片 DOM `1` 張、preload `1` 個；這個修正尚未部署到 staging，因此不能改寫上面的 staging 數字。
+桌面測試實際確認圖片 DOM `1` 張、preload `1` 個；這段是歷史本機證據，不能取代上方最新 staging 驗收。
 
 本輪完整本機檢查：typecheck、lint、Vitest `181` 檔／`1346` 測試、build、`npm run verify:db`、73 份 verification、migration
 guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `PRODUCT_TELEMETRY_SINK_FAILURE` 是本機測試環境既有的
@@ -92,8 +120,9 @@ guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `P
   `e1ea85c3e941` 條件與 runtime 不完全相同，不當成改版前後因果比較。
 - 登入後社員首頁目前最明確、風險最低的改善點是 `hero-mountains.webp` 的發現時間：圖片本身只有
   10.6 kB，卻在 LCP 前延遲 1,319 ms。上一個 staging runtime `bd8a8e9d0205` 已把它改成社員首頁限定的 `<img>`，
-  但 hosted React／Next 仍產生 2 個相同的普通 preload 提示；目前工作樹改用 React 的 `preload()` API 並已在本機重現驗證為
-  1 個提示，待部署後再做 hosted DOM 核對，不能先宣稱 staging 已修好。
+  但 hosted React／Next 仍產生 2 個相同的普通 preload 提示；先前 React `preload()` 方案在本機看似單一，
+  部署後仍未解決 hosted 重複。最新 `36f32f8` 改用 `next/image` 單一元件管理 preload，staging DOM 已核對為
+  1 個提示。
 - 修改後登入社員頁已取得有效的 Chrome DevTools LCP `1.30 s` 與 CLS `0.01`，且 LCP 元素是首頁的 hero `<img>`；
   但 FCP／TTFB 仍未量測，不能只用這次 LCP 宣稱整體效能已改善。
 - 管理頁的 637 ms TTFB 與 1,140 ms render delay 是基線訊號，不足以直接判定是資料庫慢；要先做同一
@@ -117,7 +146,8 @@ guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `P
 ## 下一次量測方法
 
 要比較效能時，必須使用已登入的專用 staging 測試帳號，在相同 staging revision、同一個 viewport、CPU、網路與快取條件下，
-修改前後各至少量一次。2026-09-16 已取得社員首頁修改後 LCP／CLS，但仍要在可重現的快取條件下補 FCP／TTFB，再測管理頁。每次至少記錄：
+修改前後各至少量一次。2026-09-17 已完成 hosted DOM 修正驗收，但本輪沒有用可比條件取得新的 CWV；
+社員首頁與管理頁的最新前後 FCP／TTFB／LCP 因果比較仍是未量測。每次至少記錄：
 
 - URL、runtime revision、日期時間、viewport、CPU／網路設定。
 - LCP、FCP、CLS、TTFB，以及 LCP breakdown。
@@ -128,6 +158,17 @@ guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `P
 不能宣稱改善幅度。
 
 ## 變更紀錄
+
+### 2026-09-17
+
+- `36f32f8a44e121689d7a01836d75dcbd99e4a5ee` 已由 Staging Release `35121647301`／Staging Go-Live
+  `35121777337` 部署；`/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`，revision `36f32f8a44e1`。
+- 真實登入 LEO 社員頁重新載入後，hero 圖片 DOM 為 `1` 張、preload 為 `1` 個（body 1、head 0）；使用
+  `next/image` 的 `preload` 與 `unoptimized`，直接載入 `/hero-mountains.webp`。先前 React preload 方案的 hosted
+  重複已被這次部署的 DOM 證據取代。
+- 本機完整品質與資料庫驗證均通過，`member-home-1440` 為 `3 passed`；CI `35121629076` 成功，Browser Smoke
+  `35121629061` 在更新當時仍執行中。這次沒有手動觸發 CI／Browser Smoke。
+- 最新社員首頁／管理頁 CWV 前後比較：未量測；保留 2026-09-16 數字作為不同條件的歷史基線，不宣稱因果改善。
 
 ### 2026-09-16
 
