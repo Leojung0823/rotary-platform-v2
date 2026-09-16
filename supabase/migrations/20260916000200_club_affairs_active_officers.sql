@@ -28,7 +28,12 @@ set search_path = pg_catalog, public, auth
 as $$
 declare
   actor_id uuid := public.current_app_account_id();
-  target_year integer := coalesce(p_start_year, public.current_rotary_year_start());
+  -- 20260915000200 repaired this in place, by rewriting the function text
+  -- Postgres itself held: current_rotary_year_start() returns a date and
+  -- this is an integer, and the error only surfaced when the page omitted
+  -- p_start_year. A restatement from the declaration in the migration files
+  -- cannot see a repair made that way, so it is carried here by hand.
+  target_year integer := coalesce(p_start_year, extract(year from public.current_rotary_year_start())::integer);
   can_manage boolean;
 begin
   -- Every view, including a manager's member-mode view, needs live membership

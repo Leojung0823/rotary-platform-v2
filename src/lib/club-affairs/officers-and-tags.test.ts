@@ -67,19 +67,46 @@ describe("the restatement is built on the definition that was current", () => {
   // a signature change. Applying it would have reverted that work silently --
   // every test would have stayed green, because they all read the migration
   // files and the older text still said what they asked about.
-  it("is the superseding definition with one condition added and nothing else", () => {
+  it("is the superseding definition with the two known changes and nothing else", () => {
     const v2 = readFileSync("supabase/migrations/20260914001100_club_service_plan_v2.sql", "utf8");
     const from = v2.indexOf("create function public.get_club_affairs_page(");
     const previous = v2.slice(from, v2.indexOf("\n$$;", from));
 
-    // Remove exactly what this migration adds; what remains must be the
+    // Undo exactly what this migration changes; what remains must be the
     // definition it was built on, character for character. Anything else that
     // drifted -- a reverted line, a dropped field -- shows up here.
-    const added = affairs.slice(affairs.indexOf("          -- The role is held by"), affairs.indexOf("      ) as officer"));
-    const withoutAddition = affairs
+    const addedOfficerCondition = affairs.slice(
+      affairs.indexOf("          -- The role is held by"),
+      affairs.indexOf("      ) as officer"),
+    );
+    const carriedRepair = affairs.slice(
+      affairs.indexOf("  -- 20260915000200 repaired this in place"),
+      affairs.indexOf("  target_year integer :="),
+    );
+    const withoutChanges = affairs
       .replace("create or replace function", "create function")
-      .replace(added, "");
-    expect(withoutAddition).toBe(previous);
+      .replace(addedOfficerCondition, "")
+      .replace(carriedRepair, "")
+      .replace(
+        "  target_year integer := coalesce(p_start_year, extract(year from public.current_rotary_year_start())::integer);",
+        "  target_year integer := coalesce(p_start_year, public.current_rotary_year_start());",
+      );
+    expect(withoutChanges).toBe(previous);
+  });
+
+  it("does not undo a repair made in place", () => {
+    // 20260915000200 fixed this function by rewriting the text Postgres itself
+    // held, not by re-declaring it, so the migration files never showed the
+    // fix. Restating from a file therefore reintroduced the bug -- and the
+    // only thing that noticed was that migration's own verification, on CI.
+    const repair = readFileSync("supabase/migrations/20260915000200_club_service_plan_year_cast.sql", "utf8");
+    const corrected = /corrected_declaration text := '([^']+)';/u.exec(repair);
+    expect(corrected, "the repair no longer names its corrected text").not.toBeNull();
+    expect(affairs, "the restatement dropped an in-place repair").toContain(corrected![1]);
+
+    const broken = /old_declaration text := '([^']+)';/u.exec(repair);
+    expect(affairs, "the restatement brought back the text that was repaired")
+      .not.toContain(broken![1]);
   });
 });
 
