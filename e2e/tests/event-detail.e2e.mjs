@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openEventDetails } from "./member-event-list.mjs";
 
 const password = process.env.E2E_ROLE_PASSWORD;
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
@@ -21,10 +22,11 @@ test("a member opens an event from the list and sees when, where and how full", 
   await login(page);
   await page.goto(new URL("/events?mode=member", baseURL).toString());
 
-  const firstTitle = page.locator("article.card h2 a").first();
-  await expect(firstTitle).toBeVisible();
-  const title = await firstTitle.innerText();
-  await firstTitle.click();
+  const title = (await page.locator("details.event-fold > summary h2").first().innerText()).trim();
+  await openEventDetails(page);
+  const intoDetail = page.getByRole("link", { name: "查看活動詳情" }).first();
+  await expect(intoDetail).toBeVisible();
+  await intoDetail.click();
 
   await expect(page).toHaveURL(/\/events\/[0-9a-f-]{36}/u);
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
@@ -56,7 +58,8 @@ test("an event id that is not this member's is indistinguishable from one that d
 test("the check-in prompt is absent for an event that is not running", async ({ page }) => {
   await login(page);
   await page.goto(new URL("/events?mode=member", baseURL).toString());
-  await page.locator("article.card h2 a").first().click();
+  await openEventDetails(page);
+  await page.getByRole("link", { name: "查看活動詳情" }).first().click();
   await expect(page).toHaveURL(/\/events\/[0-9a-f-]{36}/u);
 
   // The fixture events are not in progress, so the prompt must not appear.

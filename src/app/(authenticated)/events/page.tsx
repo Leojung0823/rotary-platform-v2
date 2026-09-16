@@ -8,7 +8,9 @@ import {
   activeClubCookieName,
   readActiveClubPreference,
 } from "@/lib/experience-context-cookie";
+import { EventDescription } from "@/components/events/event-description";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
+import { formatEventTimeRange } from "@/lib/events/event-time";
 import { createClient } from "@/lib/supabase/server";
 
 type EventClub = {
@@ -146,15 +148,7 @@ function statusBadge(status: ClubEvent["status"]) {
   return "badge badge-neutral";
 }
 
-function EventHeader({
-  clubId,
-  canManage = false,
-  hasOtherClubs = false,
-}: {
-  clubId?: string | null;
-  canManage?: boolean;
-  hasOtherClubs?: boolean;
-}) {
+function EventHeader({ hasOtherClubs = false }: { hasOtherClubs?: boolean }) {
   return <header className="page-header">
     <div>
       <p className="eyebrow">社務互動</p>
@@ -164,15 +158,15 @@ function EventHeader({
     {/* The hint used to sit between the two buttons, so all three competed for
         the same row and the labels broke mid-word. The buttons keep the row to
         themselves and the hint sits under them. */}
+    {/* No management entry here. This page is what a member sees, and an
+        officer reading it is reading it as a member -- the way into management
+        is the shell's own mode switch, present on every page. The button and
+        the hint beside it said opposite things: one offered the very feature
+        the other said had moved away. */}
     <div className="header-actions">
       <div className="form-actions">
-        {clubId && canManage && <a
-          className="button button-secondary"
-          href={`/clubs/${encodeURIComponent(clubId)}/events?mode=management`}
-        >活動管理</a>}
         <Link className="button" href="/events/checkin">社員簽到</Link>
       </div>
-      {clubId && canManage && <span className="hint">幹部功能已移至社務管理模式。</span>}
     </div>
   </header>;
 }
@@ -238,11 +232,7 @@ export default async function EventsPage({
   const coverUrls = await signCoverImageUrls(events.map((event) => event.cover_image_path));
 
   return <div className="page-stack">
-    <EventHeader
-      clubId={selectedClub?.club_id}
-      canManage={Boolean(selectedClub?.can_manage)}
-      hasOtherClubs={clubRows.length > 1}
-    />
+    <EventHeader hasOtherClubs={clubRows.length > 1} />
 
     {params.success && successMessages[params.success] && <div className="notice notice-success" role="status">
       {successMessages[params.success]}
@@ -273,34 +263,51 @@ export default async function EventsPage({
 
       <div className="form-stack">
         {events.map((event) => <article className="card" key={event.id}>
-          {/* Plain <img> rather than next/image: the URL is signed and
-              expires, so the optimizer cannot cache it, and optimizing on a
-              0.1 CPU instance would cost more than it saves. The browser
-              already resized the picture before uploading it. */}
+          {/* Collapsed by default. A member opening this page is choosing which
+              event to look at, and a list where every card is already expanded
+              is a list you scroll past rather than read. The summary keeps what
+              the choice is made on: what it is, what it is called, and when. */}
+          {/* Outside the fold: the cover is how a member recognises an event at
+              a glance, which is the choice the collapsed list exists to help
+              them make. Plain <img> rather than next/image -- the URL is
+              signed and expires, so the optimizer cannot cache it, and
+              optimizing on a 0.1 CPU instance would cost more than it saves.
+              The browser already resized the picture before uploading it. */}
           {event.cover_image_path && coverUrls.get(event.cover_image_path) && <img
             className="event-cover"
             src={coverUrls.get(event.cover_image_path)}
             alt=""
             loading="lazy"
           />}
-          <div className="section-heading">
-            <div>
+          <details className="event-fold">
+            <summary>
               <div className="status-pair">
                 <span className={statusBadge(event.status)}>{statusLabels[event.status]}</span>
                 <span className="badge badge-neutral">{eventTypeLabels[event.event_type] ?? "其他"}</span>
                 {event.counts_for_attendance && <span className="badge badge-neutral">計入出席</span>}
               </div>
-              <h2><Link href={`/events/${encodeURIComponent(event.id)}`}>{event.title}</Link></h2>
+              <h2>{event.title}</h2>
+              <p className="event-when">
+                {formatEventTimeRange(event.starts_at, event.ends_at)}
+                {"　"}
+                <span className="event-fold-hint event-fold-hint-open">▸ 展開詳情</span>
+                <span className="event-fold-hint event-fold-hint-close">▾ 收合詳情</span>
+              </p>
+            </summary>
+
+          <div className="section-heading">
+            <div>
+              <h3><Link href={`/events/${encodeURIComponent(event.id)}`}>查看活動詳情</Link></h3>
             </div>
             <span>版本 {event.version}</span>
           </div>
 
           <div className="two-column">
             <div>
-              <p><strong>時間：</strong>{formatDateTime(event.starts_at)}－{formatDateTime(event.ends_at)}</p>
+              <p><strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at)}</p>
               <p><strong>地點：</strong>{event.location || "尚未填寫"}</p>
               <p><strong>報名截止：</strong>{formatDateTime(event.registration_deadline)}</p>
-              {event.description && <p className="event-description">{event.description}</p>}
+              {event.description && <EventDescription className="event-description" text={event.description} />}
             </div>
             <div className="card">
               <span className="metric-label">目前參加</span>
@@ -313,7 +320,10 @@ export default async function EventsPage({
           {event.status === "published" && event.registration_open && selectedClub.can_register && <form action={registerEventAction} className="form-stack">
             <input type="hidden" name="clubId" value={selectedClub.club_id} />
             <input type="hidden" name="eventId" value={event.id} />
-            <div className="form-grid">
+            {/* These two are one answer, not two questions: "am I coming, and
+                with how many". form-grid stacks below 840px, which split them
+                across two rows and made the pair read as unrelated. */}
+            <div className="response-grid">
               <label className="field"><span className="label">我的回覆</span>
                 <select className="input" name="response" defaultValue={event.my_response ?? "pending"}>
                   <option value="pending">待確認</option>
@@ -341,6 +351,7 @@ export default async function EventsPage({
               href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}&mode=management`}
             >管理簽到</a>}
           </div>}
+          </details>
         </article>)}
       </div>
     </section>}
