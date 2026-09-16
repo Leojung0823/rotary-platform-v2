@@ -56,6 +56,12 @@ const notAMemberEventList = new Set([
   "get_club_attendance_summary", "export_event_attendance_csv",
   "list_club_attendance_events", "revoke_attendance_adjustment",
   // Management, each with its own permission check.
+  // The registration roster and the officer's entry on a member's behalf both
+  // require event.manage, and both apply the audience rule themselves through
+  // membership_is_in_event_audience -- asked about a member rather than about
+  // the caller, which is why it is a separate function.
+  "list_club_event_registrations", "set_event_registration_for_member",
+  "membership_is_in_event_audience",
   "create_club_event", "update_club_event", "publish_club_event",
   "cancel_club_event", "set_club_event_audience", "list_club_event_line_targets",
   "record_club_event_line_push", "can_manage_event_covers", "can_view_event_covers",
