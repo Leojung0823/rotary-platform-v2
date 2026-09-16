@@ -16,6 +16,28 @@ export function migrationFilenames(): string[] {
 }
 
 /**
+ * A migration's text, or null if it is no longer there.
+ *
+ * A directory listing is a snapshot. Vitest runs test files in parallel, and a
+ * guard that writes a fixture migration and removes it again leaves a window in
+ * which a name from the listing no longer opens -- which surfaced as an
+ * intermittent ENOENT inside whichever unrelated guard was reading migrations at
+ * that moment. The fixture no longer goes in this directory, and this makes the
+ * reader itself indifferent to the next thing that does.
+ *
+ * Only ENOENT is tolerated, and only for a name this module just listed: it can
+ * mean nothing except that the file went away in between.
+ */
+function migrationText(file: string): string | null {
+  try {
+    return readFileSync(join(migrations, file), "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+/**
  * Both spellings a migration can use to define a function.
  *
  * A few functions are re-declared with a plain `create function` after a
@@ -35,8 +57,8 @@ function definitionMarkers(name: string): readonly string[] {
 export function migrationDefining(name: string): string | null {
   const markers = definitionMarkers(name);
   const found = migrationFilenames().filter((file) => {
-    const text = readFileSync(join(migrations, file), "utf8");
-    return markers.some((marker) => text.includes(marker));
+    const text = migrationText(file);
+    return text !== null && markers.some((marker) => text.includes(marker));
   });
   return found.length === 0 ? null : found[found.length - 1];
 }
@@ -45,7 +67,10 @@ export function migrationDefining(name: string): string | null {
 export function latestDefinition(name: string): string {
   const file = migrationDefining(name);
   if (file === null) throw new Error(`no migration defines public.${name}`);
-  const text = readFileSync(join(migrations, file), "utf8");
+  const text = migrationText(file);
+  // Said plainly rather than left as a bare ENOENT three frames down, which is
+  // how this race spent an afternoon looking like a bug somewhere else.
+  if (text === null) throw new Error(`${file} defined public.${name} and is no longer there`);
   const start = Math.max(...definitionMarkers(name).map((marker) => text.lastIndexOf(marker)));
   if (start === -1) throw new Error(`public.${name} is not defined in ${file}`);
   const end = text.indexOf("\n$$;", start);
@@ -57,7 +82,8 @@ export function latestDefinition(name: string): string {
 export function definedFunctionNames(): readonly string[] {
   const names = new Set<string>();
   for (const file of migrationFilenames()) {
-    const text = readFileSync(join(migrations, file), "utf8");
+    const text = migrationText(file);
+    if (text === null) continue;
     for (const match of text.matchAll(/create or replace function public\.([a-z0-9_]+)\(/gu)) {
       names.add(match[1]);
     }

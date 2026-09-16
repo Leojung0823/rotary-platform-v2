@@ -16,8 +16,18 @@ git fetch origin "$base_ref" --quiet
 # This is checked over the whole directory rather than the diff, because the
 # collision is a property of the tree, and the branch that completes the pair is
 # usually not the branch that looks wrong.
+#
+# The directory is overridable for one reason: the test that proves this check
+# fires has to put a colliding file somewhere. It used to put it in the real
+# supabase/migrations and delete it again -- and vitest runs test files in
+# parallel, so anything else enumerating that directory could list the fixture
+# and then fail to open it. That surfaced as an intermittent ENOENT in whichever
+# unrelated guard happened to be reading migrations at the time. Only this check
+# is overridable; the history checks below are about this repository's git
+# history and stay pointed at the real tree.
+migrations_dir="${MIGRATION_COLLISION_DIR:-supabase/migrations}"
 duplicates="$(
-  find supabase/migrations -name '*.sql' -type f -print0 2>/dev/null \
+  find "$migrations_dir" -name '*.sql' -type f -print0 2>/dev/null \
     | xargs -0 -n1 basename 2>/dev/null \
     | sed -E 's/^([0-9]+)_.*/\1/' \
     | sort \
@@ -27,7 +37,7 @@ if [[ -n "$duplicates" ]]; then
   echo "Two migrations cannot share a version number; Supabase keys on the number alone:"
   while IFS= read -r version; do
     [[ -z "$version" ]] && continue
-    find supabase/migrations -name "${version}_*.sql" -type f | sed 's/^/  /'
+    find "$migrations_dir" -name "${version}_*.sql" -type f | sed 's/^/  /'
   done <<< "$duplicates"
   echo "Renumber one of them to a version later than every migration already on main."
   exit 1
