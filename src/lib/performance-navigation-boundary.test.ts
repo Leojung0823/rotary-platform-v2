@@ -55,14 +55,15 @@ describe("performance-first navigation boundaries", () => {
     expect(portal.match(/<Link/gu)?.length).toBe(portal.match(/prefetch=\{false\}/gu)?.length);
   });
 
-  it("eagerly loads the member home's decorative LCP image without making it global", () => {
+  it("preloads the member home's decorative LCP image once without making it global", () => {
     const portal = source("src/components/member-portal/member-portal.tsx");
     const authenticatedLayout = source("src/app/(authenticated)/layout.tsx");
 
     expect(portal).toContain('src="/hero-mountains.webp"');
-    expect(portal).toContain('loading="eager"');
-    expect(portal).not.toContain('fetchPriority="high"');
-    expect(portal).not.toContain("preload(");
+    expect(portal).toContain('import { preload } from "react-dom";');
+    expect(portal).toContain('preload("/hero-mountains.webp", { as: "image", fetchPriority: "high" });');
+    expect(portal).not.toContain('loading="eager"');
+    expect(portal).not.toContain('loading="lazy"');
     expect(portal).not.toContain('<link rel="preload" as="image"');
     expect(authenticatedLayout).not.toContain("hero-mountains.webp");
   });

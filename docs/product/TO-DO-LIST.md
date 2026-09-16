@@ -376,14 +376,17 @@ production 沒有修改。
   管理頁 LCP `1,777 ms`、FCP `760 ms`、LCP TTFB `637 ms`、CLS `0.00`；社員首頁 LCP `1,929 ms`、FCP `562 ms`、
   LCP TTFB `452 ms`、CLS `0.01`。兩頁 INP 均為「未量測」。
 - **目前真正找到的改善方向**：社員首頁的 LCP 圖片 `/hero-mountains.webp` 藏在 CSS background，資源發現延遲
-  `1,319 ms`；管理頁另有文件請求延遲洞察估算 `532 ms`。本輪已把社員首頁限定的 hero 改成 eager `<img>`，
-  並部署至 staging `bd8a8e9d0205`；管理頁後續仍要拆出文件等待與 render pipeline。
+  `1,319 ms`；管理頁另有文件請求延遲洞察估算 `532 ms`。上一個 staging runtime `bd8a8e9d0205` 已把社員首頁限定的
+  hero 改成 `<img>`，但 hosted DOM 仍有兩個相同 preload；目前工作樹已改用 React `preload()` API 並在本機確認為單一提示，
+  待部署後重測 staging。管理頁後續仍要拆出文件等待與 render pipeline。
 - **staging 實際 DOM 驗收**：社員頁圖片 DOM 為 `1` 張，但 hosted React／Next 仍產生 `2` 個相同的普通 preload 提示（head／body）。
-  本機社員首頁 E2E 為 `3 passed`，含圖片 `1` 張／preload `1` 個與管理模式不載入圖片；兩者行為不同，不能把本機結果當成 hosted 完成證據。
+  本機目前工作樹社員首頁 E2E 六種尺寸為 `8 passed`、`10 skipped`，桌面確認圖片 `1` 張／preload `1` 個與管理模式不載入圖片；
+  修正尚未部署，不能把本機結果當成 hosted 完成證據。
 - **2026-09-16 修改後補測**：真實 LEO 社員頁在同一個 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、
   未限速下，DevTools 顯示 LCP `1.30 s`、CLS `0.01`，LCP 元素為 `img.member-portal-module__wpzd3a__backdropImage`；FCP、TTFB、INP 未量測。
   DevTools「停用網路快取」未勾選，且測量 runtime `bd8a8e9d0205` 不同於修改前基線 `1ef38bb50407`，所以不能宣稱因果改善。
-- **尚未結案原因**：還缺同一 runtime／快取條件下的 FCP、TTFB，並需再測管理頁；也不能宣稱已消除所有 preload。
+- **尚未結案原因**：目前工作樹的單一 preload 修正尚未部署；還缺同一 runtime／快取條件下的 FCP、TTFB，並需再測管理頁；
+  也不能宣稱 staging 已消除所有 preload。
 - **完成證據**：同一帳號、同一社、同一網路條件，取得修改前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。完整條件與限制見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
 
 ### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
@@ -841,7 +844,8 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 2. **E-02：生日邀請 LINE 實際送達** `[x]`：2026-09-12 完成。`PANCHIAO-ELITE` 的邀請實際送達 `Michael` 的 LINE，重跑 `jobCount=0` 不重送；負向情境（取消追蹤、關閉通知）未另做對照測試。
 3. **E-03：follow 自動配對真人驗收** `[>]`：2026-09-14 暫緩解除——公開加入連結帶來真實流量，audit log 已有 `line_oa.auto_paired`。仍缺的是「配對到的是正確的人」這一半，需要人核對姓名；負向情境（多社／外社／停權）也未驗。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
-5. **E-06：登入後管理頁效能量測** `[>]`：社員首頁 eager 圖片修正已部署至 `bd8a8e9`；修改後 LCP／FCP／TTFB 尚未量測，且 hosted DOM 仍有兩個普通 preload 提示。先補同條件前後量測，再拆管理頁文件等待與 render pipeline。
+5. **E-06：登入後管理頁效能量測** `[>]`：社員首頁圖片發現修正已部署至 `bd8a8e9`；目前工作樹再改用 React `preload()` API，
+   本機已確認 preload 單一但尚未部署。先發布後補同條件前後量測，再拆管理頁文件等待與 render pipeline。
 6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
 7. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次只啟用 PANCHIAO-ELITE，已結案。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。

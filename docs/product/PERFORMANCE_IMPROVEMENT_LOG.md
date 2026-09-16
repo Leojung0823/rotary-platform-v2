@@ -71,14 +71,29 @@ Chrome DevTools Performance 的「記錄並重新載入」完成後，回到即�
 LCP 觀測值比前一個 runtime 的基線 `1.929 s` 低約 `629 ms`，但 runtime 不同且快取未停用，這只能記為方向性觀察，
 不能當成修正造成的因果改善。要結案仍須在相同 runtime、相同快取條件下補齊 FCP 與 TTFB，並至少重測一次管理頁。
 
+### 2026-09-16 本機重現與修正驗證（尚未部署）
+
+在本機 production build 重現了 hosted 的重複提示：社員首頁的單一 hero `<img>` 仍會出現兩個相同的
+`link[rel="preload"][as="image"]`。原因不是圖片 DOM 重複，也不是登入後整頁公開快取；是串流中的 literal
+`<link>` 可能在 head／body 各產生一次。
+
+目前工作樹改用 React DOM 的 `preload()` resource hint API，並保留社員首頁自己的普通 `<img>`；React 會合併同一個
+資源提示，管理頁仍不會載入 `/hero-mountains.webp`。本機會員首頁 Playwright production-build 測試結果為：
+`member-home-1440`、`1024`、`768`、`412`、`375`、`320` 共 `8 passed`、`10 skipped`（後 10 項是測試設計只在桌面執行的互動案例）。
+桌面測試實際確認圖片 DOM `1` 張、preload `1` 個；這個修正尚未部署到 staging，因此不能改寫上面的 staging 數字。
+
+本輪完整本機檢查：typecheck、lint、Vitest `181` 檔／`1346` 測試、build、`npm run verify:db`、73 份 verification、migration
+guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `PRODUCT_TELEMETRY_SINK_FAILURE` 是本機測試環境既有的
+遙測 sink 警告，未影響測試結果。
+
 ## 目前判斷
 
 - 未登入 `/login` 的主要等待是 TTFB：LCP 167 ms 中有 104 ms 是 TTFB；它和歷史
   `e1ea85c3e941` 條件與 runtime 不完全相同，不當成改版前後因果比較。
 - 登入後社員首頁目前最明確、風險最低的改善點是 `hero-mountains.webp` 的發現時間：圖片本身只有
-  10.6 kB，卻在 LCP 前延遲 1,319 ms。本輪已改成社員首頁限定的 eager `<img>`，並部署至 staging `bd8a8e9d0205`；
-  實際 DOM 有 1 張圖片，但 hosted React／Next 仍產生 2 個相同的普通 preload 提示，所以只確認管線已改變，不能宣稱
-  已消除所有提示或已改善 LCP。
+  10.6 kB，卻在 LCP 前延遲 1,319 ms。上一個 staging runtime `bd8a8e9d0205` 已把它改成社員首頁限定的 `<img>`，
+  但 hosted React／Next 仍產生 2 個相同的普通 preload 提示；目前工作樹改用 React 的 `preload()` API 並已在本機重現驗證為
+  1 個提示，待部署後再做 hosted DOM 核對，不能先宣稱 staging 已修好。
 - 修改後登入社員頁已取得有效的 Chrome DevTools LCP `1.30 s` 與 CLS `0.01`，且 LCP 元素是首頁的 hero `<img>`；
   但 FCP／TTFB 仍未量測，不能只用這次 LCP 宣稱整體效能已改善。
 - 管理頁的 637 ms TTFB 與 1,140 ms render delay 是基線訊號，不足以直接判定是資料庫慢；要先做同一
@@ -116,6 +131,9 @@ LCP 觀測值比前一個 runtime 的基線 `1.929 s` 低約 `629 ms`，但 runt
 
 ### 2026-09-16
 
+- 本輪尚未部署的工作樹修正：以 React DOM `preload()` resource hint API 取代可能在串流 head／body 重複的 literal `<link>`；
+  hero 圖仍只在社員首頁出現，管理頁不載入。重新跑本機 production-build Playwright 六種尺寸，共 `8 passed`、`10 skipped`，
+  桌面實際確認 hero 圖片 `1` 張／preload `1` 個。完整本機檢查與 DB verification 均通過；staging 尚未重測。
 - `bd8a8e9d0205` 已部署社員首頁效能修正：將 CSS background 改成首頁限定的 eager `<img>`，移除手動 React `preload()` 與
   `fetchPriority="high"`，保留管理頁不載入 hero 圖片的邊界；本輪沒有新增 migration，也沒有修改快取／登入／權限。
 - staging 真實登入社員頁（網址加驗證 query、重新抓取頁面）確認 `/hero-mountains.webp` 的圖片 DOM 為 `1` 張，但 hosted
