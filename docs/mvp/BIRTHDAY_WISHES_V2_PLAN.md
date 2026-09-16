@@ -2,7 +2,7 @@
 
 > 更新日期：2026-09-16（Asia/Taipei）
 > 狀態：**生日 V2 核心、祝福徵集、生日邀請 LINE 推播與有收件人的 scheduler 送達／冪等重跑驗收已完成；M1 真人使用者測試仍待完成**
-> 程式現況基準：staging 產品 runtime 為 `708b32a19594`，`/api/health` 的 `issues` 與 `warnings` 為空。生日相關程式、migration、旗標與 scheduler secret 已完成 staging 設定。
+> 程式現況基準：staging 產品 runtime 為 `1ef38bb50407`，`/api/health` 的 `issues` 與 `warnings` 為空。生日相關程式、migration、旗標與 scheduler secret 已完成 staging 設定。
 > 前一版：[`BIRTHDAY_WISHES_V1_SCOPE.md`](./BIRTHDAY_WISHES_V1_SCOPE.md)（已實作並部署）
 
 這份文件記錄目前產品討論的結論。它取代先前那份「生日祝福與壽星關懷 V2」草稿中

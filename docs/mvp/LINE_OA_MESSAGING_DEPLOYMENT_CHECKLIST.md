@@ -4,7 +4,7 @@
 見 [`LINE_LOGIN_DEPLOYMENT_CHECKLIST.md`](./LINE_LOGIN_DEPLOYMENT_CHECKLIST.md)。兩者不共用 secret。
 
 目前狀態：真實 Messaging API、訊息中心公告、活動發布與 webhook follow 基礎已在 staging 完成驗收。
-目前 staging runtime 為 `708b32a19594`，Flex 卡片模板程式與 migration 已包含在內，`line_oa_flex_templates_v1` 已開啟，且三種模板已完成真人收訊驗收。
+目前產品程式 staging runtime 為 `1ef38bb50407`，Flex 卡片模板程式與 migration 已包含在內，`line_oa_flex_templates_v1` 已開啟，且三種模板已完成真人收訊驗收。
 生日徵集邀請的 LINE 推播也已完成有收件人的實際送達與冪等重跑驗收：`34695450977` 送達、`34695655038` 重跑不重送；早期無收件人的 `34673612440` 只保留為歷史紀錄。
 GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步。production 仍未修改。
 

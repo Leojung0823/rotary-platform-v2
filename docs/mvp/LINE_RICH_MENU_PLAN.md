@@ -3,7 +3,7 @@
 更新日期：2026-09-16（Asia/Taipei）
 
 狀態：程式底座已進入 `main` 並部署 staging；目前產品範圍只使用 `PANCHIAO-ELITE`，HAPPY 不使用。
-staging runtime `708b32a19594` 健康；仍待 PANCHIAO-ELITE 的 OA 外部設定、旗標狀態確認與手機真人驗收。
+staging runtime `1ef38bb50407` 健康；仍待 PANCHIAO-ELITE 的 OA 外部設定、旗標狀態確認與手機真人驗收。
 
 ## 1. 目的
 

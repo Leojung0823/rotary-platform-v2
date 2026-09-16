@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-16（Asia/Taipei；以 GitHub `main=1ef38bb` 核對）
+更新日期：2026-09-16（Asia/Taipei；以 GitHub `main=1223cdd` 核對）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
@@ -13,22 +13,22 @@
 本次以 GitHub `Leojung0823/rotary-platform-v2` 的 `origin/main`、GitHub Actions 與 staging
 實際健康檢查交叉核對；舊的 2026-09-15 段落保留作為歷史紀錄，不再當作目前狀態。
 
-- `origin/main` exact SHA：`1ef38bb504075d7a197e99c2364db8b087cea22e`。
-- staging `/api/health`：`status=ok`、`revision=708b32a19594`、`configuration=true`、
-  `database=true`、`issues=[]`、`warnings=[]`。production 沒有修改；staging 尚未發布 `1ef38bb`。
-- 9/16 已進入主線的修正／功能包括：首頁待辦完成後移除生日提醒、社費提醒連到實際應付年度、
+- `origin/main` exact SHA：`1223cdd69ec2210857293579688797943dd68a89`；產品程式基準為 `1ef38bb504075d7a197e99c2364db8b087cea22e`。
+- staging `/api/health`：`status=ok`、`revision=1ef38bb50407`、`configuration=true`、
+  `database=true`、`issues=[]`、`warnings=[]`。production 沒有修改；產品程式已發布 `1ef38bb`，最新 `main=1223cdd` 只有文件同步尚未重新部署。
+- 9/16 已進入主線並部署至 staging 的修正／功能包括：首頁待辦完成後移除生日提醒、社費提醒連到實際應付年度、
   只有 Email 的社員可以清除個人資料提醒、活動報名截止日可留空、生日徵集可編輯日期／關閉、
   管理員批次修復未配對 follower、手機表格卡片不再把整頁撐寬，以及測試 fixture race 修正。
-- 新增的資料庫 migration 是 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`；在受控 staging Go-Live
-  前仍要依 migration／rollback 規則檢查，不能只看應用程式 CI。
-- PR #188、#189、#190 都已正常 merge；目前 `main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，仍未視為 staging 已發布。
+- 新增的資料庫 migration `20260916001500_dues_reminder_lands_on_the_year_owed.sql` 已隨 Staging Go-Live
+  `35083792540` 套用；仍要依 migration／rollback 規則管理後續變更，不能只看應用程式 CI。
+- PR #188、#189、#190 都已正常 merge；`main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，並已由 Staging Release `35083682035`／Go-Live `35083792540` 發布產品程式。
 - **判斷規則**：open PR 未通過完整必要檢查前，不算主線完成；已 merge 也不等於 staging 已部署。不能 force push 或 rebase 別人的分支。
 
 ### 這次掃描後的實際結論
 
-1. 不是「主線沒有更新」：主線已到 `1ef38bb`，但 staging 仍停在 `708b32a`。
+1. 不是「主線沒有更新」：主線已到文件同步 commit `1223cdd`，產品程式 staging 已到 `1ef38bb`。
 2. 不是「所有待辦都完成」：E-03、E-05、E-06、E-07、E-08、E-10、E-11 仍需要真人、效能工具、產品決策或外部 OA 設定。
-3. #188／#189／#190 已合併且合併後檢查已通過；接下來按受控流程把 `1ef38bb` 發布到 staging。
+3. #188／#189／#190 已合併、檢查已通過並發布至 staging；下一步是完成剩餘真人／外部驗收。
 
 ## 2026-09-15 GitHub 開發狀態快照（#147 合併後）
 

@@ -30,7 +30,7 @@
 TTFB，render-blocking CSS 的工具估算改善為 0 ms；目前優先瓶頸是 Render 伺服器回應時間，
 不是把登入頁改成公開快取。
 
-> 2026-09-16 補充：staging 已前進到 `708b32a19594`，但上表的 `/login` 數字是在另一個 runtime
+> 2026-09-16 補充：產品程式 staging 已前進到 `1ef38bb50407`，但上表的 `/login` 數字是在另一個 runtime
 > `e1ea85c3e941` 量得，仍可作為當時的登入頁基準，不能冒充目前 runtime 或登入後頁面數字。
 > 登入後管理頁、社員首頁的 TTFB／LCP／FCP 仍標記為「未量測」，要等同一個已登入 DevTools session。
 

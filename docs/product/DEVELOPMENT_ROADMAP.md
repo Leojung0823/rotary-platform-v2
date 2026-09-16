@@ -1,19 +1,19 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-16（Asia/Taipei；以 GitHub `main=1ef38bb` 核對）
+更新日期：2026-09-16（Asia/Taipei；以 GitHub `main=1223cdd` 核對）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
 ## 2026-09-16 最新基線（覆蓋下面的 2026-09-15 快照）
 
 - GitHub `origin/main` exact SHA：`1ef38bb504075d7a197e99c2364db8b087cea22e`。
-- staging 目前仍是上一個已部署版本 `708b32a19594`；`/api/health` 為 `status=ok`、
+- staging 產品程式目前為已部署版本 `1ef38bb50407`；`/api/health` 為 `status=ok`、
   `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
 - 主線已包含 9/16 的首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、
   生日徵集日期／關閉、follower 批次配對、手機表格卡片寬度修正與測試 fixture race 修正。
-  另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，目前尚未部署到 staging。
-- PR #188、#189、#190 都已正常合併；`main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，尚未把它們寫成 staging 已發布。
-- 下一個開發順序：按受控流程發布 `1ef38bb` 到 staging，然後處理 E-03、E-10、E-06、E-07、E-05、E-11；
+  另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已由 Staging Go-Live `35083792540` 套用。
+- PR #188、#189、#190 都已正常合併；`main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，並已由 Staging Release `35083682035`／Go-Live `35083792540` 發布產品程式。
+- 最新 `main=1223cdd` 只有文件同步，尚未重新部署；下一個開發順序是處理 E-03、E-10、E-06、E-07、E-05、E-11；
   E-08 production 與 E-09 recovery email 仍是另行決策，不混入一般 staging 開發。
 
 ## 目前基線

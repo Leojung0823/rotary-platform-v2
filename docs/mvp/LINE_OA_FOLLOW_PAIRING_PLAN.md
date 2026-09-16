@@ -1,7 +1,7 @@
 # LINE OA follow 事件自動配對社員 企劃書
 
 狀態：`[>]` 核心實作、verification、CI 與 staging 部署已完成；目前 staging runtime 為
-`708b32a19594`；仍待用真實帳號核對「配對到正確 person」及多社／外社／停權／退社負向案例。
+`1ef38bb50407`；仍待用真實帳號核對「配對到正確 person」及多社／外社／停權／退社負向案例。
 2026-09-12 補上解除配對後重新配對修正　　建立日期：2026-09-02（Asia/Taipei）
 預定執行者：**Codex（獨立分支）**　　平行分支：Claude 負責事件驅動自動推播，兩者不共用檔案。
 
@@ -12,7 +12,7 @@
 - `[x]` `20260902000200_line_oa_follow_event_pairing.sql` 已進入 `main`，新增的 service-role-only RPC、flag gate、精確 identity 比對、同社有效社籍與不覆寫既有配對規則均已實作。
 - `[x]` webhook follow 路徑已在 follower upsert 成功後呼叫自動配對 RPC；配對失敗不讓 webhook 重試風暴，結果會留在 webhook failure code。
 - `[x]` `supabase/verification/line_oa_follow_event_pairing_security.sql`、route／邊界測試與 manifest 已完成，最新 `CI` 與 `Browser Smoke` 均通過。
-- `[x]` `line_oa_auto_pairing_v1` 已由受保護流程開啟 staging；日期窗口防護 migration `20260911000300_line_oa_pairing_membership_window.sql` 已部署，目前 staging runtime 為 `708b32a19594`，`/api/health` 的 `issues` 與 `warnings` 都是空的。
+- `[x]` `line_oa_auto_pairing_v1` 已由受保護流程開啟 staging；日期窗口防護 migration `20260911000300_line_oa_pairing_membership_window.sql` 已部署，目前 staging runtime 為 `1ef38bb50407`，`/api/health` 的 `issues` 與 `warnings` 都是空的。
 - `[x]` 2026-09-12 修正解除配對後仍綁回舊社員的問題：手動解除會清除 `person_id`／`app_account_id`／`paired_at` 但保留實際 following 狀態；LINE `unfollow` 也會清除身份投影；migration 另修復舊的 `unpaired` stale projection。
 - `[>]` 尚未完成「曾用 LINE Login 登入的社員加入同一社 OA 後，自動對上正確 person」的真實 identity 驗收；也尚未用真實身份完成多社、外社、停權／退社的全流程證據。
 
