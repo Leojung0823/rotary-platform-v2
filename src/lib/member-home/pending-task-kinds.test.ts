@@ -142,8 +142,11 @@ describe("每一列自己說要去哪裡", () => {
 
   it("uses that destination rather than a hardcoded one", () => {
     // It was hardcoded to /events because there was only ever one kind.
-    const parsed = parsedTasks([task({ kind: "dues_outstanding", action_path: "/me/finance", deadline: null, hours_remaining: null })]);
-    expect(tasksFrom(parsed!)[0].href).toBe("/me/finance");
+    // A real destination: this test used to invent /me/finance, which is not a
+    // route -- and the projection shipped pointing at it. A made-up path here
+    // proves the row is carried, and quietly suggests the path is fine.
+    const parsed = parsedTasks([task({ kind: "dues_outstanding", action_path: "/dues", deadline: null, hours_remaining: null })]);
+    expect(tasksFrom(parsed!)[0].href).toBe("/dues");
   });
 
   it("uses each row's own title rather than 回覆活動報名", () => {
