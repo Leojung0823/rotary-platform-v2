@@ -14,6 +14,7 @@ import {
   upcomingEventsFrom,
 } from "@/lib/member-portal/from-projection";
 import { MemberPortalBody, MemberPortalHeader, MemberPortalShell } from "./member-portal";
+import { NotificationBellItems, NotificationBellLoading } from "./notification-bell-items";
 
 const todayDate = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, month: "long", day: "numeric" });
 const todayWeekday = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, weekday: "long" });
@@ -25,13 +26,33 @@ type Features = Readonly<{
   lineOaOnboarding: boolean;
 }>;
 
+/**
+ * The bell's contents. Its own boundary, so the greeting still paints before
+ * the projection arrives -- resolveMemberHomeProjection is React-cached, so
+ * asking for it here and in the body is one database round trip.
+ */
+async function BellNotifications({
+  clubId,
+  messageCentre,
+}: {
+  clubId: string;
+  messageCentre: boolean;
+}) {
+  const resolution = await resolveMemberHomeProjection(clubId);
+  return <NotificationBellItems
+    items={resolution.ok && messageCentre ? announcementsFrom(resolution.projection, clubId) : []}
+  />;
+}
+
 /** Everything that has to wait for the projection. */
 async function PortalBody({
   activeClub,
   features,
+  messagesHref,
 }: {
   activeClub: Pick<ClubContext, "clubId" | "clubName">;
   features: Features;
+  messagesHref: string;
 }) {
   const resolution = await resolveMemberHomeProjection(activeClub.clubId);
   if (!resolution.ok) {
@@ -48,6 +69,7 @@ async function PortalBody({
     upcomingEvents={upcomingEventsFrom(projection.upcomingEvents)}
     tasks={tasksFrom(projection.pendingTasks)}
     announcements={features.messageCentre ? announcementsFrom(projection, activeClub.clubId) : []}
+    messagesHref={messagesHref}
     entries={entriesFrom(activeClub.clubId, features)}
   >
     {features.lineOaOnboarding && <Suspense fallback={<MemberLineOaOnboardingLoading />}>
@@ -74,18 +96,22 @@ export function MemberPortalHome({
   features: Features;
 }) {
   const now = new Date();
+  // One place decides where the message centre is: the header's bell footer,
+  // the notices card's 查看全部 and the body all point at the same URL.
+  const messagesHref = `/messages?clubId=${encodeURIComponent(activeClub.clubId)}&mode=member`;
   return <MemberPortalShell>
     <MemberPortalHeader
       member={{ displayName: identity.display_name, initial: identity.display_name.slice(0, 1) }}
       today={{ date: todayDate.format(now), weekday: todayWeekday.format(now) }}
       // No message centre for this club means no bell: a control that leads
       // nowhere is worse than an empty corner.
-      messagesHref={features.messageCentre
-        ? `/messages?clubId=${encodeURIComponent(activeClub.clubId)}&mode=member`
-        : null}
+      messagesHref={features.messageCentre ? messagesHref : null}
+      bell={<Suspense fallback={<NotificationBellLoading />}>
+        <BellNotifications clubId={activeClub.clubId} messageCentre={features.messageCentre} />
+      </Suspense>}
     />
     <Suspense fallback={<MemberPortalBodyLoading />}>
-      <PortalBody activeClub={activeClub} features={features} />
+      <PortalBody activeClub={activeClub} features={features} messagesHref={messagesHref} />
     </Suspense>
   </MemberPortalShell>;
 }

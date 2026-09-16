@@ -1,10 +1,10 @@
 import Link from "next/link";
+import { NotificationBell } from "./notification-bell";
 import { PortalIcon, type PortalIconName } from "./portal-icons";
 import {
   registrationLabels,
   type PortalAnnouncement,
   type PortalEntry,
-
   type PortalFeaturedEvent,
   type PortalMember,
   type PortalTask,
@@ -13,12 +13,14 @@ import {
 import styles from "./member-portal.module.css";
 
 function Header({
-  member, today, messagesHref,
+  member, today, messagesHref, bell,
 }: {
   member: PortalMember;
   today: { date: string; weekday: string };
-  /** Where the bell goes, or null when this club has no message centre. */
+  /** Where the bell's footer link goes, or null when this club has none. */
   messagesHref: string | null;
+  /** The panel's contents, rendered on the server behind its own Suspense. */
+  bell: React.ReactNode;
 }) {
   return <header className={styles.header}>
     <div className={styles.headerGreeting}>
@@ -45,13 +47,14 @@ function Header({
           />
           <button className="sr-only" type="submit">搜尋</button>
         </form>
-        {/* A link, because it went nowhere before, and with no dot, because the
-            dot was painted on always -- it said "you have something waiting"
-            every single time, which is not a signal. Unread is still shown
-            where it can be true or false: on the announcements themselves. */}
-        {messagesHref !== null && <Link className={styles.bell} href={messagesHref} prefetch={false} aria-label="社內訊息">
-          <PortalIcon name="bell" size={21} />
-        </Link>}
+        {/* A popover, not a link: the bell is about a handful of lines, and
+            leaving the page to read them means coming back when there was
+            nothing. No dot is painted -- it used to be painted always, which
+            said "you have something waiting" every single time. Unread is
+            shown where it can be true or false: on the notices themselves. */}
+        {messagesHref !== null && <NotificationBell messagesHref={messagesHref}>
+          {bell}
+        </NotificationBell>}
         <span className={styles.headerAvatar} aria-hidden="true">{member.initial}</span>
       </div>
       <p className={styles.today}><strong>{today.date}</strong><span>{today.weekday}</span></p>
@@ -129,12 +132,14 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
 }
 
 function DashboardCard({
-  icon, title, tone, empty, children,
+  icon, title, tone, empty, href, children,
 }: {
   icon: PortalIconName;
   title: string;
   tone: "blue" | "green" | "amber";
   empty: string | null;
+  /** Where this card's own "查看全部" goes. */
+  href: string;
   children: React.ReactNode;
 }) {
   return <section className={styles.panel}>
@@ -143,7 +148,9 @@ function DashboardCard({
         <PortalIcon name={icon} size={20} />
       </span>
       <h2 className={styles.cardTitle}>{title}</h2>
-      <Link className={styles.panelLink} href="/events" prefetch={false}>
+      {/* Each card links to its own list. This was hardcoded to /events, so
+          "查看全部" under the notices sent a member to the events page. */}
+      <Link className={styles.panelLink} href={href} prefetch={false}>
         查看全部 <PortalIcon name="chevronRight" size={16} />
       </Link>
     </div>
@@ -158,6 +165,8 @@ export type MemberPortalContentProps = {
   upcomingEvents: readonly PortalUpcomingEvent[];
   tasks: readonly PortalTask[];
   announcements: readonly PortalAnnouncement[];
+  /** Where the notices card's "查看全部" goes; the message centre. */
+  messagesHref: string;
   /** Ways into features the home page is the only route to. */
   entries: readonly PortalEntry[];
   /** Anything the home must still carry, such as the LINE pairing prompt. */
@@ -170,18 +179,19 @@ export type MemberPortalContentProps = {
  */
 /** The greeting, which needs no data and so need not wait for any. */
 export function MemberPortalHeader({
-  member, today, messagesHref,
+  member, today, messagesHref, bell,
 }: {
   member: PortalMember;
   today: { date: string; weekday: string };
   messagesHref: string | null;
+  bell: React.ReactNode;
 }) {
-  return <Header member={member} today={today} messagesHref={messagesHref} />;
+  return <Header member={member} today={today} messagesHref={messagesHref} bell={bell} />;
 }
 
 /** What the page can only draw once the projection has arrived. */
 export function MemberPortalBody({
-  featuredEvent, upcomingEvents, tasks, announcements, entries, children,
+  featuredEvent, upcomingEvents, tasks, announcements, messagesHref, entries, children,
 }: Omit<MemberPortalContentProps, "member" | "today">) {
   return <>
       {/* Nothing to do today is the common case, and it says so in one line
@@ -195,7 +205,7 @@ export function MemberPortalBody({
         : <HeroCard event={featuredEvent} />}
 
       <div className={styles.dashboard}>
-        <DashboardCard icon="calendar" title="近期活動" tone="blue" empty={upcomingEvents.length === 0 ? "近期沒有活動" : null}>
+        <DashboardCard icon="calendar" title="近期活動" tone="blue" href="/events" empty={upcomingEvents.length === 0 ? "近期沒有活動" : null}>
           {upcomingEvents.map((event) => <div className={styles.eventRow} key={event.title}>
             <span className={styles.dateCard}>
               <small>{event.month}</small>
@@ -211,7 +221,7 @@ export function MemberPortalBody({
           </div>)}
         </DashboardCard>
 
-        <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" empty={tasks.length === 0 ? "目前沒有待辦事項" : null}>
+        <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" href="/events" empty={tasks.length === 0 ? "目前沒有待辦事項" : null}>
           {tasks.map((task) => <Link className={styles.taskRow} key={`${task.title}-${task.detail}`} href={task.href} prefetch={false}>
             <span className={`${styles.taskIcon} ${styles[`taskIcon_${task.tone}`]}`} aria-hidden="true">
               <PortalIcon name={task.icon === "bell" ? "bell" : task.icon === "document" ? "document" : "users"} size={19} />
@@ -226,7 +236,7 @@ export function MemberPortalBody({
           </Link>)}
         </DashboardCard>
 
-        <DashboardCard icon="megaphone" title="社團公告" tone="amber" empty={announcements.length === 0 ? "目前沒有社團公告" : null}>
+        <DashboardCard icon="megaphone" title="社團訊息" tone="amber" href={messagesHref} empty={announcements.length === 0 ? "目前沒有社團訊息" : null}>
           {announcements.map((item) => <Link
             className={item.unread ? `${styles.noticeRow} ${styles.noticeRowUnread}` : styles.noticeRow}
             key={`${item.date}-${item.title}`}
