@@ -281,8 +281,14 @@ export function MemberPortalBody({
 
 /** The page's own frame, inside the shell that carries the navigation. */
 export function MemberPortalShell({ children }: { children: React.ReactNode }) {
-  return <div className={styles.contentOnly}>
-    <div className={styles.backdrop} aria-hidden="true" />
-    <main className={styles.main}>{children}</main>
-  </div>;
+  return <>
+    {/* The decorative backdrop is the member home's LCP image. Keep this
+        preload here, rather than in the authenticated layout, so management
+        pages do not fetch a member-only asset. */}
+    <link rel="preload" as="image" href="/hero-mountains.webp" fetchPriority="high" />
+    <div className={styles.contentOnly}>
+      <div className={styles.backdrop} aria-hidden="true" />
+      <main className={styles.main}>{children}</main>
+    </div>
+  </>;
 }

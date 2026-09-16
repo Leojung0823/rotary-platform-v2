@@ -55,6 +55,16 @@ describe("performance-first navigation boundaries", () => {
     expect(portal.match(/<Link/gu)?.length).toBe(portal.match(/prefetch=\{false\}/gu)?.length);
   });
 
+  it("preloads the member home's decorative LCP image without making it global", () => {
+    const portal = source("src/components/member-portal/member-portal.tsx");
+    const authenticatedLayout = source("src/app/(authenticated)/layout.tsx");
+
+    expect(portal).toContain(
+      '<link rel="preload" as="image" href="/hero-mountains.webp" fetchPriority="high" />',
+    );
+    expect(authenticatedLayout).not.toContain("hero-mountains.webp");
+  });
+
   it("does not wait for diagnostic writes before rendering the homepage", () => {
     const context = source("src/lib/experience-context.server.ts");
     const memberHome = source("src/lib/member-home.server.ts");

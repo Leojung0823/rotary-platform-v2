@@ -346,12 +346,15 @@ production 沒有修改。
 
 ### E-06 登入後管理頁效能量測 `[>]`
 
-- **外部條件**：需要已登入的 staging 管理帳號與 Chrome DevTools 效能工具；目前只有未登入 `/login` 的 lab 數字，管理頁 TTFB／LCP／FCP 尚未量測。
-- **最新工具狀態（2026-09-16）**：Chrome DevTools MCP 仍只連到未登入的 `/login`；本次 trace 量得
-  LCP `167 ms`、FCP `168 ms`、LCP TTFB `104 ms`、CLS `0.00`（CPU 1x、未限速），相鄰
-  `/api/health` 為 staging `1ef38bb50407`。已登入管理頁在另一個瀏覽器 session，尚未取得同一 session 的 trace，
-  因此管理頁數字維持「未量測」。完整條件與限制見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
-- **完成證據**：同一帳號、同一社、同一網路條件，取得改版前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。
+- **2026-09-16 已建立登入後基線**：同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未限速；staging runtime `1ef38bb50407`。
+  管理頁 LCP `1,777 ms`、FCP `760 ms`、LCP TTFB `637 ms`、CLS `0.00`；社員首頁 LCP `1,929 ms`、FCP `562 ms`、
+  LCP TTFB `452 ms`、CLS `0.01`。兩頁 INP 均為「未量測」。
+- **目前真正找到的改善方向**：社員首頁的 LCP 圖片 `/hero-mountains.webp` 藏在 CSS background，資源發現延遲
+  `1,319 ms`；管理頁另有文件請求延遲洞察估算 `532 ms`。社員首頁限定 preload 已在本輪分支實作，管理頁
+  後續仍要拆出文件等待與 render pipeline。
+- **尚未結案原因**：preload 尚未部署到同一 staging revision，還沒有修改前後的 LCP／FCP 數字；不能把本機
+  測試通過或單次基線當作改善完成。
+- **完成證據**：同一帳號、同一社、同一網路條件，取得修改前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。完整條件與限制見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
 
 ### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
 
@@ -802,7 +805,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 2. **E-02：生日邀請 LINE 實際送達** `[x]`：2026-09-12 完成。`PANCHIAO-ELITE` 的邀請實際送達 `Michael` 的 LINE，重跑 `jobCount=0` 不重送；負向情境（取消追蹤、關閉通知）未另做對照測試。
 3. **E-03：follow 自動配對真人驗收** `[>]`：2026-09-14 暫緩解除——公開加入連結帶來真實流量，audit log 已有 `line_oa.auto_paired`。仍缺的是「配對到的是正確的人」這一半，需要人核對姓名；負向情境（多社／外社／停權）也未驗。
 4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
-5. **E-06：登入後管理頁效能量測** `[>]`：使用已登入 staging 帳號量測 TTFB、LCP、FCP；沒有數字就寫未量測。
+5. **E-06：登入後管理頁效能量測** `[>]`：已建立登入後基線；先驗證社員首頁限定 preload 的前後 LCP／FCP，再拆管理頁文件等待與 render pipeline。
 6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
 7. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次只啟用 PANCHIAO-ELITE，已結案。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
