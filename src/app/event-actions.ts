@@ -373,10 +373,23 @@ export async function updateEventAction(
     return createEventFailure(values, revision, "請修正下列欄位後再儲存。", validated.fieldErrors);
   }
 
+  // The edit form renders the audience picker, but this action never read it:
+  // an officer could change 發送對象 and nothing happened. Forced the same way
+  // creating does, so a targeted event cannot also claim to count.
+  const audienceTagIds = readUuidList(formData, "audienceTagIds");
+  const audienceMembershipIds = readUuidList(formData, "audienceMembershipIds");
+  const targeted = audienceTagIds.length > 0 || audienceMembershipIds.length > 0;
+  const countsForAttendance = validated.input.countsForAttendance && !targeted;
+
   type UpdateOutcome = { notify_members?: unknown; changed_field_count?: unknown; version?: unknown };
   let outcome: UpdateOutcome | null = null;
   try {
     const supabase = await createClient();
+    // The audience first. counts_for_attendance and the audience are mutually
+    // exclusive in the database, so widening the audience before the event
+    // stops counting would be refused by the trigger -- but update_club_event
+    // sets counts_for_attendance to false in the same call, and it has to have
+    // done so before the audience is written.
     const result = await supabase.rpc("update_club_event", {
       p_club_id: clubId,
       p_event_id: eventId,
@@ -388,13 +401,34 @@ export async function updateEventAction(
       p_ends_at: validated.input.endsAt,
       p_registration_deadline: validated.input.registrationDeadline,
       p_capacity: validated.input.capacity,
-      p_counts_for_attendance: validated.input.countsForAttendance,
+      p_counts_for_attendance: countsForAttendance,
       p_venue_latitude: validated.input.venue?.latitude ?? null,
       p_venue_longitude: validated.input.venue?.longitude ?? null,
       p_expected_version: Number.isNaN(expectedVersion) ? null : expectedVersion,
     });
     if (result.error) return updateEventRpcFailure(values, revision, result.error.message);
     outcome = (result.data ?? null) as UpdateOutcome | null;
+
+    // Always sent, including when it is empty: an officer removing every tag
+    // is widening the event back to the whole club, and skipping the call for
+    // an empty selection would make that the one edit that cannot be made.
+    const audience = await supabase.rpc("set_club_event_audience", {
+      p_club_id: clubId,
+      p_event_id: eventId,
+      p_tag_ids: audienceTagIds,
+      p_membership_ids: audienceMembershipIds,
+    });
+    if (audience.error) {
+      // The rest of the edit is already saved, and saying so matters: a plain
+      // failure would send the officer to make the same changes again.
+      revalidatePath("/events");
+      revalidatePath(`/clubs/${clubId}/events`);
+      return createEventFailure(
+        values,
+        revision,
+        "活動已儲存，但發送對象未更新。請重新開啟編輯頁確認對象。",
+      );
+    }
   } catch {
     return createEventFailure(values, revision, "目前無法儲存這場活動，請稍後再試。已輸入的內容仍保留。");
   }

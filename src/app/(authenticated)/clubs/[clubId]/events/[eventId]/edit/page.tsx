@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { EventCreateForm } from "@/components/events/event-create-form";
 import { Notice } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
+import { audienceFromEvent } from "@/lib/audience/selection";
+import type { AudienceSelection } from "@/lib/audience/selection";
 import type { EventCreateFormValues } from "@/lib/events/validation";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +35,8 @@ type ManagedEvent = {
   counts_for_attendance: boolean;
   venue_latitude: number | null;
   venue_longitude: number | null;
+  audience_tag_ids: string[] | null;
+  audience_membership_ids: string[] | null;
 };
 
 /** datetime-local wants the club's wall clock, not an instant with a zone. */
@@ -77,6 +81,14 @@ export default async function EditEventPage({
     </div>;
   }
 
+  // The picker opens on what the event already addresses. Opening it empty
+  // meant an officer saw "whole club" for a targeted event, and saving would
+  // have widened it to the whole club without ever saying so.
+  const audience: AudienceSelection = audienceFromEvent(
+    target.audience_tag_ids ?? [],
+    target.audience_membership_ids ?? [],
+  );
+
   const values: EventCreateFormValues = {
     eventType: target.event_type,
     title: target.title,
@@ -111,7 +123,7 @@ export default async function EditEventPage({
         eventTypeLabels={eventTypeLabels}
         tags={((tagsResult.data as { tags?: never[] } | null)?.tags ?? [])}
         members={((membersResult.data ?? []) as never[])}
-        editing={{ eventId, version: target.version, values }}
+        editing={{ eventId, version: target.version, values, audience }}
       />
     </section>
   </div>;
