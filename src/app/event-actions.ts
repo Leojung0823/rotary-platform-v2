@@ -438,3 +438,69 @@ function updateEventRpcFailure(
   const matched = Object.keys(messages).find((code) => message?.includes(code));
   return createEventFailure(values, revision, matched ? messages[matched] : "目前無法儲存這場活動，請稍後再試。");
 }
+
+const registrationErrors: Record<string, string> = {
+  event_manage_required: "目前帳號沒有管理這個活動的權限。",
+  event_not_available: "找不到這場活動。",
+  membership_not_available: "找不到這位社員，或這場活動不是發送給他的。",
+  event_registration_closed: "活動尚未發布或已結束，不能代為報名。",
+  event_capacity_full: "名額已滿，這次沒有寫入。",
+  invalid_event_registration: "報名內容不正確。",
+  registration_reason_required: "請寫下原因（例如：來電告知無法出席），最多 200 字。",
+};
+
+function registrationErrorMessage(message: string | undefined): string {
+  for (const [code, text] of Object.entries(registrationErrors)) {
+    if (message?.includes(code)) return text;
+  }
+  return "目前無法更新報名狀態，請稍後再試。";
+}
+
+/**
+ * An officer answering for a member.
+ *
+ * A member phoning to say they cannot come is ordinary club business that had
+ * no home in the product: the card showed a count and nothing else. The reason
+ * is required and stored as the registration's note, so the member can later
+ * see why their answer is what it is, and the club can answer for the change.
+ */
+export async function setMemberEventRegistrationAction(formData: FormData) {
+  let clubId: string;
+  let eventId: string;
+  let membershipId: string;
+  try {
+    clubId = parseUuid(formData.get("clubId"));
+    eventId = parseUuid(formData.get("eventId"));
+    membershipId = parseUuid(formData.get("membershipId"));
+  } catch {
+    redirect("/dashboard");
+  }
+
+  const response = String(formData.get("response") ?? "");
+  const guestCount = Number.parseInt(String(formData.get("guestCount") ?? "0"), 10);
+  const reason = String(formData.get("reason") ?? "").trim();
+  const back = (key: "success" | "error", code: string) =>
+    `/clubs/${encodeURIComponent(clubId)}/events?mode=management&${key}=${encodeURIComponent(code)}#event-${encodeURIComponent(eventId)}`;
+
+  if (!["pending", "attending", "declined"].includes(response)) redirect(back("error", "invalid_input"));
+  if (reason.length === 0 || reason.length > 200) redirect(back("error", "reason_required"));
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_event_registration_for_member", {
+    p_club_id: clubId,
+    p_event_id: eventId,
+    p_membership_id: membershipId,
+    p_response: response,
+    p_guest_count: Number.isNaN(guestCount) ? 0 : guestCount,
+    p_reason: reason,
+  });
+  if (error) {
+    redirect(`${back("error", "registration_failed")}&detail=${encodeURIComponent(registrationErrorMessage(error.message))}`);
+  }
+
+  revalidatePath(`/clubs/${clubId}/events`);
+  revalidatePath("/events");
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/dashboard");
+  redirect(back("success", "registration_set"));
+}

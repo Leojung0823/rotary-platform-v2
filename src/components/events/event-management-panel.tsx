@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { cancelEventAction, publishEventAction } from "@/app/event-actions";
 import { EventCoverUpload } from "@/components/events/event-cover-upload";
+import { EventRegistrationRoster } from "@/components/events/event-registration-roster";
+import type { RegistrationRosterEntry } from "@/lib/events/registration-roster";
 import { EventCreateForm } from "@/components/events/event-create-form";
 import { eventTypeLabels, formatDateTime, responseLabels, statusBadge, statusLabels, type ClubEvent, type EventClub } from "@/lib/events/page-contract";
 
@@ -14,19 +16,23 @@ export function EventManagementPanel({
   coverUrls,
   audienceTags,
   audienceMembers,
+  rosters,
 }: {
   selectedClub: EventClub;
   events: readonly ClubEvent[];
   coverUrls: ReadonlyMap<string, string>;
   audienceTags: readonly EventManagementAudienceTag[];
   audienceMembers: readonly EventManagementAudienceMember[];
+  /** Per published event: who was asked and what they said. null means the
+      read failed, which the card reports rather than drawing as "nobody". */
+  rosters: ReadonlyMap<string, readonly RegistrationRosterEntry[] | null>;
 }) {
   const live = events.filter((event) => event.status !== "cancelled");
   const cancelled = events.filter((event) => event.status === "cancelled");
 
   // One card, rendered for the live list and for the archive alike.
   function eventCard(event: ClubEvent) {
-    return <article className="card" key={event.id}>
+    return <article className="card" id={`event-${event.id}`} key={event.id}>
           {/* Folded by default. An officer scanning this list wants to see
               which event is which; a full-width poster on every card turns a
               dozen events into a page of scrolling. */}
@@ -65,6 +71,12 @@ export function EventManagementPanel({
               {event.my_response && <span className="badge badge-success">我的狀態：{responseLabels[event.my_response]}</span>}
             </div>
           </div>
+
+          {event.status === "published" && <EventRegistrationRoster
+            clubId={selectedClub.club_id}
+            eventId={event.id}
+            entries={rosters.get(event.id) ?? []}
+          />}
 
           {event.status === "published" && event.counts_for_attendance && <div className="form-actions">
             <Link className="button" href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}&mode=management`}>管理簽到</Link>
