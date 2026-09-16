@@ -158,8 +158,29 @@ set primary_phone = '0911111111', birth_date = '1980-05-05'
 where id = '4b000000-0000-0000-0000-000000000001';
 update public.club_message_recipients set read_at = now()
 where membership_id = '4e000000-0000-4000-8000-000000000001';
-delete from public.club_finance_receivables where id = '5c000000-0000-4000-8000-000000000001';
-delete from public.birthday_wish_campaign_participants where id = '6a000000-0000-4000-8000-000000000001';
+-- Settled the way it is actually settled: a receipt allocated against it.
+-- Finance records are append-only (club_finance_record_immutable), so deleting
+-- the receivable is not a thing the product can do -- and a test that did it
+-- would be proving something the application never does.
+insert into public.club_finance_receipts (
+  id, club_id, amount, received_on, payment_method, idempotency_key,
+  recorded_by_app_account_id
+) values (
+  '6b000000-0000-4000-8000-000000000001', '4d000000-0000-4000-8000-000000000001',
+  12000, current_date, 'bank_transfer', 'tasks-test-receipt',
+  '4c000000-0000-0000-0000-000000000002'
+);
+insert into public.club_finance_receipt_allocations (
+  club_id, receipt_id, receivable_id, amount
+) values (
+  '4d000000-0000-4000-8000-000000000001', '6b000000-0000-4000-8000-000000000001',
+  '5c000000-0000-4000-8000-000000000001', 12000
+);
+
+-- The wish is answered by declining it, which is a state the product has.
+update public.birthday_wish_campaign_participants
+set participant_status = 'declined', responded_at = now()
+where id = '6a000000-0000-4000-8000-000000000001';
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '4a000000-0000-0000-0000-000000000001', true);

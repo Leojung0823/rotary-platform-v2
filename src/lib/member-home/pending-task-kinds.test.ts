@@ -86,6 +86,34 @@ describe("一個不可能遲到的提醒不准說自己快遲到了", () => {
   });
 });
 
+describe("報名截止可以留空的活動，待辦仍然完整", () => {
+  // Two of my own features collided: registration_deadline became nullable, so
+  // an event_response row could carry a null deadline and a real countdown at
+  // the same time. The parser rejects a row like that -- and rejecting one row
+  // rejects the whole projection, which turned the member home into an error
+  // state with every link on it gone. CI found it; nothing local did.
+  it("reports when registration actually closes, not the nullable column", () => {
+    const branch = projection.slice(projection.indexOf("'kind', 'event_response'"));
+    const upToCount = branch.slice(0, branch.indexOf("'count',"));
+    expect(upToCount).toContain("'deadline', public.event_registration_closes_at(");
+    expect(upToCount, "the nullable column is used as the deadline")
+      .not.toMatch(/'deadline',\s*task\.registration_deadline/u);
+  });
+
+  it("measures the countdown to that same moment", () => {
+    const branch = projection.slice(projection.indexOf("'kind', 'event_response'"));
+    const upToCount = branch.slice(0, branch.indexOf("'count',"));
+    expect(upToCount).toContain("public.event_registration_closes_at(\n              task.registration_deadline, task.ends_at\n            )");
+    expect(upToCount).toContain("'hours_remaining', floor(extract(epoch from (");
+  });
+
+  it("rejecting one row rejects the whole projection", () => {
+    // Why the above matters this much: there is no partial answer. A single
+    // malformed task takes the page with it.
+    expect(parsedTasks([task({ deadline: null })])).toBeNull();
+  });
+});
+
 describe("a row that half-carries a deadline is not a row", () => {
   // The two travel together. One without the other means the projection and
   // the parser disagree about what a row is, and guessing which is right would

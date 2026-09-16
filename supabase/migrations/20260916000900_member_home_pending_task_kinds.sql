@@ -352,14 +352,22 @@ begin
       from (
         select
           1 as sort_rank,
-          task.registration_deadline as deadline,
+          public.event_registration_closes_at(task.registration_deadline, task.ends_at) as deadline,
           task.title as label,
           jsonb_build_object(
             'kind', 'event_response',
             'title', task.title,
             'detail', '',
             'action_path', '/events',
-            'deadline', task.registration_deadline,
+            -- When registration actually closes, not the column. An event with
+            -- no deadline of its own still closes -- at the end of the event --
+            -- and the countdown below is already measured to that moment. The
+            -- column alone would be null while the countdown was a number, and
+            -- a row that half-carries a deadline is rejected outright, taking
+            -- the whole projection and the page with it.
+            'deadline', public.event_registration_closes_at(
+              task.registration_deadline, task.ends_at
+            ),
             -- Hours, not a bucket: how soon "soon" is stays a product decision
             -- for the page to make, and it can change without a migration.
             'hours_remaining', floor(extract(epoch from (
