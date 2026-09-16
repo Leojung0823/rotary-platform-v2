@@ -63,6 +63,10 @@ FCP／LCP／TTFB 再用 trace 原始事件交叉核對。這是各頁各一次�
   CUA 頁面可驗證 DOM，但不提供 Performance timing。
 - 管理頁的 637 ms TTFB 與 1,140 ms render delay 是基線訊號，不足以直接判定是資料庫慢；要先做同一
   revision 的修改後 trace，並用 server timing／請求瀑布拆分文件等待與前端繪製。
+- 2026-09-16 後續嘗試再次開啟 `/dashboard?mode=management` 與 `/dashboard?mode=member` 時，Chrome DevTools
+  的登入 session 實際渲染的是「平台管理工作台」，不是社員或社務管理帳號。這次 trace 雖回報平台頁 LCP
+  `1,490 ms`／`1,523 ms` 等數字，但不符合 E-06 的測試對象，全部排除，不納入效能基準；社員首頁修改後
+  的 LCP／FCP／TTFB 仍是**未量測**。下次量測前必須先確認畫面標題與導覽是目標角色，再開始 trace。
 - Trace 的 render-blocking CSS 與約 14.4 kB legacy JavaScript 是後續候選項，不在沒有前後證據時大改。
 - 登入頁回應是 `private, no-cache, no-store, max-age=0, must-revalidate`，且
   `cf-cache-status: DYNAMIC`；這是安全的登入頁設定，不應為了速度改成公開快取。
