@@ -34,13 +34,16 @@ describe("event list", () => {
 });
 
 describe("event page header actions", () => {
-  it("keeps the explanatory note out of the button row", () => {
+  it("keeps any explanatory note out of the button row", () => {
     // With the note between them, the two buttons and the prose all competed
     // for one row and the labels broke mid-word.
+    //
+    // There is no note left to misplace: it existed to explain where the
+    // 活動管理 button had gone, and that button is no longer offered here at
+    // all. The layout rule still holds for whatever is added next.
     const header = listPage.slice(listPage.indexOf('className="header-actions"'));
     const buttonRow = header.slice(header.indexOf('className="form-actions"'), header.indexOf("</div>"));
     expect(buttonRow).not.toContain('className="hint"');
-    expect(header).toContain('className="hint"');
   });
 
   it("lets a crowded action row wrap instead of squeezing its buttons", () => {
