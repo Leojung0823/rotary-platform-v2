@@ -45,6 +45,47 @@ describe("the member events page offers no way into management", () => {
     expect(list).toContain("redirect(`/clubs/${encodeURIComponent(selectedClub.club_id)}/events?mode=management`)");
   });
 
+  it("renders no link into management anywhere on the page", () => {
+    // 活動管理 was removed from the header, but 管理簽到 was still sitting in
+    // every event card's footer -- the same offer, one fold further down, and
+    // it outlived the guard because that guard only read the header function.
+    // Every route into management is one rule, not one rule per button.
+    //
+    // Asserted per line rather than by picking hrefs out: an href here is a
+    // template literal, and `${...}` ends any pattern that tries to read one
+    // as a single quoted string -- which is how the first version of this
+    // guard let 管理簽到 straight back in.
+    const offers = list.split("\n")
+      .filter((line) => line.includes("mode=management") || line.includes("/clubs/"))
+      .filter((line) => !line.includes("redirect("));
+    expect(offers, "the member page routes into management").toEqual([]);
+  });
+
+  it("still offers 本人簽到, which is the member's own action", () => {
+    // The point is not "no check-in link". A member signs themselves in from
+    // here; what left is the route that manages everyone else's.
+    expect(list).toMatch(/>\s*本人簽到\s*<\/Link>/u);
+    expect(list).not.toMatch(/>\s*管理簽到\s*<\/a>/u);
+  });
+
+  it("offers it on the member's own condition, not on an empty row", () => {
+    // 本人簽到 and 管理簽到 shared a wrapper gated on counts_for_attendance. With
+    // 管理簽到 gone, an officer who is not a member of this club would have been
+    // shown an empty .form-actions strip.
+    //
+    // Read forwards from the wrapper to the label rather than backwards from
+    // the label: 400 characters back reaches the notice above, whose own
+    // condition is `!selectedClub.can_register` -- so the first version of this
+    // guard passed while reading a different line entirely.
+    const at = list.indexOf("本人簽到");
+    const wrapper = list.lastIndexOf("counts_for_attendance", at);
+    expect(wrapper, "the check-in row no longer follows counts_for_attendance").toBeGreaterThan(-1);
+    const condition = list.slice(wrapper, at);
+    expect(condition.length, "the label moved away from its wrapper").toBeLessThan(200);
+    expect(condition, "the row is not gated on the member's own ability to check in")
+      .toMatch(/&&\s*selectedClub\.can_register/u);
+  });
+
   it("does not take a canManage flag it no longer needs", () => {
     // A flag left behind is an invitation to render something from it again.
     expect(list).not.toContain("canManage");
