@@ -4,7 +4,7 @@
 
 ## 2026-09-16 最新狀態（優先於下方歷史紀錄）
 
-- `main` exact SHA：`a8f96f52aa2f712852401d6e29ff1ffce712e0c5`；產品程式 staging runtime：`1ef38bb50407`（目前 `main` 的文件同步 commit 尚未重新部署）。
+- `main` exact SHA：`857b9dc54a4cc98e67f86b264d2014c91b4f38c1`；產品程式 staging runtime：`1ef38bb50407`（目前 `main` 的文件同步 commit 尚未重新部署）。
 - 社費報表與匯出，以及祝福 IOU 伺服器 PDF 的程式與 migration 已包含在目前 staging；健康檢查為 `status=ok`、`issues=[]`、`warnings=[]`。
 - 尚未結案的是 staging hosted 驗收：角色／跨社隔離、空資料格式、CSV／Excel／PDF 內容與 `no-store` 回應；沒有把「程式已部署」寫成「真人已驗收」。
 - production 沒有修改。

@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-16（Asia/Taipei；以 GitHub `main=a8f96f5` 核對）
+更新日期：2026-09-16（Asia/Taipei；以 GitHub `main=857b9dc` 核對）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
@@ -13,9 +13,9 @@
 本次以 GitHub `Leojung0823/rotary-platform-v2` 的 `origin/main`、GitHub Actions 與 staging
 實際健康檢查交叉核對；舊的 2026-09-15 段落保留作為歷史紀錄，不再當作目前狀態。
 
-- `origin/main` exact SHA：`a8f96f52aa2f712852401d6e29ff1ffce712e0c5`；產品程式基準為 `1ef38bb504075d7a197e99c2364db8b087cea22e`。
+- `origin/main` exact SHA：`857b9dc54a4cc98e67f86b264d2014c91b4f38c1`；產品程式基準為 `1ef38bb504075d7a197e99c2364db8b087cea22e`。
 - staging `/api/health`：`status=ok`、`revision=1ef38bb50407`、`configuration=true`、
-  `database=true`、`issues=[]`、`warnings=[]`。production 沒有修改；產品程式已發布 `1ef38bb`，最新 `main=a8f96f5` 只有文件同步尚未重新部署。
+  `database=true`、`issues=[]`、`warnings=[]`。production 沒有修改；產品程式已發布 `1ef38bb`，最新 `main=857b9dc` 只有文件同步尚未重新部署。
 - 9/16 已進入主線並部署至 staging 的修正／功能包括：首頁待辦完成後移除生日提醒、社費提醒連到實際應付年度、
   只有 Email 的社員可以清除個人資料提醒、活動報名截止日可留空、生日徵集可編輯日期／關閉、
   管理員批次修復未配對 follower、手機表格卡片不再把整頁撐寬，以及測試 fixture race 修正。
@@ -26,7 +26,7 @@
 
 ### 這次掃描後的實際結論
 
-1. 不是「主線沒有更新」：主線已到文件同步 commit `a8f96f5`，產品程式 staging 已到 `1ef38bb`。
+1. 不是「主線沒有更新」：主線已到文件同步 commit `857b9dc`，產品程式 staging 已到 `1ef38bb`。
 2. 不是「所有待辦都完成」：E-03、E-05、E-06、E-07、E-08、E-10、E-11 仍需要真人、效能工具、產品決策或外部 OA 設定。
 3. #188／#189／#190 已合併、檢查已通過並發布至 staging；下一步是完成剩餘真人／外部驗收。
 
