@@ -1,0 +1,75 @@
+.wrapper { position: relative; display: inline-flex; }
+
+.bell {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--background-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.bell:hover { color: var(--rotary-blue); }
+.bell:focus-visible { outline: 2px solid var(--rotary-blue); outline-offset: 2px; }
+
+.panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--background-card);
+  box-shadow: 0 18px 50px rgba(20, 60, 110, .18);
+  text-align: left;
+}
+
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+.panelHead strong { font-size: var(--type-label); }
+.panelAll { color: var(--blue-ink); font-size: var(--type-meta); font-weight: var(--weight-medium); }
+
+.empty { margin: 0; color: var(--text-secondary); font-size: var(--type-meta); }
+
+.list { display: grid; gap: 2px; }
+
+.item {
+  display: grid;
+  gap: 2px;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-control);
+  color: inherit;
+  text-decoration: none;
+}
+.item:hover { background: var(--rotary-blue-light); }
+.item small { color: var(--text-secondary); font-size: var(--type-meta); }
+.item strong { font-size: var(--type-label); }
+.item span { color: var(--text-secondary); font-size: var(--type-meta); }
+
+/* Unread is said twice -- the dot and the weight -- because colour may not be
+   the only signal a reader has. */
+.unread strong::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--rotary-blue);
+  vertical-align: middle;
+}
+
+@media (max-width: 640px) {
+  .panel { position: fixed; top: 64px; right: 12px; left: 12px; width: auto; }
+}

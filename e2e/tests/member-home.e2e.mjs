@@ -81,3 +81,45 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     await expect(page.getByRole("link", { name: "前往簽到" })).toBeVisible();
   }
 });
+
+test("the bell opens its notices in place instead of leaving the page", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "member-home-1440", "one width is enough for a behaviour");
+  await login(page, "e2e-shell-ordinary@example.test");
+  await expect(page.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
+
+  const bell = page.getByRole("button", { name: "社內訊息" });
+  const panel = page.getByRole("dialog", { name: "社內訊息" });
+  await expect(bell).toBeVisible();
+  await expect(bell).toHaveAttribute("aria-expanded", "false");
+  await expect(panel).toBeHidden();
+
+  const before = page.url();
+  await bell.click();
+  await expect(panel).toBeVisible();
+  await expect(bell).toHaveAttribute("aria-expanded", "true");
+  // The whole point: the member is still on the home page.
+  expect(page.url()).toBe(before);
+  await expect(panel.getByRole("link", { name: "開啟訊息中心 →" })).toBeVisible();
+
+  // Escape closes it and puts the caret back where it was.
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await expect(bell).toBeFocused();
+
+  // And a click anywhere else closes it too.
+  await bell.click();
+  await expect(panel).toBeVisible();
+  await page.getByRole("heading", { name: "今天與我有關的事情" }).click();
+  await expect(panel).toBeHidden();
+});
+
+test("每張卡片的查看全部連到自己的清單", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "member-home-1440", "one width is enough for a link");
+  await login(page, "e2e-shell-ordinary@example.test");
+
+  // 社團訊息's 查看全部 used to be hardcoded to /events along with every other
+  // card's, so it sent a member to the events page.
+  const notices = page.locator("section").filter({ hasText: "社團訊息" }).first();
+  await expect(notices.getByRole("heading", { name: "社團訊息" })).toBeVisible();
+  await expect(notices.getByRole("link", { name: /查看全部/u })).toHaveAttribute("href", /\/messages\?/u);
+});
