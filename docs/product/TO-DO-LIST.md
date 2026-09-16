@@ -13,22 +13,24 @@
 本次以 GitHub `Leojung0823/rotary-platform-v2` 的 `origin/main`、GitHub Actions 與 staging
 實際健康檢查交叉核對；舊的 2026-09-15 段落保留作為歷史紀錄，不再當作目前狀態。
 
-- `origin/main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；產品程式基準為 `1ef38bb504075d7a197e99c2364db8b087cea22e`。
-- staging `/api/health`：`status=ok`、`revision=1ef38bb50407`、`configuration=true`、
-  `database=true`、`issues=[]`、`warnings=[]`。production 沒有修改；產品程式已發布 `1ef38bb`，後續主線只有文件同步尚未重新部署。
+- `origin/main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；本輪產品程式提交為
+  `bd8a8e9d0205b6c70b4f4dbc9228fc090c007b57`。
+- staging `/api/health`：`status=ok`、`revision=bd8a8e9d0205`、`configuration=true`、
+  `database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - 9/16 已進入主線並部署至 staging 的修正／功能包括：首頁待辦完成後移除生日提醒、社費提醒連到實際應付年度、
   只有 Email 的社員可以清除個人資料提醒、活動報名截止日可留空、生日徵集可編輯日期／關閉、
   管理員批次修復未配對 follower、手機表格卡片不再把整頁撐寬，以及測試 fixture race 修正。
-- 新增的資料庫 migration `20260916001500_dues_reminder_lands_on_the_year_owed.sql` 已隨 Staging Go-Live
-  `35083792540` 套用；仍要依 migration／rollback 規則管理後續變更，不能只看應用程式 CI。
-- PR #188、#189、#190 都已正常 merge；`main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，並已由 Staging Release `35083682035`／Go-Live `35083792540` 發布產品程式。
+- 新增的資料庫 migration `20260916001500_dues_reminder_lands_on_the_year_owed.sql` 已在前一個 Staging Go-Live
+  `35083792540` 套用，目前 staging 仍包含它；本輪 `bd8a8e9` 沒有新增 migration，仍要依 migration／rollback 規則管理後續變更。
+- PR #188、#189、#190 都已正常 merge；本輪效能修正的自動 CI `35100760020` 與 Browser Smoke `35100760034` 均成功，
+  Staging Release `35102157586` 與 Go-Live `35102495571` 也以同一個 exact SHA 成功完成。
 - **判斷規則**：open PR 未通過完整必要檢查前，不算主線完成；已 merge 也不等於 staging 已部署。不能 force push 或 rebase 別人的分支。
 
 ### 這次掃描後的實際結論
 
-1. 不是「主線沒有更新」：主線已包含最新文件同步，產品程式 staging 已到 `1ef38bb`。
+1. 不是「主線沒有更新」：主線已包含 `bd8a8e9` 的效能修正，產品程式 staging 已到 `bd8a8e9`。
 2. 不是「所有待辦都完成」：E-03、E-05、E-06、E-07、E-08、E-10、E-11 仍需要真人、效能工具、產品決策或外部 OA 設定。
-3. #188／#189／#190 已合併、檢查已通過並發布至 staging；下一步是完成剩餘真人／外部驗收。
+3. #188／#189／#190 已合併、檢查已通過並發布至 staging；本輪效能修正也已發布，下一步是完成剩餘真人／外部驗收。
 
 ## 2026-09-15 GitHub 開發狀態快照（#147 合併後）
 
@@ -346,14 +348,15 @@ production 沒有修改。
 
 ### E-06 登入後管理頁效能量測 `[>]`
 
-- **2026-09-16 已建立登入後基線**：同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未限速；staging runtime `1ef38bb50407`。
+- **2026-09-16 已建立登入後基線**：同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未限速；量測當時 staging runtime `1ef38bb50407`，目前已部署 runtime 為 `bd8a8e9d0205`。
   管理頁 LCP `1,777 ms`、FCP `760 ms`、LCP TTFB `637 ms`、CLS `0.00`；社員首頁 LCP `1,929 ms`、FCP `562 ms`、
   LCP TTFB `452 ms`、CLS `0.01`。兩頁 INP 均為「未量測」。
 - **目前真正找到的改善方向**：社員首頁的 LCP 圖片 `/hero-mountains.webp` 藏在 CSS background，資源發現延遲
-  `1,319 ms`；管理頁另有文件請求延遲洞察估算 `532 ms`。社員首頁限定 preload 已在本輪分支實作，管理頁
-  後續仍要拆出文件等待與 render pipeline。
-- **尚未結案原因**：preload 尚未部署到同一 staging revision，還沒有修改前後的 LCP／FCP 數字；不能把本機
-  測試通過或單次基線當作改善完成。
+  `1,319 ms`；管理頁另有文件請求延遲洞察估算 `532 ms`。本輪已把社員首頁限定的 hero 改成 eager `<img>`，
+  並部署至 staging `bd8a8e9d0205`；管理頁後續仍要拆出文件等待與 render pipeline。
+- **staging 實際 DOM 驗收**：社員頁圖片 DOM 為 `1` 張，但 hosted React／Next 仍產生 `2` 個相同的普通 preload 提示（head／body）。
+  本機社員首頁 E2E 為 `3 passed`，含圖片 `1` 張／preload `1` 個與管理模式不載入圖片；兩者行為不同，不能把本機結果當成 hosted 完成證據。
+- **尚未結案原因**：修改後 LCP／FCP／TTFB **未量測**；目前沒有前後效能數字，也不能宣稱已消除所有 preload 或已改善 LCP。
 - **完成證據**：同一帳號、同一社、同一網路條件，取得修改前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。完整條件與限制見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
 
 ### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
@@ -430,7 +433,7 @@ production 沒有修改。
 - `[>]` **生日徵集產生失敗時的錯誤訊息無效**（2026-09-13 實測發現）。PR #110 已加入
   已把「同一社員同一扶輪年已有徵集」轉成可理解的提示，保留每年唯一約束，不放寬資料庫規則。
 
-## 本輪結論（2026-09-16 staging Go-Live 後）
+## 歷史結論（2026-09-16；`1ef38bb` staging Go-Live 後）
 
 截至 2026-09-16，能在 repo 內完成的功能已合併，並以 exact SHA 完成 staging Go-Live；仍要把 hosted、
 真人、實機與產品決策分開記錄。GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 依產品決定暫緩；

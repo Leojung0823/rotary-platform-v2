@@ -7,18 +7,22 @@
 
 這次以 GitHub `origin/main`、GitHub Actions 和 staging `/api/health` 重新核對：
 
-- `origin/main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；產品程式基準為 `1ef38bb504075d7a197e99c2364db8b087cea22e`。
-- staging revision：`1ef38bb50407`；health 為 `status=ok`、`configuration=true`、`database=true`、
+- `origin/main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；本輪產品程式提交為
+  `bd8a8e9d0205b6c70b4f4dbc9228fc090c007b57`。若本輪再提交文件，`main` 會比 staging runtime 多一個純文件 commit。
+- staging revision：`bd8a8e9d0205`；health 為 `status=ok`、`configuration=true`、`database=true`、
   `issues=[]`、`warnings=[]`。production 沒有修改。
 - 9/16 主線新增／修正首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、生日徵集日期／關閉、
   follower 批次配對、手機表格卡片寬度，以及測試 fixture race；另新增 migration
   `20260916001500_dues_reminder_lands_on_the_year_owed.sql`。
-- PR #188、#189、#190 都已合併；`main@1ef38bb` 的合併後 CI 與 Browser Smoke 均已成功，且 Staging Go-Live `35083792540` 已發布 `1ef38bb`。後續主線只有文件同步，尚未重新部署；不要把 merge 或檢查通過當成部署證據。
+- PR #188、#189、#190 都已合併；本輪效能修正提交 `bd8a8e9` 的自動 CI `35100760020` 與 Browser Smoke
+  `35100760034` 均成功。Staging Release `35102157586` 與 Go-Live `35102495571` 使用同一個 exact SHA，已成功發布。
+  不要把 merge 或檢查通過單獨當成部署證據。
 - 文件同步只更新本狀態，不會把 PR 自動合併，也不會因此重新部署 staging；若後續只改文件，依變更範圍規則不手動跑 CI／Browser Smoke。
-- 2026-09-16 Chrome DevTools 量得未登入 `/login`：LCP `167 ms`、FCP `168 ms`、LCP TTFB `104 ms`、CLS `0.00`；
-  同一個已登入 Chrome session 另量得管理頁 LCP `1,777 ms`／FCP `760 ms`／LCP TTFB `637 ms`／CLS `0.00`，
-  社員首頁 LCP `1,929 ms`／FCP `562 ms`／LCP TTFB `452 ms`／CLS `0.01`。兩頁 INP 未量測；社員首頁的
-  `/hero-mountains.webp` 資源發現延遲 `1,319 ms`；本輪分支已加入社員首頁限定 preload，但尚未部署，仍無前後改善數字。
+- 2026-09-16 的登入後數字是修改前基線：管理頁 LCP `1,777 ms`／FCP `760 ms`／LCP TTFB `637 ms`／CLS `0.00`，
+  社員首頁 LCP `1,929 ms`／FCP `562 ms`／LCP TTFB `452 ms`／CLS `0.01`；兩頁 INP 未量測。社員首頁原本的
+  `/hero-mountains.webp` 資源發現延遲 `1,319 ms`，本輪已改成社員首頁限定的 eager `<img>`。
+- staging 實際社員頁驗收：圖片 DOM 為 `1` 張；hosted React／Next 仍產生 `2` 個相同的普通 preload 提示（head／body），
+  因此目前只確認請求管線已從 CSS background 改為文件內圖片，尚未宣稱 preload 或 LCP 改善。修改後 LCP／FCP／TTFB 為**未量測**。
   完整條件記在 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)，效能修改前先讀該文件。
 - 真正仍需外部條件的主線待辦，依 [`TO-DO-LIST.md`](./TO-DO-LIST.md) E-03、E-05、E-06、E-07、E-08、E-10、E-11；
   E-09 目前維持產品決定的暫緩。

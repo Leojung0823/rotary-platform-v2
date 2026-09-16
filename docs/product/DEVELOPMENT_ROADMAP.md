@@ -7,18 +7,21 @@
 ## 2026-09-16 最新基線（覆蓋下面的 2026-09-15 快照）
 
 - GitHub `origin/main` 的最新 SHA 請以 `git rev-parse origin/main` 現場核對；本節固定記錄產品與 staging 版本，避免文件提交後自我過期。
-- staging 產品程式目前為已部署版本 `1ef38bb50407`；`/api/health` 為 `status=ok`、
+- staging 產品程式目前為已部署版本 `bd8a8e9d0205`；`/api/health` 為 `status=ok`、
   `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
 - 主線已包含 9/16 的首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、
   生日徵集日期／關閉、follower 批次配對、手機表格卡片寬度修正與測試 fixture race 修正。
-  另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已由 Staging Go-Live `35083792540` 套用。
-- PR #188、#189、#190 都已正常合併；`main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，並已由 Staging Release `35083682035`／Go-Live `35083792540` 發布產品程式。
+  另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已在前一個 Staging Go-Live `35083792540` 套用，
+  目前 staging 仍包含它；本輪 `bd8a8e9` 沒有新增 migration。
+- PR #188、#189、#190 都已正常合併；本輪效能修正 `bd8a8e9` 的自動 CI `35100760020` 與 Browser Smoke `35100760034` 均成功，
+  並已由 Staging Release `35102157586`／Go-Live `35102495571` 發布產品程式。
 - 最新主線只有文件同步，尚未重新部署；下一個開發順序是處理 E-03、E-10、E-06、E-07、E-05、E-11；
   E-08 production 與 E-09 recovery email 仍是另行決策，不混入一般 staging 開發。
-- 9/16 後續完成登入後頁面效能基線：同一個已登入 Chrome session 下，管理頁 LCP `1,777 ms`／FCP `760 ms`／
+- 9/16 已完成登入後頁面效能基線：同一個已登入 Chrome session 下，管理頁 LCP `1,777 ms`／FCP `760 ms`／
   LCP TTFB `637 ms`／CLS `0.00`；社員首頁 LCP `1,929 ms`／FCP `562 ms`／LCP TTFB `452 ms`／CLS `0.01`。
-  社員首頁的 `/hero-mountains.webp` 資源發現延遲 `1,319 ms`；本輪分支已加入社員首頁限定的 preload，待部署後取得
-  前後改善數字。未登入 `/login` 的 trace 仍為 LCP `167 ms`、FCP `168 ms`、TTFB `104 ms`。完整條件見
+  本輪 `bd8a8e9` 已把社員首頁 LCP 圖片改成首頁限定的 eager `<img>` 並部署；實際社員頁確認圖片 `1` 張，但 hosted
+  React／Next 仍有 `2` 個普通 preload 提示。修改後 LCP／FCP／TTFB **未量測**，不能宣稱改善。未登入 `/login` 的 trace
+  仍為 LCP `167 ms`、FCP `168 ms`、TTFB `104 ms`。完整條件見
   [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。Rich Menu 圖片已在本機準備成
   `2500×1686`、小於 1 MB 的 JPEG，但尚未開旗標、上傳或發布。
 
@@ -508,7 +511,7 @@ PR-01c 不做：
 
 1. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
-3. **E-06：登入後管理頁效能量測** `[>]`：已建立登入後基線；先驗證社員首頁限定 preload 的前後 LCP／FCP，再拆管理頁文件等待與 render pipeline。
+3. **E-06：登入後管理頁效能量測** `[>]`：已部署社員首頁 eager 圖片修正，但修改後 LCP／FCP／TTFB 未量測，且 hosted DOM 仍有兩個普通 preload 提示；先補同條件量測，再拆管理頁文件等待與 render pipeline。
 4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
 5. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次 rollout 只啟用 PANCHIAO-ELITE，已完成。
 6. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging，待各社 OA 設定與真人驗收。
