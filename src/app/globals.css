@@ -397,6 +397,27 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 .checkbox-row input { width: 20px; height: 20px; flex: 0 0 auto; }
 .checkbox-row > span { min-width: 0; overflow-wrap: anywhere; }
 .two-column { display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; }
+
+/* 管理模式的活動卡片。事實排成一行、動作排成一列，取消收進摺疊。
+   原本每一項事實是一個段落、每一個動作是一條 block，加上側欄一個只放了
+   一個數字的 .card，一張說得很少的卡片高 480px。 */
+.event-facts { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0; font-size: 14px; }
+.event-facts > div { display: flex; min-width: 0; gap: 7px; }
+.event-facts dt { flex: 0 0 auto; color: var(--muted); font-weight: var(--weight-medium); }
+.event-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.event-description { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+.event-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.event-actions > form { margin: 0; }
+/* The upload control is its own component with a button and a note. display:
+   contents lets both join this row directly instead of forming a block of
+   their own, and the note takes a line of its own below it. */
+.event-actions .upload { display: contents; }
+.event-actions .upload > .form-actions { margin-top: 0; }
+.event-actions .upload > .hint, .event-actions .upload > .field-error { flex-basis: 100%; margin: 0; }
+.event-danger { margin-top: 12px; }
+.event-danger > summary { display: inline-flex; width: fit-content; color: var(--danger); font-size: 14px; font-weight: var(--weight-medium); cursor: pointer; }
+.event-danger[open] > summary { margin-bottom: 2px; }
+.event-danger .inline-form { margin-top: 8px; }
 .activity-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .activity-list li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .activity-list li:last-child { border-bottom: 0; }
