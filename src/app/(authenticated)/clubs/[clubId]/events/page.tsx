@@ -4,6 +4,7 @@ import { EventManagementPanel, type EventManagementAudienceMember, type EventMan
 import { Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
 import { isEventClub, parseEvents } from "@/lib/events/page-contract";
+import { parseRegistrationRoster } from "@/lib/events/registration-roster";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,10 +16,13 @@ const successMessages: Record<string, string> = {
   event_published_line_failed:
     "活動已發布，社員現在可以報名；但 LINE 推播沒有成功，請到 LINE OA 的推播紀錄確認。",
   event_cancelled: "活動已取消並留下稽核紀錄。",
+  registration_set: "已代為更新報名狀態，並留下稽核紀錄。",
 };
 
 const errorMessages: Record<string, string> = {
   invalid_input: "輸入內容不完整或格式不正確。",
+  reason_required: "代為更新報名時必須寫下原因，最多 200 字。",
+  registration_failed: "無法更新這位社員的報名狀態。",
   cannot_publish: "活動目前不能發布，請確認開始與截止時間。",
   forbidden: "目前帳號沒有執行此動作的權限。",
   unexpected: "目前無法完成操作，請稍後再試。",
@@ -29,7 +33,7 @@ export default async function EventManagementPage({
   searchParams,
 }: {
   params: Promise<{ clubId: string }>;
-  searchParams: Promise<{ mode?: string; success?: string; error?: string }>;
+  searchParams: Promise<{ mode?: string; success?: string; error?: string; detail?: string }>;
 }) {
   const [, { clubId }, query] = await Promise.all([requireIdentity(), params, searchParams]);
   if (!uuidPattern.test(clubId)) notFound();
@@ -82,11 +86,26 @@ export default async function EventManagementPage({
     p_status: "active",
   });
   const coverUrlsPromise = signCoverImageUrls(events.map((event) => event.cover_image_path));
-  const [tagsResult, membersResult, coverUrls] = await Promise.all([
+  // One request per published event, issued together. Only published events
+  // have anyone to list, and a draft's roster would be a list of people who
+  // have not been asked yet.
+  const rosterEvents = events.filter((event) => event.status === "published");
+  const rostersPromise = Promise.all(rosterEvents.map(async (event) => {
+    const { data, error } = await supabase.rpc("list_club_event_registrations", {
+      p_club_id: selectedClub.club_id,
+      p_event_id: event.id,
+    });
+    // A read that failed is not an empty roster: the component says so rather
+    // than showing "nobody has registered".
+    return [event.id, error ? null : parseRegistrationRoster(data)] as const;
+  }));
+  const [tagsResult, membersResult, coverUrls, rosterEntries] = await Promise.all([
     tagsPromise,
     membersPromise,
     coverUrlsPromise,
+    rostersPromise,
   ]);
+  const rosters = new Map(rosterEntries);
   const audienceTags = ((tagsResult.data as { tags?: EventManagementAudienceTag[] } | null)?.tags ?? []);
   const audienceMembers = ((membersResult.data ?? []) as EventManagementAudienceMember[])
     .map((member) => ({ membership_id: member.membership_id, display_name: member.display_name }));
@@ -104,13 +123,19 @@ export default async function EventManagementPage({
       </div>
     </header>
     {query.success && successMessages[query.success] && <Notice tone="success">{successMessages[query.success]}</Notice>}
-    {query.error && <Notice tone="error">{errorMessages[query.error] ?? errorMessages.unexpected}</Notice>}
+    {query.error && <Notice tone="error">
+      {errorMessages[query.error] ?? errorMessages.unexpected}
+      {/* The RPC's own words when it has some: "名額已滿" is actionable in a
+          way that "無法更新" is not. */}
+      {query.detail && ` ${query.detail}`}
+    </Notice>}
     <EventManagementPanel
       selectedClub={selectedClub}
       events={events}
       coverUrls={coverUrls}
       audienceTags={audienceTags}
       audienceMembers={audienceMembers}
+      rosters={rosters}
     />
   </div>;
 }

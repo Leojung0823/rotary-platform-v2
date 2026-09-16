@@ -500,6 +500,34 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 /* A link an organiser typed into a description. */
 .event-description a { color: var(--blue-ink); text-decoration: underline; overflow-wrap: anywhere; }
 
+/* The registration roster on a management card: the counts are in the summary,
+   because that is what an officer came for; the list is what they open when
+   they are chasing replies. */
+.roster-fold { margin: var(--space-4) 0 0; }
+.roster-fold > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--blue-ink);
+  cursor: pointer;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  list-style: none;
+}
+.roster-fold > summary::-webkit-details-marker { display: none; }
+.roster-fold > summary::before { content: "▸"; transition: transform .15s ease; }
+.roster-fold[open] > summary::before { transform: rotate(90deg); }
+.roster-fold > summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.roster-fold > .table-wrap { margin-top: var(--space-3); }
+
+/* One row's controls. They stay on one line while there is room and wrap as a
+   block rather than squeezing the reason box to nothing. */
+.roster-action { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.roster-action select { min-width: 6.5rem; }
+.roster-action input[type="number"] { width: 5rem; }
+.roster-action input[name="reason"] { flex: 1 1 12rem; min-width: 0; }
+
 .cover-fold, .archive-fold { margin: 0; }
 .cover-fold > summary, .archive-fold > summary {
   min-height: 48px;
