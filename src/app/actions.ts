@@ -445,6 +445,35 @@ export async function pairLineOaAction(formData: FormData) {
   redirect(`${returnPath}&success=paired`);
 }
 
+/**
+ * Pair everyone who added the OA before auto-pairing was switched on.
+ *
+ * The same match auto-pairing makes, asked for all at once. It reports what it
+ * did rather than redirecting to a bare success: "0 paired, 12 unmatched" is a
+ * different situation from "12 paired", and an officer who cannot tell them
+ * apart will press the button again.
+ */
+export async function repairLineOaFollowersAction(formData: FormData) {
+  const clubId = String(formData.get("clubId") ?? "");
+  const returnPath = lineOaManagementPath(clubId);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("pair_unpaired_line_oa_followers", {
+    p_club_id: clubId,
+  });
+  if (error) redirect(errorPath(returnPath, mapDatabaseError(error.message)));
+
+  const outcome = (data ?? {}) as {
+    paired?: number; unmatched?: number; conflicted?: number; blocked?: boolean;
+  };
+  const summary = new URLSearchParams({
+    paired: String(outcome.paired ?? 0),
+    unmatched: String(outcome.unmatched ?? 0),
+    conflicted: String(outcome.conflicted ?? 0),
+    blocked: outcome.blocked ? "1" : "0",
+  });
+  redirect(`${returnPath}&success=bulk_paired&${summary.toString()}`);
+}
+
 export async function unpairLineOaAction(formData: FormData) {
   const clubId = String(formData.get("clubId") ?? "");
   const returnPath = lineOaManagementPath(clubId);
