@@ -9,9 +9,17 @@ begin;
 -- excluded them.
 --
 -- Restated from the current definition with one condition added; nothing else
--- about this function changes.
+-- about this function changes. "Current" is 20260914001100, which re-declared
+-- this function with a plain `create function` after a signature change --
+-- the first draft of this migration restated 20260914000800 instead and would
+-- have reverted that. src/lib/attendance/latest-definition.ts now reads both
+-- spellings, and has a test that says so.
 
-create or replace function public.get_club_affairs_page(p_club_id uuid, p_start_year integer default null)
+create or replace function public.get_club_affairs_page(
+  p_club_id uuid,
+  p_start_year integer default null,
+  p_as_member boolean default true
+)
 returns jsonb
 language plpgsql
 stable
@@ -23,14 +31,18 @@ declare
   target_year integer := coalesce(p_start_year, public.current_rotary_year_start());
   can_manage boolean;
 begin
-  -- Readable by anyone with a live membership in the club. This page carries no
-  -- personal data beyond the officers' own names, which the directory already
-  -- shows to fellow members.
+  -- Every view, including a manager's member-mode view, needs live membership
+  -- in the target club. The mode flag only controls draft visibility and the
+  -- management capability returned to the caller.
   if actor_id is null or not public.current_has_club_permission(p_club_id, 'member.read') then
     raise exception using errcode = '42501', message = 'club_member_required';
   end if;
 
-  can_manage := public.current_can_manage_service_plan(p_club_id);
+  if target_year is null or target_year not between 2000 and 2200 then
+    raise exception using errcode = '22023', message = 'invalid_service_plan_year';
+  end if;
+
+  can_manage := p_as_member is false and public.current_can_manage_service_plan(p_club_id);
 
   return jsonb_build_object(
     'club', (
@@ -67,7 +79,7 @@ begin
           and assignment.assignment_status = 'active'
           and assignment.role_key in ('president', 'secretary', 'finance')
           -- The role is held by a member of this club, not by an account that
-          -- once was one. A suspended or ended membership kept its assignment
+          -- once was one. A suspended or ended membership keeps its assignment
           -- and went on being introduced as the club's secretary, on the same
           -- card whose member count had already stopped counting them.
           and account.account_status = 'active'
@@ -82,26 +94,51 @@ begin
     ), '[]'::jsonb),
     'start_year', target_year,
     'can_manage_plan', can_manage,
-    -- A draft is visible to whoever may edit it and to nobody else, so an
-    -- unfinished plan never reads as this year's plan to the club.
     'service_plan', (
       select jsonb_build_object(
         'title', plan.title,
         'body', plan.body,
+        'annual_theme', plan.annual_theme,
+        'member_invitation', plan.member_invitation,
         'plan_status', plan.plan_status,
         'published_at', plan.published_at,
-        'updated_at', plan.updated_at
+        'updated_at', plan.updated_at,
+        'sections', coalesce((
+          select jsonb_agg(jsonb_build_object(
+            'category_key', section.category_key,
+            'progress_status', section.progress_status,
+            'annual_goal', section.annual_goal,
+            'activities', section.activities,
+            'latest_result', section.latest_result,
+            'next_step', section.next_step,
+            'member_participation', section.member_participation,
+            'updated_at', section.updated_at
+          ) order by case section.category_key
+            when 'membership' then 1
+            when 'vocational' then 2
+            when 'community' then 3
+            when 'international' then 4
+          end)
+          from public.club_service_plan_sections as section
+          where section.service_plan_id = plan.id
+        ), '[]'::jsonb)
       )
       from public.club_service_plans as plan
       where plan.club_id = p_club_id
         and plan.start_year = target_year
-        and (plan.plan_status = 'published' or can_manage)
+        and (
+          plan.plan_status = 'published'
+          or (p_as_member is false and can_manage)
+        )
     ),
     'plan_years', coalesce((
       select jsonb_agg(plan.start_year order by plan.start_year desc)
       from public.club_service_plans as plan
       where plan.club_id = p_club_id
-        and (plan.plan_status = 'published' or can_manage)
+        and (
+          plan.plan_status = 'published'
+          or (p_as_member is false and can_manage)
+        )
     ), '[]'::jsonb)
   );
 end;

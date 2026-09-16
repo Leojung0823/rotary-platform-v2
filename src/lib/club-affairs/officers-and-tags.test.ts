@@ -61,6 +61,28 @@ describe("a club is introduced by people who are still in it", () => {
   });
 });
 
+describe("the restatement is built on the definition that was current", () => {
+  // The first draft of this migration restated 20260914000800, which
+  // 20260914001100 had already superseded with a plain `create function` after
+  // a signature change. Applying it would have reverted that work silently --
+  // every test would have stayed green, because they all read the migration
+  // files and the older text still said what they asked about.
+  it("is the superseding definition with one condition added and nothing else", () => {
+    const v2 = readFileSync("supabase/migrations/20260914001100_club_service_plan_v2.sql", "utf8");
+    const from = v2.indexOf("create function public.get_club_affairs_page(");
+    const previous = v2.slice(from, v2.indexOf("\n$$;", from));
+
+    // Remove exactly what this migration adds; what remains must be the
+    // definition it was built on, character for character. Anything else that
+    // drifted -- a reverted line, a dropped field -- shows up here.
+    const added = affairs.slice(affairs.indexOf("          -- The role is held by"), affairs.indexOf("      ) as officer"));
+    const withoutAddition = affairs
+      .replace("create or replace function", "create function")
+      .replace(added, "");
+    expect(withoutAddition).toBe(previous);
+  });
+});
+
 describe("社員標籤 belongs to management mode", () => {
   // canManage says an officer could manage; it does not say they are managing
   // now. An officer reading 社務 as a member is reading it as a member.
