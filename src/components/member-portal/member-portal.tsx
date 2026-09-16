@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { preload } from "react-dom";
+import Image from "next/image";
 import { NotificationBell } from "./notification-bell";
 import { PortalIcon, type PortalIconName } from "./portal-icons";
 import {
@@ -282,22 +282,21 @@ export function MemberPortalBody({
 
 /** The page's own frame, inside the shell that carries the navigation. */
 export function MemberPortalShell({ children }: { children: React.ReactNode }) {
-  // React's resource hint API deduplicates this across streamed server
-  // segments. A literal <link> can be emitted more than once when this tree
-  // streams through Suspense, while the hint remains scoped to member home.
-  preload("/hero-mountains.webp", { as: "image", fetchPriority: "high" });
   return <>
     <div className={styles.contentOnly}>
       <div className={styles.backdrop} aria-hidden="true">
         <div className={styles.backdropArt}>
-          {/* The preload above starts fetching early. Leave loading
-              unspecified so React does not add another streamed hint for this
-              first-viewport image. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          {/* Next Image owns the single first-viewport preload. Keep the
+              source unoptimized: this small static asset should not make a
+              second application-server request through /_next/image. */}
+          <Image
             className={styles.backdropImage}
             src="/hero-mountains.webp"
             alt=""
+            width={1600}
+            height={914}
+            preload
+            unoptimized
             decoding="async"
           />
         </div>

@@ -60,11 +60,11 @@ describe("performance-first navigation boundaries", () => {
     const authenticatedLayout = source("src/app/(authenticated)/layout.tsx");
 
     expect(portal).toContain('src="/hero-mountains.webp"');
-    expect(portal).toContain('import { preload } from "react-dom";');
-    expect(portal).toContain('preload("/hero-mountains.webp", { as: "image", fetchPriority: "high" });');
+    expect(portal).toContain('import Image from "next/image";');
+    expect(portal).toContain("preload");
+    expect(portal).toContain("unoptimized");
     expect(portal).not.toContain('loading="eager"');
     expect(portal).not.toContain('loading="lazy"');
-    expect(portal).not.toContain('<link rel="preload" as="image"');
     expect(authenticatedLayout).not.toContain("hero-mountains.webp");
   });
 

@@ -30,7 +30,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     const memberPage = await memberContext.newPage();
     await login(memberPage, "e2e-shell-ordinary@example.test");
     await expect(memberPage.locator('img[src="/hero-mountains.webp"]')).toHaveCount(1);
-    // The member shell owns one explicit hint; duplicate hints were the
+    // The member shell owns one Next Image hint; duplicate hints were the
     // hosted-streaming regression this assertion is meant to catch.
     await expect(memberPage.locator('link[rel="preload"][as="image"][href="/hero-mountains.webp"]')).toHaveCount(1);
     await expect(memberPage.getByRole("heading", { name: "加入「本機 Shell 社員社」LINE 官方帳號" })).toBeVisible();
