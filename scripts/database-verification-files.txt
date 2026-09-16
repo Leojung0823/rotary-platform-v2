@@ -67,3 +67,4 @@ supabase/verification/club_service_plan_year_cast_security.sql
 supabase/verification/checkin_without_attendance.sql
 supabase/verification/member_home_audience.sql
 supabase/verification/optional_registration_deadline.sql
+supabase/verification/member_search_visibility.sql
