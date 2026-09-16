@@ -32,6 +32,9 @@
   `2500×1686`、小於 1 MB 的 JPEG，但尚未開旗標、上傳或發布。
 - E-03 目前不能用 LEO 的既有配對當作乾淨真人證據：Audit Log 同時出現 `line_oa.auto_paired`、後續
   `line_oa.bulk_paired`，以及 LEO 的 `line_identity.unbound`／社籍狀態變更。下一次必須使用未經人工批次配對或解除綁定污染的測試帳號，並由真人核對後台姓名與實際 LINE Login 身份一致。
+- Go-Live 後已用同一個 staging 社員帳號完成 hosted 正向回歸：切換 `PANCHIAO-ELITE` → `HAPPY` 後開啟
+  `/club-affairs?mode=member`，顯示 `HAPPY／虛擬扶輪社` 的社務與年度服務計劃；切回後資料也回到 PANCHIAO。這完成 active-club
+  cookie 修正的正向證據，但 E-10 的停權／退社／外社執行秘書負向矩陣仍未完成。
 
 ## 2026-09-17 本輪開發修正（最新）
 
@@ -45,7 +48,7 @@
   `git diff --check`，以及 production-build `member-home-1440` `3 passed`。
 - Push 後的自動 CI `35129357577`／Browser Smoke `35129357651` 已要求取消；這不是手動 dispatch／重跑，且不把它們當作本輪驗收證據。
 - 路線圖下一步：在已發布的 staging 上重新驗收「多社切換 → 社務」的 hosted 行為；E-03、E-05、E-06、E-07、E-08、E-10、E-11
-  等外部待辦仍照原狀管理。
+  等外部待辦仍照原狀管理。多社切換 → 社務的 hosted 正向路徑已驗收。
 
 ## 歷史產品基線（2026-09-15；非目前 `main`）
 

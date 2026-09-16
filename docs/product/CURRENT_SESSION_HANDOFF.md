@@ -22,6 +22,9 @@
 - `965abc8` 只修正 E2E 測試的 session 隔離，不含產品程式或 migration；本輪 Go-Live 已另外部署 `15bfd0a` 所含的產品修正。
 - 2026-09-17 唯讀驗收補充：社員模式只有社員導覽；社務管理模式有 8 項管理功能。服務計劃管理端仍是草稿，社員端顯示尚未發布；
   社費直連回 404（`dues_finance_v1` 關閉），Rich Menu 管理區未顯示（`line_rich_menu_v1` 關閉）。這是模式／草稿隔離證據，不是完整真人驗收。
+- Go-Live 後以已登入 staging 社員帳號做唯讀回歸：從 `PANCHIAO-ELITE` 切換到 `HAPPY`，開啟
+  `/club-affairs?mode=member` 顯示 `社務 · HAPPY`、`虛擬扶輪社` 及 HAPPY 服務計劃；切回 PANCHIAO 後資料正確回復。
+  這是本輪 active-club cookie 修正的 hosted 正向證據；E-10 的停權／退社／外社執行秘書負向驗收仍待真人帳號。
 - 本輪 DevTools MCP 頁面實際都是平台管理員身份，沒有把它們的 trace 當成社員效能數據；已登入社員 CUA 頁可做畫面驗收，
   但無法取得有效 Performance API，E-06 本次 runtime 的 FCP／TTFB／LCP／INP 仍未量測。
 - 舊的 Staging Release `35084851997` 已取消，使用舊 head，沒有回滾也不影響目前 `3e955553d7ee` staging。後續文件同步不需手動觸發 CI／Browser Smoke。
@@ -41,7 +44,8 @@
 - 本機驗證：typecheck、lint、Vitest `181` 檔／`1347` tests、build、完整 verify:db、migration guard、verification manifest、diff check 均通過；
   production-build 本機 `member-home-1440` `3 passed`。
 - Push 自動建立 CI `35129357577`／Browser Smoke `35129357651`；已依規則取消，沒有手動觸發或重跑。Go-Live `35130278609` 已完成發布。
-- 下一步是在已發布的 staging 上重新做 hosted 多社社員「切換社團 → 開社務」驗收；在該真人流程完成前，不把 E-10 標成結案。
+- 下一步是補做 E-10 的停權／退社／外社執行秘書負向驗收；多社社員「切換社團 → 開社務」的 hosted 正向流程已完成，
+  但在負向矩陣完成前不把 E-10 標成結案。
 
 ## 歷史：2026-09-16 最新狀態（已被 9/17 取代）
 

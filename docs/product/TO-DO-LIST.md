@@ -29,6 +29,10 @@
 - 2026-09-17 再用已登入 staging 測試帳號做唯讀驗收：社員模式只有社員導覽；社務管理模式顯示 8 項管理功能。
   服務計劃在管理端仍是草稿，社員端顯示「尚未發布」；直接開啟社費管理頁回 404，與 `dues_finance_v1` 關閉相符；
   Rich Menu 管理區也未顯示，與 `line_rich_menu_v1` 關閉相符。這補強模式邊界與草稿隔離，但不等於 E-03／E-07／E-10／E-11 已結案。
+- Go-Live 後以同一個已登入 staging 社員帳號做唯讀回歸：從 `PANCHIAO-ELITE` 切到 `HAPPY`，再開
+  `/club-affairs?mode=member`，頁面顯示 `社務 · HAPPY`、`虛擬扶輪社` 與 HAPPY 的年度服務計劃；切回
+  `PANCHIAO-ELITE` 後又顯示板橋群英扶輪社資料。這確認本輪 active-club cookie 修正已在 hosted 生效，完成 E-10 的正向切換證據；
+  停權／退社／外社執行秘書等負向矩陣仍待真人帳號驗收。
 - 本輪 Chrome DevTools MCP 的兩個頁面雖帶有社員／管理 query，實際身份都解析成平台管理員，因此沒有採用其效能數字；
   已登入社員頁的 CUA 瀏覽器可以做畫面驗收，但無法取得 Performance API 的有效資料。E-06 的本次 runtime FCP／TTFB／LCP／INP 仍是未量測。
 - E-06 的「重複 preload」已完成程式修正與 hosted DOM 驗收；同一 runtime／快取條件下的 LCP、FCP、TTFB、INP 前後比較仍未量測，
@@ -49,7 +53,7 @@
   `npm run check:migrations`、`npm run check:db-verifications`、`git diff --check`；本機 `member-home-1440` 為 `3 passed`。
 - Push 後自動建立 CI `35129357577` 與 Browser Smoke `35129357651`；依「後續開發不手動跑 CI」規則已取消，沒有手動 dispatch／重跑。
   這兩個 run 不作為本輪驗收證據。Go-Live `35130278609` 已完成發布，下一步只剩使用多社社員在 hosted 環境做同一條
-  「切換社團 → 開社務」驗收。
+  「切換社團 → 開社務」的負向矩陣驗收；正向路徑已完成。
 
 ### 2026-09-16 本機角色回歸補充
 
