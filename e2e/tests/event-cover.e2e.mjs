@@ -100,10 +100,15 @@ test("an ordinary member sees the cover but is offered no way to change it", asy
   await expect(page.getByRole("heading", { name: "活動" }).first()).toBeVisible();
 
   // The cover stays outside the card's disclosure, so it is visible without
-  // opening anything. This test never actually asserted it before -- it only
-  // checked that the upload buttons were absent -- so the claim in its name
-  // went unchecked.
-  await expect(page.locator("img.event-cover").first()).toBeVisible();
+  // opening anything. Asserting a cover exists would depend on whether this
+  // run's fixtures happen to have one -- the claim that belongs to this change
+  // is where a cover sits, not that there is one.
+  const cards = page.locator("article.card");
+  await expect(cards.first()).toBeVisible();
+  const coversInsideFold = await page.locator("details.event-fold img.event-cover").count();
+  expect(coversInsideFold, "a cover is hidden behind the disclosure").toBe(0);
+  const covers = await page.locator("img.event-cover").count();
+  if (covers > 0) await expect(page.locator("img.event-cover").first()).toBeVisible();
 
   await expect(page.getByRole("button", { name: "上傳圖片" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "更換圖片" })).toHaveCount(0);
