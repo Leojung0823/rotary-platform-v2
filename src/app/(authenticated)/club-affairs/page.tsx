@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { Badge, Card, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
@@ -11,6 +12,10 @@ import {
 } from "@/lib/club-affairs/service-plan";
 import { createClient } from "@/lib/supabase/server";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
+import {
+  activeClubCookieName,
+  readActiveClubPreference,
+} from "@/lib/experience-context-cookie";
 import { currentExperienceMode } from "@/lib/experience-mode.server";
 import styles from "./club-affairs.module.css";
 
@@ -52,11 +57,12 @@ export default async function ClubAffairsPage({
 }: {
   searchParams: Promise<{ year?: string }>;
 }) {
-  const query = await searchParams;
+  const [query, cookieStore] = await Promise.all([searchParams, cookies()]);
   const requestedYear = Number.parseInt(query.year ?? "", 10);
+  const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
   const supabase = await createClient();
   const [resolution, identity] = await Promise.all([
-    resolveExperienceContext(null),
+    resolveExperienceContext(preferredClubId),
     requireIdentity(),
   ]);
   const activeClubId = resolution.ok ? resolution.context.activeClubId : null;

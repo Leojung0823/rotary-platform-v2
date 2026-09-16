@@ -68,6 +68,7 @@ supabase/verification/checkin_without_attendance.sql
 supabase/verification/member_home_audience.sql
 supabase/verification/optional_registration_deadline.sql
 supabase/verification/club_affairs_officers.sql
+supabase/verification/club_affairs_member_access.sql
 supabase/verification/member_search_visibility.sql
 supabase/verification/manage_event_registrations.sql
 supabase/verification/member_home_pending_task_kinds.sql

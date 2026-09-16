@@ -52,6 +52,13 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     await multiPage.getByLabel("切換目前所在的社或委員會").click();
     await multiPage.getByRole("button", { name: /^本機 Shell 第二社 E2E-SHELL-SECOND/u }).click();
     await expect(multiPage.getByLabel("切換目前所在的社或委員會")).toContainText("本機 Shell 第二社");
+    // The shell and the member pages must use the same active-club choice.
+    // Without this assertion, /club-affairs silently fell back to the first
+    // club even though the shell still said the second club was active.
+    await multiPage.getByRole("link", { name: "社務" }).click();
+    await expect(multiPage).toHaveURL(/\/club-affairs\?mode=member$/u);
+    await expect(multiPage.getByRole("heading", { name: "本機 Shell 第二社" })).toBeVisible();
+    await expect(multiPage.getByRole("heading", { name: "本機 Shell 社員社" })).toHaveCount(0);
     await multiContext.close();
 
     const managementContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });

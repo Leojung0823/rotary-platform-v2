@@ -127,3 +127,12 @@ describe("社員標籤 belongs to management mode", () => {
     expect(page).toMatch(/const managing =[\s\S]{0,200}resolution\.context\.canManage/u);
   });
 });
+
+describe("社務頁 follows the shell's active club", () => {
+  it("passes the validated active-club cookie into context resolution", () => {
+    expect(page).toContain('activeClubCookieName');
+    expect(page).toContain('readActiveClubPreference');
+    expect(page).toContain('resolveExperienceContext(preferredClubId)');
+    expect(page).not.toContain('resolveExperienceContext(null)');
+  });
+});
