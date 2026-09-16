@@ -209,10 +209,19 @@ insert into public.club_finance_receipt_allocations (
   '5c000000-0000-4000-8000-000000000001', 12000
 );
 
--- The wish is answered by declining it, which is a state the product has.
-update public.birthday_wish_campaign_participants
-set participant_status = 'declined', responded_at = now()
-where id = '6a000000-0000-4000-8000-000000000001';
+-- The wish is answered the way a member actually answers it: they write it
+-- and send it. Not by declining -- declining proves the reminder goes away when
+-- the member opts out, which was never in doubt. What was wrong is that writing
+-- it did not clear the reminder: the task asked whether it had been *published*,
+-- which is the officer's action, so a member who had done everything available
+-- to them was still told 「生日祝福待填寫」.
+insert into public.birthday_wish_campaign_submissions (
+  club_id, campaign_id, participant_id, author_app_account_id, content, submission_status
+) values (
+  '4d000000-0000-4000-8000-000000000001', '5f000000-0000-4000-8000-000000000001',
+  '6a000000-0000-4000-8000-000000000001', '4c000000-0000-0000-0000-000000000001',
+  '生日快樂，祝你平安順心。', 'submitted'
+);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '4a000000-0000-0000-0000-000000000001', true);
