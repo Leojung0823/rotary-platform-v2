@@ -11,18 +11,26 @@
   background:
     linear-gradient(180deg, #f2f7fd 0%, var(--background-primary) 38%, #e9f1fa 100%);
 }
-.backdrop::after {
-  content: "";
+.backdropArt {
   position: absolute;
   inset: 0;
-  opacity: 1;
-  background: url("/hero-mountains.webp") no-repeat right -40px top -18px / 76% auto;
+  overflow: hidden;
+  pointer-events: none;
   /* Radial, centred beyond the top right corner: it fades in every direction
      at once, so the ridges have no edge anywhere. A rectangle with a linear
      mask fades downwards but keeps a hard left edge, and that edge read as a
      pale blue panel ending in the middle of the header. */
   -webkit-mask-image: radial-gradient(128% 104% at 84% 0%, #000 8%, rgba(0,0,0,.58) 40%, transparent 74%);
   mask-image: radial-gradient(128% 104% at 84% 0%, #000 8%, rgba(0,0,0,.58) 40%, transparent 74%);
+}
+.backdropImage {
+  position: absolute;
+  top: -18px;
+  right: -40px;
+  width: 76%;
+  max-width: none;
+  height: auto;
+  opacity: 1;
 }
 
 .contentOnly {
@@ -320,8 +328,10 @@
 /* The ridges sit behind the header on a phone, where there is far less of it,
    so they are pulled in and lightened further. */
 @media (max-width: 900px) {
-  .backdrop::after {
-    background-size: 190% auto;
+  .backdropImage {
+    width: 190%;
+  }
+  .backdropArt {
     -webkit-mask-image: radial-gradient(150% 70% at 76% 0%, #000 4%, rgba(0,0,0,.42) 34%, transparent 70%);
     mask-image: radial-gradient(150% 70% at 76% 0%, #000 4%, rgba(0,0,0,.42) 34%, transparent 70%);
   }

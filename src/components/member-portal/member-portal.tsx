@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { preload } from "react-dom";
 import { NotificationBell } from "./notification-bell";
 import { PortalIcon, type PortalIconName } from "./portal-icons";
 import {
@@ -282,15 +281,26 @@ export function MemberPortalBody({
 
 /** The page's own frame, inside the shell that carries the navigation. */
 export function MemberPortalShell({ children }: { children: React.ReactNode }) {
-  // React's resource hint API deduplicates this across streamed server
-  // segments. A literal <link> was emitted more than once after navigation.
-  preload("/hero-mountains.webp", { as: "image", fetchPriority: "high" });
   return <>
-    {/* The decorative backdrop is the member home's LCP image. Keep this
-        hint here, rather than in the authenticated layout, so management
-        pages do not fetch a member-only asset. */}
+    {/* The decorative backdrop is the member home's LCP image. Keep the
+        eager image here, rather than in the authenticated layout, so
+        management pages do not fetch a member-only asset. */}
     <div className={styles.contentOnly}>
-      <div className={styles.backdrop} aria-hidden="true" />
+      <div className={styles.backdrop} aria-hidden="true">
+        <div className={styles.backdropArt}>
+          {/* A real image starts fetching as it is parsed and avoids duplicate
+              resource-hint tags when this page streams through Suspense. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className={styles.backdropImage}
+            src="/hero-mountains.webp"
+            alt=""
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+      </div>
       <main className={styles.main}>{children}</main>
     </div>
   </>;

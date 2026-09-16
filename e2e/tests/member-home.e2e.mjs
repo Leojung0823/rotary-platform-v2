@@ -29,7 +29,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const memberPage = await memberContext.newPage();
     await login(memberPage, "e2e-shell-ordinary@example.test");
-    await expect(memberPage.locator('link[rel="preload"][as="image"][href="/hero-mountains.webp"]')).toHaveCount(1);
+    await expect(memberPage.locator('img[src="/hero-mountains.webp"]')).toHaveCount(1);
     await expect(memberPage.getByRole("heading", { name: "加入「本機 Shell 社員社」LINE 官方帳號" })).toBeVisible();
     await expect(memberPage.getByRole("link", { name: "綁定 LINE 身份" })).toHaveAttribute(
       "href",
@@ -54,7 +54,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     const managementContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const managementPage = await managementContext.newPage();
     await login(managementPage, "e2e-shell-management@example.test");
-    await expect(managementPage.locator('link[rel="preload"][as="image"][href="/hero-mountains.webp"]')).toHaveCount(0);
+    await expect(managementPage.locator('img[src="/hero-mountains.webp"]')).toHaveCount(0);
     await expect(managementPage.getByRole("heading", { name: "平台管理工作台" })).toHaveCount(0);
     await expect(managementPage.locator("aside > header > p").first()).toHaveText("社務管理模式");
     await expect(managementPage.getByRole("heading", { name: "今天與我有關的事情" })).toHaveCount(0);
