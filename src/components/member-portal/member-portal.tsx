@@ -295,7 +295,6 @@ export function MemberPortalShell({ children }: { children: React.ReactNode }) {
             className={styles.backdropImage}
             src="/hero-mountains.webp"
             alt=""
-            fetchPriority="high"
             loading="eager"
             decoding="async"
           />
