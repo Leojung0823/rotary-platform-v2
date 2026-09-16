@@ -54,7 +54,8 @@ type ValidEventCreateInput = {
   title: string;
   startsAt: string;
   endsAt: string;
-  registrationDeadline: string;
+  /** null when the officer left it blank: open until the event ends. */
+  registrationDeadline: string | null;
   capacity: number | null;
   location: string;
   venue: VenueCoordinates | null;
@@ -115,7 +116,7 @@ export function validateEventCreateForm(values: EventCreateFormValues): EventCre
   let title: string | undefined;
   let startsAt: string | undefined;
   let endsAt: string | undefined;
-  let registrationDeadline: string | undefined;
+  let registrationDeadline: string | null | undefined;
   let capacity: number | null | undefined;
   let location: string | undefined;
   let venue: VenueCoordinates | null | undefined;
@@ -143,10 +144,16 @@ export function validateEventCreateForm(values: EventCreateFormValues): EventCre
   } catch {
     fieldErrors.endsAt = "請輸入有效的結束日期與時間。";
   }
-  try {
-    registrationDeadline = parseTaipeiDateTime(values.registrationDeadline);
-  } catch {
-    fieldErrors.registrationDeadline = "請輸入有效的報名截止日期與時間。";
+  // Optional. A club that meets every week does not set a deadline for its own
+  // regular meeting; blank means registration stays open until the event ends.
+  if (values.registrationDeadline.trim() === "") {
+    registrationDeadline = null;
+  } else {
+    try {
+      registrationDeadline = parseTaipeiDateTime(values.registrationDeadline);
+    } catch {
+      fieldErrors.registrationDeadline = "請輸入有效的報名截止日期與時間，或留空表示活動結束前都可報名。";
+    }
   }
   try {
     capacity = parseOptionalCapacity(values.capacity);
@@ -172,7 +179,7 @@ export function validateEventCreateForm(values: EventCreateFormValues): EventCre
   if (startsAt && endsAt && endsAt <= startsAt) {
     fieldErrors.endsAt = "結束時間必須晚於開始時間。";
   }
-  if (startsAt && registrationDeadline && registrationDeadline > startsAt) {
+  if (startsAt && registrationDeadline != null && registrationDeadline > startsAt) {
     fieldErrors.registrationDeadline = "報名截止時間不得晚於活動開始時間。";
   }
 
@@ -185,7 +192,7 @@ export function validateEventCreateForm(values: EventCreateFormValues): EventCre
       title: title!,
       startsAt: startsAt!,
       endsAt: endsAt!,
-      registrationDeadline: registrationDeadline!,
+      registrationDeadline: registrationDeadline ?? null,
       capacity: capacity!,
       location: location!,
       venue: venue!,

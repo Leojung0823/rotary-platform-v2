@@ -202,7 +202,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await createForm.getByLabel("活動名稱").fill(eventTitle);
     await createForm.getByLabel("開始時間（台北）").fill(dateTimeLocalFromNow(30, 10));
     await createForm.getByLabel("結束時間（台北）").fill(dateTimeLocalFromNow(30, 11));
-    await createForm.getByLabel("報名截止（台北）").fill(dateTimeLocalFromNow(29, 18));
+    await createForm.getByLabel("報名截止（台北，選填）").fill(dateTimeLocalFromNow(29, 18));
     await createForm.getByLabel("名額（留空表示不限）").fill("20");
     await createForm.getByLabel("地點").fill("staging 驗收測試場地");
     await createForm.getByLabel("活動說明").fill("供管理模式驗收後保留的可回收測試活動。");

@@ -14,7 +14,8 @@ export type ClubEvent = {
   location: string;
   starts_at: string;
   ends_at: string;
-  registration_deadline: string;
+  /** null when the officer left it blank: open until the event ends. */
+  registration_deadline: string | null;
   capacity: number | null;
   counts_for_attendance: boolean;
   status: "draft" | "published" | "cancelled" | "completed";
@@ -74,7 +75,7 @@ export function isClubEvent(value: unknown): value is ClubEvent {
     && typeof value.location === "string"
     && typeof value.starts_at === "string"
     && typeof value.ends_at === "string"
-    && typeof value.registration_deadline === "string"
+    && (typeof value.registration_deadline === "string" || value.registration_deadline === null)
     && (typeof value.capacity === "number" || value.capacity === null)
     && (typeof value.cover_image_path === "string" || value.cover_image_path === null || value.cover_image_path === undefined)
     && typeof value.counts_for_attendance === "boolean"

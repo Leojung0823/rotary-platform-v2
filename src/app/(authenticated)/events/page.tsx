@@ -29,7 +29,7 @@ type ClubEvent = {
   location: string;
   starts_at: string;
   ends_at: string;
-  registration_deadline: string;
+  registration_deadline: string | null;
   capacity: number | null;
   counts_for_attendance: boolean;
   status: "draft" | "published" | "cancelled" | "completed";
@@ -105,7 +105,7 @@ function isClubEvent(value: unknown): value is ClubEvent {
     && typeof event.location === "string"
     && typeof event.starts_at === "string"
     && typeof event.ends_at === "string"
-    && typeof event.registration_deadline === "string"
+    && (typeof event.registration_deadline === "string" || event.registration_deadline === null)
     && (typeof event.capacity === "number" || event.capacity === null)
     && (typeof event.cover_image_path === "string" || event.cover_image_path === null || event.cover_image_path === undefined)
     && typeof event.counts_for_attendance === "boolean"
@@ -306,7 +306,9 @@ export default async function EventsPage({
             <div>
               <p><strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at)}</p>
               <p><strong>地點：</strong>{event.location || "尚未填寫"}</p>
-              <p><strong>報名截止：</strong>{formatDateTime(event.registration_deadline)}</p>
+              <p><strong>報名截止：</strong>{event.registration_deadline === null
+                ? "不設截止，活動結束前都可報名"
+                : formatDateTime(event.registration_deadline)}</p>
               {event.description && <EventDescription className="event-description" text={event.description} />}
             </div>
             <div className="card">

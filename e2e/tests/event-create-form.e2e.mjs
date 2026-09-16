@@ -32,7 +32,7 @@ test("recoverable event-create failure retains the form and exposes an accessibl
   await page.getByLabel("活動名稱").fill("本機表單保留服務活動");
   await page.getByLabel("開始時間（台北）").fill("2026-08-20T18:30");
   await page.getByLabel("結束時間（台北）").fill("2026-08-20T18:00");
-  await page.getByLabel("報名截止（台北）").fill("2026-08-19T18:30");
+  await page.getByLabel("報名截止（台北，選填）").fill("2026-08-19T18:30");
   await page.getByLabel("名額（留空表示不限）").fill("80");
   await page.getByLabel("地點").fill("本機河濱公園");
   await page.getByLabel("活動說明").fill("請攜帶手套與飲水。");
@@ -51,7 +51,7 @@ test("recoverable event-create failure retains the form and exposes an accessibl
   await expect(page.getByLabel("活動名稱")).toHaveValue("本機表單保留服務活動");
   await expect(page.getByLabel("開始時間（台北）")).toHaveValue("2026-08-20T18:30");
   await expect(page.getByLabel("結束時間（台北）")).toHaveValue("2026-08-20T18:00");
-  await expect(page.getByLabel("報名截止（台北）")).toHaveValue("2026-08-19T18:30");
+  await expect(page.getByLabel("報名截止（台北，選填）")).toHaveValue("2026-08-19T18:30");
   await expect(page.getByLabel("名額（留空表示不限）")).toHaveValue("80");
   await expect(page.getByLabel("地點")).toHaveValue("本機河濱公園");
   await expect(page.getByLabel("活動說明")).toHaveValue("請攜帶手套與飲水。");

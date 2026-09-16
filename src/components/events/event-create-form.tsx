@@ -131,8 +131,9 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members, editin
         <input className="input" id="event-create-endsAt" type="datetime-local" name="endsAt" required defaultValue={values.endsAt} aria-invalid={Boolean(errorFor("endsAt"))} aria-describedby={describedBy("endsAt")} />
         {errorFor("endsAt") && <span className="field-error" id="event-create-endsAt-error">{errorFor("endsAt")}</span>}
       </label>
-      <label className="field" htmlFor="event-create-registrationDeadline"><span className="label">報名截止（台北）</span>
-        <input className="input" id="event-create-registrationDeadline" type="datetime-local" name="registrationDeadline" required defaultValue={values.registrationDeadline} aria-invalid={Boolean(errorFor("registrationDeadline"))} aria-describedby={describedBy("registrationDeadline")} />
+      <label className="field" htmlFor="event-create-registrationDeadline"><span className="label">報名截止（台北，選填）</span>
+        <input className="input" id="event-create-registrationDeadline" type="datetime-local" name="registrationDeadline" defaultValue={values.registrationDeadline} aria-invalid={Boolean(errorFor("registrationDeadline"))} aria-describedby={describedBy("registrationDeadline")} />
+        <span className="hint">留空表示不設截止時間，活動結束前都可以報名。</span>
         {errorFor("registrationDeadline") && <span className="field-error" id="event-create-registrationDeadline-error">{errorFor("registrationDeadline")}</span>}
       </label>
       <label className="field" htmlFor="event-create-capacity"><span className="label">名額（留空表示不限）</span>

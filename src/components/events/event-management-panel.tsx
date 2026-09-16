@@ -55,7 +55,9 @@ export function EventManagementPanel({
             <div>
               <p><strong>時間：</strong>{formatDateTime(event.starts_at)}－{formatDateTime(event.ends_at)}</p>
               <p><strong>地點：</strong>{event.location || "尚未填寫"}</p>
-              <p><strong>報名截止：</strong>{formatDateTime(event.registration_deadline)}</p>
+              <p><strong>報名截止：</strong>{event.registration_deadline === null
+                ? "不設截止，活動結束前都可報名"
+                : formatDateTime(event.registration_deadline)}</p>
               {event.description && <p>{event.description}</p>}
             </div>
             <div className="card">
