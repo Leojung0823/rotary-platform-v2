@@ -98,6 +98,26 @@ test("the member roster fits the phone it is read on", async ({ page }, testInfo
   // And it still fits once the roster has rows in it.
   await expect(page.getByRole("table").last()).toBeVisible();
   await expectNoHorizontalOverflow(page);
+
+  // And with a tag wide enough to prove the point. This page carries a second
+  // table -- 社員標籤 -- inside a card, and a card was not told it may shrink
+  // below its content, so the card grew to the table's natural width and took
+  // the page with it while the scroller inside never scrolled.
+  //
+  // It used to fail here only by luck: the widest tag in this club is created
+  // and archived by member-tags.e2e.mjs, running in parallel, so whether this
+  // page was over 375px depended on the timing of a different file. Asserted
+  // with a tag of its own, it is a width question with a fixed answer.
+  const tagName = `名冊寬度測試標籤 ${Date.now()}`;
+  await page.getByLabel("標籤名稱").fill(tagName);
+  await page.getByLabel("說明（選填）").fill("理事、監事與各委員會主委，用於指定活動與訊息對象");
+  await page.getByRole("button", { name: "建立標籤" }).click();
+  await expect(page.getByText(tagName, { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  const tagRow = page.locator("tr").filter({ hasText: tagName });
+  await tagRow.getByRole("button", { name: "封存" }).click();
+  await expect(page.getByText(tagName, { exact: true })).toHaveCount(0);
 });
 
 test("an officer can leave management mode again", async ({ page }) => {
