@@ -94,30 +94,51 @@ test("a manager uploads a cover, and the browser shrinks it first", async ({ pag
 });
 
 test("a cover a manager uploads is the cover a member sees", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "event-cover-1440", "Follows the upload test, which only runs here.");
+  test.skip(testInfo.project.name !== "event-cover-1440", "One upload per run is enough.");
+  test.setTimeout(90_000);
   // The upload test proves the picture comes back on the page it was uploaded
-  // from. Nothing checked that it reaches the page members actually read --
-  // which is where Leo found it missing.
+  // from. Nothing checked that it reaches the page members read -- which is
+  // where Leo found it missing.
+  //
+  // It starts from the member page on purpose. Picking the first management
+  // card instead chose whichever event sorted first, and that turned out to be
+  // a targeted one the member was never addressed to, so the title being
+  // looked for could not be there.
   await login(page, managerEmail);
+  await page.goto(new URL("/events?mode=member", baseURL).toString());
+  const memberCard = page.locator("article.card").first();
+  await expect(memberCard).toBeVisible();
+  const title = (await memberCard.locator("summary h2").first().innerText()).trim();
+
+  // The same event, on the page an officer uploads from.
   await page.goto(new URL("/events?mode=management", baseURL).toString());
   await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/events\?mode=management$/u);
+  const managedCard = page.locator("article.card").filter({ hasText: title }).first();
+  await expect(managedCard, `the member's own event is missing from management: ${title}`).toBeVisible();
 
-  const fold = page.locator("details.cover-fold").first();
-  await expect(fold).toBeAttached();
-  await fold.locator("summary").click();
-  const managed = page.locator("img.event-cover").first();
-  await expect(managed).toBeAttached();
-  const managedTitle = await page.locator("article.card").first().locator("h2, h3").first().innerText();
+  const control = managedCard.getByRole("button", { name: /^(上傳圖片|更換圖片)$/u });
+  await expect(control).toBeVisible();
+  // A small PNG: the resize is the other test's subject, this one is about
+  // where the picture ends up.
+  await managedCard.locator('input[type="file"]').setInputFiles({
+    name: "cover.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  await expect(page.getByText("圖片已更新。").first()).toBeVisible({ timeout: 30_000 });
 
-  // The same event, read the way a member reads it.
+  // Back to the member view, where it has to appear.
   await page.goto(new URL("/events?mode=member", baseURL).toString());
-  const card = page.locator("article.card").filter({ hasText: managedTitle.trim().split("｜")[0] }).first();
+  const card = page.locator("article.card").filter({ hasText: title }).first();
   await expect(card).toBeVisible();
-  const memberCover = card.locator("img.event-cover").first();
-  await expect(memberCover, "the cover did not reach the member view").toBeAttached();
-  await memberCover.scrollIntoViewIfNeeded();
+  const cover = card.locator("img.event-cover").first();
+  await expect(cover, "the cover did not reach the member view").toBeAttached();
+  await cover.scrollIntoViewIfNeeded();
   await expect.poll(
-    () => memberCover.evaluate((image) => image.naturalWidth),
+    () => cover.evaluate((image) => image.naturalWidth),
     { timeout: 15_000 },
   ).toBeGreaterThan(0);
 });
