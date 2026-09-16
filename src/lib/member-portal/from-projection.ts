@@ -33,8 +33,8 @@ const isoDay = new Intl.DateTimeFormat("en-CA", {
 function heroRegistration(event: MemberHomeEvent): PortalFeaturedEvent["registration"] {
   switch (event.registrationState) {
     case "registered": return "registered";
+    case "declined": return "declined";
     case "registration_closed": return "closed";
-    case "declined": return "closed";
     default: return "not_registered";
   }
 }

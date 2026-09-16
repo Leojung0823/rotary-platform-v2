@@ -24,6 +24,12 @@ export type MemberHomeEvent = Readonly<{
   startsAt: string;
   endsAt: string;
   registrationState: MemberHomeRegistrationState;
+  /**
+   * Whether registration is still open, which registrationState stops saying
+   * once the member has answered. Without it "declined" cannot be told apart
+   * from "declined, and too late to change".
+   */
+  registrationOpen: boolean;
   checkinState: MemberHomeCheckinState;
 }>;
 
@@ -109,7 +115,7 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
   if (!isRecord(value)
     || !hasExactKeys(value, [
       "event_type", "title", "location", "cover_image_path",
-      "starts_at", "ends_at", "registration_state", "checkin_state",
+      "starts_at", "ends_at", "registration_state", "registration_open", "checkin_state",
     ])
     || typeof value.event_type !== "string"
     || typeof value.title !== "string"
@@ -130,6 +136,7 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
     || !isIsoDateTime(value.starts_at)
     || !isIsoDateTime(value.ends_at)
     || !includes(memberHomeRegistrationStates, value.registration_state)
+    || typeof value.registration_open !== "boolean"
     || !includes(memberHomeCheckinStates, value.checkin_state)) return null;
 
   return {
@@ -140,6 +147,7 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
     startsAt: value.starts_at,
     endsAt: value.ends_at,
     registrationState: value.registration_state,
+    registrationOpen: value.registration_open,
     checkinState: value.checkin_state,
   };
 }
@@ -316,5 +324,11 @@ export function memberHomePrimaryAction(event: MemberHomeEvent): Readonly<{ href
   if (event.checkinState === "available") return { href: "/events/checkin", label: "前往簽到" };
   if (event.registrationState === "not_registered") return { href: "/events", label: "前往報名" };
   if (event.registrationState === "pending") return { href: "/events", label: "確認報名" };
+  // Declining is an answer, not a door closing behind you -- while the deadline
+  // has not passed, the card offers the way back. It is gated on
+  // registrationOpen because offering it after the deadline would be a lie.
+  if (event.registrationState === "declined" && event.registrationOpen) {
+    return { href: "/events", label: "改為報名" };
+  }
   return { href: "/events", label: "查看活動" };
 }

@@ -14,6 +14,7 @@ const event = {
   starts_at: "2026-08-12T10:00:00.000Z",
   ends_at: "2026-08-12T12:00:00.000Z",
   registration_state: "not_registered",
+  registration_open: true,
   checkin_state: "not_open",
 };
 
@@ -57,6 +58,7 @@ describe("member-home projection contract", () => {
         startsAt: "2026-08-12T10:00:00.000Z",
         endsAt: "2026-08-12T12:00:00.000Z",
         registrationState: "not_registered",
+        registrationOpen: true,
         checkinState: "not_open",
       },
       nextEvent: null,
