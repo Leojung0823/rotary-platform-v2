@@ -6,22 +6,24 @@ import type { MemberHomePendingTask } from "@/lib/member-home";
 const task = (hoursRemaining: number): MemberHomePendingTask => ({
   kind: "event_response",
   title: "十月例會",
-  eventId: "00000000-0000-4000-8000-000000000001",
+  detail: "",
+  actionPath: "/events",
   deadline: "2026-10-01T10:00:00Z",
   hoursRemaining,
+  count: null,
 });
 
 describe("how urgent an unanswered registration looks", () => {
   it("calls it urgent inside the threshold and not outside it", () => {
-    expect(pendingTaskUrgency(task(urgentWithinHours - 1)).tone).toBe("danger");
-    expect(pendingTaskUrgency(task(urgentWithinHours)).tone).toBe("neutral");
+    expect(pendingTaskUrgency(task(urgentWithinHours - 1))?.tone).toBe("danger");
+    expect(pendingTaskUrgency(task(urgentWithinHours))?.tone).toBe("neutral");
   });
 
   it("never tells a member they have a day left when they have an hour", () => {
     // Rounding up would say 尚餘 1 天 on something closing in sixty-one
     // minutes, and a member who acted tomorrow would have missed it.
     for (const hours of [urgentWithinHours, 95, 96, 120, 167]) {
-      const { label } = pendingTaskUrgency(task(hours));
+      const label = pendingTaskUrgency(task(hours))!.label;
       const days = Number(/尚餘 (\d+) 天/u.exec(label)?.[1]);
       expect(days * 24, `${hours}h must not be reported as more time than it is`)
         .toBeLessThanOrEqual(hours);
