@@ -126,6 +126,8 @@ production 沒有修改。
 - **LINE Rich Menu** `[>]`（PR #107）。每社獨立設定與旗標已部署到 staging，仍待各社 OA 設定與真人驗收。
 - **社費、收款、核銷與財務報表** `[>]`（PR #108）。核心程式與資料庫已部署到 staging，仍待 hosted／角色邊界驗收。
 - **生日設定 UX** `[>]`（PR #110）。生日頁沿用全域社別、每社預設公開且保留既有缺列私密語意，並補上徵集重複時的可理解錯誤提示；已部署到 staging，仍待 hosted／真人驗收。
+  2026-09-16 以 staging 的 LEO 會員帳號抽查，`/birthdays` 已顯示 1 位公開社員與「目前 39 歲」；`/me` 也顯示
+  PANCHIAO-ELITE／HAPPY 各自有生日設定入口。這是正向顯示證據，尚未涵蓋另一帳號、關閉後牆面消失與完整儲存回歸。
 
 ### 修正
 
@@ -312,6 +314,9 @@ production 沒有修改。
 
 ### E-03 LINE Login 身份的 follow 自動配對真人驗收 `[>]`（暫緩解除）
 
+- **2026-09-16 hosted 正向補充**：同一個 staging 會員帳號的 `/me/line-oa` 顯示「已完成好友與社員身份確認」；
+  社務管理頁的 follower 清單也把已配對的 `U888f7e17b…` 投影為 `LEO`。這支持目前帳號的正向身份投影，
+  但仍沒有足夠證據證明最近一次 follow 事件就是這個本人操作，也未涵蓋多社／外社／停權／退社負向情境。
 - **2026-09-14：暫緩解除，因為證據自己出現了。** 公開加入連結上線後，`PANCHIAO-ELITE` 的 audit log
   出現四筆 `club_join_link.redeemed`（Ethan T.、Maggie佳佑、Green Chen陳冠青、承希✨Olivia），
   中間夾著兩筆 `line_oa.auto_paired`。真人透過 LINE 加入本社，自動配對路徑實際被觸發。
