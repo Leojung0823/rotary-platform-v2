@@ -326,11 +326,15 @@ production 沒有修改。
 - **完成證據**：follow webhook 成功、`person_id` 自動指向正確社員；再驗證多社、外社、停權與已過 `ended_on` 的社員不會誤配。
 - **必要條件**：LINE Developers Console webhook／Use webhook 維持開啟，測試者必須使用真實 LINE 帳號與正確社別 OA。
 
-### E-04 每社 LINE OA 與 channel 設定 `[x]`（本次 rollout）
+### E-04 每社 LINE OA 與 channel 設定 `[x]`（本次 rollout；staging 殘留資料待處理）
 
 - **產品決定已確認**：本次 rollout **不使用 HAPPY**，目前只啟用 `PANCHIAO-ELITE`；因此本階段不建立
   `HAPPY` 的 OA、channel、webhook 或 `LINE_OA_HAPPY_*` secrets。
 - **已完成**：`PANCHIAO-ELITE` 使用 `LINE_OA_PANCHIAO_ELITE_*`，staging 的管理頁身份驗證已成功。
+- **2026-09-16 staging 實際核對發現矛盾**：登入管理頁切到 `HAPPY` 時，仍看得到該社的 OA metadata、
+  `LINE_OA_HAPPY_*` namespace、4 位 follower 與既有推播紀錄。這不能當成 production rollout 證據，
+  但也不能再寫成「staging 沒有 HAPPY 設定」；目前先視為舊的 staging／mock 測試殘留，未執行停用或刪除。
+  在產品明確決定前，不對 HAPPY 發送訊息、不發布 Rich Menu，也不把 HAPPY 的資料當成驗收證據。
 - **安全保留**：未來若要啟用 HAPPY，必須建立 HAPPY 自己的 OA／Messaging API channel、自己的 webhook 與
   `LINE_OA_HAPPY_*` server secrets；不能把 PANCHIAO 的 key 改名或跨社 fallback。
 - **完成證據**：本次啟用的社通過 LINE `/v2/bot/info` Basic ID 核對、webhook Verify、follow 與指定對象推播驗收。

@@ -4,6 +4,9 @@
 
 狀態：程式底座已進入 `main` 並部署 staging；目前產品範圍只使用 `PANCHIAO-ELITE`，HAPPY 不使用。
 staging runtime `1ef38bb50407` 健康；仍待 PANCHIAO-ELITE 的 OA 外部設定、旗標狀態確認與手機真人驗收。
+2026-09-16 管理頁實際核對仍看得到 HAPPY 的 OA metadata、`LINE_OA_HAPPY_*` namespace、4 位 follower
+與既有推播紀錄；這是 staging／mock 殘留的待釐清資料，不代表 HAPPY 已納入 rollout。未經產品明確決定前，
+不得對 HAPPY 發布或發送 Rich Menu。
 
 ## 1. 目的
 
@@ -17,7 +20,9 @@ staging runtime `1ef38bb50407` 健康；仍待 PANCHIAO-ELITE 的 OA 外部設�
 4. **全 OA 好友共用**：第一版使用 LINE 的 default rich menu，因此同一個 OA 的好友看到同一份選單；不做每位社員一份選單。
 5. **停用可回復且不誤傷其他選單**：停用前先讀取 LINE 目前的 default rich menu ID；只有確認它等於平台保存的 `richMenuId` 才清除。沒有預設選單、ID 已被替換，或由 LINE Official Account Manager 接管時，不清除現有選單。已建立的 provider object 保留，日後可重新發布新圖片。LINE 的選單圖片不能直接替換，換圖要建立新的選單。
 6. **功能旗標預設關閉**：`line_rich_menu_v1` 必須明確啟用；`DISABLE_LINE_RICH_MENU=true` 可緊急關閉。旗標關閉時管理頁不顯示發布區，也不呼叫 LINE。
-7. **目前社團範圍**：只對 `PANCHIAO-ELITE` 進行 staging 發布與手機驗收；`HAPPY` 目前不使用，不建立它的 OA、channel、webhook 或 secrets。
+7. **目前社團範圍**：只對 `PANCHIAO-ELITE` 進行 staging 發布與手機驗收；`HAPPY` 目前不使用。
+   若 staging 仍留有舊的 HAPPY metadata／follower，視為殘留資料，不得發布、推播或拿來當 rollout 證據；
+   是否停用或清理要另取得明確決定。
 
 ## 3. 使用流程
 

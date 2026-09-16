@@ -6,8 +6,11 @@
 
 ## 2026-09-16 最新狀態（優先於下方歷史部署紀錄）
 
-- GitHub `main` exact SHA：`1ef38bb504075d7a197e99c2364db8b087cea22e`。
+- GitHub `main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；產品程式基準為
+  `1ef38bb504075d7a197e99c2364db8b087cea22e`。
 - staging runtime：`1ef38bb50407`；`/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- 2026-09-16 管理頁核對發現 `HAPPY` 仍有 staging OA metadata、`LINE_OA_HAPPY_*` namespace、4 位 follower
+  與既有推播紀錄；這是待釐清的 staging／mock 殘留，不代表 HAPPY 納入本次 rollout。未經明確決定前不使用 HAPPY。
 - PR-1、PR-2 的程式與 migration 已在目前 staging；這不等於 PR-3 的 LINE 真實 follow／精確身份配對驗收完成。
 - PR-3 仍需：使用曾以同一 LINE Login channel 登入的社員加入正確社別 OA，核對 `person_id` 與姓名；再驗證多社、外社、停權及退社／過期社籍不誤配。
 
