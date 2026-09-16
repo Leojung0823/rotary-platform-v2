@@ -15,6 +15,9 @@
   `20260916001500_dues_reminder_lands_on_the_year_owed.sql`。
 - PR #188、#189、#190 都已合併；`main@1ef38bb` 的合併後 CI 與 Browser Smoke 均已成功，且 Staging Go-Live `35083792540` 已發布 `1ef38bb`。後續主線只有文件同步，尚未重新部署；不要把 merge 或檢查通過當成部署證據。
 - 文件同步只更新本狀態，不會把 PR 自動合併，也不會因此重新部署 staging；若後續只改文件，依變更範圍規則不手動跑 CI／Browser Smoke。
+- 2026-09-16 Chrome DevTools 重新量得未登入 `/login`：LCP `167 ms`、FCP `168 ms`、LCP TTFB `104 ms`、
+  CLS `0.00`；已登入管理頁仍沒有同一個 DevTools session，故 TTFB／FCP／LCP 維持「未量測」。完整量測條件記在
+  [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)，後續效能修改前先讀該文件。
 - 真正仍需外部條件的主線待辦，依 [`TO-DO-LIST.md`](./TO-DO-LIST.md) E-03、E-05、E-06、E-07、E-08、E-10、E-11；
   E-09 目前維持產品決定的暫緩。
 

@@ -11,33 +11,38 @@
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
 | 目前 staging runtime | `1ef38bb50407` |
-| 本次 `/login` 量測時 runtime | `e1ea85c3e941` |
+| 本次 `/login` 量測時 runtime | `1ef38bb50407`（由相鄰時間的 `/api/health` 核對；trace 本身未暴露 revision） |
 | 量測頁面 | `/login`（未登入） |
 | 工具 | Chrome DevTools Performance trace + `PerformanceNavigationTiming` |
 | CPU／網路 | CPU 1x；未設定網路限速 |
-| LCP | 500 ms |
-| LCP 的 TTFB | 415 ms |
-| LCP render delay | 84 ms |
-| FCP | 500 ms |
+| LCP | 167 ms |
+| LCP 的 TTFB | 104 ms |
+| LCP render delay | 63 ms |
+| FCP | 168 ms |
 | CLS | 0.00 |
 | CrUX | 無資料 |
 
-本次瀏覽器回報的 navigation timing（量測時 runtime `e1ea85c3e941`）：`responseStart=415.5 ms`、
-`responseEnd=521.1 ms`、`DOMContentLoaded=524.7 ms`、`load=525.4 ms`。
+本次瀏覽器回報的 navigation timing（2026-09-16 18:52 Asia/Taipei；相鄰健康檢查為
+`1ef38bb50407`）：`responseStart=103.7 ms`、`responseEnd=106.0 ms`、
+`DOMContentLoaded=130.1 ms`、`load=151.5 ms`。Performance trace 的 LCP 元素是登入頁的文字
+`blockquote`，沒有 LCP 圖片下載；當次只看到 18 個網路請求。
 
 這次沒有登入狀態，因此**管理模式、社員首頁與其他登入後頁面的 TTFB／LCP
-仍是未量測**，不能用上面的 `/login` 數字代替。這次 trace 顯示 LCP 的 415 ms（83.0%）花在
-TTFB，render-blocking CSS 的工具估算改善為 0 ms；目前優先瓶頸是 Render 伺服器回應時間，
-不是把登入頁改成公開快取。
+仍是未量測**，不能用上面的 `/login` 數字代替。這次 trace 顯示 LCP 的 104 ms（62.3%）花在
+TTFB、63 ms（37.7%）是 render delay；render-blocking CSS 的工具估算可改善 FCP／LCP 約 98 ms，
+但該 CSS 實際由 service worker 提供且下載本身只有微秒級，先不把它當成需要改動的主要瓶頸。
+這次沒有證據支持把登入頁改成公開快取。
 
-> 2026-09-16 補充：產品程式 staging 目前為 `1ef38bb50407`，但上表的 `/login` 數字是在另一個 runtime
-> `e1ea85c3e941` 量得，仍可作為當時的登入頁基準，不能冒充目前 runtime 或登入後頁面數字。
+> 2026-09-16 補充：本表最上方的 `/login` 數字是在相鄰健康檢查顯示為 `1ef38bb50407` 時量得；
+> 先前 `e1ea85c3e941` 的量測仍保留在下方歷史紀錄，不能把任一組 `/login` 數字冒充登入後頁面數字。
 > 登入後管理頁、社員首頁的 TTFB／LCP／FCP 仍標記為「未量測」，要等同一個已登入 DevTools session。
 
 ## 目前判斷
 
-- `/login` 的主要等待在伺服器回應前：LCP 500 ms 中有 415 ms 是 TTFB。
-- Chrome DevTools 沒有發現有明顯可節省的 render-blocking 資源。
+- `/login` 這次量測的主要等待仍是 TTFB：LCP 167 ms 中有 104 ms 是 TTFB；絕對時間已比歷史
+  `e1ea85c3e941` 基準小，但兩次條件與 runtime 不完全相同，不當成改版前後因果比較。
+- Chrome DevTools 找到一條 render-blocking CSS，工具估算 FCP／LCP 可少約 98 ms；實際 CSS 已由
+  service worker 命中且下載只花微秒級，必須在已登入頁 trace 證實有影響後才值得改。
 - Trace 提示約 14.4 kB 的 legacy JavaScript 可再檢討，但目前不是已證明的主要瓶頸。
 - 登入頁回應是 `private, no-cache, no-store, max-age=0, must-revalidate`，且
   `cf-cache-status: DYNAMIC`；這是安全的登入頁設定，不應為了速度改成公開快取。
@@ -65,6 +70,15 @@ TTFB，render-blocking CSS 的工具估算改善為 0 ms；目前優先瓶頸是
 若沒有登入瀏覽器 session 或 Chrome DevTools，請寫「未量測」，不要猜數字。
 
 ## 變更紀錄
+
+### 2026-09-16
+
+- 以 Chrome DevTools Performance trace 重新量測 staging `/login`：LCP 167 ms、FCP 168 ms、LCP TTFB 104 ms、
+  render delay 63 ms、CLS 0.00；CPU 1x、未設定網路限速。
+- 相鄰時間的 `/api/health` 顯示 staging runtime `1ef38bb50407`，但 trace 未直接提供 revision；
+  管理模式與社員首頁仍未取得同一個已登入 DevTools session，因此維持「未量測」。
+- 看到一條 render-blocking CSS，但它由 service worker 提供；未在登入後頁證明 98 ms 工具估算可重現，
+  暫不修改 CSS 載入策略。
 
 ### 2026-09-11
 
