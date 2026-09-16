@@ -7,18 +7,20 @@
 
 這次以 GitHub `origin/main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 重新核對：
 
-- `main`／`origin/main` 最新 SHA 為 `36f32f8a44e121689d7a01836d75dcbd99e4a5ee`；staging revision 為
+- `main`／`origin/main` 最新 SHA 為 `965abc82868fe585bc3779da5c33d05c0c44ed09`；staging revision 為
   `36f32f8a44e1`。health 為 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、
   `warnings=[]`；production 沒有修改。
 - Staging Release `35121647301` 與 Go-Live `35121777337` 使用同一個 exact SHA 並成功；本輪沒有新增 migration。
-  自動 CI `35121629076` 成功；Browser Smoke `35121629061` 最後為 `189 passed`、`57 skipped`、`1 failed`，
-  唯一失敗是 role-shell 負向登入測試填密碼時輸入框被串流重繪卸載；沒有手動重跑。
+  自動 CI `35121629076`／Browser Smoke `35121629061` 的唯一失敗已由 `965abc8` 修正：撤銷／停權／退社帳號各用
+  獨立瀏覽器 context。本機六個 role-shell 尺寸共 `18 passed`；自動 CI `35123956529` 與 Browser Smoke `35123956508`
+  均成功，且沒有手動重跑流程。
 - `36f32f8` 修正社員首頁 hero 圖片的 hosted 重複 preload：已登入 LEO 社員頁 `/dashboard?mode=member` 重新載入後，
   `/hero-mountains.webp` 的圖片 DOM 為 `1` 張、preload 為 `1` 個（body 1、head 0）。修正使用 `next/image`、`preload`
   與 `unoptimized` 直出小型靜態檔，沒有改登入、權限、社團隔離或登入後首頁公開快取。
 - 本機完整 typecheck、lint、Vitest `181` 檔／`1346` 測試、build、verify:db、verification、migration guard、manifest、
   `git diff --check` 均通過；`member-home-1440` 為 `3 passed`。
 - 這輪只完成圖片提示的程式與 hosted DOM 修正；同一 runtime／快取條件下的 LCP、FCP、TTFB、INP 前後比較仍未量測，E-06 仍是待辦。
+- `965abc8` 只修正 E2E 測試的 session 隔離，不含產品程式或 migration；因此沒有重新部署 staging，staging 仍是 `36f32f8a44e1`。
 - 舊的 Staging Release `35084851997` 已取消，使用舊 head，沒有回滾也不影響這次 `36f32f8` staging。後續文件同步不需手動觸發 CI／Browser Smoke。
 - 目前仍需外部條件的待辦：E-03 follow 自動配對真人核對、E-05 額度政策、E-06 可比效能量測、E-07 實機／M1、E-08 production 決策、
   E-10 多社／角色邊界真人驗收、E-11 各社 Rich Menu／OA 外部設定；E-09 recovery email 依產品決定暫緩。

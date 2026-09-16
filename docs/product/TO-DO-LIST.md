@@ -12,12 +12,13 @@
 
 本次以 GitHub `main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 交叉核對：
 
-- `main` 與 `origin/main` 目前為 `36f32f8a44e121689d7a01836d75dcbd99e4a5ee`；staging 目前 revision 為
+- `main` 與 `origin/main` 目前為 `965abc82868fe585bc3779da5c33d05c0c44ed09`；staging 目前 revision 為
   `36f32f8a44e1`。`/api/health` 回報 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、
   `warnings=[]`；production 沒有修改。
 - Staging Release `35121647301` 與 Go-Live `35121777337` 使用同一個 exact SHA 並成功；本次沒有新增 migration。
-  自動 CI `35121629076` 已成功；Browser Smoke `35121629061` 最後為 `189 passed`、`57 skipped`、`1 failed`，
-  唯一失敗是 role-shell 負向登入測試填密碼時輸入框被串流重繪卸載，沒有手動重跑。
+  自動 CI `35121629076`／Browser Smoke `35121629061` 的舊測試競態已由 `965abc8` 修正：每個撤銷／停權／退社帳號
+  改用獨立瀏覽器 context。本機六個 role-shell 尺寸 `18 passed`；自動 CI `35123956529` 與 Browser Smoke
+  `35123956508` 均成功。這次只改測試檔，沒有重新部署 staging。
 - 真實登入 LEO 社員頁 `/dashboard?mode=member` 重新載入後，`/hero-mountains.webp` 圖片 DOM 為 `1` 張、preload 為
   `1` 個（body 1、head 0）。`36f32f8` 使用 `next/image` 單一元件管理 preload，並以 `unoptimized` 直接載入小型靜態檔；
   沒有改登入、角色、權限、社團隔離或登入後首頁公開快取。

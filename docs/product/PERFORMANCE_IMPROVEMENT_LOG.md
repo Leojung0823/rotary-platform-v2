@@ -10,6 +10,7 @@
 | 項目 | 結果 |
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
+| 目前 origin/main | `965abc82868fe585bc3779da5c33d05c0c44ed09`（只含 E2E 測試隔離修正，未重新部署） |
 | 目前 staging runtime | `36f32f8a44e1` |
 | 本次 `/login` 量測時 runtime | `1ef38bb50407`（由相鄰時間的 `/api/health` 核對；trace 本身未暴露 revision） |
 | 量測頁面 | `/login`（未登入） |
@@ -58,6 +59,11 @@ verification、migration guard、verification manifest、`git diff --check`；`m
 最後為 `189 passed`、`57 skipped`、`1 failed`。唯一失敗是 `role-shells.e2e.mjs:245` 的負向登入測試，
 在 `role-shells.e2e.mjs:253` 填密碼時輸入框被串流重繪卸載，兩次都在 30 秒逾時；它不是 hero 圖片測試，
 也不改變本輪 `member-home-1440` 的本機與 hosted DOM 證據。本輪沒有手動重跑 Browser Smoke。
+
+後續只針對上述測試競態提交 `965abc82868fe585bc3779da5c33d05c0c44ed09`：每個撤銷／停權／退社帳號都使用
+全新的瀏覽器 context，避免前一個登入 session 的 `LoginSessionRedirect` 讓密碼輸入框在串流期間卸載。
+本機六個 role-shell 尺寸共 `18 passed`；自動 CI `35123956529` 與 Browser Smoke `35123956508` 均成功。
+這是測試檔修正，沒有新增 migration，因此沒有重新部署 staging；目前 staging 產品 runtime 仍是 `36f32f8a44e1`。
 
 ### 2026-09-16 已登入 staging 基線
 
@@ -170,7 +176,9 @@ guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `P
   重複已被這次部署的 DOM 證據取代。
 - 本機完整品質與資料庫驗證均通過，`member-home-1440` 為 `3 passed`；CI `35121629076` 成功。Browser Smoke
   `35121629061` 最後為 `189 passed`、`57 skipped`、`1 failed`，失敗是 role-shell 負向登入測試的密碼輸入框
-  被串流重繪卸載而逾時；這次沒有手動觸發或重跑 CI／Browser Smoke。
+  被串流重繪卸載而逾時；這次沒有手動觸發或重跑 CI／Browser Smoke。之後的測試隔離修正已在
+  `965abc8` 通過本機六尺寸 `18 passed`，自動 CI `35123956529` 與 Browser Smoke `35123956508` 也成功；
+  因為只改測試檔，沒有重新部署 staging。
 - 最新社員首頁／管理頁 CWV 前後比較：未量測；保留 2026-09-16 數字作為不同條件的歷史基線，不宣稱因果改善。
 
 ### 2026-09-16
