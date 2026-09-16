@@ -8,7 +8,7 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
-## 2026-09-17 最新掃描（本節覆蓋下面的歷史快照）
+## 2026-09-17 文件同步基線（本節覆蓋下面的歷史快照）
 
 本次以 GitHub `main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 交叉核對：
 
@@ -32,6 +32,22 @@
   已登入社員頁的 CUA 瀏覽器可以做畫面驗收，但無法取得 Performance API 的有效資料。E-06 的本次 runtime FCP／TTFB／LCP／INP 仍是未量測。
 - E-06 的「重複 preload」已完成程式修正與 hosted DOM 驗收；同一 runtime／快取條件下的 LCP、FCP、TTFB、INP 前後比較仍未量測，
   因此 E-06 仍維持 `[>]`。
+
+## 2026-09-17 本輪開發修正（最新）
+
+- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`；文件更新後 main 會再前進，請以 `git rev-parse origin/main` 現場核對。
+  本輪沒有修改 production，也沒有部署 staging，所以 staging 仍是 `36f32f8a44e1`。
+- 實際驗收發現：多社社員切換到第二個社團後，社員導覽的「社務」頁仍用第一個社團；原因是該頁沒有讀取 shell 使用的
+  `rotary_active_club_v1` cookie，而是把 `resolveExperienceContext(null)` 當成第一個候選社團。這是頁面顯示錯社的資料隔離缺口。
+- 已修正 `src/app/(authenticated)/club-affairs/page.tsx`：讀取並驗證 active-club cookie，再把同一個社團偏好傳給 context resolver；同時保留
+  `get_club_affairs_page` 自己的後端社籍檢查。
+- 已新增 forward-only migration `20260917000100_club_affairs_member_read_access.sql`：一般 active 社員可以讀取社務公開投影，
+  不會因此取得廣義 `member.read`；外社使用者與停權社員仍被拒絕。新增驗證 `club_affairs_member_access.sql` 並加入 manifest。
+- 本機已通過：`npm run typecheck`、`npm run lint`、`npm test`（181 檔／1347 tests）、`npm run build`、完整 `npm run verify:db`、
+  `npm run check:migrations`、`npm run check:db-verifications`、`git diff --check`；本機 `member-home-1440` 為 `3 passed`。
+- Push 後自動建立 CI `35129357577` 與 Browser Smoke `35129357651`；依「後續開發不手動跑 CI」規則已提出取消要求，沒有手動 dispatch／重跑。
+  這兩個 run 的最後狀態仍以 GitHub 現場查詢為準，不能當成本輪驗證證據。
+- 這次修正仍待下一次受控 staging release 後，使用多社社員在 hosted 環境做同一條「切換社團 → 開社務」驗收；目前不自行部署。
 
 ### 2026-09-16 本機角色回歸補充
 

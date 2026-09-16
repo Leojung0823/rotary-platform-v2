@@ -30,6 +30,21 @@
 - 目前仍需外部條件的待辦：E-03 follow 自動配對真人核對、E-05 額度政策、E-06 可比效能量測、E-07 實機／M1、E-08 production 決策、
   E-10 多社／角色邊界真人驗收、E-11 各社 Rich Menu／OA 外部設定；E-09 recovery email 依產品決定暫緩。
 
+## 2026-09-17 本輪開發修正（最新）
+
+- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`；文件更新後 main 會再前進，請以 `git rev-parse origin/main` 現場核對。
+  本輪沒有部署 staging，staging 仍為 `36f32f8a44e1`，production 沒有修改。
+- 真正發現的問題是多社社員切換到第二社團後，`/club-affairs?mode=member` 的內容仍回到第一社團；shell 顯示的社團與頁面資料不一致。
+  根因是社務頁呼叫 `resolveExperienceContext(null)`，沒有讀 `rotary_active_club_v1`。
+- 已修正 `src/app/(authenticated)/club-affairs/page.tsx`，以既有 `readActiveClubPreference` 驗證 cookie 後傳入 context resolver；
+  未改變登入、模式邊界或任何前端授權判斷。已在 `e2e/tests/member-home.e2e.mjs` 加入多社切換後社務頁只顯示第二社的回歸測試。
+- 一般社員原本因沒有廣義 `member.read` 而被社務 RPC 擋下；已新增 `20260917000100_club_affairs_member_read_access.sql`，只讓本人在目標社的
+  active membership 讀取這支公開社務投影，不擴大角色權限。`supabase/verification/club_affairs_member_access.sql` 覆蓋 active member、outsider、suspended。
+- 本機驗證：typecheck、lint、Vitest `181` 檔／`1347` tests、build、完整 verify:db、migration guard、verification manifest、diff check 均通過；
+  production-build 本機 `member-home-1440` `3 passed`。
+- Push 自動建立 CI `35129357577`／Browser Smoke `35129357651`；已提出取消要求，沒有手動觸發或重跑。若它們稍後完成，仍不取代本機結果。
+- 下一步是下一次受控 staging release 後重新做 hosted 多社社員驗收；在那之前不要把這個修正寫成 staging 已生效。
+
 ## 歷史：2026-09-16 最新狀態（已被 9/17 取代）
 
 這次以 GitHub `origin/main`、GitHub Actions 和 staging `/api/health` 重新核對：

@@ -36,6 +36,19 @@
 - E-03 目前不能用 LEO 的既有配對當作乾淨真人證據：Audit Log 同時出現 `line_oa.auto_paired`、後續
   `line_oa.bulk_paired`，以及 LEO 的 `line_identity.unbound`／社籍狀態變更。下一次必須使用未經人工批次配對或解除綁定污染的測試帳號，並由真人核對後台姓名與實際 LINE Login 身份一致。
 
+## 2026-09-17 本輪開發修正（最新）
+
+- 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`；文件更新後 main 會再前進，請以 `git rev-parse origin/main` 現場核對。
+  staging 尚未發布這個 SHA，仍是 `36f32f8a44e1`，production 沒有修改。
+- 本輪修正一個跨社資料顯示缺口：多社社員切換 active club 後，社務頁原本忽略 `rotary_active_club_v1`，會把內容落回第一個候選社團。
+  社務頁現在沿用 shell 的已驗證 active-club preference；回歸測試確認切換後只顯示所選社團。
+- 本輪同時修正一般 active 社員無法閱讀社務公開投影的權限缺口：新增 `20260917000100_club_affairs_member_read_access.sql`，
+  只在 `get_club_affairs_page` 內確認本人 active membership，不把廣義 `member.read` 發給一般社員；outsider／suspended 仍拒絕。
+- 本機完整驗證均通過：typecheck、lint、Vitest `181` 檔／`1347` tests、build、完整 verify:db、migration guard、verification manifest、
+  `git diff --check`，以及 production-build `member-home-1440` `3 passed`。
+- Push 後的自動 CI `35129357577`／Browser Smoke `35129357651` 已要求取消；這不是手動 dispatch／重跑，且不把它們當作本輪驗收證據。
+- 路線圖下一步：受控發布這個 exact SHA 後，重新驗收「多社切換 → 社務」的 hosted 行為；E-03、E-05、E-06、E-07、E-08、E-10、E-11 等外部待辦仍照原狀管理。
+
 ## 歷史產品基線（2026-09-15；非目前 `main`）
 
 本次 staging release 所依據的 `main` exact SHA 是 `93d341c3fd7818783bd6779b1466162baf86548b`；當時沒有 open PR。
