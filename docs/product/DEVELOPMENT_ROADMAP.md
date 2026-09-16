@@ -23,7 +23,8 @@
 - 9/16 已完成登入後頁面效能基線：同一個已登入 Chrome session 下，管理頁 LCP `1,777 ms`／FCP `760 ms`／
   LCP TTFB `637 ms`／CLS `0.00`；社員首頁 LCP `1,929 ms`／FCP `562 ms`／LCP TTFB `452 ms`／CLS `0.01`。
   本輪 `bd8a8e9` 已把社員首頁 LCP 圖片改成首頁限定的 eager `<img>` 並部署；實際社員頁確認圖片 `1` 張，但 hosted
-  React／Next 仍有 `2` 個普通 preload 提示。修改後 LCP／FCP／TTFB **未量測**，不能宣稱改善。未登入 `/login` 的 trace
+  React／Next 仍有 `2` 個普通 preload 提示。後續用真實 LEO 社員頁重新載入取得 LCP `1.30 s`／CLS `0.01`，但 FCP／TTFB／INP 未量測；
+  runtime 不同且快取未停用，不能宣稱因果改善。未登入 `/login` 的 trace
   仍為 LCP `167 ms`、FCP `168 ms`、TTFB `104 ms`。完整條件見
   [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。Rich Menu 圖片已在本機準備成
   `2500×1686`、小於 1 MB 的 JPEG，但尚未開旗標、上傳或發布。
@@ -516,7 +517,7 @@ PR-01c 不做：
 
 1. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
-3. **E-06：登入後管理頁效能量測** `[>]`：已部署社員首頁 eager 圖片修正，但修改後 LCP／FCP／TTFB 未量測，且 hosted DOM 仍有兩個普通 preload 提示；先補同條件量測，再拆管理頁文件等待與 render pipeline。
+3. **E-06：登入後管理頁效能量測** `[>]`：已部署社員首頁 eager 圖片修正；真實社員頁已補到 LCP `1.30 s`／CLS `0.01`，但 FCP／TTFB／INP 未量測，且 hosted DOM 仍有兩個普通 preload 提示。先用一致的 runtime／快取條件補齊社員頁 FCP／TTFB，再拆管理頁文件等待與 render pipeline。
 4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
 5. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次 rollout 只啟用 PANCHIAO-ELITE，已完成。
 6. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging，待各社 OA 設定與真人驗收。

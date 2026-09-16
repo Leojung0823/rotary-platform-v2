@@ -51,6 +51,26 @@ FCP／LCP／TTFB 再用 trace 原始事件交叉核對。這是各頁各一次�
 > 先前 `e1ea85c3e941` 的量測仍保留在下方歷史紀錄，不能把任一組 `/login` 數字冒充登入後頁面數字。
 > 登入後管理頁、社員首頁已取得同一個已登入 DevTools session 的現況基線；修改前後的改善幅度仍未量測。
 
+### 2026-09-16 修改後社員首頁補測
+
+這次改用同一個已登入 Chrome session 的 LEO 社員帳號，畫面確認為「社員模式」、目前社為 PANCHIAO-ELITE；URL 為
+`/dashboard?mode=member`。viewport `1365×813`、DPR `1`、CPU `1x`、未設定網路限速；DevTools 的「停用網路快取」沒有勾選，
+因此這不是清空快取的新訪客測試。相鄰 `/api/health` 在 `2026-09-16T15:08:00Z` 核對為 staging runtime `bd8a8e9d0205`。
+
+Chrome DevTools Performance 的「記錄並重新載入」完成後，回到即時指標頁面顯示：
+
+| 項目 | 修改後觀測值 |
+|---|---:|
+| LCP | 1.30 s |
+| LCP 元素 | `img.member-portal-module__wpzd3a__backdropImage` |
+| CLS | 0.01 |
+| INP | 未量測（沒有可用互動事件） |
+| FCP | 未量測（本次 DevTools 結果頁沒有可靠數值） |
+| TTFB | 未量測（本次 DevTools 結果頁沒有可靠數值） |
+
+LCP 觀測值比前一個 runtime 的基線 `1.929 s` 低約 `629 ms`，但 runtime 不同且快取未停用，這只能記為方向性觀察，
+不能當成修正造成的因果改善。要結案仍須在相同 runtime、相同快取條件下補齊 FCP 與 TTFB，並至少重測一次管理頁。
+
 ## 目前判斷
 
 - 未登入 `/login` 的主要等待是 TTFB：LCP 167 ms 中有 104 ms 是 TTFB；它和歷史
@@ -59,14 +79,12 @@ FCP／LCP／TTFB 再用 trace 原始事件交叉核對。這是各頁各一次�
   10.6 kB，卻在 LCP 前延遲 1,319 ms。本輪已改成社員首頁限定的 eager `<img>`，並部署至 staging `bd8a8e9d0205`；
   實際 DOM 有 1 張圖片，但 hosted React／Next 仍產生 2 個相同的普通 preload 提示，所以只確認管線已改變，不能宣稱
   已消除所有提示或已改善 LCP。
-- 修改後登入社員頁的 LCP／FCP／TTFB **未量測**：目前可用的 Chrome DevTools page 是平台管理員工作階段，不能代表社員頁；
-  CUA 頁面可驗證 DOM，但不提供 Performance timing。
+- 修改後登入社員頁已取得有效的 Chrome DevTools LCP `1.30 s` 與 CLS `0.01`，且 LCP 元素是首頁的 hero `<img>`；
+  但 FCP／TTFB 仍未量測，不能只用這次 LCP 宣稱整體效能已改善。
 - 管理頁的 637 ms TTFB 與 1,140 ms render delay 是基線訊號，不足以直接判定是資料庫慢；要先做同一
   revision 的修改後 trace，並用 server timing／請求瀑布拆分文件等待與前端繪製。
-- 2026-09-16 後續嘗試再次開啟 `/dashboard?mode=management` 與 `/dashboard?mode=member` 時，Chrome DevTools
-  的登入 session 實際渲染的是「平台管理工作台」，不是社員或社務管理帳號。這次 trace 雖回報平台頁 LCP
-  `1,490 ms`／`1,523 ms` 等數字，但不符合 E-06 的測試對象，全部排除，不納入效能基準；社員首頁修改後
-  的 LCP／FCP／TTFB 仍是**未量測**。下次量測前必須先確認畫面標題與導覽是目標角色，再開始 trace。
+- 2026-09-16 先前渲染成「平台管理工作台」的 trace（LCP `1,490 ms`／`1,523 ms`）仍全部排除，不納入效能基準；
+  本輪已重新確認目標是 LEO 的社員首頁並取得有效 LCP，但 FCP／TTFB 尚未補齊。下次量測仍要先確認畫面標題與導覽是目標角色。
 - Trace 的 render-blocking CSS 與約 14.4 kB legacy JavaScript 是後續候選項，不在沒有前後證據時大改。
 - 登入頁回應是 `private, no-cache, no-store, max-age=0, must-revalidate`，且
   `cf-cache-status: DYNAMIC`；這是安全的登入頁設定，不應為了速度改成公開快取。
@@ -83,9 +101,8 @@ FCP／LCP／TTFB 再用 trace 原始事件交叉核對。這是各頁各一次�
 
 ## 下一次量測方法
 
-要比較效能時，必須使用已登入的專用 staging 測試帳號，在相同 staging revision、同一個 viewport、CPU
-與網路條件下，修改前後各至少量一次。2026-09-16 的已登入基線已建立；下一次應在 `bd8a8e9d0205` 或更新版本量測社員首頁
-修改後結果，再測管理頁。每次至少記錄：
+要比較效能時，必須使用已登入的專用 staging 測試帳號，在相同 staging revision、同一個 viewport、CPU、網路與快取條件下，
+修改前後各至少量一次。2026-09-16 已取得社員首頁修改後 LCP／CLS，但仍要在可重現的快取條件下補 FCP／TTFB，再測管理頁。每次至少記錄：
 
 - URL、runtime revision、日期時間、viewport、CPU／網路設定。
 - LCP、FCP、CLS、TTFB，以及 LCP breakdown。
@@ -104,8 +121,10 @@ FCP／LCP／TTFB 再用 trace 原始事件交叉核對。這是各頁各一次�
 - staging 真實登入社員頁（網址加驗證 query、重新抓取頁面）確認 `/hero-mountains.webp` 的圖片 DOM 為 `1` 張，但 hosted
   React／Next DOM 仍有 `2` 個相同的普通 preload 提示，分別位於 head 與 body；這與本機 production build 的 `1` 個提示不同，
   因此仍需把 hosted streaming 行為視為後續調查項目。
-- 本機社員首頁 E2E：`3 passed`（`member-home-1440`，含圖片 1 張／preload 1 個與管理模式不載入圖片）；修改後 staging 的
-  LCP／FCP／TTFB **未量測**，沒有前後效能數字可報告。
+- 本機社員首頁 E2E：`3 passed`（`member-home-1440`，含圖片 1 張／preload 1 個與管理模式不載入圖片）。
+- 以 Chrome DevTools 在 staging 的真實 LEO 社員頁重新載入：LCP `1.30 s`、CLS `0.01`，LCP 元素為
+  `img.member-portal-module__wpzd3a__backdropImage`；INP、FCP、TTFB 分別為未量測、未量測、未量測。因 runtime 與快取條件
+  和修改前基線不同，不能宣稱前後因果改善；E-06 仍未結案。
 - 自動 CI `35100760020`、Browser Smoke `35100760034`、Staging Release `35102157586`、Staging Go-Live `35102495571` 均成功；
   `/api/health` revision `bd8a8e9d0205`、`issues=[]`。
 

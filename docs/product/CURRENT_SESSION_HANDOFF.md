@@ -25,8 +25,9 @@
 - 2026-09-16 的登入後數字是修改前基線：管理頁 LCP `1,777 ms`／FCP `760 ms`／LCP TTFB `637 ms`／CLS `0.00`，
   社員首頁 LCP `1,929 ms`／FCP `562 ms`／LCP TTFB `452 ms`／CLS `0.01`；兩頁 INP 未量測。社員首頁原本的
   `/hero-mountains.webp` 資源發現延遲 `1,319 ms`，本輪已改成社員首頁限定的 eager `<img>`。
-- staging 實際社員頁驗收：圖片 DOM 為 `1` 張；hosted React／Next 仍產生 `2` 個相同的普通 preload 提示（head／body），
-  因此目前只確認請求管線已從 CSS background 改為文件內圖片，尚未宣稱 preload 或 LCP 改善。修改後 LCP／FCP／TTFB 為**未量測**。
+- staging 實際社員頁驗收：圖片 DOM 為 `1` 張；hosted React／Next 仍產生 `2` 個相同的普通 preload 提示（head／body）。
+  本輪再以真實 LEO 社員頁和 Chrome DevTools 重新載入，取得 LCP `1.30 s`／CLS `0.01`，LCP 元素為首頁 hero `<img>`；FCP／TTFB／INP 未量測。
+  這次 runtime 為 `bd8a8e9d0205` 且快取未停用，和修改前基線條件不同，因此只能算有效觀測，不能宣稱因果改善；E-06 仍未結案。
   完整條件記在 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)，效能修改前先讀該文件。
 - 真正仍需外部條件的主線待辦，依 [`TO-DO-LIST.md`](./TO-DO-LIST.md) E-03、E-05、E-06、E-07、E-08、E-10、E-11；
   E-09 目前維持產品決定的暫緩。

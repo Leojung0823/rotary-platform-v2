@@ -14,6 +14,8 @@
 - 本機 `line-oa-rich-menu-1440`：1 passed。已涵蓋 mock OA 的 Rich Menu 發布與停用；這不是 staging OA 或真人手機驗收證據。
 - 本機安全邊界測試：4 檔、20 tests passed，涵蓋管理模式、社費旗標、Rich Menu 旗標與首頁效能邊界。
 - Staging Release `35084851997` 已取消；它的 head 是舊版 `857b9dc54a4cc98e67f86b264d2014c91b4f38c1`，不影響目前 staging，也沒有因取消而回滾程式。
+- 以 Chrome DevTools 重新量測真實 LEO 社員首頁：LCP `1.30 s`、CLS `0.01`，LCP 元素為首頁 hero `<img>`；FCP／TTFB／INP 未量測。
+  這次 runtime 為 `bd8a8e9d0205`、快取未停用，不能直接宣稱相較舊 runtime 的因果改善。
 - 以上只補充本機證據，不把 E-03、E-06、E-07、E-10、E-11 的真人／外部驗收改標成完成。
 
 ## 2026-09-16 最新掃描（本節覆蓋下面的歷史快照）
@@ -377,7 +379,10 @@ production 沒有修改。
   並部署至 staging `bd8a8e9d0205`；管理頁後續仍要拆出文件等待與 render pipeline。
 - **staging 實際 DOM 驗收**：社員頁圖片 DOM 為 `1` 張，但 hosted React／Next 仍產生 `2` 個相同的普通 preload 提示（head／body）。
   本機社員首頁 E2E 為 `3 passed`，含圖片 `1` 張／preload `1` 個與管理模式不載入圖片；兩者行為不同，不能把本機結果當成 hosted 完成證據。
-- **尚未結案原因**：修改後 LCP／FCP／TTFB **未量測**；目前沒有前後效能數字，也不能宣稱已消除所有 preload 或已改善 LCP。
+- **2026-09-16 修改後補測**：真實 LEO 社員頁在同一個 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、
+  未限速下，DevTools 顯示 LCP `1.30 s`、CLS `0.01`，LCP 元素為 `img.member-portal-module__wpzd3a__backdropImage`；FCP、TTFB、INP 未量測。
+  DevTools「停用網路快取」未勾選，且測量 runtime `bd8a8e9d0205` 不同於修改前基線 `1ef38bb50407`，所以不能宣稱因果改善。
+- **尚未結案原因**：還缺同一 runtime／快取條件下的 FCP、TTFB，並需再測管理頁；也不能宣稱已消除所有 preload。
 - **完成證據**：同一帳號、同一社、同一網路條件，取得修改前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。完整條件與限制見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
 
 ### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
