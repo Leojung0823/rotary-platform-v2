@@ -326,6 +326,10 @@ production 沒有修改。
 - **2026-09-16 hosted 正向補充**：同一個 staging 會員帳號的 `/me/line-oa` 顯示「已完成好友與社員身份確認」；
   社務管理頁的 follower 清單也把已配對的 `U888f7e17b…` 投影為 `LEO`。這支持目前帳號的正向身份投影，
   但仍沒有足夠證據證明最近一次 follow 事件就是這個本人操作，也未涵蓋多社／外社／停權／退社負向情境。
+- **2026-09-16 稽核時間線補充**：同一社的 Audit Log 顯示 `line_oa.auto_paired`（10:00:12），
+  但之後又有兩筆 `line_oa.bulk_paired`（10:18:26、10:18:49），以及 LEO 的
+  `line_identity.unbound` 與 `membership.status_changed`（11:53）。因此目前 LEO follower 雖然仍顯示已配對，
+  不能把它當成「該次 follow 自動配對到 LEO」的乾淨證據；需要重新準備未被人工批次配對／解除綁定污染的測試帳號與事件窗口。
 - **2026-09-14：暫緩解除，因為證據自己出現了。** 公開加入連結上線後，`PANCHIAO-ELITE` 的 audit log
   出現四筆 `club_join_link.redeemed`（Ethan T.、Maggie佳佑、Green Chen陳冠青、承希✨Olivia），
   中間夾著兩筆 `line_oa.auto_paired`。真人透過 LINE 加入本社，自動配對路徑實際被觸發。
