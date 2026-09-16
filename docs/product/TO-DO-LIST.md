@@ -8,6 +8,14 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+### 2026-09-16 本機角色回歸補充
+
+- 本機 `officer-mode-1440`：9 passed、1 刻意跳過手機版。已涵蓋社員／社務模式切換、跨社管理路由拒絕、社費只在管理模式顯示、生日管理入口，以及文件建立／編輯／上傳。
+- 本機 `line-oa-rich-menu-1440`：1 passed。已涵蓋 mock OA 的 Rich Menu 發布與停用；這不是 staging OA 或真人手機驗收證據。
+- 本機安全邊界測試：4 檔、20 tests passed，涵蓋管理模式、社費旗標、Rich Menu 旗標與首頁效能邊界。
+- Staging Release `35084851997` 已取消；它的 head 是舊版 `857b9dc54a4cc98e67f86b264d2014c91b4f38c1`，不影響目前 staging，也沒有因取消而回滾程式。
+- 以上只補充本機證據，不把 E-03、E-06、E-07、E-10、E-11 的真人／外部驗收改標成完成。
+
 ## 2026-09-16 最新掃描（本節覆蓋下面的歷史快照）
 
 本次以 GitHub `Leojung0823/rotary-platform-v2` 的 `origin/main`、GitHub Actions 與 staging
