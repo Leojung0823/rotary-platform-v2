@@ -390,6 +390,8 @@ production 沒有修改。
 
 - **目前證據**：Rich Menu 程式已在 PR #107 合併至 `main`（merge `1164f763`），並隨 Go-Live `34912921064` 部署 staging；
   外部 OA 設定與真人驗收仍未完成，不是本輪 staging blocker。
+- **2026-09-16 實際核對**：以已登入的 PANCHIAO-ELITE 社務管理頁檢查，畫面沒有 Rich Menu 發布區；
+  這與 `line_rich_menu_v1` 尚未開啟相符，也表示目前沒有可宣稱的圖片上傳、LINE 發布或手機驗收結果。
 - **外部動作**：產品先決定各社 Rich Menu 的入口與文案；開發完成後，由各社在自己的 LINE OA／Messaging API channel 設定並驗證 menu、URI 與權限邊界，不共用其他社的 OA。
 - **完成證據**：每個啟用的社都能在自己的 OA 看到正確 Rich Menu；登入／社別切換不會把 A 社入口導到 B 社；停用旗標或未設定 OA 時不會送出錯誤連結。
 

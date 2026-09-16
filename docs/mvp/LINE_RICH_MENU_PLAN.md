@@ -4,6 +4,8 @@
 
 狀態：程式底座已進入 `main` 並部署 staging；目前產品範圍只使用 `PANCHIAO-ELITE`，HAPPY 不使用。
 staging runtime `1ef38bb50407` 健康；仍待 PANCHIAO-ELITE 的 OA 外部設定、旗標狀態確認與手機真人驗收。
+2026-09-16 已登入管理頁實際核對，尚未看到 Rich Menu 發布區，與旗標尚未開啟相符；目前沒有圖片上傳、
+LINE 發布或手機驗收證據。
 2026-09-16 管理頁實際核對仍看得到 HAPPY 的 OA metadata、`LINE_OA_HAPPY_*` namespace、4 位 follower
 與既有推播紀錄；這是 staging／mock 殘留的待釐清資料，不代表 HAPPY 已納入 rollout。未經產品明確決定前，
 不得對 HAPPY 發布或發送 Rich Menu。
