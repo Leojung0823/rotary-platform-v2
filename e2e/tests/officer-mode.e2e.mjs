@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openEveryEventDetails } from "./member-event-list.mjs";
 
 const password = process.env.E2E_ROLE_PASSWORD;
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
@@ -42,6 +43,10 @@ test("an officer in member mode sees the events page a plain member sees", async
   await expect(page.getByRole("button", { name: "發布活動" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "取消活動" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^(上傳圖片|更換圖片)$/u })).toHaveCount(0);
+
+  // Each event is collapsed now, so what is inside a card is reached the way a
+  // member reaches it.
+  await openEveryEventDetails(page);
   await expect(page.getByRole("link", { name: "管理簽到" }).first()).toBeVisible();
 
   // Drafts are a manager's business; a member never sees one.
