@@ -81,3 +81,37 @@ describe("recording a cover refreshes everywhere it is shown", () => {
     expect(coverAction()).toContain("revalidatePath(`/clubs/${club}/events`)");
   });
 });
+
+describe("a key that will not sign is not the same as no key", () => {
+  const signer = readFileSync("src/lib/events/cover-image.server.ts", "utf8");
+
+  // Both halves of this feature failed in silence. Returning an empty map is
+  // still right -- a page without a picture beats a page that fails -- but
+  // silence made "no cover" and "cover that cannot be read" identical from
+  // outside, and that is the pair that had to be told apart.
+  it("says so in the server log", () => {
+    expect(signer).toContain("EVENT_COVER_SIGN_FAILED");
+  });
+
+  it("reports every way signing can come back empty", () => {
+    for (const branch of ["no_data", "object_unsigned", "unknown"]) {
+      expect(signer, `${branch} is not reported`).toContain(branch);
+    }
+  });
+
+  it("still renders the page when signing fails", () => {
+    // The log is an addition, not a new failure mode.
+    expect(signer).toContain("return new Map();");
+    expect(signer).not.toContain("throw new Error");
+  });
+
+  it("logs the count and the reason, not the keys", () => {
+    // `<club>/<event>` is already in the URL of the page being rendered, so
+    // repeating it in the log buys nothing and spreads identifiers around.
+    const line = signer.split("\n").find((candidate) => candidate.includes("EVENT_COVER_SIGN_FAILED"));
+    expect(line).toContain("unsigned=");
+    expect(line).toContain("reason=");
+    expect(line).not.toContain("wanted.join");
+    expect(line).not.toContain("path");
+  });
+});
