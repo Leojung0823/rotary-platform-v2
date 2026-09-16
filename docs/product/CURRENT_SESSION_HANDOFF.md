@@ -7,7 +7,8 @@
 
 這次以 GitHub `origin/main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 重新核對：
 
-- `main`／`origin/main` 最新 SHA 為 `965abc82868fe585bc3779da5c33d05c0c44ed09`；staging revision 為
+- 本次文件同步前的 `main`／`origin/main` 為 `4e1a8ed368c6d1b1b30821643976627fa22ff0f5`；本文件提交後請以
+  `git rev-parse origin/main` 現場核對；staging revision 為
   `36f32f8a44e1`。health 為 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、
   `warnings=[]`；production 沒有修改。
 - Staging Release `35121647301` 與 Go-Live `35121777337` 使用同一個 exact SHA 並成功；本輪沒有新增 migration。

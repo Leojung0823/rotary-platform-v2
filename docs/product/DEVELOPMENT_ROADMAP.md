@@ -6,15 +6,16 @@
 
 ## 2026-09-17 最新基線（覆蓋下面的 2026-09-16／2026-09-15 快照）
 
-- GitHub `origin/main` 最新 SHA 為 `965abc82868fe585bc3779da5c33d05c0c44ed09`；本節固定記錄產品與 staging 版本，避免文件提交後自我過期。
+- 本次文件同步前 GitHub `origin/main` 為 `4e1a8ed368c6d1b1b30821643976627fa22ff0f5`；本文件提交後請以
+  `git rev-parse origin/main` 現場核對，本節固定記錄產品與 staging 版本，避免把兩者混為一談。
 - staging 產品程式目前為已部署版本 `36f32f8a44e1`；`/api/health` 為 `status=ok`、
   `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
 - 主線已包含 9/16 的首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、
   生日徵集日期／關閉、follower 批次配對、手機表格卡片寬度修正與測試 fixture race 修正。
   另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已在前一個 Staging Go-Live `35083792540` 套用，
   目前 staging 仍包含它；本輪 `36f32f8` 沒有新增 migration，只修正社員首頁圖片 preload。
-- `origin/main` 最新提交為 `965abc82868fe585bc3779da5c33d05c0c44ed09`，是針對 role-shell 負向登入測試的獨立 context
-  隔離修正；產品程式仍以 staging 已部署的 `36f32f8a44e1` 為準，沒有重新部署。下一次文件同步仍應以現場的
+- 文件同步前最新提交 `4e1a8ed368c6d1b1b30821643976627fa22ff0f5` 是記錄 role-shell 負向登入測試修正後狀態的文件同步提交；前一個提交
+  `965abc8` 才是該測試的獨立 context 隔離修正。產品程式仍以 staging 已部署的 `36f32f8a44e1` 為準，沒有重新部署。下一次文件同步仍應以現場的
   `git rev-parse origin/main` 核對，避免文件提交後再次過期。
   舊的 Staging Release `35084851997` 已取消，但它使用的是舊 head，沒有回滾或改變目前 staging runtime。
 - PR #188、#189、#190 都已正常合併；`36f32f8` 的自動 CI `35121629076` 已成功，Staging Release

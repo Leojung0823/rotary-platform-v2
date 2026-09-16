@@ -10,7 +10,7 @@
 | 項目 | 結果 |
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
-| 目前 origin/main | `965abc82868fe585bc3779da5c33d05c0c44ed09`（只含 E2E 測試隔離修正，未重新部署） |
+| 文件同步前的 origin/main | `4e1a8ed368c6d1b1b30821643976627fa22ff0f5`（本文件提交後請現場核對；未重新部署） |
 | 目前 staging runtime | `36f32f8a44e1` |
 | 本次 `/login` 量測時 runtime | `1ef38bb50407`（由相鄰時間的 `/api/health` 核對；trace 本身未暴露 revision） |
 | 量測頁面 | `/login`（未登入） |
