@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, Card, Notice } from "@/components/ui";
+import { requireIdentity } from "@/lib/auth";
 import {
   SERVICE_PLAN_CATEGORIES,
   SERVICE_PLAN_STATUS_LABELS,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/club-affairs/service-plan";
 import { createClient } from "@/lib/supabase/server";
 import { resolveExperienceContext } from "@/lib/experience-context.server";
+import { currentExperienceMode } from "@/lib/experience-mode.server";
 import styles from "./club-affairs.module.css";
 
 export const dynamic = "force-dynamic";
@@ -53,9 +55,17 @@ export default async function ClubAffairsPage({
   const query = await searchParams;
   const requestedYear = Number.parseInt(query.year ?? "", 10);
   const supabase = await createClient();
-  const resolution = await resolveExperienceContext(null);
+  const [resolution, identity] = await Promise.all([
+    resolveExperienceContext(null),
+    requireIdentity(),
+  ]);
   const activeClubId = resolution.ok ? resolution.context.activeClubId : null;
-  const canManage = resolution.ok && resolution.context.canManage;
+  // Being able to manage is not the same as currently managing. An officer
+  // reading 社務 as a member is reading it as a member, exactly as on the
+  // events page -- the way into management is the shell's mode switch.
+  const mode = await currentExperienceMode(identity.id);
+  const managing = (mode === null || mode === "management")
+    && resolution.ok && resolution.context.canManage;
 
   if (!activeClubId) {
     return <Notice tone="error">目前沒有有效社籍，無法查看社務資訊。</Notice>;
@@ -179,7 +189,7 @@ export default async function ClubAffairsPage({
         looking for them from 社務 rather than from the roster, which is where
         they actually live. The link is shown to anyone who can manage a club;
         the RPCs behind it still require member.manage on their own. */}
-    {canManage && <Card>
+    {managing && <Card>
       <div className="section-heading">
         <div><p className="eyebrow">分眾</p><h2>社員標籤</h2></div>
       </div>

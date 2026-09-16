@@ -17,6 +17,9 @@ const memberFacingEventReaders = [
   // A write, and the more serious half: the lists never offered a targeted
   // event, but nothing refused a registration for one.
   "set_my_event_registration",
+  // Search: a member asking "which events mention this word" is asking which
+  // events exist, so it answers only for the ones addressed to them.
+  "search_my_club",
 ];
 
 /**
