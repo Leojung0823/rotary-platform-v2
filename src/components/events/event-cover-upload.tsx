@@ -78,11 +78,18 @@ export function EventCoverUpload({
         .upload(path, blob, { contentType: "image/jpeg", upsert: true });
       if (error) throw new Error("upload_failed");
 
-      startTransition(() => {
-        void recordEventCoverAction({ clubId, eventId, path });
+      // Awaited, not fired and forgotten: the bytes reaching Storage is only
+      // half the job, and the half that used to fail in silence is the other.
+      startTransition(async () => {
+        const recorded = await recordEventCoverAction({ clubId, eventId, path });
+        if (recorded.ok) {
+          setState("done");
+          setMessage("圖片已更新。");
+          return;
+        }
+        setState("error");
+        setMessage(coverImageError(recorded.reason));
       });
-      setState("done");
-      setMessage("圖片已更新。");
     } catch (error) {
       setState("error");
       setMessage(coverImageError(error instanceof Error ? error.message : "unknown"));
@@ -91,11 +98,16 @@ export function EventCoverUpload({
 
   const remove = () => {
     setMessage(null);
-    startTransition(() => {
-      void recordEventCoverAction({ clubId, eventId, path: null });
+    startTransition(async () => {
+      const recorded = await recordEventCoverAction({ clubId, eventId, path: null });
+      if (recorded.ok) {
+        setState("done");
+        setMessage("圖片已移除。");
+        return;
+      }
+      setState("error");
+      setMessage(coverImageError(recorded.reason));
     });
-    setState("done");
-    setMessage("圖片已移除。");
   };
 
   const busy = state === "preparing" || state === "uploading" || pending;

@@ -93,6 +93,35 @@ test("a manager uploads a cover, and the browser shrinks it first", async ({ pag
   expect(painted.src).toContain("token=");
 });
 
+test("a cover a manager uploads is the cover a member sees", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "event-cover-1440", "Follows the upload test, which only runs here.");
+  // The upload test proves the picture comes back on the page it was uploaded
+  // from. Nothing checked that it reaches the page members actually read --
+  // which is where Leo found it missing.
+  await login(page, managerEmail);
+  await page.goto(new URL("/events?mode=management", baseURL).toString());
+  await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]+\/events\?mode=management$/u);
+
+  const fold = page.locator("details.cover-fold").first();
+  await expect(fold).toBeAttached();
+  await fold.locator("summary").click();
+  const managed = page.locator("img.event-cover").first();
+  await expect(managed).toBeAttached();
+  const managedTitle = await page.locator("article.card").first().locator("h2, h3").first().innerText();
+
+  // The same event, read the way a member reads it.
+  await page.goto(new URL("/events?mode=member", baseURL).toString());
+  const card = page.locator("article.card").filter({ hasText: managedTitle.trim().split("｜")[0] }).first();
+  await expect(card).toBeVisible();
+  const memberCover = card.locator("img.event-cover").first();
+  await expect(memberCover, "the cover did not reach the member view").toBeAttached();
+  await memberCover.scrollIntoViewIfNeeded();
+  await expect.poll(
+    () => memberCover.evaluate((image) => image.naturalWidth),
+    { timeout: 15_000 },
+  ).toBeGreaterThan(0);
+});
+
 test("an ordinary member sees the cover but is offered no way to change it", async ({ page }) => {
   await login(page, memberEmail);
   await page.goto(new URL("/events", baseURL).toString());

@@ -168,6 +168,18 @@ export async function createEventAction(
   redirect(eventPath(clubId, "success", "event_created", readMode(formData)));
 }
 
+export type EventCoverActionResult =
+  | Readonly<{ ok: true }>
+  | Readonly<{ ok: false; reason: string }>;
+
+/**
+ * Attach an uploaded object to its event, or detach it.
+ *
+ * Returns an outcome rather than nothing. It used to swallow every failure and
+ * return void, while the button said 「圖片已更新。」 regardless -- so an upload
+ * that reached Storage but was never recorded looked exactly like one that
+ * worked, and the officer had no way to find out which they had.
+ */
 export async function recordEventCoverAction({
   clubId,
   eventId,
@@ -176,14 +188,14 @@ export async function recordEventCoverAction({
   clubId: string;
   eventId: string;
   path: string | null;
-}) {
+}): Promise<EventCoverActionResult> {
   let club: string;
   let event: string;
   try {
     club = parseUuid(clubId);
     event = parseUuid(eventId);
   } catch {
-    return;
+    return { ok: false, reason: "invalid_input" };
   }
 
   const supabase = await createClient();
@@ -194,7 +206,7 @@ export async function recordEventCoverAction({
     p_event_id: event,
     p_cover_image_path: path,
   });
-  if (error) return;
+  if (error) return { ok: false, reason: error.message ?? "unknown" };
 
   if (path === null) {
     // Leaving the object behind would keep consuming the storage allowance for
@@ -202,8 +214,10 @@ export async function recordEventCoverAction({
     await supabase.storage.from(COVER_BUCKET).remove([`${club}/${event}`]);
   }
   revalidatePath("/events");
+  revalidatePath(`/events/${event}`);
   revalidatePath(`/clubs/${club}/events`);
   revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 export async function publishEventAction(formData: FormData) {
