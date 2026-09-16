@@ -535,7 +535,7 @@ PR-01c 不做：
 
 1. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：本機已補撤銷管理者、停權、退社的 role-shell 負向測試；仍需 staging 真人確認雙重社籍、跨社執行秘書、資料隔離與管理權限不越權。
-3. **E-06：登入後管理頁效能量測** `[>]`：已部署社員首頁 eager 圖片修正；真實社員頁已補到 LCP `1.30 s`／CLS `0.01`，但 FCP／TTFB／INP 未量測，且 hosted DOM 仍有兩個普通 preload 提示。先用一致的 runtime／快取條件補齊社員頁 FCP／TTFB，再拆管理頁文件等待與 render pipeline。
+3. **E-06：登入後管理頁效能量測** `[>]`：已部署社員首頁圖片提示修正；真實社員頁已核對為 1 張 hero 圖片／1 個 preload，並觀測到 LCP `1.30 s`／CLS `0.01`。但同一 runtime／快取條件下的 FCP／TTFB／LCP／INP 前後比較仍未完成，先補齊社員頁可比數據，再拆管理頁文件等待與 render pipeline。
 4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
 5. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次 rollout 只啟用 PANCHIAO-ELITE，已完成。
 6. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging，待各社 OA 設定與真人驗收。
