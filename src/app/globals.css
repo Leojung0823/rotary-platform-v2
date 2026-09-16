@@ -463,6 +463,43 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
    scrolling. The cancelled events, because they are still the record of what
    was called off -- filed rather than hidden, but not what anyone opened the
    page to read. */
+/* The member event list. Unlike the two folds above, whose summary is a single
+   line of link-coloured text, this one is the card's own heading -- the member
+   is choosing between events, so the summary carries the badges, the title and
+   the time, and only the rest is behind the disclosure. */
+.event-fold { margin: 0; }
+.event-fold > summary {
+  display: grid;
+  gap: var(--space-2);
+  min-height: 48px;
+  align-content: center;
+  cursor: pointer;
+  list-style: none;
+}
+.event-fold > summary::-webkit-details-marker { display: none; }
+.event-fold > summary h2 { margin: 0; font-size: var(--type-card-title); }
+.event-fold > summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; border-radius: var(--radius-control); }
+.event-when { margin: 0; color: var(--subtle-ink); font-size: var(--text-small); }
+/* Real text rather than generated content: it is a label a member reads, so it
+   must be selectable and translatable like any other. The open and closed words
+   are both rendered and one is hidden, so neither can go missing. */
+.event-fold-hint { color: var(--blue-ink); font-size: var(--text-small); font-weight: var(--weight-medium); }
+.event-fold > summary .event-fold-hint-close { display: none; }
+.event-fold[open] > summary .event-fold-hint-open { display: none; }
+.event-fold[open] > summary .event-fold-hint-close { display: inline; }
+
+/* One answer in two parts -- "am I coming, and with how many" -- so it stays a
+   single row at every width. The guest count needs room for two digits and a
+   stepper, never more. */
+.response-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(5.5rem, 8rem);
+  gap: var(--space-3);
+}
+
+/* A link an organiser typed into a description. */
+.event-description a { color: var(--blue-ink); text-decoration: underline; overflow-wrap: anywhere; }
+
 .cover-fold, .archive-fold { margin: 0; }
 .cover-fold > summary, .archive-fold > summary {
   min-height: 48px;
