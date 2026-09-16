@@ -54,10 +54,13 @@ describe("every qualified column the projection reads is one it selected", () =>
   });
 
   it("checks something", () => {
-    // A regex that matched nothing would make both tests above vacuous.
-    expect(referenced("item").size).toBeGreaterThan(3);
-    expect(referenced("task").size).toBeGreaterThan(3);
+    // A regex that matched nothing would make both tests above vacuous. Named
+    // columns rather than a count: the count changed when the projection
+    // stopped selecting two columns it no longer used, which says nothing
+    // about whether this guard still works.
     expect(referenced("item")).toContain("ends_at");
+    expect(referenced("item")).toContain("registration_deadline");
     expect(referenced("task")).toContain("ends_at");
+    expect(referenced("task")).toContain("registration_deadline");
   });
 });

@@ -62,12 +62,32 @@ export type MemberHomeUpcomingEvent = Readonly<{
 }>;
 
 /** An event this member has been asked about and has not answered. */
+export const pendingTaskKinds = [
+  "event_response",
+  "dues_outstanding",
+  "birthday_wish",
+  "unread_messages",
+  "profile_incomplete",
+] as const;
+export type PendingTaskKind = (typeof pendingTaskKinds)[number];
+
+/**
+ * Something the member owes the club, of whatever sort.
+ *
+ * `deadline` and `hoursRemaining` are null together and only for the kinds that
+ * genuinely have no due date -- unpaid dues carry no per-receivable due date in
+ * this schema, and nothing goes wrong if a profile is never completed. A
+ * reminder that cannot be late must not be able to say 「即將截止」.
+ */
 export type MemberHomePendingTask = Readonly<{
-  kind: "event_response";
+  kind: PendingTaskKind;
   title: string;
-  eventId: string;
-  deadline: string;
-  hoursRemaining: number;
+  detail: string;
+  actionPath: string;
+  deadline: string | null;
+  hoursRemaining: number | null;
+  /** How many, for the kinds that count rather than name one thing. */
+  count: number | null;
 }>;
 
 export type MemberHomeProjection = Readonly<{
@@ -237,27 +257,48 @@ const maximumPendingTasks = 5;
 
 function parsePendingTask(value: unknown): MemberHomePendingTask | null {
   if (!isRecord(value)
-    || !hasExactKeys(value, ["kind", "title", "event_id", "deadline", "hours_remaining"])
-    || value.kind !== "event_response"
+    || !hasExactKeys(value, ["kind", "title", "detail", "action_path", "deadline", "hours_remaining", "count"])
+    || !includes(pendingTaskKinds, value.kind)
     || typeof value.title !== "string"
     || value.title.length === 0
     || value.title.length > maximumEventTextLength
-    || typeof value.event_id !== "string"
-    || value.event_id.length === 0
-    || typeof value.deadline !== "string"
-    || value.deadline.length === 0
-    || typeof value.hours_remaining !== "number"
-    || !Number.isSafeInteger(value.hours_remaining)
-    // The row is filtered to deadlines still ahead, so a negative here means
-    // the projection and this parser disagree about what it contains.
-    || value.hours_remaining < 0) return null;
+    || typeof value.detail !== "string"
+    || value.detail.length > maximumEventTextLength
+    // A relative path this app serves, never a URL: the row decides where a
+    // tap goes, and an absolute one would let the projection send a member off
+    // the platform.
+    || typeof value.action_path !== "string"
+    || !value.action_path.startsWith("/")
+    || value.action_path.startsWith("//")
+    || value.action_path.length > 200) return null;
+
+  // Deadline and countdown arrive together or not at all. One without the
+  // other means the projection and this parser disagree about what a row is.
+  const hasDeadline = value.deadline !== null;
+  if (hasDeadline) {
+    if (!isIsoDateTime(value.deadline)) return null;
+    if (typeof value.hours_remaining !== "number"
+      || !Number.isSafeInteger(value.hours_remaining)
+      // Every deadline-bearing row is filtered to one still ahead, so a
+      // negative here means the two sides disagree about what it contains.
+      || value.hours_remaining < 0) return null;
+  } else if (value.hours_remaining !== null) {
+    return null;
+  }
+
+  if (!(value.count === null
+    || (typeof value.count === "number" && Number.isSafeInteger(value.count) && value.count > 0))) {
+    return null;
+  }
 
   return {
-    kind: "event_response",
+    kind: value.kind,
     title: value.title,
-    eventId: value.event_id,
-    deadline: value.deadline,
-    hoursRemaining: value.hours_remaining,
+    detail: value.detail,
+    actionPath: value.action_path,
+    deadline: (value.deadline as string | null) ?? null,
+    hoursRemaining: (value.hours_remaining as number | null) ?? null,
+    count: (value.count as number | null) ?? null,
   };
 }
 

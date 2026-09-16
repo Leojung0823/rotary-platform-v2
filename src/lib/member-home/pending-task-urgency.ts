@@ -12,7 +12,16 @@ export type PendingTaskUrgency = Readonly<{
   tone: "danger" | "neutral";
 }>;
 
-export function pendingTaskUrgency(task: MemberHomePendingTask): PendingTaskUrgency {
+/**
+ * Null for a task with no deadline.
+ *
+ * Unpaid dues carry no due date in this schema, and nothing goes wrong if a
+ * profile is never completed. Those rows get no countdown at all rather than a
+ * borrowed one -- a reminder that cannot be late must not be able to say
+ * 「即將截止」.
+ */
+export function pendingTaskUrgency(task: MemberHomePendingTask): PendingTaskUrgency | null {
+  if (task.hoursRemaining === null) return null;
   if (task.hoursRemaining < urgentWithinHours) return { label: "即將截止", tone: "danger" };
 
   // Whole days, rounded down, so a member who reads "尚餘 1 天" and acts

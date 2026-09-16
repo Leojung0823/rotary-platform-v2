@@ -91,16 +91,35 @@ export function upcomingEventsFrom(
   });
 }
 
+/** The picture each kind of reminder wears. */
+const taskIcons: Record<MemberHomePendingTask["kind"], PortalTask["icon"]> = {
+  event_response: "bell",
+  dues_outstanding: "document",
+  birthday_wish: "user",
+  unread_messages: "bell",
+  profile_incomplete: "user",
+};
+
+/**
+ * The title used to be hardcoded to 「回覆活動報名」 because there was only ever
+ * one kind. Each row now carries its own, and its own destination -- so a new
+ * kind cannot be added in the database and land here silently mislabelled.
+ */
 export function tasksFrom(tasks: readonly MemberHomePendingTask[]): readonly PortalTask[] {
   return tasks.map((task) => {
     const urgency = pendingTaskUrgency(task);
     return {
-      icon: "bell" as const,
-      title: "回覆活動報名",
-      detail: task.title,
-      status: urgency.label,
-      tone: urgency.tone,
-      href: "/events",
+      icon: taskIcons[task.kind],
+      title: task.kind === "event_response" ? "回覆活動報名" : task.title,
+      detail: task.count === null
+        ? task.detail
+        // "3 則" says more than repeating the title on both lines.
+        : `${task.count} 則`,
+      // No deadline means no countdown, not a blank pill: a task that cannot be
+      // late says nothing about time at all.
+      status: urgency?.label ?? null,
+      tone: urgency?.tone ?? "neutral",
+      href: task.actionPath,
     };
   });
 }
