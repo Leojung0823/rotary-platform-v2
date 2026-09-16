@@ -1,8 +1,9 @@
 # LINE Rich Menu 每社社員入口企劃
 
-更新日期：2026-09-14（Asia/Taipei）
+更新日期：2026-09-16（Asia/Taipei）
 
-狀態：程式底座已完成；目前產品範圍只使用 `PANCHIAO-ELITE`，HAPPY 不使用。staging 發布與 PANCHIAO-ELITE 手機真人驗收尚未完成。
+狀態：程式底座已進入 `main` 並部署 staging；目前產品範圍只使用 `PANCHIAO-ELITE`，HAPPY 不使用。
+staging runtime `708b32a19594` 健康；仍待 PANCHIAO-ELITE 的 OA 外部設定、旗標狀態確認與手機真人驗收。
 
 ## 1. 目的
 
@@ -16,7 +17,7 @@
 4. **全 OA 好友共用**：第一版使用 LINE 的 default rich menu，因此同一個 OA 的好友看到同一份選單；不做每位社員一份選單。
 5. **停用可回復且不誤傷其他選單**：停用前先讀取 LINE 目前的 default rich menu ID；只有確認它等於平台保存的 `richMenuId` 才清除。沒有預設選單、ID 已被替換，或由 LINE Official Account Manager 接管時，不清除現有選單。已建立的 provider object 保留，日後可重新發布新圖片。LINE 的選單圖片不能直接替換，換圖要建立新的選單。
 6. **功能旗標預設關閉**：`line_rich_menu_v1` 必須明確啟用；`DISABLE_LINE_RICH_MENU=true` 可緊急關閉。旗標關閉時管理頁不顯示發布區，也不呼叫 LINE。
-7. **目前社團範圍**：只對 `PANCHIAO-ELITE` 規劃 staging 發布與手機驗收；`HAPPY` 目前不使用，不建立它的 OA、channel、webhook 或 secrets。
+7. **目前社團範圍**：只對 `PANCHIAO-ELITE` 進行 staging 發布與手機驗收；`HAPPY` 目前不使用，不建立它的 OA、channel、webhook 或 secrets。
 
 ## 3. 使用流程
 
@@ -81,12 +82,11 @@ LINE Rich Menu 的標準流程是建立 rich menu、上傳圖片，再指定為 
 
 以下不是本機程式缺口，不能用單元測試宣稱完成：
 
-1. 以同一個 exact commit 做 staging migration、部署與 `/api/health` 核對。
-2. staging 設定 `line_rich_menu_v1`，並確認該社自己的 `LINE_OA_<CLUB>_ACCESS_TOKEN` 可用。
-3. 由各社管理員上傳正式圖片，確認自己的 OA 手機版真的看到選單。
-4. 逐一測試四格連結都落到正確社別的社員頁；切換其他社後不會把 A 社 OA 的入口當成 B 社授權。
-5. 以一般社員直接輸入管理網址、未設定 OA、錯誤 token、旗標關閉、停用後重新發布做負向驗收。
-6. HAPPY 目前不在上線範圍；若未來重新啟用，才建立 HAPPY 自己的 OA／Messaging API channel、webhook 與 `LINE_OA_HAPPY_*` secrets，不可沿用 PANCHIAO。
+1. 確認 staging 的 `line_rich_menu_v1` 已由受保護流程開啟；若未開啟，不能把「程式已部署」當成社員已可用。
+2. 確認該社自己的 `LINE_OA_PANCHIAO_ELITE_ACCESS_TOKEN` 可用，並由管理員上傳正式圖片。
+3. 用手機確認自己的 OA 真的看到選單，四格都落到正確社別的社員頁。
+4. 驗證一般社員直接輸入管理網址、未設定 OA、錯誤 token、旗標關閉、停用後重新發布等負向情境。
+5. HAPPY 目前不在上線範圍；若未來重新啟用，才建立 HAPPY 自己的 OA／Messaging API channel、webhook 與 `LINE_OA_HAPPY_*` secrets，不可沿用 PANCHIAO。
 
 ## 8. 不在本輪範圍
 

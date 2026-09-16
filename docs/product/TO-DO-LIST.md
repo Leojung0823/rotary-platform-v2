@@ -1,12 +1,34 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-15（Asia/Taipei；#147 合併後、staging Go-Live 完成）
+更新日期：2026-09-16（Asia/Taipei；以 GitHub `main=1ef38bb` 核對）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
 的舊掃描結果；那份檔案屬於獨立 worktree，不是權威 repo 的版本。
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
+
+## 2026-09-16 最新掃描（本節覆蓋下面的歷史快照）
+
+本次以 GitHub `Leojung0823/rotary-platform-v2` 的 `origin/main`、GitHub Actions 與 staging
+實際健康檢查交叉核對；舊的 2026-09-15 段落保留作為歷史紀錄，不再當作目前狀態。
+
+- `origin/main` exact SHA：`1ef38bb504075d7a197e99c2364db8b087cea22e`。
+- staging `/api/health`：`status=ok`、`revision=708b32a19594`、`configuration=true`、
+  `database=true`、`issues=[]`、`warnings=[]`。production 沒有修改；staging 尚未發布 `1ef38bb`。
+- 9/16 已進入主線的修正／功能包括：首頁待辦完成後移除生日提醒、社費提醒連到實際應付年度、
+  只有 Email 的社員可以清除個人資料提醒、活動報名截止日可留空、生日徵集可編輯日期／關閉、
+  管理員批次修復未配對 follower、手機表格卡片不再把整頁撐寬，以及測試 fixture race 修正。
+- 新增的資料庫 migration 是 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`；在受控 staging Go-Live
+  前仍要依 migration／rollback 規則檢查，不能只看應用程式 CI。
+- PR #188、#189、#190 都已正常 merge；目前 `main@1ef38bb` 的 CI 與 Browser Smoke 均已成功，仍未視為 staging 已發布。
+- **判斷規則**：open PR 未通過完整必要檢查前，不算主線完成；已 merge 也不等於 staging 已部署。不能 force push 或 rebase 別人的分支。
+
+### 這次掃描後的實際結論
+
+1. 不是「主線沒有更新」：主線已到 `1ef38bb`，但 staging 仍停在 `708b32a`。
+2. 不是「所有待辦都完成」：E-03、E-05、E-06、E-07、E-08、E-10、E-11 仍需要真人、效能工具、產品決策或外部 OA 設定。
+3. #188／#189／#190 已合併且合併後檢查已通過；接下來按受控流程把 `1ef38bb` 發布到 staging。
 
 ## 2026-09-15 GitHub 開發狀態快照（#147 合併後）
 
@@ -48,7 +70,7 @@ production 沒有修改。
 - `[x]` PR #143／#144／#146／#147 staging 受控 logical backup workflow：已合併；最後一版 merge `93d341c3`，不新增資料庫結構，
   只建立受保護的備份工作流程。
 
-目前沒有 open PR。#123、#124、#126、#127、#130、#132、#135、#139 均已隨 Go-Live `34912921064` 發布；
+目前有 open PR #188、#189；#123、#124、#126、#127、#130、#132、#135、#139 均已隨 Go-Live `34912921064` 發布；
 `20260914001100_club_service_plan_v2.sql`、`20260915000100_event_push_version_contract.sql` 與
 `20260915000200_club_service_plan_year_cast.sql` 的 migration apply 步驟均通過，該次執行回報遠端資料庫已是最新。
 後續若只有文件變更，不需要重新部署 staging。
@@ -371,16 +393,16 @@ production 沒有修改。
 
 這些是需要另外開發與驗證的產品功能，不應誤寫成「等外部設定」：
 
-- `[>]` 社費、收款與核銷（應收、部分收款、代墊、核銷）已在 PR #108 合併，待部署與 hosted 驗收。
-- `[>]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）已在 PR #108 合併，待部署與 hosted 驗收。
-- `[>]` LINE Rich Menu 與完整 OA 整合已在 PR #107 合併，待部署與各社 OA 外部設定（見 E-11）。
+- `[>]` 社費、收款與核銷（應收、部分收款、代墊、核銷）已在 PR #108 合併並包含在目前 staging，待 hosted／角色邊界驗收。
+- `[>]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）已在 PR #108 合併並包含在目前 staging，待 hosted／權限與空資料驗收。
+- `[>]` LINE Rich Menu 與完整 OA 整合已在 PR #107 合併並包含在目前 staging，待各社 OA 外部設定（見 E-11）。
 - `[>]` 手機 Web App（安裝、離線提示與推播準備）已在 PR #109 合併，待真實手機驗收。
-- `[>]` 社務資訊與年度服務計劃已合併至 `main`（PR #111、#124），待 staging／hosted 與角色邊界驗收。
+- `[>]` 社務資訊與年度服務計劃已合併至 `main`（PR #111、#124）並包含在目前 staging，待 hosted 與角色邊界驗收。
 - `[ ]` 社務 AI 助理（摘要、公告草稿、會議紀錄與授權查詢）；目前沒有可執行企劃或已授權的 AI 服務規格，不能直接開發。
 
-### 生日設定 UX 調整（產品決定 2026-09-12；PR #110 已合併，待 staging 驗收）
+### 生日設定 UX 調整（產品決定 2026-09-12；PR #110 已合併並部署 staging，待 hosted／真人驗收）
 
-實際操作 `/birthdays` 時提出，四項都已在 PR #110 實作；程式已進入 `main`，尚待 staging／hosted 驗收：
+實際操作 `/birthdays` 時提出，四項都已在 PR #110 實作並進入目前 staging；尚待 hosted／真人驗收：
 
 - `[>]` **`/birthdays` 不應該可以切換扶輪社**。PR #110 已移除頁面內重複選擇器，改用全域已選社別。
 - `[>]` **生日隱私改為預設全部打開**。PR #110 已讓新社籍預設公開，並保留既有缺列資料的私密語意，
@@ -390,14 +412,14 @@ production 沒有修改。
 - `[>]` **生日徵集產生失敗時的錯誤訊息無效**（2026-09-13 實測發現）。PR #110 已加入
   已把「同一社員同一扶輪年已有徵集」轉成可理解的提示，保留每年唯一約束，不放寬資料庫規則。
 
-## 本輪結論（2026-09-15 staging Go-Live 後）
+## 本輪結論（2026-09-16 staging Go-Live 後）
 
-截至 2026-09-15，能在 repo 內完成的功能已合併，並以 exact SHA 完成 staging Go-Live；仍要把 hosted、
+截至 2026-09-16，能在 repo 內完成的功能已合併，並以 exact SHA 完成 staging Go-Live；仍要把 hosted、
 真人、實機與產品決策分開記錄。GPS 精度政策已決定（不設 accuracy 門檻），密碼 recovery 依產品決定暫緩；
 自動化檢查也不能取代 E-03／E-06／E-07／E-10／E-11 的真人、效能與 OA 驗收。
 
-本次 staging release source 是 `main=93d341c3fd7818783bd6779b1466162baf86548b`；staging revision 是
-`93d341c3fd78`，`/api/health` 為 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
+本次 staging release source 是 `main=1ef38bb504075d7a197e99c2364db8b087cea22e`；但目前 staging revision 仍是
+`708b32a19594`，`/api/health` 為 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
 #107、#108、#109、#110、#111、#113、#115、#117、#118、#119、#120、#121、#122、#123、#124、#125、#126、#127、#130、#132、#135、#136、#137、#138、#139、#145
 已進入 main；#124、#126、#127、#130、#132、#135、#139 與 #145 已隨 Go-Live `34912921064` 發布；production 沒有修改。
 
@@ -431,7 +453,7 @@ fallback 給 HAPPY。剩下的是 follow 事件自動配對真人驗收，不是
 `68b12a5` 的自動 `CI` `34584379642` 與對應 `Browser Smoke` `34584379653` 均已成功，並已由 `34594381922` 部署到 staging；沒有待核准的同一輪 Go-Live。
 
 生日旗標與正確 Render staging service 的 scheduler secret 已同步；既有排程證據與本次 PR 狀態分開記錄，
-不能用舊的 `34673612440` 取代新的 hosted 驗收。production 沒有修改；目前沒有 open PR，#124 與 #125 均已合併，
+不能用舊的 `34673612440` 取代新的 hosted 驗收。production 沒有修改；#188、#189、#190 已合併，#124 與 #125 均已合併，
 詳見本文件開頭的最新快照。
 
 ## 逐項狀態

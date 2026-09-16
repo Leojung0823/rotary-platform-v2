@@ -1,6 +1,14 @@
 # 社費、收款與核銷 V1 企劃
 
-更新日期：2026-09-14（Asia/Taipei）
+更新日期：2026-09-16（Asia/Taipei）
+
+## 2026-09-16 最新狀態（優先於下方歷史實作紀錄）
+
+- GitHub `main` exact SHA：`1ef38bb504075d7a197e99c2364db8b087cea22e`；staging runtime：`708b32a19594`。
+- `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- 社費／收款／核銷的程式、報表 RPC、匯出 Route 與 migration `20260914000400`–`20260914000900` 已包含在目前 staging runtime。
+- `dues_finance_v1` 仍須以受保護方式確認旗標狀態；在旗標與 hosted 驗收完成前，不把管理財務頁公開給社員。
+- 尚未結案的是 staging 管理／社員流程、一般社員／外社／停權帳號負向權限、跨社隔離與空資料 CSV／Excel／PDF 驗收；這些不是單看健康檢查就能完成的項目。
 
 ## 為什麼先寫規格
 
@@ -53,7 +61,7 @@
 
 ## 本輪已完成：資料模型、RPC、頁面與匯出（本機）
 
-已在本機分支 `codex/dues-finance-v1` 建立 migration `20260914000400_dues_finance_v1_core.sql`。原規劃的 `000100` 與已進入 `main` 的社員封存、活動列表及 Rich Menu migration 撞號，因此在未部署前改用 `000400`。內容包括：
+已在功能分支建立、並已進入 `main` 與目前 staging 的 migration `20260914000400_dues_finance_v1_core.sql`。原規劃的 `000100` 與已進入 `main` 的社員封存、活動列表及 Rich Menu migration 撞號，因此在未部署前改用 `000400`。內容包括：
 
 - 年度預設、社員應收、收款與分配、反向收款、代墊、退回、核銷與反向核銷資料表。
 - 每社／扶輪年度／社員唯一應收、金額上限、TWD 與收款方式限制。
@@ -68,7 +76,7 @@
 - 新增 `/api/v1/dues-finance` mutation route、`/report` 與 `/export`（CSV／Excel／PDF）。所有財務回應使用 `no-store`，Route Handler 不直接 `.from()` 讀表。
 - 新增 TypeScript 投影 parser、輸入驗證、公式注入防護、報表匯出與管理／社員模式邊界測試；代墊投影 parser 會再核對未反向核銷明細總額、剩餘金額與「已結案」狀態，異常投影直接拒絕。
 
-本輪的資料庫、應用程式頁面與匯出已完成本機實作；`dues_finance_v1` 仍預設關閉，尚未做 staging migration、旗標開啟、真人驗收或部署。
+本輪的資料庫、應用程式頁面與匯出已進入 `main` 並包含在目前 staging；`dues_finance_v1` 仍是預設關閉，旗標／hosted／真人驗收尚未結案。
 
 ## 驗收條件
 
@@ -82,4 +90,4 @@
 
 ## 目前狀態
 
-產品規則已確認，資料模型、RPC、管理頁、社員查詢與匯出已完成本機實作與負向驗證。下一步只剩依同一個 exact SHA 做 staging migration、確認旗標與受保護 route，再進行管理／社員／跨社真人驗收；在此之前不應把 `dues_finance_v1` 對 staging 社員公開。
+產品規則已確認，資料模型、RPC、管理頁、社員查詢與匯出已進入 `main`／目前 staging，並有本機負向驗證。下一步是確認旗標與受保護 route，再進行管理／社員／跨社／空資料真人驗收；在此之前不應把 `dues_finance_v1` 對 staging 社員公開。

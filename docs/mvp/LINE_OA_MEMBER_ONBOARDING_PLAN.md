@@ -1,8 +1,15 @@
 # 每社專屬 LINE OA 登入後引導與社員配對企劃書
 
-狀態：PR-1、PR-2 已完成並部署 staging；PR-3 真實驗收尚未執行
+狀態：PR-1、PR-2 已完成並部署 staging；PR-3 真實驗收尚未完成（仍缺正確身份核對與負向案例）
 
-建立日期：2026-09-03（Asia/Taipei）　　更新日期：2026-09-11（Asia/Taipei）
+建立日期：2026-09-03（Asia/Taipei）　　更新日期：2026-09-16（Asia/Taipei）
+
+## 2026-09-16 最新狀態（優先於下方歷史部署紀錄）
+
+- GitHub `main` exact SHA：`1ef38bb504075d7a197e99c2364db8b087cea22e`。
+- staging runtime：`708b32a19594`；`/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- PR-1、PR-2 的程式與 migration 已在目前 staging；這不等於 PR-3 的 LINE 真實 follow／精確身份配對驗收完成。
+- PR-3 仍需：使用曾以同一 LINE Login channel 登入的社員加入正確社別 OA，核對 `person_id` 與姓名；再驗證多社、外社、停權及退社／過期社籍不誤配。
 
 本文件原為開發前企劃。實作已落地，逐條對照與差異見 §16、§17。
 
@@ -417,7 +424,7 @@ LINE identity 綁定 -> follow -> 配對
 | §12.1 單元測試 | `oa-onboarding.test.ts`、`oa-onboarding-security-boundary.test.ts`、`oa-onboarding-bind-boundary.test.ts` |
 | §12.2 資料庫 verification | `line_oa_member_onboarding_security.sql`、`line_oa_pair_after_bind_security.sql`（列在 `scripts/database-verification-files.txt`，CI 每次執行） |
 
-部署狀態：PR-1 隨 Go-Live `33704642718` 上 staging，`line_oa_onboarding_v1` 已對 staging 開啟；PR-2 與日期窗口防護已在 `main`，最新 staging runtime 為 `e6ff5b9854ef`，Go-Live `34594381922` 成功。詳見 `docs/product/CURRENT_SESSION_HANDOFF.md`。
+部署狀態：PR-1 隨 Go-Live `33704642718` 上 staging，`line_oa_onboarding_v1` 已對 staging 開啟；PR-2 與日期窗口防護已在 `main`，目前 staging runtime 為 `708b32a19594`，健康檢查通過。這只證明程式已在 staging，不取代 PR-3 的真人 follow／精確身份配對驗收。詳見 `docs/product/CURRENT_SESSION_HANDOFF.md`。
 
 ## 17. 實作與企劃書的差異
 

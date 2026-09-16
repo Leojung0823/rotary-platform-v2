@@ -4,9 +4,8 @@
 見 [`LINE_LOGIN_DEPLOYMENT_CHECKLIST.md`](./LINE_LOGIN_DEPLOYMENT_CHECKLIST.md)。兩者不共用 secret。
 
 目前狀態：真實 Messaging API、訊息中心公告、活動發布與 webhook follow 基礎已在 staging 完成驗收。
-Flex 卡片模板的程式與 migration 已合併至 `main`（PR #98，merge commit `55047dd1f2d936a5147458fd16faa5038b068c3d`），
-並已由 Staging Go-Live `34686702234` 部署到 staging runtime `fbdc061dd702`；旗標仍未開啟。生日徵集邀請的 LINE 推播程式與 migration 已部署到 staging；
-最新 scheduler run `34673612440` 成功，但 `line_push.jobCount=0`、`sentCount=0`，尚未證明實際送達；
+目前 staging runtime 為 `708b32a19594`，Flex 卡片模板程式與 migration 已包含在內，`line_oa_flex_templates_v1` 已開啟，且三種模板已完成真人收訊驗收。
+生日徵集邀請的 LINE 推播也已完成有收件人的實際送達與冪等重跑驗收：`34695450977` 送達、`34695655038` 重跑不重送；早期無收件人的 `34673612440` 只保留為歷史紀錄。
 GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步。production 仍未修改。
 
 所有需要外部平台、真人收訊、實機或產品決策的事項，統一回 [`TO-DO-LIST.md`](../product/TO-DO-LIST.md) E-01–E-11。
@@ -37,11 +36,11 @@ Flex 功能使用獨立旗標 `line_oa_flex_templates_v1`，預設關閉；伺�
 旗標與 `oa.manage` 權限。管理頁目前提供「社務公告」、「活動提醒」與「生日祝福」三種固定版型，
 不接受瀏覽器自行傳入 Flex JSON、按鈕 action 或遠端圖片。
 
-- [ ] migration `20260912000200_line_oa_flex_templates_flag.sql` 已部署到 staging。
-- [ ] migration 部署完成後，由平台管理員透過受保護 CLI 只開啟 `line_oa_flex_templates_v1`：
+- [x] migration `20260912000200_line_oa_flex_templates_flag.sql` 已部署到 staging。
+- [x] migration 部署完成後，由平台管理員透過受保護 CLI 只開啟 `line_oa_flex_templates_v1`：
       `npm run flags:enable:staging -- line_oa_flex_templates_v1`
-- [ ] 管理頁可預覽卡片，並以指定對象發送一則測試訊息。
-- [ ] 真人收到卡片，推播紀錄為 `sent` 且保留 provider request id。
+- [x] 管理頁可預覽卡片，並以指定對象發送一則測試訊息。
+- [x] 真人收到卡片，推播紀錄為 `sent` 且保留 provider request id。
 - [ ] 旗標關閉或一般社員送出偽造的卡片欄位時，沒有 LINE API 請求。
 
 ## LINE Developers Console
@@ -63,7 +62,7 @@ Flex 功能使用獨立旗標 `line_oa_flex_templates_v1`，預設關閉；伺�
       畫面回報「指定的對象中沒有人加入官方帳號」，不會誤記成送出 0 人。
 - [ ] 故意用錯誤的 access token 送一次：畫面顯示憑證被拒絕，推播紀錄的 `failure_code` 是
       `credentials_rejected`，而不是籠統的 `provider_error`。
-- [>] 生日徵集邀請：程式與 migration 已部署到 staging；scheduler run `34673612440` 已成功但沒有符合條件的 LINE 收件人（`jobCount=0`、`sentCount=0`）。需準備已配對且開啟通知的社員，驗證實際送達、未配對／停追蹤／關閉通知者不收到，且重跑不重送。
+- [x] 生日徵集邀請：`34695450977` 已由有收件人的測試批次證明實際送達，`34695655038` 證明重跑不重送；`34673612440` 是早期沒有收件人的歷史空跑。未配對／停追蹤／關閉通知者的逐項對照案例仍未另驗，詳見生日企劃書。
 
 ## 已知的限制與行為
 

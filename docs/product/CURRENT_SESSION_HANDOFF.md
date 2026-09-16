@@ -1,9 +1,24 @@
-# 交接筆記（持續更新；最新核對 2026-09-15，#147 合併後、staging Go-Live 完成）
+# 交接筆記（持續更新；最新核對 2026-09-16，`main=1ef38bb`）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 最新 GitHub 開發掃描（2026-09-15；#147 與 staging Go-Live）
+## 2026-09-16 最新狀態（本節優先於下面的歷史紀錄）
+
+這次以 GitHub `origin/main`、GitHub Actions 和 staging `/api/health` 重新核對：
+
+- `origin/main` exact SHA：`1ef38bb504075d7a197e99c2364db8b087cea22e`。
+- staging revision：`708b32a19594`；health 為 `status=ok`、`configuration=true`、`database=true`、
+  `issues=[]`、`warnings=[]`。production 沒有修改。
+- 9/16 主線新增／修正首頁待辦清除、社費提醒連到正確扶輪年度、個人資料提醒、活動截止日留空、生日徵集日期／關閉、
+  follower 批次配對、手機表格卡片寬度，以及測試 fixture race；另新增 migration
+  `20260916001500_dues_reminder_lands_on_the_year_owed.sql`。
+- PR #188、#189、#190 都已合併；`main@1ef38bb` 的合併後 CI 與 Browser Smoke 均已成功，staging 尚未發布 `1ef38bb`。不要把 merge 或檢查通過當成部署證據。
+- 文件同步只更新本狀態，不會把 PR 自動合併，也不會因此重新部署 staging；若後續只改文件，依變更範圍規則不手動跑 CI／Browser Smoke。
+- 真正仍需外部條件的主線待辦，依 [`TO-DO-LIST.md`](./TO-DO-LIST.md) E-03、E-05、E-06、E-07、E-08、E-10、E-11；
+  E-09 目前維持產品決定的暫緩。
+
+## 歷史：最新 GitHub 開發掃描（2026-09-15；#147 與 staging Go-Live）
 
 本次 staging release 以 GitHub `main=93d341c3fd7818783bd6779b1466162baf86548b` 為 exact source SHA，當時沒有 open PR。
 Staging Release plan `34912834525` 與 Go-Live `34912921064` 使用同一個 SHA 並成功完成；目前 staging runtime revision 為

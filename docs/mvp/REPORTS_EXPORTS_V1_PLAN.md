@@ -1,6 +1,13 @@
 # 報表與匯出 V1 企劃與進度
 
-更新日期：2026-09-14（Asia/Taipei）
+更新日期：2026-09-16（Asia/Taipei）
+
+## 2026-09-16 最新狀態（優先於下方歷史紀錄）
+
+- `main` exact SHA：`1ef38bb504075d7a197e99c2364db8b087cea22e`；目前 staging runtime：`708b32a19594`。
+- 社費報表與匯出，以及祝福 IOU 伺服器 PDF 的程式與 migration 已包含在目前 staging；健康檢查為 `status=ok`、`issues=[]`、`warnings=[]`。
+- 尚未結案的是 staging hosted 驗收：角色／跨社隔離、空資料格式、CSV／Excel／PDF 內容與 `no-store` 回應；沒有把「程式已部署」寫成「真人已驗收」。
+- production 沒有修改。
 
 ## 目標
 
@@ -19,8 +26,8 @@
 
 ## 尚未結案範圍
 
-- 社費、收款與核銷匯出：本機已完成受保護的年度報表 RPC、CSV／Excel／PDF Route Handler 與五張 Excel 工作表；目前仍要做 staging migration、權限／跨社／空資料真人驗收。
-- 祝福 IOU 伺服器 PDF 的 staging 真人驗收：本機已完成中文字型嵌入、A4 分頁、年度摘要／月統計／社員彙總與 `no-store` 回應；仍要部署到 staging，下載檔案並核對社別、年度、權限與空資料情境，完成後才能結案。
+- 社費、收款與核銷匯出：受保護的年度報表 RPC、CSV／Excel／PDF Route Handler 與五張 Excel 工作表已部署至目前 staging；仍要做權限／跨社／空資料真人驗收。
+- 祝福 IOU 伺服器 PDF 的 staging 真人驗收：中文字型嵌入、A4 分頁、年度摘要／月統計／社員彙總與 `no-store` 回應已部署至目前 staging；仍要下載檔案並核對社別、年度、權限與空資料情境，完成後才能結案。
 - 本輪社費報表的本機交付位置：`/api/v1/dues-finance/report`、`/api/v1/dues-finance/export?format=csv|xlsx|pdf`，以及社務管理頁的三個下載入口。報表只回傳指定社別／扶輪年度的聚合資料，未登入、一般社員、外社幹部與停權帳號不能取得管理報表。
 
 ## 安全規則

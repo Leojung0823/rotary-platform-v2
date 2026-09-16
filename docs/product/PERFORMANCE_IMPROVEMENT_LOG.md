@@ -1,6 +1,6 @@
 # Rotary Platform V2 效能改善紀錄
 
-更新日期：2026-09-11（Asia/Taipei）
+更新日期：2026-09-16（Asia/Taipei）
 
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
@@ -10,7 +10,7 @@
 | 項目 | 結果 |
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
-| 目前 staging runtime | `e6ff5b9854ef` |
+| 目前 staging runtime | `708b32a19594` |
 | 本次 `/login` 量測時 runtime | `e1ea85c3e941` |
 | 量測頁面 | `/login`（未登入） |
 | 工具 | Chrome DevTools Performance trace + `PerformanceNavigationTiming` |
@@ -29,6 +29,10 @@
 仍是未量測**，不能用上面的 `/login` 數字代替。這次 trace 顯示 LCP 的 415 ms（83.0%）花在
 TTFB，render-blocking CSS 的工具估算改善為 0 ms；目前優先瓶頸是 Render 伺服器回應時間，
 不是把登入頁改成公開快取。
+
+> 2026-09-16 補充：staging 已前進到 `708b32a19594`，但上表的 `/login` 數字是在另一個 runtime
+> `e1ea85c3e941` 量得，仍可作為當時的登入頁基準，不能冒充目前 runtime 或登入後頁面數字。
+> 登入後管理頁、社員首頁的 TTFB／LCP／FCP 仍標記為「未量測」，要等同一個已登入 DevTools session。
 
 ## 目前判斷
 
