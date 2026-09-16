@@ -187,7 +187,7 @@ export default async function IdentityCenterPage({
           </div>}
     </Card>}
 
-    {ledger?.selected_club_id && ledger.totals && <Card className="identity-ledger-card">
+    {ledger?.selected_club_id && ledger.totals && <Card>
       <div className="section-heading">
         <div>
           <p className="eyebrow">祝福 IOU</p>
