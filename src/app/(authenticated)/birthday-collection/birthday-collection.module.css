@@ -177,3 +177,22 @@
     display: grid;
   }
 }
+
+/* Correcting a task is the exception, not the reason an officer opened this
+   list, so it stays behind a disclosure on the card it belongs to. */
+.campaignEdit { margin-top: var(--space-3); }
+.campaignEdit > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--blue-ink);
+  cursor: pointer;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  list-style: none;
+}
+.campaignEdit > summary::-webkit-details-marker { display: none; }
+.campaignEdit > summary::before { content: "▸"; transition: transform .15s ease; }
+.campaignEdit[open] > summary::before { transform: rotate(90deg); }
+.campaignEdit > summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }

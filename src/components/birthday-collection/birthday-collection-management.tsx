@@ -1,8 +1,10 @@
 import {
+  closeBirthdayCampaignAction,
   createBirthdayCollectionQuestionAction,
   hideBirthdayCollectionSubmissionAction,
   publishBirthdayCollectionSubmissionAction,
   runBirthdayCollectionMonthAction,
+  updateBirthdayCampaignDateAction,
   updateBirthdayCollectionQuestionAction,
 } from "@/app/birthday-collection-actions";
 import { Badge, Button, Card, EmptyState, Field, Input } from "@/components/ui";
@@ -76,6 +78,41 @@ export function BirthdayCollectionManagement({ page }: { page: BirthdayCollectio
           <div className={styles.cardHeading}><div><p className="eyebrow">{campaign.birthdayDate}</p><h3>{campaign.recipientName}</h3></div><Badge tone={campaign.campaignStatus === "collecting" ? "warning" : "success"}>{campaignStatusLabel(campaign.campaignStatus)}</Badge></div>
           <p>{campaign.submittedCount} / {campaign.participantCount} 位社員已送出祝福</p>
           <div className={styles.progress} aria-label={`${campaign.submittedCount} / ${campaign.participantCount} 已送出`}><span style={{ width: `${campaign.participantCount ? Math.min(100, campaign.submittedCount / campaign.participantCount * 100) : 0}%` }} /></div>
+
+          {/* Folded: an officer reading this list is usually checking progress,
+              not correcting a task. Nothing could undo a campaign before, so a
+              wrong month or a member who has since left stayed on the page --
+              and the members assigned to it kept being reminded. */}
+          {(campaign.campaignStatus === "draft"
+            || campaign.campaignStatus === "collecting"
+            || campaign.campaignStatus === "published") && <details className={styles.campaignEdit}>
+            <summary>修改這個徵集</summary>
+
+            {(campaign.campaignStatus === "draft" || campaign.campaignStatus === "collecting") && <form action={updateBirthdayCampaignDateAction} className="inline-form">
+              <input type="hidden" name="clubId" value={page.clubId} />
+              <input type="hidden" name="campaignId" value={campaign.campaignId} />
+              <Field label="生日日期">
+                <Input name="birthdayDate" type="date" defaultValue={campaign.birthdayDate} required />
+              </Field>
+              <Button className="button-secondary" type="submit">更新日期</Button>
+            </form>}
+
+            <form action={closeBirthdayCampaignAction} className="inline-form">
+              <input type="hidden" name="clubId" value={page.clubId} />
+              <input type="hidden" name="campaignId" value={campaign.campaignId} />
+              <Field label="原因（必填）">
+                <Input name="reason" maxLength={200} placeholder="例如：月份建錯、社友已退社" required />
+              </Field>
+              <button className="button button-danger" type="submit">
+                {campaign.campaignStatus === "published" ? "隱藏這批祝福" : "結束這個徵集"}
+              </button>
+            </form>
+            <p className={styles.hint}>
+              {campaign.campaignStatus === "published"
+                ? "壽星已經看過這批祝福，隱藏之後他就不會再看到。"
+                : "結束之後，指派給社員的待辦也會一併消失。"}
+            </p>
+          </details>}
         </Card>)}
       </div>}
     </section>
