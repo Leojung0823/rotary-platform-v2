@@ -52,3 +52,15 @@ export function latestDefinition(name: string): string {
   if (end === -1) throw new Error(`public.${name} in ${file} has no closing $$;`);
   return text.slice(start, end);
 }
+
+/** Every function name any migration defines. */
+export function definedFunctionNames(): readonly string[] {
+  const names = new Set<string>();
+  for (const file of migrationFilenames()) {
+    const text = readFileSync(join(migrations, file), "utf8");
+    for (const match of text.matchAll(/create or replace function public\.([a-z0-9_]+)\(/gu)) {
+      names.add(match[1]);
+    }
+  }
+  return [...names].sort();
+}
