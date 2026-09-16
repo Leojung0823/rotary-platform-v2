@@ -13,7 +13,8 @@
   生日徵集日期／關閉、follower 批次配對、手機表格卡片寬度修正與測試 fixture race 修正。
   另外新增 `20260916001500_dues_reminder_lands_on_the_year_owed.sql`，已在前一個 Staging Go-Live `35083792540` 套用，
   目前 staging 仍包含它；本輪 `bd8a8e9` 沒有新增 migration。
-- `origin/main` 在產品程式提交 `bd8a8e9` 之後只有進度文件同步；目前最新文件提交為 `7c92fe6`。
+- `origin/main` 在產品程式提交 `bd8a8e9` 之後只有進度文件同步；最新主線 SHA 必須以現場的
+  `git rev-parse origin/main` 核對，不在這裡寫死，避免下一次文件同步後再次過期。
   舊的 Staging Release `35084851997` 已取消，但它使用的是舊 head，沒有回滾或改變目前 staging runtime。
 - PR #188、#189、#190 都已正常合併；本輪效能修正 `bd8a8e9` 的自動 CI `35100760020` 與 Browser Smoke `35100760034` 均成功，
   並已由 Staging Release `35102157586`／Go-Live `35102495571` 發布產品程式。
