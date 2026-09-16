@@ -331,10 +331,17 @@ begin
       id,
       title,
       starts_at,
+      -- Carried so the countdown below can ask when registration closes: with
+      -- no deadline of its own that is the end of the event.
+      ends_at,
       registration_deadline
     from candidate_events
     where (my_response is null or my_response = 'pending')
       and public.event_registration_is_open(registration_deadline, starts_at, ends_at)
+      -- Kept deliberately. For an event with no deadline the shared rule says
+      -- "open until it ends", which is right for registering but wrong for a
+      -- reminder: nobody needs to be told to answer a meeting already under
+      -- way. The reminder stops at the start; registration does not.
       and now() < starts_at
     order by registration_deadline, starts_at, id
     limit 5
@@ -345,6 +352,10 @@ begin
       id,
       title,
       starts_at,
+      -- Needed by event_registration_is_open, which answers "until the event
+      -- ends" for a blank deadline. Asking for it without selecting it is what
+      -- CI caught: column item.ends_at does not exist.
+      ends_at,
       registration_deadline,
       my_response
     from ranked_events
@@ -496,7 +507,7 @@ begin
           )) / 3600)::integer
         ) order by task.registration_deadline, task.starts_at, task.event_id
       )
-      from (select id as event_id, title, starts_at, registration_deadline from awaiting_response) as task
+      from (select id as event_id, title, starts_at, ends_at, registration_deadline from awaiting_response) as task
     ), '[]'::jsonb),
     'notifications', jsonb_build_object(
       'unread_count', (select count(*) from message_deliveries where read_at is null),
