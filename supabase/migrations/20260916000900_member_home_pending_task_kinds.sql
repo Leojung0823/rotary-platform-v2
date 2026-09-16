@@ -446,7 +446,7 @@ begin
         from profile_gaps as gaps
         where gaps.phone_missing or gaps.birthday_missing
       ) as task
-    ), '[]'::jsonb),
+    ),
     'notifications', jsonb_build_object(
       'unread_count', (select count(*) from message_deliveries where read_at is null),
       'items', coalesce((
