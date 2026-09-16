@@ -108,16 +108,21 @@ test("the member roster fits the phone it is read on", async ({ page }, testInfo
   // and archived by member-tags.e2e.mjs, running in parallel, so whether this
   // page was over 375px depended on the timing of a different file. Asserted
   // with a tag of its own, it is a width question with a fixed answer.
+  //
+  // Scoped to the 社員標籤 card: a tag name appears there and again in the
+  // batch-tagging control below the roster, so an unscoped getByText matches
+  // two elements and fails on strict mode rather than on the width.
+  const tagCard = page.locator("#member-tags");
   const tagName = `名冊寬度測試標籤 ${Date.now()}`;
   await page.getByLabel("標籤名稱").fill(tagName);
   await page.getByLabel("說明（選填）").fill("理事、監事與各委員會主委，用於指定活動與訊息對象");
   await page.getByRole("button", { name: "建立標籤" }).click();
-  await expect(page.getByText(tagName, { exact: true })).toBeVisible();
+  const tagRow = tagCard.locator("tr").filter({ hasText: tagName });
+  await expect(tagRow).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  const tagRow = page.locator("tr").filter({ hasText: tagName });
   await tagRow.getByRole("button", { name: "封存" }).click();
-  await expect(page.getByText(tagName, { exact: true })).toHaveCount(0);
+  await expect(tagCard.locator("tr").filter({ hasText: tagName })).toHaveCount(0);
 });
 
 test("an officer can leave management mode again", async ({ page }) => {
