@@ -228,15 +228,17 @@ test("mode, active-club cookie, and deep links remain bounded UX inputs", async 
   await multiContext.close();
 });
 
-test("revoked and suspended identities do not receive a role shell", async ({ page }, testInfo) => {
-  const email = testInfo.project.name === "role-shells-1440"
-    ? "e2e-shell-revoked@example.test"
-    : "e2e-shell-suspended@example.test";
+test("revoked, suspended, and ended identities do not receive a role shell", async ({ page }, testInfo) => {
+  const emails = testInfo.project.name === "role-shells-1440"
+    ? ["e2e-shell-revoked@example.test", "e2e-shell-ended@example.test"]
+    : ["e2e-shell-suspended@example.test"];
   requireCredentials();
-  await page.goto(new URL("/login", baseURL).toString());
-  await page.getByLabel("電子郵件").fill(email);
-  await page.getByLabel("密碼").fill(password);
-  await page.getByRole("button", { name: "登入平台" }).click();
-  await expect(page).toHaveURL(/\/access-denied/u);
-  await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(0);
+  for (const email of emails) {
+    await page.goto(new URL("/login", baseURL).toString());
+    await page.getByLabel("電子郵件").fill(email);
+    await page.getByLabel("密碼").fill(password);
+    await page.getByRole("button", { name: "登入平台" }).click();
+    await expect(page).toHaveURL(/\/access-denied/u);
+    await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(0);
+  }
 });

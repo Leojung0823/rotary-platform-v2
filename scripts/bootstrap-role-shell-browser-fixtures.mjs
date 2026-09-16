@@ -111,6 +111,34 @@ async function addMembership({ clubId, account, status = "active", createdBy }) 
   if (insert.error) fail("could not create local fixture membership");
 }
 
+async function addEndedMembership({ clubId, account, createdBy }) {
+  const joinedOn = "2020-01-01";
+  const endedOn = "2020-12-31";
+  const existing = await admin.from("club_memberships")
+    .select("id")
+    .eq("club_id", clubId)
+    .eq("person_id", account.person_id)
+    .maybeSingle();
+  if (existing.error) fail("could not inspect local ended-membership fixture");
+  const values = {
+    membership_status: "ended",
+    joined_on: joinedOn,
+    ended_on: endedOn,
+  };
+  if (existing.data) {
+    const update = await admin.from("club_memberships").update(values).eq("id", existing.data.id);
+    if (update.error) fail("could not update local ended-membership fixture");
+    return;
+  }
+  const insert = await admin.from("club_memberships").insert({
+    club_id: clubId,
+    person_id: account.person_id,
+    ...values,
+    created_by_app_account_id: createdBy,
+  });
+  if (insert.error) fail("could not create local ended-membership fixture");
+}
+
 async function addOperator({ clubId, account, status = "active", createdBy }) {
   const existing = await admin.from("club_operator_permissions")
     .select("id")
@@ -632,6 +660,7 @@ const fixtures = Object.fromEntries(await Promise.all([
   ["allModes", "e2e-shell-all-modes@example.test", "三模式使用者"],
   ["revoked", "e2e-shell-revoked@example.test", "已撤銷管理者"],
   ["suspended", "e2e-shell-suspended@example.test", "停權社員"],
+  ["ended", "e2e-shell-ended@example.test", "退社社員"],
 ].map(async ([key, email, displayName]) => [key, await accountFor(email, displayName)])));
 const birthdayV2FixtureStamp = Date.now();
 const birthdayV2RecipientEmail = `e2e-birthday-v2-recipient-${birthdayV2FixtureStamp}@example.test`;
@@ -659,6 +688,7 @@ await addClubManagementRole({ clubId: memberClub.id, account: fixtures.allModes,
 await addPlatformRole({ account: fixtures.allModes, createdBy });
 await addOperator({ clubId: managedClub.id, account: fixtures.revoked, status: "revoked", createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.suspended, status: "suspended", createdBy });
+await addEndedMembership({ clubId: memberClub.id, account: fixtures.ended, createdBy });
 await addMembership({ clubId: birthdayV2Club.id, account: fixtures.multi, createdBy });
 await addMembership({ clubId: birthdayV2Club.id, account: birthdayV2Recipient, createdBy });
 await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary });

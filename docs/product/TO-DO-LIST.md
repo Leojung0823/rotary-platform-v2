@@ -12,6 +12,7 @@
 
 - 本機 `officer-mode-1440`：9 passed、1 刻意跳過手機版；`officer-mode-375`：7 passed、3 個資料變更測試依設計跳過。已涵蓋社員／社務模式切換、跨社管理路由拒絕、社費只在管理模式顯示、生日管理入口，以及文件建立／編輯／上傳。
 - 本機 `line-oa-rich-menu-1440`：1 passed。已涵蓋 mock OA 的 Rich Menu 發布與停用；這不是 staging OA 或真人手機驗收證據。
+- 本機 `role-shells-1440` 新增退社 fixture 後，撤銷管理者、停權社員、退社社員的 role-shell 負向測試通過；這是本機後端路由證據，不能取代 staging 真人驗收。
 - 本機安全邊界測試：4 檔、20 tests passed，涵蓋管理模式、社費旗標、Rich Menu 旗標與首頁效能邊界。
 - Staging Release `35084851997` 已取消；它的 head 是舊版 `857b9dc54a4cc98e67f86b264d2014c91b4f38c1`，不影響目前 staging，也沒有因取消而回滾程式。
 - 以 Chrome DevTools 重新量測真實 LEO 社員首頁：LCP `1.30 s`、CLS `0.01`，LCP 元素為首頁 hero `<img>`；FCP／TTFB／INP 未量測。
@@ -423,6 +424,8 @@ production 沒有修改。
   這證明「多社切換＋社員／社務模式」的正向路徑；沒有把它誤列為完整結案。
 - **2026-09-16 模式邊界補充**：同一個 staging LEO 帳號在 `/dashboard?mode=member` 只看到社員導覽，沒有「社員管理」入口；直接開啟
   `/clubs/{clubId}/members?mode=member` 會被導向 `/access-denied`。這補強社員模式的後端拒絕證據，仍未取代多社／停權／退社帳號驗收。
+- **2026-09-16 本機負向補強**：新增退社社員 fixture，`role-shells-1440` 測試確認撤銷管理者、停權社員與退社社員都被導向
+  `/access-denied` 且沒有主要導覽。這只證明本機 fixture 下的行為，staging 仍需真實多社／停權／退社帳號。
 - **外部動作**：準備一個同時具兩社有效社籍、其中一社另有執行秘書權限的 staging 測試帳號，實際切換社別與模式；再測外社執行秘書、停權／退社帳號。
 - **完成證據**：每個社只看到自己的資料；社員模式與管理模式能正確切換；沒有管理權的有效社員不能進管理頁；停權／退社不能取得原有權限。
 
