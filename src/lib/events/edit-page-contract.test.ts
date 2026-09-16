@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { latestDefinition } from "@/lib/attendance/latest-definition";
 
-const migration = readFileSync("supabase/migrations/20260915000300_event_list_manager_venue.sql", "utf8");
+// Resolved from the migration history, not pinned to a filename: pinned, this
+// asserted against whichever definition was current when it was written, and
+// went red the next time the row gained a field rather than when the page and
+// the row actually disagreed.
+const migration = latestDefinition("list_club_events");
 const pagePath = "src/app/(authenticated)/clubs/[clubId]/events/[eventId]/edit/page.tsx";
 const page = readFileSync(pagePath, "utf8");
 

@@ -4,7 +4,7 @@ import { useActionState, useCallback, useEffect, useRef, useState, useTransition
 import { geocodeVenueAddressAction, updateEventAction, type VenueGeocodeState } from "@/app/event-actions";
 import { createEventAction } from "@/app/event-actions";
 import { AudiencePicker, type AudienceMember, type AudienceTag } from "@/components/audience/audience-picker";
-import { addressesWholeClub, type AudienceSelection } from "@/lib/audience/selection";
+import { addressesWholeClub, emptyAudienceSelection, type AudienceSelection } from "@/lib/audience/selection";
 import {
   EVENT_CREATE_FIELDS,
   initialEventCreateActionState,
@@ -36,11 +36,17 @@ type EventCreateFormProps = {
     eventId: string;
     version: number;
     values: EventCreateFormValues;
+    /** The audience this event already has, so editing starts from the truth. */
+    audience: AudienceSelection;
   };
 };
 
 export function EventCreateForm({ clubId, eventTypeLabels, tags, members, editing }: EventCreateFormProps) {
-  const [targeted, setTargeted] = useState(false);
+  // Creating starts on the whole club; editing starts on whatever the event
+  // already addresses. Opening the picker empty for a targeted event would
+  // have made "save" mean "send this to everyone".
+  const initialAudience = editing?.audience ?? emptyAudienceSelection;
+  const [targeted, setTargeted] = useState(!addressesWholeClub(initialAudience));
   const handleAudienceChange = useCallback((selection: AudienceSelection) => {
     setTargeted(!addressesWholeClub(selection));
   }, []);
@@ -161,6 +167,7 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members, editin
         clubId={clubId}
         tags={tags}
         members={members}
+        initial={initialAudience}
         onSelectionChange={handleAudienceChange}
       />
     </fieldset>
