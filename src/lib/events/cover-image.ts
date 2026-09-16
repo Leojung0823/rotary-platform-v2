@@ -24,6 +24,19 @@ export function coverImageError(code: string): string {
     upload_failed: "上傳失敗，請稍後再試。",
     forbidden: "目前帳號沒有管理這個活動的權限。",
   };
+  // The second half of the upload -- attaching the stored object to its event
+  // -- used to fail silently. These name the ways it can, so "圖片已更新" is
+  // never said about an upload that did not finish.
+  if (code.includes("event_manage_required")) return messages.forbidden;
+  if (code.includes("invalid_event_cover_path")) {
+    return "圖片已上傳，但沒有正確連到這場活動，請重新整理後再試一次。";
+  }
+  if (code.includes("event_not_found")) {
+    return "找不到這場活動，可能已被取消或刪除。";
+  }
+  if (code === "record_failed") {
+    return "圖片已上傳，但沒有存進這場活動。請重新整理確認，必要時再上傳一次。";
+  }
   return messages[code] ?? "目前無法上傳圖片，請稍後再試。";
 }
 
