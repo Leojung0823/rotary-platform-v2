@@ -48,3 +48,24 @@ export function audienceQueryString(selection: AudienceSelection) {
 export function toggleId(current: readonly string[], id: string) {
   return current.includes(id) ? current.filter((value) => value !== id) : [...current, id];
 }
+
+/**
+ * The selection an event's stored audience corresponds to.
+ *
+ * An event addressed to nobody in particular is the whole club, which is what
+ * the picker calls "everyone" -- not an empty tag list, which would render as
+ * "tags, none chosen" and read as a mistake.
+ */
+export function audienceFromEvent(
+  tagIds: readonly string[],
+  membershipIds: readonly string[],
+): AudienceSelection {
+  if (tagIds.length === 0 && membershipIds.length === 0) return emptyAudienceSelection;
+  // Tags win the mode when both are present: the picker shows one list at a
+  // time, and a tag is the reusable half of the pair.
+  return {
+    mode: tagIds.length > 0 ? "tags" : "members",
+    tagIds: [...tagIds],
+    membershipIds: [...membershipIds],
+  };
+}
