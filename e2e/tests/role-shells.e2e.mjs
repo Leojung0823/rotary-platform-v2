@@ -242,17 +242,26 @@ test("mode, active-club cookie, and deep links remain bounded UX inputs", async 
   await multiContext.close();
 });
 
-test("revoked, suspended, and ended identities do not receive a role shell", async ({ page }, testInfo) => {
+test("revoked, suspended, and ended identities do not receive a role shell", async ({ page, browser }, testInfo) => {
   const emails = testInfo.project.name === "role-shells-1440"
     ? ["e2e-shell-revoked@example.test", "e2e-shell-ended@example.test"]
     : ["e2e-shell-suspended@example.test"];
   requireCredentials();
   for (const email of emails) {
-    await page.goto(new URL("/login", baseURL).toString());
-    await page.getByLabel("電子郵件").fill(email);
-    await page.getByLabel("密碼").fill(password);
-    await page.getByRole("button", { name: "登入平台" }).click();
-    await expect(page).toHaveURL(/\/access-denied/u);
-    await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(0);
+    // Each denied identity gets a clean session. Otherwise the previous
+    // successful sign-in can race LoginSessionRedirect while the next login
+    // form is still streaming, detaching the password input during fill.
+    const identityContext = await browser.newContext({ viewport: page.viewportSize() ?? undefined });
+    const identityPage = await identityContext.newPage();
+    try {
+      await identityPage.goto(new URL("/login", baseURL).toString());
+      await identityPage.getByLabel("電子郵件").fill(email);
+      await identityPage.getByLabel("密碼").fill(password);
+      await identityPage.getByRole("button", { name: "登入平台" }).click();
+      await expect(identityPage).toHaveURL(/\/access-denied/u);
+      await expect(identityPage.getByRole("navigation", { name: "主要導覽" })).toHaveCount(0);
+    } finally {
+      await identityContext.close();
+    }
   }
 });
