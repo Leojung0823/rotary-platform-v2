@@ -140,6 +140,27 @@ begin
     raise exception 'a task points somewhere other than this app: %', tasks;
   end if;
 
+  -- 社費未繳 lands on the year that is owed. /dues opens on the newest Rotary
+  -- year, so a bare /dues showed this year -- settled -- to a member who owes
+  -- from an earlier one, with nothing on the page to say where to look.
+  if not exists (
+    select 1 from jsonb_array_elements(tasks) as entry
+    where entry ->> 'kind' = 'dues_outstanding'
+      and entry ->> 'action_path' like '/dues?yearId=%'
+      and length(entry ->> 'action_path') > length('/dues?yearId=')
+  ) then
+    raise exception 'the dues reminder does not say which year: %', tasks;
+  end if;
+
+  -- And it names that year, because owing two of them gives two identical rows.
+  if not exists (
+    select 1 from jsonb_array_elements(tasks) as entry
+    where entry ->> 'kind' = 'dues_outstanding'
+      and entry ->> 'detail' like '%·%'
+  ) then
+    raise exception 'the dues reminder does not name the year: %', tasks;
+  end if;
+
   -- The unread row counts rather than naming one message.
   if not (tasks @> '[{"kind": "unread_messages", "count": 1}]'::jsonb) then
     raise exception 'the unread reminder did not count: %', tasks;
