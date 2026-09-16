@@ -45,9 +45,12 @@ test("an officer in member mode sees the events page a plain member sees", async
   await expect(page.getByRole("button", { name: /^(上傳圖片|更換圖片)$/u })).toHaveCount(0);
 
   // Each event is collapsed now, so what is inside a card is reached the way a
-  // member reaches it.
+  // member reaches it -- including the management routes that must not be here.
   await openEveryEventDetails(page);
-  await expect(page.getByRole("link", { name: "管理簽到" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "管理簽到" })).toHaveCount(0);
+  // 本人簽到 is not a management affordance: it is how a member signs themselves
+  // in, and this officer is a member of this club.
+  await expect(page.getByRole("link", { name: "本人簽到" }).first()).toBeVisible();
 
   // Drafts are a manager's business; a member never sees one.
   await expect(page.getByText("草稿", { exact: true })).toHaveCount(0);

@@ -346,13 +346,19 @@ export default async function EventsPage({
           {event.status === "published" && !event.registration_open && <div className="notice notice-info">活動已開始或報名已截止，目前不能修改報名。</div>}
           {event.status === "published" && event.registration_open && !selectedClub.can_register && <div className="notice notice-info">此帳號可管理活動，但不是該社有效社員，因此不能占用社員報名名額。</div>}
 
-          {event.status === "published" && event.counts_for_attendance && <div className="form-actions">
-            {selectedClub.can_register && <Link className="button button-secondary" href="/events/checkin">本人簽到</Link>}
-            {selectedClub.can_manage && <a
-              className="button"
-              href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}&mode=management`}
-            >管理簽到</a>}
-          </div>}
+          {/* 本人簽到 only. 管理簽到 used to sit here too, so an officer reading
+              the member events page was offered a management route from it --
+              the same thing 活動管理 was removed for. This page is the member
+              view; managing check-in is reached from management mode, where the
+              event card still offers it.
+
+              The condition is now 本人簽到's own: an officer who is not a member
+              of this club can neither check themselves in nor, from here,
+              manage it, so the row would have been an empty <div>. */}
+          {event.status === "published" && event.counts_for_attendance && selectedClub.can_register
+            && <div className="form-actions">
+              <Link className="button button-secondary" href="/events/checkin">本人簽到</Link>
+            </div>}
           </details>
         </article>)}
       </div>
