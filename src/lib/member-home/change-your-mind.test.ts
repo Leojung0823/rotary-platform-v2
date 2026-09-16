@@ -58,7 +58,7 @@ describe("registration_open comes from the database, not from the page", () => {
   const projection = latestDefinition("get_my_member_home_projection");
 
   it("is emitted beside the state it corrects", () => {
-    expect(projection).toContain("'registration_open', now() <= registration_deadline and now() < starts_at");
+    expect(projection).toContain("'registration_open', public.event_registration_is_open(");
   });
 
   it("is rejected when it is not a boolean", () => {
@@ -80,10 +80,25 @@ describe("registration_open comes from the database, not from the page", () => {
 
   it("asks the same question the events page asks", () => {
     // Two pages disagreeing about whether registration is open is the bug
-    // this replaces, not a new one to introduce.
+    // this replaces, not a new one to introduce. They now ask by calling the
+    // same function, which is the strongest form of "the same question" --
+    // copies of a comparison are how they drifted apart in the first place.
     const list = latestDefinition("list_club_events");
-    expect(list).toContain("now() <= event.registration_deadline");
-    expect(list).toContain("now() < event.starts_at");
+    expect(list).toContain("public.event_registration_is_open(");
+    expect(projection).toContain("public.event_registration_is_open(");
+  });
+
+  it("leaves no hand-written copy of the rule behind", () => {
+    // The rule was written out in five places. Any left behind is one that
+    // will not learn about a blank deadline.
+    for (const [name, body] of [
+      ["list_club_events", latestDefinition("list_club_events")],
+      ["the home projection", projection],
+      ["set_my_event_registration", latestDefinition("set_my_event_registration")],
+    ] as const) {
+      expect(body, `${name} still compares the deadline by hand`)
+        .not.toMatch(/now\(\)\s*[<>]=?\s*\w*\.?registration_deadline/u);
+    }
   });
 });
 

@@ -18,7 +18,7 @@ type ClubEvent = {
   location: string;
   starts_at: string;
   ends_at: string;
-  registration_deadline: string;
+  registration_deadline: string | null;
   capacity: number | null;
   counts_for_attendance: boolean;
   status: "draft" | "published" | "cancelled" | "completed";

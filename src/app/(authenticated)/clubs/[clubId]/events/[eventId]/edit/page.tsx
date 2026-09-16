@@ -30,7 +30,7 @@ type ManagedEvent = {
   location: string | null;
   starts_at: string;
   ends_at: string;
-  registration_deadline: string;
+  registration_deadline: string | null;
   capacity: number | null;
   counts_for_attendance: boolean;
   venue_latitude: number | null;
@@ -94,7 +94,9 @@ export default async function EditEventPage({
     title: target.title,
     startsAt: toLocalInput(target.starts_at),
     endsAt: toLocalInput(target.ends_at),
-    registrationDeadline: toLocalInput(target.registration_deadline),
+    registrationDeadline: target.registration_deadline === null
+      ? ""
+      : toLocalInput(target.registration_deadline),
     capacity: target.capacity === null ? "" : String(target.capacity),
     location: target.location ?? "",
     venueLocation: target.venue_latitude !== null && target.venue_longitude !== null
