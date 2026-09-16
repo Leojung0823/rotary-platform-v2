@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { latestDefinition, migrationDefining } from "./latest-definition";
+import { definedFunctionNames, latestDefinition, migrationDefining } from "./latest-definition";
 
 /** Every RPC that decides whether a check-in may happen at all. */
 const checkinGates = [
@@ -8,6 +8,12 @@ const checkinGates = [
   "rotate_event_checkin_token",
   "manual_check_in_event",
   "open_dynamic_event_checkin",
+  // The static QR self check-in. It was missing from this list when the list
+  // was written, so its own counts_for_attendance gate survived the migration
+  // that removed every other one -- and the guard stayed green, because a list
+  // that omits a case cannot fail on it. The completeness test below is the
+  // fix for that shape of mistake, not another name added by hand.
+  "check_in_to_event",
   "check_in_to_dynamic_event",
   "check_in_to_event_by_location",
   "list_my_location_checkin_events",
@@ -36,6 +42,24 @@ describe("an event outside the attendance rate can still take check-ins", () => 
   it("no longer reports a check-in as unavailable because of the rate", () => {
     expect(latestDefinition("get_my_member_home_projection"))
       .not.toContain("when not counts_for_attendance then 'not_available'");
+  });
+});
+
+describe("no check-in path still asks whether the event counts", () => {
+  // The generalisation. Naming the gates by hand is how check_in_to_event was
+  // missed; this asks the question of every function that writes or opens a
+  // check-in, whatever it is called.
+  it("finds no counts_for_attendance left in any of them", () => {
+    const offenders = definedFunctionNames()
+      .filter((name) => /^(check_in_to|open_.*_checkin|rotate_event_checkin|manual_check_in|list_my_location_checkin)/u.test(name))
+      .filter((name) => latestDefinition(name).includes("counts_for_attendance"));
+    expect(offenders, "these still gate check-in on the attendance rate").toEqual([]);
+  });
+
+  it("checks a meaningful number of them", () => {
+    const matched = definedFunctionNames()
+      .filter((name) => /^(check_in_to|open_.*_checkin|rotate_event_checkin|manual_check_in|list_my_location_checkin)/u.test(name));
+    expect(matched.length).toBeGreaterThanOrEqual(checkinGates.length);
   });
 });
 
@@ -72,9 +96,22 @@ describe("the guards read the definition the database runs", () => {
     expect(migrationDefining(name)).not.toBeNull();
   });
 
-  it("resolves the check-in gates to this change, not to where they were born", () => {
-    for (const name of ["open_event_checkin", "check_in_to_event_by_location"]) {
-      expect(migrationDefining(name)).toBe("20260915000700_checkin_without_attendance.sql");
+  it("resolves the check-in gates past the migration that introduced them", () => {
+    // Pinned to a particular filename this said "the latest definition is
+    // 20260915000700", which stops being true the moment anything touches
+    // these functions again -- as the audience fix did. The claim worth
+    // keeping is that the guards read something newer than where the function
+    // was born, which is the mistake this whole file exists to avoid.
+    const born: Record<string, string> = {
+      open_event_checkin: "20260730000100_event_checkin_mvp.sql",
+      check_in_to_event_by_location: "20260819000200_gps_checkin_v2.sql",
+      check_in_to_dynamic_event: "20260812000100_dynamic_qr_checkin_v2.sql",
+    };
+    for (const [name, origin] of Object.entries(born)) {
+      const current = migrationDefining(name);
+      expect(current, `${name} is undefined`).not.toBeNull();
+      expect(current!, `${name} still resolves to where it was introduced`).not.toBe(origin);
+      expect(current! > origin, `${name} resolves to an older migration`).toBe(true);
     }
   });
 });
