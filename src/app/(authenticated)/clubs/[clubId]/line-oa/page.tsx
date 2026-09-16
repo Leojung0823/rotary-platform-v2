@@ -397,13 +397,24 @@ export default async function LineOaPage({
         <div className="section-heading">
           <h2>Follower 配對</h2>
           <span>
-            {oa.followers.filter((item) => item.status === "following").length}{" "}
-            位
+            平台已知 {oa.followers.filter((item) => item.status === "following").length} 位
           </span>
         </div>
+        {/* The old copy said a follower "會自動出現在這裡（需先設定 webhook）",
+            which reads as a setup note rather than what it is: this list is
+            built from follow events, so it only knows about people who joined
+            while the webhook was already receiving them. LINE does not resend.
+            Leo spent a while looking for two members here who had simply never
+            finished joining, and the page gave him no way to tell that from a
+            follow it had missed. */}
         <p className="subtle">
-          加入官方帳號的人會自動出現在這裡（需先設定
-          webhook）。未配對的列可以直接選社員完成配對，不需要另外查 OA userId。
+          這份清單是由 webhook 收到的 follow 事件建立的，所以它只知道
+          <strong>在 webhook 生效之後</strong>加入的人。LINE 不會補送先前的事件，
+          所以在那之前加入的人不會出現，也不會自動補上——請對照 LINE 官方帳號後台
+          「分析 → 好友」的人數，兩邊不一致就是這個原因。
+        </p>
+        <p className="subtle">
+          未配對的列可以直接選社員完成配對，不需要另外查 OA userId。
         </p>
         {/* Auto-pairing runs on the follow event, so everyone who added the OA
             before it was switched on stays unpaired. This is that backlog,
