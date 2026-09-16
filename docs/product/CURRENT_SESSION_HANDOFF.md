@@ -19,6 +19,7 @@
   不要把 merge 或檢查通過單獨當成部署證據。
 - 文件同步只更新本狀態，不會把 PR 自動合併，也不會因此重新部署 staging；若後續只改文件，依變更範圍規則不手動跑 CI／Browser Smoke。
 - 本輪本機回歸：`officer-mode-1440` 為 9 passed、1 刻意跳過手機版，`officer-mode-375` 為 7 passed、3 個資料變更測試依設計跳過；`line-oa-rich-menu-1440` 為 1 passed；另 4 檔安全邊界測試共 20/20 passed。這些只證明本機程式邊界，不取代 staging／真人／實機驗收。
+- 本輪 staging 模式邊界補充：LEO 在 `/dashboard?mode=member` 只看到社員導覽；直接開啟 `/clubs/{clubId}/members?mode=member` 被導向 `/access-denied`。這仍不涵蓋多社／停權／退社帳號的完整驗收。
 - 舊 Staging Release `35084851997` 已取消，head `857b9dc54a4cc98e67f86b264d2014c91b4f38c1`；取消沒有改變目前 staging runtime，也沒有回滾 `bd8a8e9`。
 - 2026-09-16 的登入後數字是修改前基線：管理頁 LCP `1,777 ms`／FCP `760 ms`／LCP TTFB `637 ms`／CLS `0.00`，
   社員首頁 LCP `1,929 ms`／FCP `562 ms`／LCP TTFB `452 ms`／CLS `0.01`；兩頁 INP 未量測。社員首頁原本的
