@@ -76,7 +76,7 @@ export function LocationCheckinPanel({ events }: { events: readonly LocationChec
     </div>
 
     {events.length === 0
-      ? <p className="hint">目前沒有開放定位簽到的活動。活動需要由管理者開啟簽到，且建立活動時要設定場地座標。</p>
+      ? <p className="hint">目前沒有開放定位簽到的活動。定位簽到只在<strong>活動開始前一小時，到結束後一小時</strong>之間開放；活動還需要由管理者開啟簽到，而且建立活動時要設定場地座標。時間還沒到、或已經過了，都可以改用掃描 QR。</p>
       : <ul className={styles.locationEventList}>
           {events.map((event) => <li key={event.event_id}>
             <div>
