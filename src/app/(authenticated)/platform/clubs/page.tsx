@@ -42,7 +42,7 @@ export default async function PlatformClubsPage() {
           <h1>扶輪社</h1>
           <p>建立新社、追蹤建置狀態並管理執行秘書。</p>
         </div>
-        <Link className="button" href="/platform/clubs/new">
+        <Link className="button" href="/platform/clubs/new" prefetch={false}>
           ＋ 建立扶輪社
         </Link>
       </header>
@@ -74,7 +74,7 @@ export default async function PlatformClubsPage() {
                     </Badge>
                   </td>
                   <td>{new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE }).format(new Date(club.created_at))}</td>
-                  <td><Link href={`/platform/clubs/${club.club_id}`}>查看 →</Link></td>
+                  <td><Link href={`/platform/clubs/${club.club_id}`} prefetch={false}>查看 →</Link></td>
                 </tr>
               ))}
             </tbody>

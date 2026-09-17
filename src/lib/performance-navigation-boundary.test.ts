@@ -55,6 +55,13 @@ describe("performance-first navigation boundaries", () => {
     expect(portal.match(/<Link/gu)?.length).toBe(portal.match(/prefetch=\{false\}/gu)?.length);
   });
 
+  it("does not prefetch every platform club destination from the club list", () => {
+    const clubsPage = source("src/app/(authenticated)/platform/clubs/page.tsx");
+
+    expect(clubsPage).toContain('href="/platform/clubs/new" prefetch={false}');
+    expect(clubsPage).toContain('href={`/platform/clubs/${club.club_id}`} prefetch={false}');
+  });
+
   it("preloads the member home's decorative LCP image once without making it global", () => {
     const portal = source("src/components/member-portal/member-portal.tsx");
     const authenticatedLayout = source("src/app/(authenticated)/layout.tsx");
