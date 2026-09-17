@@ -244,7 +244,6 @@ export default async function DashboardPage({
           features={{
             messageCentre: messageCenterEvaluation.enabled,
             blessingIou: blessingIouEvaluation.enabled,
-            duesFinance: duesFinanceEvaluation.enabled,
             lineOaOnboarding: lineOaOnboardingEvaluation.enabled,
           }}
         />;

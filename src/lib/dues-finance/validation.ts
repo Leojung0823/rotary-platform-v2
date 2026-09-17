@@ -1,8 +1,14 @@
-import { duesFinancePaymentMethods, type DuesFinancePaymentMethod } from "./contracts";
+import {
+  duesFinancePaymentMethods,
+  duesFinanceRemitKeyKinds,
+  type DuesFinancePaymentMethod,
+  type DuesFinanceRemitKeyKind,
+} from "./contracts";
 
 export const DUES_FINANCE_REQUEST_MAX_BYTES = 64 * 1024;
 export const DUES_FINANCE_TEXT_MAX_LENGTH = 1000;
 export const DUES_FINANCE_REASON_MAX_LENGTH = 500;
+export const DUES_FINANCE_REMIT_KEY_NOTE_MAX_LENGTH = 200;
 export const DUES_FINANCE_IDEMPOTENCY_MAX_LENGTH = 160;
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -19,7 +25,9 @@ export type DuesFinanceMutation =
   | Readonly<{ action: "return_advance"; clubId: string; advanceId: string; reason: string }>
   | Readonly<{ action: "resubmit_advance"; clubId: string; advanceId: string; note: string | null }>
   | Readonly<{ action: "approve_reconciliation"; clubId: string; advanceId: string; amount: number; approvalNote: string | null; idempotencyKey: string }>
-  | Readonly<{ action: "reverse_reconciliation"; clubId: string; reconciliationId: string; reason: string }>;
+  | Readonly<{ action: "reverse_reconciliation"; clubId: string; reconciliationId: string; reason: string }>
+  // 只收後幾碼。對帳需要的就只有這個，存更多只是把風險留在資料庫裡。
+  | Readonly<{ action: "set_remit_key"; clubId: string; membershipId: string; keyKind: DuesFinanceRemitKeyKind; keyValue: string; note: string | null }>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -138,6 +146,25 @@ export function parseDuesFinanceMutationBody(value: unknown): DuesFinanceMutatio
     case "approve_reconciliation":
       if (!exactKeys(value, ["action", "clubId", "advanceId", "amount", "approvalNote", "idempotencyKey"])) throw new Error("invalid_dues_finance_input");
       return { action: value.action, clubId, advanceId: uuid(value.advanceId), amount: integer(value.amount, 1, 9_999_999_999), approvalNote: nullableText(value.approvalNote, DUES_FINANCE_REASON_MAX_LENGTH), idempotencyKey: idempotencyKey(value.idempotencyKey) };
+    case "set_remit_key": {
+      if (!exactKeys(value, ["action", "clubId", "membershipId", "keyKind", "keyValue", "note"])) throw new Error("invalid_dues_finance_input");
+      if (!duesFinanceRemitKeyKinds.includes(value.keyKind as DuesFinanceRemitKeyKind)) throw new Error("invalid_dues_finance_input");
+      const keyKind = value.keyKind as DuesFinanceRemitKeyKind;
+      const keyValue = typeof value.keyValue === "string" ? value.keyValue.trim() : "";
+      // The same shape the column's check constraint enforces, refused here so
+      // a full account number never reaches the database to be rejected there.
+      if (!(keyKind === "bank_last5" ? /^[0-9]{5}$/u : /^[0-9]{4}$/u).test(keyValue)) {
+        throw new Error("invalid_dues_finance_input");
+      }
+      return {
+        action: value.action,
+        clubId,
+        membershipId: uuid(value.membershipId),
+        keyKind,
+        keyValue,
+        note: nullableText(value.note, DUES_FINANCE_REMIT_KEY_NOTE_MAX_LENGTH),
+      };
+    }
     case "reverse_reconciliation":
       if (!exactKeys(value, ["action", "clubId", "reconciliationId", "reason"])) throw new Error("invalid_dues_finance_input");
       return { action: value.action, clubId, reconciliationId: uuid(value.reconciliationId), reason: text(value.reason, DUES_FINANCE_REASON_MAX_LENGTH, 2) };

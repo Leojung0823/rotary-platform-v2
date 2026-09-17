@@ -7,6 +7,7 @@ import type {
   DuesFinanceAnnualDefault,
   DuesFinanceManagementLedger,
   DuesFinancePaymentMethod,
+  DuesFinanceRemitKeyKind,
 } from "@/lib/dues-finance/contracts";
 import { APP_TIME_ZONE } from "@/lib/time";
 import styles from "./dues-finance-management.module.css";
@@ -23,6 +24,20 @@ const paymentMethodLabels: Record<DuesFinancePaymentMethod, string> = {
   other: "其他",
 };
 const receivableStatusLabels = { unpaid: "未收", partial: "部分收款", paid: "已收清" } as const;
+
+/**
+ * 只有留下識別字的收款方式才問。
+ *
+ * 現金和支票當場就知道是誰，沒有要認的東西。信用卡會留下卡號後四碼，而
+ * card_last4 這個種類資料庫已經收得下 —— 但收款方式目前還沒有「信用卡」
+ * 這個選項（它連同手續費要記到哪裡，是下一批的事）。
+ */
+function leavesARemitKey(method: DuesFinancePaymentMethod) {
+  return method === "bank_transfer";
+}
+
+/** 這一批只認得匯款帳號的末五碼；卡號後四碼要等收款方式有信用卡。 */
+const bankRemitKeyKind: DuesFinanceRemitKeyKind = "bank_last5";
 
 type RosterFilter = "unpaid" | "partial" | "paid" | "all";
 
@@ -114,6 +129,8 @@ export function DuesFinanceManagement({
   const [batchMode, setBatchMode] = useState(false);
   const [openReceipt, setOpenReceipt] = useState<string | null>(null);
   const [rowAmount, setRowAmount] = useState("");
+  const [remitKeyValue, setRemitKeyValue] = useState("");
+  const [rememberRemitKey, setRememberRemitKey] = useState(true);
 
   const unpaidCount = useMemo(
     () => ledger.receivables.filter((entry) => entry.outstandingAmount > 0).length,
@@ -144,11 +161,29 @@ export function DuesFinanceManagement({
 
   const receiptTotal = useMemo(() => Object.values(receiptAmounts).reduce((total, amount) => total + (Number(amount) || 0), 0), [receiptAmounts]);
 
-  async function runAction(action: string, body: Record<string, unknown>, success: string, reset?: () => void) {
+  async function runAction(
+    action: string,
+    body: Record<string, unknown>,
+    success: string,
+    reset?: () => void,
+    // 收款成功之後才做、而且不准把收款拖下水的後續動作。記住末五碼失敗只是
+    // 下次要再認一次，那不是把一筆已經入帳的錢報成失敗的理由。
+    followUp?: Record<string, unknown>,
+  ) {
     setPending(action);
     setMessage(null);
     try {
       await postMutation(body);
+      if (followUp) {
+        try {
+          await postMutation(followUp);
+        } catch {
+          setMessageTone("success");
+          setMessage("收款已登錄，但這組末五碼沒有記起來，下次請再填一次。");
+          router.refresh();
+          return;
+        }
+      }
       reset?.();
       setMessageTone("success");
       setMessage(success);
@@ -219,7 +254,7 @@ export function DuesFinanceManagement({
     setRowAmount(String(outstanding));
   }
 
-  function submitRowReceipt(event: FormEvent<HTMLFormElement>, receivableId: string) {
+  function submitRowReceipt(event: FormEvent<HTMLFormElement>, receivableId: string, membershipId: string | null) {
     event.preventDefault();
     const amount = Number(rowAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -241,6 +276,17 @@ export function DuesFinanceManagement({
       setOpenReceipt(null);
       setRowAmount("");
       setReferenceNote("");
+      setRemitKeyValue("");
+    }, membershipId === null || !rememberRemitKey || remitKeyValue.trim() === "" ? undefined : {
+      // 記住是對帳一個月比一個月輕鬆的唯一機制。認過一次，下次那一行就自動
+      // 指得出是誰 —— 而今天這組數字只會被打進核對備註，掛在那一筆收款上，
+      // 系統什麼都學不會。
+      action: "set_remit_key",
+      clubId: ledger.clubId,
+      membershipId,
+      keyKind: bankRemitKeyKind,
+      keyValue: remitKeyValue.trim(),
+      note: null,
     });
   }
 
@@ -455,13 +501,28 @@ export function DuesFinanceManagement({
 
             {/* 金額預填未收額、日期預設今天、收款方式沿用上次 —— 全額繳清是最常見的
                 情況，而它現在是點兩下、零打字。 */}
-            {openReceipt === receivable.receivableId && <ActionForm className={styles.rowReceipt} onSubmit={(event) => submitRowReceipt(event, receivable.receivableId)}>
+            {openReceipt === receivable.receivableId && <ActionForm className={styles.rowReceipt} onSubmit={(event) => submitRowReceipt(event, receivable.receivableId, receivable.membershipId ?? null)}>
               <div className={styles.formGrid}>
                 <Field label="本次收款"><Input type="number" min="1" max={String(receivable.outstandingAmount)} step="1" value={rowAmount} onChange={(event) => setRowAmount(event.target.value)} required autoFocus disabled={pending !== null} /></Field>
                 <Field label="收款日期"><Input type="date" value={receivedOn} onChange={(event) => setReceivedOn(event.target.value)} required disabled={pending !== null} /></Field>
                 <Field label="收款方式"><Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as DuesFinancePaymentMethod)} disabled={pending !== null}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-                <Field label="核對備註（選填）"><Input value={referenceNote} onChange={(event) => setReferenceNote(event.target.value)} maxLength={500} placeholder="例如：轉帳末五碼" disabled={pending !== null} /></Field>
+                {leavesARemitKey(paymentMethod)
+                  ? <Field label="匯款末五碼（選填）">
+                      <Input
+                        value={remitKeyValue}
+                        onChange={(event) => setRemitKeyValue(event.target.value.replace(/\D/gu, ""))}
+                        inputMode="numeric"
+                        maxLength={5}
+                        placeholder="5 碼"
+                        disabled={pending !== null}
+                      />
+                    </Field>
+                  : <Field label="核對備註（選填）"><Input value={referenceNote} onChange={(event) => setReferenceNote(event.target.value)} maxLength={500} disabled={pending !== null} /></Field>}
               </div>
+              {leavesARemitKey(paymentMethod) && remitKeyValue.trim() !== "" && <label className={styles.rememberKey}>
+                <input type="checkbox" checked={rememberRemitKey} onChange={(event) => setRememberRemitKey(event.target.checked)} disabled={pending !== null} />
+                <span>記住這組數字，下次對帳自動認出是 {receivable.memberDisplayName}</span>
+              </label>}
               <div className={styles.rowReceiptActions}>
                 <Button type="submit" disabled={pending !== null}>確認收款</Button>
                 <Button type="button" className="button-secondary" disabled={pending !== null} onClick={() => setOpenReceipt(null)}>取消</Button>

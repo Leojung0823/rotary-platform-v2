@@ -168,7 +168,7 @@ export type MemberPortalContentProps = {
   announcements: readonly PortalAnnouncement[];
   /** Where the notices card's "查看全部" goes; the message centre. */
   messagesHref: string;
-  /** Ways into features the home page is the only route to. */
+  /** Optional feature shortcuts kept on the home page. */
   entries: readonly PortalEntry[];
   /** Anything the home must still carry, such as the LINE pairing prompt. */
   children?: React.ReactNode;
@@ -261,9 +261,8 @@ export function MemberPortalBody({
 
       {children}
 
-      {/* The reference design shows no such row. It is here because removing
-          it would remove the only way a member reaches the message centre,
-          their dues or the blessing board from this page. */}
+      {/* The reference design shows no such row. It remains for secondary
+          shortcuts that do not belong in the first-level navigation. */}
       {entries.length > 0 && <section className={styles.entries} aria-labelledby="portal-entries">
         <h2 className={styles.entriesHeading} id="portal-entries">常用入口</h2>
         <div className={styles.entryGrid}>

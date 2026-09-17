@@ -50,12 +50,13 @@ export default async function IdentityCenterPage({
   const [query, identity] = await Promise.all([searchParams, requireIdentity()]);
   // Both are request-cached and already resolved by the shell, so this costs
   // no additional round trip.
-  const [attendance, blessingIou, lineOaOnboarding, birthdayV1, birthdayV2] = await Promise.all([
+  const [attendance, blessingIou, lineOaOnboarding, birthdayV1, birthdayV2, duesFinance] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "attendance_ui_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "line_oa_onboarding_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "dues_finance_v1", subjectUuid: identity.id }),
   ]);
   const birthdayEnabled = birthdayV1.enabled || birthdayV2.enabled;
   const pageMode = query.mode === "management" || query.mode === "platform" ? query.mode : "member";
@@ -124,6 +125,17 @@ export default async function IdentityCenterPage({
       <Card><span className="metric-label">LINE Login</span><strong className="metric-value metric-text">{center.line_identity?.status === "active" ? "已綁定" : "未綁定"}</strong></Card>
       <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>
     </div>
+
+    {duesFinance.enabled && <Card>
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">財務資料</p>
+          <h2>我的社費</h2>
+        </div>
+        <Link className="button button-secondary" href="/dues?mode=member" prefetch={false}>查看社費</Link>
+      </div>
+      <p>查看自己的年度應收、收款、未繳，以及代墊申請與核銷狀態。</p>
+    </Card>}
 
     {lineOaOnboarding.enabled && <Card>
       <div className="section-heading">

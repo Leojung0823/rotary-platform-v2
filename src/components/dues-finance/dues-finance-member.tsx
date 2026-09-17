@@ -116,7 +116,7 @@ export function DuesFinanceMember({ initialLedger }: { initialLedger: DuesFinanc
       {initialLedger.receipts.length === 0 ? <Card><p>目前沒有收款明細。</p></Card> : <div className={styles.list}>{initialLedger.receipts.map((receipt) => <Card key={receipt.receiptId} className={styles.card}><div className={styles.cardHeading}><div><h3>{moneyFormatter.format(receipt.amount)}</h3><small>{dateFormatter.format(new Date(`${receipt.receivedOn}T00:00:00Z`))}{receipt.referenceNote ? ` · ${receipt.referenceNote}` : ""}</small></div><Badge tone={receipt.status === "posted" ? "success" : "warning"}>{receipt.status === "posted" ? "有效" : "已沖銷"}</Badge></div></Card>)}</div>}
     </section>
 
-    <Card>
+    <Card id="advance-application">
       <div className="section-heading"><div><p className="eyebrow">社員代墊</p><h2>申請代墊核銷</h2></div></div>
       <p>如果您先替社團支付費用，可以在這裡留下申請；幹部核准前都可以看到處理狀態。</p>
       <form className="form-stack" onSubmit={createAdvance}>

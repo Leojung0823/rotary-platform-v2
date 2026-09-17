@@ -15,11 +15,12 @@ export default async function InteractPage() {
   const identity = await requireIdentity();
   // Each destination renders notFound() when its flag is off, so only offer a
   // card when the same server-side evaluation says the page will open.
-  const [messageBoard, birthdayWishesV1, birthdayWishesV2, blessingIou] = await Promise.all([
+  const [messageBoard, birthdayWishesV1, birthdayWishesV2, blessingIou, duesFinance] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "message_board_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "dues_finance_v1", subjectUuid: identity.id }),
   ]);
   const birthdayWishesEnabled = birthdayWishesV1.enabled || birthdayWishesV2.enabled;
 
@@ -46,6 +47,14 @@ export default async function InteractPage() {
       title: "祝福 IOU",
       body: "把祝福分享給本社社員，也可以留下希望捐贈的金額。",
       icon: "heart",
+    });
+  }
+  if (duesFinance.enabled) {
+    entries.push({
+      href: "/dues?mode=member#advance-application",
+      title: "申請代墊核銷",
+      body: "先替社團支付費用，可在這裡送出申請並查看處理狀態。",
+      icon: "check",
     });
   }
 

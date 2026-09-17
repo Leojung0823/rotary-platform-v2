@@ -1,3 +1,14 @@
+/**
+ * What a remitting member can be recognised by.
+ *
+ * Only the trailing digits: a bank line shows the last five of the remitting
+ * account, a card settlement the last four. The full number is not what
+ * reconciliation needs, and storing it would keep a risk in the database for
+ * no gain.
+ */
+export const duesFinanceRemitKeyKinds = ["bank_last5", "card_last4"] as const;
+export type DuesFinanceRemitKeyKind = typeof duesFinanceRemitKeyKinds[number];
+
 export const duesFinancePaymentMethods = ["cash", "bank_transfer", "check", "other"] as const;
 export type DuesFinancePaymentMethod = (typeof duesFinancePaymentMethods)[number];
 
