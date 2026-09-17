@@ -12,7 +12,7 @@
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄，不得覆蓋本節。
 
-- 現場 `origin/main` 為 `49d419315bb2507960d48d741231d9f8faef435a`，目前沒有 open PR。此 SHA 已包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce`，以及並行合併的社費對帳單／定位簽到版本調整。
+- 現場 `origin/main` 為 `2512d8d91ea68840bf0ec13feae030fe0821d6b5`，目前沒有 open PR。此 SHA 是文件同步提交，所依據的產品程式仍是已部署的 `49d419315bb2507960d48d741231d9f8faef435a`，包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce` 與並行合併的社費對帳單／定位簽到版本調整。
 - Staging Release plan `35177783006` 與 Staging Go-Live `35177857319` 使用同一個 exact SHA `49d419315bb2507960d48d741231d9f8faef435a`；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部成功。
 - 這次 Go-Live 包含 `20260917000300_bank_statement_lines.sql` 與 `20260917000400_location_checkin_window.sql`；production 沒有修改。
 - staging `/api/health` 現場回報 `status=ok`、`revision=49d419315bb2`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
