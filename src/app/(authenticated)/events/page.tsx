@@ -355,7 +355,12 @@ export default async function EventsPage({
               The condition is now 本人簽到's own: an officer who is not a member
               of this club can neither check themselves in nor, from here,
               manage it, so the row would have been an empty <div>. */}
-          {event.status === "published" && event.counts_for_attendance && selectedClub.can_register
+          {/* Not gated on counts_for_attendance. #164 made check-in work for
+              events that do not count towards attendance, and the database
+              agrees -- check_in_to_event_by_location never asks. Only this
+              button still did, so a 不計入出席 event showed no way to check in
+              and the officer who made one could not find one. */}
+          {event.status === "published" && selectedClub.can_register
             && <div className="form-actions">
               <Link className="button button-secondary" href="/events/checkin">本人簽到</Link>
             </div>}

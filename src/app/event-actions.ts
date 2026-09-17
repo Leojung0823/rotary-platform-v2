@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   type EventCreateActionState,
+  type EventCreateField,
   type EventCreateFormValues,
   parseEventResponse,
   parseEventText,
@@ -81,10 +82,38 @@ function createEventFailure(
   return { status: "error", revision, values, fieldErrors, formError };
 }
 
+/**
+ * Which field the database refused, and what to say about it.
+ *
+ * Every one of these used to arrive as `invalid_event_input`, so the form could
+ * only say 「活動資料未通過系統規則」 and leave the officer to find it. The
+ * database knew which rule it was; it just had no way to say so.
+ */
+const eventRuleFailures: readonly Readonly<{
+  message: string;
+  field: EventCreateField;
+  text: string;
+}>[] = [
+  { message: "event_ends_before_it_starts", field: "endsAt", text: "結束時間必須晚於開始時間。" },
+  { message: "event_deadline_after_start", field: "registrationDeadline", text: "報名截止不能晚於活動開始時間。" },
+  { message: "invalid_event_capacity", field: "capacity", text: "名額請填 1 到 10000，或留空表示不限。" },
+  { message: "invalid_event_title", field: "title", text: "請填活動名稱，最多 160 個字。" },
+  { message: "invalid_event_description", field: "description", text: "活動說明最多 5000 個字。" },
+  { message: "invalid_event_location", field: "location", text: "地點最多 300 個字。" },
+  { message: "invalid_event_type", field: "eventType", text: "請選擇一種活動類型。" },
+  { message: "invalid_event_venue_location", field: "venueLocation", text: "座標要一組完整的緯度與經度，例如 25.033964, 121.564468。" },
+  { message: "invalid_event_time", field: "startsAt", text: "請填開始時間與結束時間。" },
+];
+
 function createEventRpcFailure(values: EventCreateFormValues, revision: number, message: string | undefined) {
   const code = mapEventError(message);
   if (code === "forbidden") {
     return createEventFailure(values, revision, "目前帳號沒有建立此扶輪社活動的權限。請確認社別與權限後再試。");
+  }
+  // Name the field before falling back to the sentence that names none.
+  const named = eventRuleFailures.find((failure) => message?.includes(failure.message));
+  if (named) {
+    return createEventFailure(values, revision, "請修正下列欄位後再建立活動草稿。", { [named.field]: named.text });
   }
   if (code === "invalid_input" || code === "cannot_publish") {
     return createEventFailure(values, revision, "活動資料未通過系統規則，請確認內容後再試。");
