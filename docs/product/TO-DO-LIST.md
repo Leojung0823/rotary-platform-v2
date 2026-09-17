@@ -12,10 +12,10 @@
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄，不得覆蓋本節。
 
-- 本節所依據的產品程式基準是已部署的 `49d419315bb2507960d48d741231d9f8faef435a`，包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce` 與並行合併的社費對帳單／定位簽到版本調整；後續 `main` 的文件同步不會改變 staging runtime。最新主線 SHA 請以 `git rev-parse origin/main` 現場核對，目前沒有 open PR。
-- Staging Release plan `35177783006` 與 Staging Go-Live `35177857319` 使用同一個 exact SHA `49d419315bb2507960d48d741231d9f8faef435a`；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部成功。
-- 這次 Go-Live 包含 `20260917000300_bank_statement_lines.sql` 與 `20260917000400_location_checkin_window.sql`；production 沒有修改。
-- staging `/api/health` 現場回報 `status=ok`、`revision=49d419315bb2`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
+- 本節所依據的產品程式基準是 `49d419315bb2507960d48d741231d9f8faef435a`，包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce` 與並行合併的社費對帳單／定位簽到版本調整；目前 staging 已用文件同步後的 exact SHA `878c36cab966360ad2e289cdea27362bfbe2a87d` 發布，後續文件同步不改變產品程式。最新主線 SHA 請以 `git rev-parse origin/main` 現場核對，目前沒有 open PR。
+- Staging Release plan `35180166234` 與 Staging Go-Live `35180295020` 使用同一個 exact SHA `878c36cab966360ad2e289cdea27362bfbe2a87d`；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部成功。
+- 這次 Go-Live 沒有新增 migration，production 沒有修改。
+- staging `/api/health` 現場回報 `status=ok`、`revision=878c36cab966`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
 - `f4cddb6` 已讓平台扶輪社清單的「建立扶輪社／查看」連結停止自動預載每個目的頁，減少無用的 RSC 背景請求；已部署並記錄在 `PERFORMANCE_IMPROVEMENT_LOG.md`。本輪沒有手動觸發或重跑 CI／Browser Smoke。
 - 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 `git diff --check` 通過；`npm run verify:db` 受到共用本機 Supabase 被其他 worktree 同時改動的 race 影響，在 `member_home_audience.sql` 報錯，未把它誤記為通過，也沒有重置共用資料庫。
 - 2026-09-17 hosted 唯讀驗收補充：社員模式的 `/dues?...&mode=member` 只顯示自己的應收、收款與代墊申請；社務管理模式的 `/clubs/{clubId}/dues?mode=management` 顯示年度設定、收款名單、收款紀錄與代墊管理。這次帳號同時具管理身份，沒有用它宣稱一般社員的負向權限已完成，也沒有送出任何財務 mutation。

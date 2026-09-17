@@ -7,8 +7,8 @@
 
 現場核對結果：
 
-- 本節所依據的產品程式基準是已部署的 `49d419315bb2507960d48d741231d9f8faef435a`，staging runtime 為 `49d419315bb2`；後續 `main` 的文件同步不會改變 staging runtime。最新主線 SHA 與 open PR 請現場核對。
-- Staging Release plan `35177783006` 與 Go-Live `35177857319` 全部成功，包含 migration apply、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance；health `issues=[]`，production 沒有修改。
+- 本節所依據的產品程式基準是 `49d419315bb2507960d48d741231d9f8faef435a`；staging 已用文件同步後的 exact SHA `878c36cab966360ad2e289cdea27362bfbe2a87d` 發布，runtime 為 `878c36cab966`，後續文件同步不改變產品程式。最新主線 SHA 與 open PR 請現場核對。
+- Staging Release plan `35180166234` 與 Go-Live `35180295020` 全部成功，沒有新增 migration，包含 migration apply、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance；health `issues=[]`，production 沒有修改。
 - 這個版本包含效能提交 `f4cddb6`，已停止平台扶輪社清單對每個目的頁的自動 RSC 預載；也包含並行合併的社費對帳單與定位簽到版本調整。
 - 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 diff check 通過；`verify:db` 因共用本機 Supabase 被其他 worktree 同時改動，在 `member_home_audience.sql` 發生 race，不能視為通過。
 - hosted 唯讀抽查確認社員社費頁只顯示本人資料與代墊申請，管理頁才顯示年度設定／收款／核銷工具；服務計劃管理端的草稿仍被社員端隱藏。測試帳號同時具管理身份，這不是一般社員負向驗收證據，也沒有提交財務資料。

@@ -5,13 +5,22 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
+## 2026-09-17 staging 發布紀錄
+
+- Staging Release plan `35180166234` 與 Go-Live `35180295020` 使用同一個 exact SHA
+  `878c36cab966360ad2e289cdea27362bfbe2a87d`；migration、部署、exact revision wait、HTTPS smoke
+  與 hosted member acceptance 全部成功。
+- 這次只發布效能紀錄與進度文件，沒有新增 migration 或產品程式；staging `/api/health` 為
+  `status=ok`、revision `878c36cab966`、`configuration=true`、`database=true`、`issues=[]`，production 沒有修改。
+- 因為這次沒有改變效能程式，既有社員／管理頁的前後測量限制仍然有效；E-06 仍不能標成完成。
+
 ## 目前基準
 
 | 項目 | 結果 |
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
-| 文件更新時的 origin/main | `49d419315bb2507960d48d741231d9f8faef435a`（本文件提交後主線會前進；請再以 `git rev-parse origin/main` 核對） |
-| 目前 staging runtime | `49d419315bb2` |
+| 本次 staging 發布 exact SHA | `878c36cab966360ad2e289cdea27362bfbe2a87d`（文件同步版本） |
+| 目前 staging runtime | `878c36cab966` |
 | 本次 `/login` 量測時 runtime | `1ef38bb50407`（由相鄰時間的 `/api/health` 核對；trace 本身未暴露 revision） |
 | 量測頁面 | `/login`（未登入） |
 | 工具 | Chrome DevTools Performance trace + `PerformanceNavigationTiming` |
