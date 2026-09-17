@@ -49,7 +49,7 @@ insert into public.club_events (
   counts_for_attendance, event_status, created_by_app_account_id,
   updated_by_app_account_id, published_at, venue_latitude, venue_longitude
 ) values
-  ('9f000000-0000-4000-8000-000000000001', '5f000000-0000-4000-8000-000000000001', 'board_meeting', '分眾理事會', now() + interval '2 hours', now() + interval '4 hours', now() + interval '1 hour', false, 'published', '3f000000-0000-0000-0000-000000000001', '3f000000-0000-0000-0000-000000000001', now(), 25.0, 121.5),
+  ('9f000000-0000-4000-8000-000000000001', '5f000000-0000-4000-8000-000000000001', 'board_meeting', '分眾理事會', now() + interval '30 minutes', now() + interval '3 hours', now() + interval '15 minutes', false, 'published', '3f000000-0000-0000-0000-000000000001', '3f000000-0000-0000-0000-000000000001', now(), 25.0, 121.5),
   ('9f000000-0000-4000-8000-000000000002', '5f000000-0000-4000-8000-000000000001', 'board_meeting', '分眾舊理事會', now() - interval '4 hours', now() - interval '2 hours', now() - interval '5 hours', false, 'published', '3f000000-0000-0000-0000-000000000001', '3f000000-0000-0000-0000-000000000001', now() - interval '1 day', null, null);
 
 insert into public.club_event_audiences (event_id, tag_id, club_id) values
@@ -58,6 +58,12 @@ insert into public.club_event_audiences (event_id, tag_id, club_id) values
 
 -- An open check-in session on the upcoming one, so the GPS list has something
 -- to offer -- or to withhold.
+--
+-- It starts in half an hour rather than in two: 定位簽到 now opens an hour
+-- before the start, so an event further out than that is outside the window and
+-- the GPS list is empty for everyone -- which would make the audience assertion
+-- below pass for the wrong reason. Still upcoming, so the home page assertions
+-- are unchanged.
 insert into public.event_checkin_sessions (
   id, club_id, event_id, token_hash, token_prefix, expires_at, created_by_app_account_id, session_status
 ) values
