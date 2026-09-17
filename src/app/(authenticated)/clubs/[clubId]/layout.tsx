@@ -14,6 +14,12 @@ export default async function ClubManagementLayout({ children }: { children: Rea
   // A disabled or unavailable role-shell projection must preserve the legacy
   // route. The child page and its RPC/RLS checks remain the authority; the
   // layout only prevents a member-mode URL from rendering a management page.
-  if (mode !== null && !isManagementMode(mode)) redirect("/access-denied");
+  //
+  // Platform mode passes too. A platform admin now carries every club in their
+  // management context -- resolve_my_experience_context reads the platform role,
+  // the way current_has_club_permission always has -- so they arrive here
+  // through the club switcher like anyone else. The mode they arrive in is
+  // still their own, and it is not member mode.
+  if (mode !== null && !isManagementMode(mode) && mode !== "platform") redirect("/access-denied");
   return children;
 }
