@@ -4,15 +4,14 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
-## 2026-09-17 最新基線（活動規則修正與管理驗收已發布；本節優先）
+## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄。
 
-- 本輪產品發布所依據的程式基準為 `855054b2e26c8be910fc77d0d9ef16295b48ad8d`，另以 `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 修正 staging 管理驗收的外層收合標題定位；若文件同步後 `main` 再前進，仍以現場 `git rev-parse origin/main` 核對，staging runtime 不會因文件提交自動改變。
-- `855054b` 新增活動輸入規則的欄位級錯誤訊息，允許補登已開始的活動，並保留不計入出席活動的簽到入口；migration `20260917000500_event_rules_say_which_one.sql` 已由 Go-Live 套用。
-- Staging Release plan `35183479207` 與 Go-Live `35183554898` 使用 exact SHA `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 並成功；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部通過。
-- staging health 為 `status=ok`、revision `34325dc0e451`、`configuration=true`、`database=true`、`issues=[]`；production 沒有修改。
-- Staging Management Acceptance `35183727808` 已成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消；先前的收合 archive strict-mode 測試問題已修正。
+- 最新主線與 staging 都已核對為 `eaafe00eed1afab4314f0d5ccc0a875571d832a5`；PR #198 已合併，簽到頁現在會逐場說明定位簽到為何不可用，且不計入出席的活動仍能開啟簽到。本次沒有新增 migration。
+- Staging Release plan `35185140008` 與 Go-Live `35185217321` 使用同一個 exact SHA，migration dry-run、部署、exact revision wait、HTTPS smoke 與 hosted acceptance 全部成功。
+- staging health 為 `status=ok`、revision `eaafe00eed1a`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- PR #198 的 CI／Browser Smoke 是 push 後自動產生，沒有手動 dispatch／重跑；文件後續只做進度同步時不需重新部署。
 - 下一批仍是 E-03、E-10、E-06，再處理 E-07、E-05、E-11；E-08 production 與 E-09 recovery email 仍須另外決策。E-10 雖已有執行秘書 hosted 正向驗收，停權／退社／外社負向矩陣仍未完成。
 
 ## 2026-09-17 文件同步基線（歷史；已被上方最新基線取代）

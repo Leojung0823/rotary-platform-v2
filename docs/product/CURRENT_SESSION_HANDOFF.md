@@ -3,13 +3,13 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-17 最新狀態（活動規則修正與管理驗收已發布；本節優先）
+## 2026-09-17 最新狀態（簽到可用性說明修正已發布；本節優先）
 
 現場核對結果：
 
-- 本輪產品發布所依據的程式基準為 `855054b2e26c8be910fc77d0d9ef16295b48ad8d`，另以 `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 修正管理驗收的外層 archive summary 定位；文件同步後 `main` 若再前進，請以 `git rev-parse origin/main` 現場核對，staging runtime 仍以 health 為準。
-- Staging Release plan `35183479207` 與 Go-Live `35183554898` 使用 exact SHA `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 全部成功，包含 migration apply、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance；health `issues=[]`，production 沒有修改。
-- `855054b` 已部署活動規則修正與 migration `20260917000500_event_rules_say_which_one.sql`；`34325dc` 只改測試定位，不改產品權限或資料結構。
+- 最新主線與 staging 都是 `eaafe00eed1afab4314f0d5ccc0a875571d832a5`。PR #198 已合併，簽到頁新增逐場原因說明，並修正不計入出席的活動仍可開啟簽到；本次沒有新增 migration。
+- Staging Release plan `35185140008` 與 Go-Live `35185217321` 使用同一個 exact SHA 全部成功，包含 migration dry-run、部署、exact revision wait、HTTPS smoke 與 hosted acceptance；health `issues=[]`，production 沒有修改。
+- PR #198 的 CI／Browser Smoke 是 push 後自動產生，沒有手動 dispatch／重跑；後續只更新文件不需重新部署 staging。
 - Staging Management Acceptance `35183727808` 已通過：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。
 - 本機 typecheck、lint、Vitest 1,402 tests、build、migration guard、verification manifest 與 diff check 通過；第一次 typecheck 因 build 前缺少 `.next/types`，build 後重跑已通過。`verify:db` 本輪未重跑，避免與其他 worktree 共用本機 Supabase 互相干擾；GitHub Go-Live 的遠端 migration verification 已成功。
 - 下一位代理先處理 E-03、E-10、E-06；E-10 雖已有執行秘書 hosted 正向驗收，仍缺停權／退社／外社負向矩陣。E-05、E-07、E-08、E-11 需要產品／真人／外部平台，E-09 仍暫緩。

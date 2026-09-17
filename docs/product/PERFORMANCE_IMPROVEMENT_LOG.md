@@ -5,6 +5,14 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
+## 2026-09-17 最新 staging 發布（簽到功能修正）
+
+- `main` 與 staging 已發布至 exact SHA `eaafe00eed1afab4314f0d5ccc0a875571d832a5`；Staging Release
+  plan `35185140008`、Go-Live `35185217321` 均成功，`/api/health` 為 `status=ok`、`configuration=true`、
+  `database=true`、`issues=[]`。
+- 本次只加入簽到頁逐場原因說明與不計入出席活動的簽到入口修正，沒有改變效能程式、快取或查詢；E-06 的
+  登入後社員／管理頁前後效能比較仍是未量測，不能把本次部署當成效能改善證據。
+
 ## 2026-09-17 staging 發布紀錄
 
 - Staging Release plan `35180166234` 與 Go-Live `35180295020` 使用同一個 exact SHA

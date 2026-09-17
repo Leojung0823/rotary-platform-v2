@@ -8,15 +8,14 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
-## 2026-09-17 最新基線（活動規則修正與管理驗收已發布；本節優先）
+## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄，不得覆蓋本節。
 
-- 本輪產品發布所依據的程式基準為 `855054b2e26c8be910fc77d0d9ef16295b48ad8d`，並以 `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 補上管理驗收的外層 archive summary 定位；文件同步後 `main` 若再前進，請以 `git rev-parse origin/main` 現場核對，staging runtime 仍以 health 為準。掃描時另有平行 PR #198，與本輪發布無關。
-- `855054b` 的活動規則修正已包含在 staging；新增 migration `20260917000500_event_rules_say_which_one.sql` 已成功套用，允許補登已開始的活動、回報欄位級錯誤，並保留不計入出席活動的簽到入口。
-- Staging Release plan `35183479207` 與 Staging Go-Live `35183554898` 使用 exact SHA `34325dc0e4512c51e1cf764ccff6ed371fe1baab`；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部成功。
-- staging `/api/health` 現場回報 `status=ok`、`revision=34325dc0e451`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
-- Staging Management Acceptance `35183727808` 已成功，生日、文件、活動與活動封面流程全部通過；`34325dc` 只修正驗收腳本定位，不改產品權限或資料結構。
+- 最新主線與 staging 都已核對為 `eaafe00eed1afab4314f0d5ccc0a875571d832a5`；PR #198「簽到頁說出這裡為什麼是空的」已合併，包含逐場說明定位簽到阻礙原因，以及不計入出席的活動仍可開啟簽到。這次沒有新增 migration。
+- Staging Release plan `35185140008` 與 Staging Go-Live `35185217321` 使用同一個 exact SHA `eaafe00eed1afab4314f0d5ccc0a875571d832a5`；migration dry-run、部署、exact revision wait、HTTPS smoke 與 hosted acceptance 全部成功。
+- staging `/api/health` 現場回報 `status=ok`、`revision=eaafe00eed1a`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- PR #198 的自動 CI 與 Browser Smoke 是 push 後自動產生，沒有手動 dispatch／重跑；部署使用 Go-Live 自己的受保護檢查。文件後續若只更新進度，不需重新部署 staging。
 - 目前尚未結案的外部／決策待辦仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。E-01、E-02、E-04、E-12 維持已完成。E-10 已補上執行秘書 hosted 正向驗收，但停權／退社／外社負向矩陣仍待真人帳號。
 
 ## 2026-09-17 文件同步基線（歷史；已被上方最新基線取代）
