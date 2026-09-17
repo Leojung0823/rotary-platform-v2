@@ -5,17 +5,24 @@ begin;
 -- 這份驗證證明四件事：只有財務改得動、一組識別字在一個社裡只指向一個人、
 -- 只收後幾碼、以及把識別字改指到另一個人時稽核看得出換了誰。
 
-set local role postgres;
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) values
+  ('00000000-0000-0000-0000-000000000000', '7c000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'remit-treasurer@example.test', '', now(), '{}', '{}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '7c000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'remit-payer-a@example.test', '', now(), '{}', '{}', now(), now());
 
-insert into public.clubs (id, club_code, club_name, club_status) values
-  ('7a000000-0000-4000-8000-000000000001', 'REMIT-TEST', '末五碼測試社', 'active');
+insert into public.clubs (id, club_code, club_name, club_status, activated_at) values
+  ('7a000000-0000-4000-8000-000000000001', 'REMIT-TEST', '末五碼測試社', 'active', now());
 
 insert into public.people (id, canonical_name, primary_email) values
   ('7b000000-0000-4000-8000-000000000001', '財務社友', 'remit-treasurer@example.test'),
   ('7b000000-0000-4000-8000-000000000002', '匯款社友甲', 'remit-payer-a@example.test'),
   ('7b000000-0000-4000-8000-000000000003', '匯款社友乙', 'remit-payer-b@example.test');
 
-insert into public.app_accounts (id, auth_user_id, person_id, account_email, account_display_name, account_status) values
+insert into public.app_accounts (
+  id, auth_user_id, person_id, login_email, account_display_name, account_status
+) values
   ('7c000000-0000-4000-8000-000000000001', '7c000000-0000-4000-8000-000000000001', '7b000000-0000-4000-8000-000000000001', 'remit-treasurer@example.test', '財務社友', 'active'),
   ('7c000000-0000-4000-8000-000000000002', '7c000000-0000-4000-8000-000000000002', '7b000000-0000-4000-8000-000000000002', 'remit-payer-a@example.test', '匯款社友甲', 'active');
 
