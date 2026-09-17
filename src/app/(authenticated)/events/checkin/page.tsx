@@ -7,7 +7,9 @@ import {
   type LocationCheckinEvent,
 } from "@/components/events/location-checkin-panel";
 import { requireIdentity } from "@/lib/auth";
+import { LocationCheckinDiagnosis } from "@/components/events/location-checkin-diagnosis";
 import { parseLocationCheckinEvents } from "@/lib/checkin/location";
+import { parseEvents, type ClubEvent } from "@/lib/events/page-contract";
 import {
   evaluateCurrentFeatureFlag,
   readFeatureFlagRecords,
@@ -44,10 +46,17 @@ export default async function EventCheckinPage({
   ]);
 
   let locationEvents: readonly LocationCheckinEvent[] = [];
+  // Only when there is nothing on offer: the answer to 「為什麼這裡是空的」 has
+  // no reason to be on screen when it is not empty.
+  let nearbyEvents: readonly ClubEvent[] = [];
   if (gpsCheckin.enabled) {
     const supabase = await createClient();
     const { data } = await supabase.rpc("list_my_location_checkin_events");
     locationEvents = parseLocationCheckinEvents(data);
+    if (locationEvents.length === 0) {
+      const page = await supabase.rpc("list_my_event_page", { p_club_id: null, p_as_member: true });
+      nearbyEvents = parseEvents(page.data) ?? [];
+    }
   }
   return <div className="page-stack narrow">
     <header className="page-header">
@@ -71,6 +80,8 @@ export default async function EventCheckinPage({
     {checkinV2.enabled ? <DynamicCheckinCameraScanner /> : <CheckinCameraScanner />}
 
     {gpsCheckin.enabled && <LocationCheckinPanel events={locationEvents} />}
+
+    {gpsCheckin.enabled && locationEvents.length === 0 && <LocationCheckinDiagnosis events={nearbyEvents} />}
 
     {!checkinV2.enabled && <section className="card">
       <div className="section-heading">
