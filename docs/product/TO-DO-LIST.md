@@ -12,7 +12,7 @@
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄，不得覆蓋本節。
 
-- `origin/main` 為 `b3dbede45188aae0cc1885bae3d33a7cdcbe689a`；PR #193 已以一般 merge 合併，沒有 open PR。這是本次文件同步後的主線 SHA；staging 產品 runtime 仍是下方記錄的 `cdb835b`。
+- PR #193 已以一般 merge 合併，沒有 open PR；最新主線 SHA 請現場執行 `git rev-parse origin/main` 核對。staging 產品 runtime 仍是下方記錄的 `cdb835b`。
 - 本輪社費 UI 修正已隨 PR #193 進入 `main`：`/me?mode=member` 顯示「我的社費」，`/interact` 顯示「申請代墊核銷」；首頁不再重複顯示社費入口，申請卡提供 `#advance-application` 錨點。兩個入口仍受既有 `dues_finance_v1` 旗標控制，沒有改登入、權限或社團隔離。
 - Staging Release plan `35174571980` 與 Staging Go-Live `35174879274` 使用同一個 exact SHA `cdb835b736cb91a3888bd7241ba96c653a0dc555`。plan 預覽的待套用 migration 是 `20260917000200_membership_remit_keys.sql`；Go-Live 已成功套用、部署並完成 exact revision wait、HTTPS smoke 與 hosted member acceptance。
 - staging `/api/health` 現場回報 `status=ok`、`revision=cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
