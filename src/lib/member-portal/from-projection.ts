@@ -138,13 +138,14 @@ export function announcementsFrom(
 }
 
 /**
- * The ways into features the home page is the only route to, each behind the
- * same flag that gated it before. A member whose club has a feature switched
- * off does not see a door to it.
+ * Low-frequency member shortcuts kept on the home page, each behind the same
+ * flag that gates its destination. A member whose club has a feature switched
+ * off does not see a door to it. Personal finance information belongs in
+ * 我的, while the advance application belongs in 社內互動.
  */
 export function entriesFrom(
   clubId: string,
-  features: Readonly<{ messageCentre: boolean; blessingIou: boolean; duesFinance: boolean }>,
+  features: Readonly<{ messageCentre: boolean; blessingIou: boolean }>,
 ): readonly PortalEntry[] {
   const club = encodeURIComponent(clubId);
   const entries: PortalEntry[] = [];
@@ -153,9 +154,6 @@ export function entriesFrom(
   }
   if (features.blessingIou) {
     entries.push({ icon: "heart", title: "祝福 IOU", detail: "分享祝福，也可以留下希望捐贈的金額", href: `/blessings?clubId=${club}&mode=member` });
-  }
-  if (features.duesFinance) {
-    entries.push({ icon: "coins", title: "我的社費", detail: "查看自己的應收、收款與代墊狀態", href: `/dues?clubId=${club}&mode=member` });
   }
   return entries;
 }

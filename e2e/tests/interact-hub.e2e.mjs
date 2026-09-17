@@ -17,7 +17,7 @@ async function login(page) {
   await expect(page).toHaveURL(/\/dashboard$/u);
 }
 
-test("the member homepage opens an interaction hub that reaches all three social features", async ({ page }) => {
+test("the member homepage opens an interaction hub that reaches all four social features", async ({ page }) => {
   await login(page);
 
   // 社內互動 was a card on the home page and is now a tab of its own, so this
@@ -29,18 +29,20 @@ test("the member homepage opens an interaction hub that reaches all three social
   await expect(page).toHaveURL(/\/interact/u);
   await expect(page.getByRole("heading", { name: "社內互動" })).toBeVisible();
 
-  // Every card must actually open its page rather than 404, which is the whole
-  // reason the hub exists: these three had no entry point at all before.
-  for (const [name, pattern] of [
+  // Every card must actually open its page rather than 404. The finance card
+  // deep-links to the member's advance application, not the management ledger.
+  for (const [name, pattern, anchor] of [
     ["留言板", /\/board/u],
     ["生日祝福", /\/birthdays/u],
     ["祝福 IOU", /\/blessings/u],
+    ["申請代墊核銷", /\/dues\?mode=member/u, "#advance-application"],
   ]) {
     await page.goto(new URL("/interact", baseURL).toString());
     const card = page.getByRole("link", { name: new RegExp(name, "u") });
     await expect(card).toBeVisible();
     await card.click();
     await expect(page).toHaveURL(pattern);
+    if (anchor) await expect(page.locator(anchor)).toBeVisible();
     // A notFound() would render the 404 page instead of the shell.
     await expect(page.getByRole("navigation", { name: "主要導覽" })).toBeVisible();
   }

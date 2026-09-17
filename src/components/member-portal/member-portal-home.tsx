@@ -22,7 +22,6 @@ const todayWeekday = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
 type Features = Readonly<{
   messageCentre: boolean;
   blessingIou: boolean;
-  duesFinance: boolean;
   lineOaOnboarding: boolean;
 }>;
 
