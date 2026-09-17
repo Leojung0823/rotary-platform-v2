@@ -263,7 +263,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
       has: page.locator("article.card").filter({ hasText: eventTitle }),
     });
     await expect(archiveFold).toHaveCount(1);
-    await archiveFold.locator("summary").click();
+    await archiveFold.locator(":scope > summary").click();
     eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
     await expect(eventCard.getByText("已取消", { exact: true })).toBeVisible();
     await expect(eventCard.getByRole("button", { name: "取消活動" })).toHaveCount(0);
