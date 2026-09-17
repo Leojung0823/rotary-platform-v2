@@ -68,6 +68,15 @@ export function EventManagementPanel({
               ? "不設截止，活動結束前都可報名"
               : formatDateTime(event.registration_deadline)}</dd></div>
             <div><dt>目前參加</dt><dd>{event.attending_members} 人 · {event.attending_spots} 個名額已使用{event.capacity === null ? " · 不限名額" : ` · 剩餘 ${event.remaining_spots ?? 0}`}</dd></div>
+            {/* 幹部設完活動之前，沒有任何跡象能看出社員到時候會不會有定位簽到
+                這個選項。社員那一頁的空狀態解釋得很清楚，但那一頁只有在每個
+                條件都湊齊之後才看得到 —— 對還在設定活動的人來說太晚了。 */}
+            <div>
+              <dt>定位簽到</dt>
+              <dd>{event.venue_location_set
+                ? "已設座標，社員到現場可直接簽到"
+                : <>未設座標，社員只能掃 QR{(event.status === "draft" || event.status === "published") && <>（<Link href={`/clubs/${selectedClub.club_id}/events/${event.id}/edit`}>補上座標</Link>）</>}</>}</dd>
+            </div>
           </dl>
           {event.description && <p className="event-description">{event.description}</p>}
 

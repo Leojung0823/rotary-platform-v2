@@ -29,6 +29,15 @@ export type ClubEvent = {
   can_manage: boolean;
   cover_image_path: string | null;
   registration_open: boolean;
+  /**
+   * Whether the event has venue coordinates.
+   *
+   * The projection has carried this since GPS check-in shipped; nothing showed
+   * it. An officer setting up an event had no way to tell whether members would
+   * be offered 定位簽到 on the day -- and the member-facing panel, which does
+   * explain itself, is only reachable once every condition already lines up.
+   */
+  venue_location_set: boolean;
 };
 
 export const eventTypeLabels: Record<string, string> = {
@@ -88,7 +97,8 @@ export function isClubEvent(value: unknown): value is ClubEvent {
     && typeof value.my_guest_count === "number"
     && typeof value.my_note === "string"
     && typeof value.can_manage === "boolean"
-    && typeof value.registration_open === "boolean";
+    && typeof value.registration_open === "boolean"
+    && typeof value.venue_location_set === "boolean";
 }
 
 export function parseEvents(value: unknown): ClubEvent[] | null {
