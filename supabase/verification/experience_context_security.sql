@@ -177,18 +177,42 @@ end;
 $$;
 reset role;
 
--- Platform mode is separate from club context, but an active member remains member-first.
+-- 平台管理員管得了每一個社，而且是從社團選擇器進去。
+--
+-- 這裡本來斷言他們的 managed_only_clubs 是空的。那在
+-- current_has_club_permission 的第一個條件就是平台角色的情況下，等於斷言
+-- 「介面看不到資料庫允許的東西」—— 而那正是讓平台管理員按下「管理社員」
+-- 得到「無法存取」的原因。
+--
+-- 現在驗的是：每一個啟用中的社都在裡面，而且他仍然不是任何一社的社員。
+-- 社數先在 postgres 身分算好：authenticated 讀不到 clubs 表，而這份驗證要問的
+-- 是「選擇器有沒有列出全部」，不是「社員能不能直接讀那張表」。
+create temporary table platform_context_expectation as
+select count(*)::integer as active_clubs
+from public.clubs where club_status in ('provisioning', 'active');
+grant select on platform_context_expectation to authenticated;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '51000000-0000-4000-8000-000000000005', true);
 do $$
-declare context jsonb;
+declare
+  context jsonb;
+  active_clubs integer;
 begin
   context := public.resolve_my_experience_context();
-  if context->>'default_mode' <> 'platform'
-    or context->'available_modes' <> '["platform"]'::jsonb
-    or jsonb_array_length(context->'member_clubs') <> 0
-    or jsonb_array_length(context->'managed_only_clubs') <> 0 then
-    raise exception 'platform-only context is invalid: %', context;
+  select expectation.active_clubs into active_clubs from platform_context_expectation as expectation;
+
+  if jsonb_array_length(context->'member_clubs') <> 0 then
+    raise exception 'a platform admin was given a membership they do not have: %', context;
+  end if;
+  if jsonb_array_length(context->'managed_only_clubs') <> active_clubs then
+    raise exception 'a platform admin cannot reach every club from the switcher: %', context;
+  end if;
+  if not (context->'available_modes' @> '["platform"]'::jsonb) then
+    raise exception 'platform mode is gone: %', context;
+  end if;
+  if not (context->>'has_platform_access')::boolean then
+    raise exception 'the platform flag is gone: %', context;
   end if;
 end;
 $$;
@@ -198,8 +222,14 @@ do $$
 declare context jsonb;
 begin
   context := public.resolve_my_experience_context();
+  -- member-first 仍然成立：一個同時是社員的平台管理員，打開平台看到的是社員
+  -- 首頁，不是管理台。
+  --
+  -- available_modes 現在也包含 management，而那是對的：他確實管得了每一個社。
+  -- 原本這裡比對整個陣列相等，所以「多了一個他真的有的模式」會被當成錯誤。
+  -- 改成斷言真正該保住的事：預設仍是 member，而 member 與 platform 都在。
   if context->>'default_mode' <> 'member'
-    or context->'available_modes' <> '["member", "platform"]'::jsonb then
+    or not (context->'available_modes' @> '["member", "platform"]'::jsonb) then
     raise exception 'platform-member context is not member-first: %', context;
   end if;
 end;
