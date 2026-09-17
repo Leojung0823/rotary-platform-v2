@@ -3,16 +3,16 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-17 最新狀態（效能修正與並行功能已發布；本節優先）
+## 2026-09-17 最新狀態（活動規則修正與管理驗收已發布；本節優先）
 
 現場核對結果：
 
-- 本節所依據的產品程式基準是 `49d419315bb2507960d48d741231d9f8faef435a`；staging 已用文件同步後的 exact SHA `878c36cab966360ad2e289cdea27362bfbe2a87d` 發布，runtime 為 `878c36cab966`，後續文件同步不改變產品程式。最新主線 SHA 與 open PR 請現場核對。
-- Staging Release plan `35180166234` 與 Go-Live `35180295020` 全部成功，沒有新增 migration，包含 migration apply、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance；health `issues=[]`，production 沒有修改。
-- 這個版本包含效能提交 `f4cddb6`，已停止平台扶輪社清單對每個目的頁的自動 RSC 預載；也包含並行合併的社費對帳單與定位簽到版本調整。
-- 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 diff check 通過；`verify:db` 因共用本機 Supabase 被其他 worktree 同時改動，在 `member_home_audience.sql` 發生 race，不能視為通過。
-- hosted 唯讀抽查確認社員社費頁只顯示本人資料與代墊申請，管理頁才顯示年度設定／收款／核銷工具；服務計劃管理端的草稿仍被社員端隱藏。測試帳號同時具管理身份，這不是一般社員負向驗收證據，也沒有提交財務資料。
-- 下一位代理先處理 E-03、E-10、E-06；仍不能把既有 LEO 配對當作乾淨 follow 證據，也不能把平台管理員頁的單次 LCP 觀測當成登入後社員／社務頁的前後因果比較。E-05、E-07、E-08、E-11 需要產品／真人／外部平台，E-09 仍暫緩。
+- 本輪產品發布所依據的程式基準為 `855054b2e26c8be910fc77d0d9ef16295b48ad8d`，另以 `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 修正管理驗收的外層 archive summary 定位；文件同步後 `main` 若再前進，請以 `git rev-parse origin/main` 現場核對，staging runtime 仍以 health 為準。
+- Staging Release plan `35183479207` 與 Go-Live `35183554898` 使用 exact SHA `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 全部成功，包含 migration apply、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance；health `issues=[]`，production 沒有修改。
+- `855054b` 已部署活動規則修正與 migration `20260917000500_event_rules_say_which_one.sql`；`34325dc` 只改測試定位，不改產品權限或資料結構。
+- Staging Management Acceptance `35183727808` 已通過：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。
+- 本機 typecheck、lint、Vitest 1,402 tests、build、migration guard、verification manifest 與 diff check 通過；第一次 typecheck 因 build 前缺少 `.next/types`，build 後重跑已通過。`verify:db` 本輪未重跑，避免與其他 worktree 共用本機 Supabase 互相干擾；GitHub Go-Live 的遠端 migration verification 已成功。
+- 下一位代理先處理 E-03、E-10、E-06；E-10 雖已有執行秘書 hosted 正向驗收，仍缺停權／退社／外社負向矩陣。E-05、E-07、E-08、E-11 需要產品／真人／外部平台，E-09 仍暫緩。
 
 ## 2026-09-17 文件同步狀態（歷史；已被上方最新狀態取代）
 

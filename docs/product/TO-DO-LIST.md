@@ -8,19 +8,16 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
-## 2026-09-17 最新基線（效能修正與並行功能已發布；本節優先）
+## 2026-09-17 最新基線（活動規則修正與管理驗收已發布；本節優先）
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄，不得覆蓋本節。
 
-- 本節所依據的產品程式基準是 `49d419315bb2507960d48d741231d9f8faef435a`，包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce` 與並行合併的社費對帳單／定位簽到版本調整；目前 staging 已用文件同步後的 exact SHA `878c36cab966360ad2e289cdea27362bfbe2a87d` 發布，後續文件同步不改變產品程式。最新主線 SHA 請以 `git rev-parse origin/main` 現場核對，目前沒有 open PR。
-- Staging Release plan `35180166234` 與 Staging Go-Live `35180295020` 使用同一個 exact SHA `878c36cab966360ad2e289cdea27362bfbe2a87d`；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部成功。
-- 這次 Go-Live 沒有新增 migration，production 沒有修改。
-- staging `/api/health` 現場回報 `status=ok`、`revision=878c36cab966`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
-- `f4cddb6` 已讓平台扶輪社清單的「建立扶輪社／查看」連結停止自動預載每個目的頁，減少無用的 RSC 背景請求；已部署並記錄在 `PERFORMANCE_IMPROVEMENT_LOG.md`。本輪沒有手動觸發或重跑 CI／Browser Smoke。
-- 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 `git diff --check` 通過；`npm run verify:db` 受到共用本機 Supabase 被其他 worktree 同時改動的 race 影響，在 `member_home_audience.sql` 報錯，未把它誤記為通過，也沒有重置共用資料庫。
-- 2026-09-17 hosted 唯讀驗收補充：社員模式的 `/dues?...&mode=member` 只顯示自己的應收、收款與代墊申請；社務管理模式的 `/clubs/{clubId}/dues?mode=management` 顯示年度設定、收款名單、收款紀錄與代墊管理。這次帳號同時具管理身份，沒有用它宣稱一般社員的負向權限已完成，也沒有送出任何財務 mutation。
-- 2026-09-17 hosted 服務計劃補充：管理頁已有可儲存草稿／發布的四大服務面向，社員頁目前顯示「本年度的服務計劃尚未發布」；草稿未外洩已驗證，但正式內容發布與另一個純社員帳號的負向驗收仍未完成。
-- 目前尚未因這次部署結案的外部待辦仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。E-01、E-02、E-04、E-12 維持已完成。
+- 本輪產品發布所依據的程式基準為 `855054b2e26c8be910fc77d0d9ef16295b48ad8d`，並以 `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 補上管理驗收的外層 archive summary 定位；文件同步後 `main` 若再前進，請以 `git rev-parse origin/main` 現場核對，staging runtime 仍以 health 為準，目前沒有 open PR。
+- `855054b` 的活動規則修正已包含在 staging；新增 migration `20260917000500_event_rules_say_which_one.sql` 已成功套用，允許補登已開始的活動、回報欄位級錯誤，並保留不計入出席活動的簽到入口。
+- Staging Release plan `35183479207` 與 Staging Go-Live `35183554898` 使用 exact SHA `34325dc0e4512c51e1cf764ccff6ed371fe1baab`；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部成功。
+- staging `/api/health` 現場回報 `status=ok`、`revision=34325dc0e451`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- Staging Management Acceptance `35183727808` 已成功，生日、文件、活動與活動封面流程全部通過；`34325dc` 只修正驗收腳本定位，不改產品權限或資料結構。
+- 目前尚未結案的外部／決策待辦仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。E-01、E-02、E-04、E-12 維持已完成。E-10 已補上執行秘書 hosted 正向驗收，但停權／退社／外社負向矩陣仍待真人帳號。
 
 ## 2026-09-17 文件同步基線（歷史；已被上方最新基線取代）
 

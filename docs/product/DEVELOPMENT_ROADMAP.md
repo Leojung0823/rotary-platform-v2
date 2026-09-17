@@ -4,16 +4,16 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
-## 2026-09-17 最新基線（效能修正與並行功能已發布；本節優先）
+## 2026-09-17 最新基線（活動規則修正與管理驗收已發布；本節優先）
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄。
 
-- 本節所依據的產品程式基準是 `49d419315bb2507960d48d741231d9f8faef435a`；staging 已用文件同步後的 exact SHA `878c36cab966360ad2e289cdea27362bfbe2a87d` 發布，runtime 為 `878c36cab966`，後續文件同步不改變產品程式。最新主線 SHA 與 open PR 請現場核對。
-- `main` 已包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce`：平台扶輪社清單不再預載每個社團詳細頁／建立頁，避免無用的 RSC 背景請求。
-- Staging Release plan `35180166234` 與 Go-Live `35180295020` 均使用同一個 exact SHA 並成功；沒有新增 migration，部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部通過。
-- staging health 為 `status=ok`、revision `878c36cab966`、`configuration=true`、`database=true`、`issues=[]`；production 沒有修改。
-- 這次發布只把文件同步提交部署到 staging，產品程式仍以 `49d4193` 為基準；下一批仍是 E-03、E-10、E-06，再處理 E-07、E-05、E-11；E-08 production 與 E-09 recovery email 仍須另外決策。
-- hosted 唯讀抽查已確認社費社員頁與社務管理頁各自顯示正確的資料／操作範圍；服務計劃管理端的草稿沒有出現在社員端。因測試帳號同時具管理身份，仍不把這兩項的完整角色負向矩陣標成完成。
+- 本輪產品發布所依據的程式基準為 `855054b2e26c8be910fc77d0d9ef16295b48ad8d`，另以 `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 修正 staging 管理驗收的外層收合標題定位；若文件同步後 `main` 再前進，仍以現場 `git rev-parse origin/main` 核對，staging runtime 不會因文件提交自動改變。
+- `855054b` 新增活動輸入規則的欄位級錯誤訊息，允許補登已開始的活動，並保留不計入出席活動的簽到入口；migration `20260917000500_event_rules_say_which_one.sql` 已由 Go-Live 套用。
+- Staging Release plan `35183479207` 與 Go-Live `35183554898` 使用 exact SHA `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 並成功；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部通過。
+- staging health 為 `status=ok`、revision `34325dc0e451`、`configuration=true`、`database=true`、`issues=[]`；production 沒有修改。
+- Staging Management Acceptance `35183727808` 已成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消；先前的收合 archive strict-mode 測試問題已修正。
+- 下一批仍是 E-03、E-10、E-06，再處理 E-07、E-05、E-11；E-08 production 與 E-09 recovery email 仍須另外決策。E-10 雖已有執行秘書 hosted 正向驗收，停權／退社／外社負向矩陣仍未完成。
 
 ## 2026-09-17 文件同步基線（歷史；已被上方最新基線取代）
 
