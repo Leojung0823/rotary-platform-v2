@@ -41,3 +41,47 @@
   .receiptRow input { max-width: none; width: 100%; }
   .actionForm > button { width: 100%; }
 }
+
+/* 年度設定一年用一次，摺疊起來而不是永遠佔著最上面。 */
+.yearSetup { border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: var(--shadow); }
+.yearSetup > summary { padding: 16px 18px; cursor: pointer; font-weight: var(--weight-strong); color: var(--blue-ink); }
+.yearSetupBody { display: grid; gap: 16px; padding: 0 18px 18px; }
+
+/* 一份名單，一列一個人。 */
+.roster { display: grid; gap: 0; padding: 0; overflow: hidden; }
+.rosterTools {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 14px 18px; border-bottom: 1px solid var(--line);
+}
+.rosterSearch { flex: 1 1 200px; min-width: 0; max-width: 320px; }
+.filterChips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.chip {
+  min-height: 36px; padding: 6px 13px; border: 1px solid var(--line);
+  border-radius: 999px; background: white; color: var(--ink);
+  font-size: var(--text-small); font-weight: var(--weight-medium); cursor: pointer;
+}
+.chip:hover { border-color: #829aae; }
+.chipOn { background: var(--ink); border-color: var(--ink); color: white; }
+.batchToggle { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-left: auto; color: var(--muted); font-size: var(--text-small); }
+.batchForm { padding: 16px 18px; }
+
+.rosterList { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; min-width: 0; }
+.rosterItem { display: grid; gap: 10px; min-width: 0; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.rosterItem:last-child { border-bottom: 0; }
+.rosterEmpty { padding: 20px 18px; color: var(--muted); }
+.rosterRow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-width: 0; }
+.rosterName { min-width: 0; overflow-wrap: anywhere; }
+.rosterFigures { flex: 1 1 200px; min-width: 0; color: var(--muted); font-size: var(--text-small); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.rowReceipt { padding: 14px 16px; border: 1px solid var(--blue); border-radius: 12px; background: var(--blue-soft); }
+.rowReceiptActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.rowReceiptActions button { width: auto; }
+.rowDetails { border-top: 1px dashed var(--line); padding-top: 10px; }
+.rowDetails summary { cursor: pointer; color: var(--muted); font-size: var(--text-small); }
+
+@media (max-width: 760px) {
+  .rosterTools { padding: 12px 14px; }
+  .batchToggle { margin-left: 0; }
+  .rosterItem { padding: 12px 14px; }
+  .rosterRow > button, .rosterRow > span:last-child { width: 100%; }
+  .rowReceiptActions button { width: 100%; }
+}

@@ -23,6 +23,12 @@ const paymentMethodLabels: Record<DuesFinancePaymentMethod, string> = {
   other: "其他",
 };
 const receivableStatusLabels = { unpaid: "未收", partial: "部分收款", paid: "已收清" } as const;
+
+type RosterFilter = "unpaid" | "partial" | "paid" | "all";
+
+function matchesRosterFilter(status: keyof typeof receivableStatusLabels, filter: RosterFilter) {
+  return filter === "all" || status === filter;
+}
 const advanceStatusLabels = { submitted: "待審核", returned: "已退回", closed: "已結案" } as const;
 
 function today() {
@@ -103,6 +109,38 @@ export function DuesFinanceManagement({
   const [advanceAmount, setAdvanceAmount] = useState("");
   const [advanceDescription, setAdvanceDescription] = useState("");
   const [advanceIncurredOn, setAdvanceIncurredOn] = useState(today);
+  const [rosterQuery, setRosterQuery] = useState("");
+  const [rosterFilter, setRosterFilter] = useState<RosterFilter>("unpaid");
+  const [batchMode, setBatchMode] = useState(false);
+  const [openReceipt, setOpenReceipt] = useState<string | null>(null);
+  const [rowAmount, setRowAmount] = useState("");
+
+  const unpaidCount = useMemo(
+    () => ledger.receivables.filter((entry) => entry.outstandingAmount > 0).length,
+    [ledger.receivables],
+  );
+
+  /** 未繳的排前面：財務打開這一頁，要找的幾乎一定是還沒收到的那些。 */
+  const visibleReceivables = useMemo(() => {
+    const needle = rosterQuery.trim().toLocaleLowerCase();
+    return ledger.receivables
+      .filter((entry) => matchesRosterFilter(entry.status, rosterFilter))
+      .filter((entry) => needle === "" || entry.memberDisplayName.toLocaleLowerCase().includes(needle))
+      .slice()
+      .sort((left, right) => {
+        if ((left.outstandingAmount > 0) !== (right.outstandingAmount > 0)) {
+          return left.outstandingAmount > 0 ? -1 : 1;
+        }
+        return left.memberDisplayName.localeCompare(right.memberDisplayName, "zh-Hant");
+      });
+  }, [ledger.receivables, rosterFilter, rosterQuery]);
+
+  const rosterFilters = useMemo(() => ([
+    { key: "unpaid" as const, label: "未繳", count: ledger.receivables.filter((entry) => entry.status === "unpaid").length },
+    { key: "partial" as const, label: "部分", count: ledger.receivables.filter((entry) => entry.status === "partial").length },
+    { key: "paid" as const, label: "已收清", count: ledger.receivables.filter((entry) => entry.status === "paid").length },
+    { key: "all" as const, label: "全部", count: ledger.receivables.length },
+  ]), [ledger.receivables]);
 
   const receiptTotal = useMemo(() => Object.values(receiptAmounts).reduce((total, amount) => total + (Number(amount) || 0), 0), [receiptAmounts]);
 
@@ -173,6 +211,37 @@ export function DuesFinanceManagement({
       reason: String(form.get("reason") ?? ""),
       idempotencyKey: newIdempotencyKey("adjustment"),
     }, "應收金額已調整。", () => event.currentTarget.reset());
+  }
+
+  /** 展開某一列的收款，金額預填未收額 —— 全額繳清不必打任何字。 */
+  function openRowReceipt(receivableId: string, outstanding: number) {
+    setOpenReceipt((current) => (current === receivableId ? null : receivableId));
+    setRowAmount(String(outstanding));
+  }
+
+  function submitRowReceipt(event: FormEvent<HTMLFormElement>, receivableId: string) {
+    event.preventDefault();
+    const amount = Number(rowAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setMessageTone("error");
+      setMessage("請填寫本次收到的金額。");
+      return;
+    }
+    // 同一支 record_dues_receipt，只是分配陣列長度為 1。收款仍然當場全額分配，
+    // 財務紀錄的不變量一行都沒有鬆動。
+    void runAction(`row-receipt-${receivableId}`, {
+      action: "record_receipt",
+      clubId: ledger.clubId,
+      receivedOn,
+      paymentMethod,
+      referenceNote: referenceNote.trim() || null,
+      allocations: [{ receivableId, amount }],
+      idempotencyKey: newIdempotencyKey("receipt"),
+    }, "收款已登錄。", () => {
+      setOpenReceipt(null);
+      setRowAmount("");
+      setReferenceNote("");
+    });
   }
 
   function recordReceipt(event: FormEvent<HTMLFormElement>) {
@@ -289,57 +358,129 @@ export function DuesFinanceManagement({
 
     {message && <Notice tone={messageTone}>{message}</Notice>}
 
-    <Card>
-      <div className="section-heading"><div><p className="eyebrow">年度設定</p><h2>應收預設</h2></div><Badge tone={annualDefault ? "success" : "warning"}>{annualDefault ? `目前 ${moneyFormatter.format(annualDefault.defaultAmount)}` : "尚未設定"}</Badge></div>
-      <p>先設定本年度每位社員的預設應收，再按按鈕產生尚未建立的應收。已存在的個別金額不會被覆蓋。</p>
-      {permissions.canManage ? <div className={styles.formGrid}>
-        <ActionForm onSubmit={submitAnnualDefault}>
-          <Field label="年度預設金額"><Input type="number" min="1" step="1" value={defaultAmount} onChange={(event) => setDefaultAmount(event.target.value)} required disabled={pending !== null} /></Field>
-          <Field label="調整原因（選填）"><Input value={defaultReason} onChange={(event) => setDefaultReason(event.target.value)} maxLength={500} placeholder="例如：本年度社費決議" disabled={pending !== null} /></Field>
-          <Button type="submit" disabled={pending !== null}>儲存年度預設</Button>
-        </ActionForm>
-        <ActionForm onSubmit={generateReceivables}>
-          <Field label="應收來源說明（選填）"><Input value={generateNote} onChange={(event) => setGenerateNote(event.target.value)} maxLength={500} placeholder="例如：2026-27 年度社費" disabled={pending !== null} /></Field>
-          <p className={styles.formHint}>只會建立還沒有應收資料的有效社員。</p>
-          <Button type="submit" className="button-secondary" disabled={pending !== null || !annualDefault}>產生年度應收</Button>
-        </ActionForm>
-      </div> : <Notice>您目前只有查看權限，不能修改年度應收設定。</Notice>}
-    </Card>
+    {/* 年度設定是一年用一次的事，摺疊起來。它原本永遠佔著整頁最上面，
+        而財務每天要做的收款排在它後面第四個區塊。 */}
+    {permissions.canManage && <details className={styles.yearSetup}>
+      <summary>年度設定 · 應收預設與個別應收</summary>
+      <div className={styles.yearSetupBody}>
+        <Card>
+          <div className="section-heading"><div><p className="eyebrow">年度設定</p><h2>應收預設</h2></div><Badge tone={annualDefault ? "success" : "warning"}>{annualDefault ? `目前 ${moneyFormatter.format(annualDefault.defaultAmount)}` : "尚未設定"}</Badge></div>
+          <ActionForm onSubmit={submitAnnualDefault}>
+            <div className={styles.formGrid}><Field label="每位社員的年度社費"><Input type="number" min="1" step="1" value={defaultAmount} onChange={(event) => setDefaultAmount(event.target.value)} required disabled={pending !== null} /></Field><Field label="調整原因（選填）"><Input value={defaultReason} onChange={(event) => setDefaultReason(event.target.value)} maxLength={500} disabled={pending !== null} /></Field></div>
+            <Button type="submit" disabled={pending !== null}>儲存預設金額</Button>
+          </ActionForm>
+          <ActionForm onSubmit={generateReceivables}>
+            <Field label="產生年度應收的備註（選填）"><Input value={generateNote} onChange={(event) => setGenerateNote(event.target.value)} maxLength={500} placeholder="例如：2026-27 年度社費" disabled={pending !== null} /></Field>
+            <p className={styles.formHint}>只為尚未建立應收的有效社員產生，重複執行不會重覆計費。</p>
+            <Button type="submit" className="button-secondary" disabled={pending !== null || !annualDefault}>產生年度應收</Button>
+          </ActionForm>
+        </Card>
 
-    {permissions.canManage && <Card>
-      <div className="section-heading"><div><p className="eyebrow">期初或個別調整</p><h2>新增一筆應收</h2></div></div>
-      <ActionForm onSubmit={createReceivable} className={styles.formGrid}>
-        <Field label="社員"><Select value={receivableMember || members[0]?.membershipId || ""} onChange={(event) => setReceivableMember(event.target.value)} required disabled={pending !== null || members.length === 0}><option value="">請選擇社員</option>{members.map((member) => <option key={member.membershipId} value={member.membershipId}>{member.displayName}</option>)}</Select></Field>
-        <Field label="金額"><Input type="number" min="1" step="1" value={receivableAmount} onChange={(event) => setReceivableAmount(event.target.value)} required disabled={pending !== null} /></Field>
-        <Field label="來源"><Select value={receivableSourceKind} onChange={(event) => setReceivableSourceKind(event.target.value as "manual" | "opening_balance")} disabled={pending !== null}><option value="manual">個別應收</option><option value="opening_balance">期初餘額</option></Select></Field>
-        <Field label="說明"><Input value={receivableNote} onChange={(event) => setReceivableNote(event.target.value)} minLength={2} maxLength={500} required placeholder="例如：加入後按比例計算" disabled={pending !== null} /></Field>
-        <Button type="submit" disabled={pending !== null || members.length === 0}>建立應收</Button>
-      </ActionForm>
-    </Card>}
+        <Card>
+          <div className="section-heading"><div><p className="eyebrow">期初或個別調整</p><h2>新增一筆應收</h2></div></div>
+          <ActionForm onSubmit={createReceivable}>
+            <div className={styles.formGrid}><Field label="社員"><Select value={receivableMember} onChange={(event) => setReceivableMember(event.target.value)} disabled={pending !== null}>{members.map((member) => <option key={member.membershipId} value={member.membershipId}>{member.displayName}</option>)}</Select></Field><Field label="金額"><Input type="number" min="1" step="1" value={receivableAmount} onChange={(event) => setReceivableAmount(event.target.value)} required disabled={pending !== null} /></Field><Field label="來源"><Select value={receivableSourceKind} onChange={(event) => setReceivableSourceKind(event.target.value as "manual" | "opening_balance")} disabled={pending !== null}><option value="manual">個別建立</option><option value="opening_balance">期初餘額</option></Select></Field><Field label="說明"><Input value={receivableNote} onChange={(event) => setReceivableNote(event.target.value)} maxLength={500} required disabled={pending !== null} /></Field></div>
+            <Button type="submit" className="button-secondary" disabled={pending !== null || members.length === 0}>建立應收</Button>
+          </ActionForm>
+        </Card>
+      </div>
+    </details>}
 
+    {/* 一份名單，一列一個人。原本是兩份：第三段把每個人畫成一張卡片（用來看），
+        第四段再把同一批人畫成一個輸入框（用來動手）。看和做在不同地方。 */}
     <section aria-labelledby="dues-receivables-heading">
-      <div className="section-heading"><div><p className="eyebrow">社員應收</p><h2 id="dues-receivables-heading">每位社員的社費狀態</h2></div><span>{ledger.receivables.length} 筆</span></div>
-      {ledger.receivables.length === 0 ? <Card><p>本年度尚未建立應收資料。可以先設定年度預設，再產生年度應收。</p></Card> : <div className={styles.recordList}>{ledger.receivables.map((receivable) => <Card key={receivable.receivableId} className={styles.recordCard}>
-        <div className={styles.recordHeading}><div><h3>{receivable.memberDisplayName}</h3><small>{receivable.sourceKind === "opening_balance" ? "期初餘額" : receivable.sourceKind === "annual_default" ? "年度預設" : "個別建立"} · {receivable.sourceNote}</small></div><Badge tone={receivable.status === "paid" ? "success" : receivable.status === "partial" ? "warning" : "neutral"}>{receivableStatusLabels[receivable.status]}</Badge></div>
-        <dl className={styles.amountList}><div><dt>應收</dt><dd>{moneyFormatter.format(receivable.receivableAmount)}</dd></div><div><dt>已收</dt><dd>{moneyFormatter.format(receivable.receivedAmount)}</dd></div><div><dt>未收</dt><dd>{moneyFormatter.format(receivable.outstandingAmount)}</dd></div></dl>
-        {permissions.canManage && receivable.status !== "paid" && <details className={styles.details}><summary>新增金額調整</summary><ActionForm onSubmit={adjustReceivable}>
-          <input type="hidden" name="receivableId" value={receivable.receivableId} />
-          <Field label="調整金額"><Input name="amountDelta" type="number" step="1" min={String(-receivable.receivableAmount + receivable.receivedAmount)} required placeholder="可填負數" disabled={pending !== null} /></Field>
-          <Field label="原因"><Input name="reason" minLength={2} maxLength={500} required placeholder="例如：減免一部分社費" disabled={pending !== null} /></Field>
-          <Button type="submit" className="button-secondary" disabled={pending !== null}>儲存調整</Button>
-        </ActionForm></details>}
-      </Card>)}</div>}
-    </section>
+      <div className="section-heading">
+        <div><p className="eyebrow">社員社費</p><h2 id="dues-receivables-heading">收款名單</h2></div>
+        <span>{unpaidCount > 0 ? `還有 ${unpaidCount} 位未收清` : "全部收齊"}</span>
+      </div>
 
-    {permissions.canManage && <Card>
-      <div className="section-heading"><div><p className="eyebrow">收款登錄</p><h2>記錄一筆或多筆收款</h2></div><Badge tone="neutral">合計 {moneyFormatter.format(receiptTotal)}</Badge></div>
-      <p>在社員旁邊填入本次收到的金額，可以一次分配給多筆應收；少於未收金額就是部分收款。</p>
-      <ActionForm onSubmit={recordReceipt}>
-        <div className={styles.formGrid}><Field label="收款日期"><Input type="date" value={receivedOn} onChange={(event) => setReceivedOn(event.target.value)} required disabled={pending !== null} /></Field><Field label="收款方式"><Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as DuesFinancePaymentMethod)} disabled={pending !== null}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field><Field label="核對備註（選填）"><Input value={referenceNote} onChange={(event) => setReferenceNote(event.target.value)} maxLength={500} placeholder="例如：轉帳末五碼" disabled={pending !== null} /></Field></div>
-        <div className={styles.receiptList}>{ledger.receivables.filter((entry) => entry.outstandingAmount > 0).map((receivable) => <label className={styles.receiptRow} key={receivable.receivableId}><span><strong>{receivable.memberDisplayName}</strong><small>未收 {moneyFormatter.format(receivable.outstandingAmount)}</small></span><Input type="number" min="1" max={String(receivable.outstandingAmount)} step="1" value={receiptAmounts[receivable.receivableId] ?? ""} onChange={(event) => setReceiptAmounts((current) => ({ ...current, [receivable.receivableId]: event.target.value }))} placeholder="本次收款" disabled={pending !== null} /></label>)}</div>
-        <Button type="submit" disabled={pending !== null || ledger.receivables.every((entry) => entry.outstandingAmount === 0)}>登錄收款</Button>
-      </ActionForm>
-    </Card>}
+      {ledger.receivables.length === 0 ? <Card><p>本年度尚未建立應收資料。可以先在「年度設定」設好預設金額，再產生年度應收。</p></Card> : <Card className={styles.roster}>
+        <div className={styles.rosterTools}>
+          <Input
+            aria-label="搜尋社員"
+            value={rosterQuery}
+            onChange={(event) => setRosterQuery(event.target.value)}
+            placeholder="搜尋社員姓名"
+            className={styles.rosterSearch}
+          />
+          <div className={styles.filterChips} role="group" aria-label="篩選社費狀態">
+            {rosterFilters.map((filter) => <button
+              key={filter.key}
+              type="button"
+              className={`${styles.chip} ${rosterFilter === filter.key ? styles.chipOn : ""}`}
+              aria-pressed={rosterFilter === filter.key}
+              onClick={() => setRosterFilter(filter.key)}
+            >{filter.label} {filter.count}</button>)}
+          </div>
+          {permissions.canManage && <label className={styles.batchToggle}>
+            <input type="checkbox" checked={batchMode} onChange={(event) => { setBatchMode(event.target.checked); setOpenReceipt(null); }} />
+            <span>一次收多筆</span>
+          </label>}
+        </div>
+
+        {/* 批次是同一份名單的另一種操作方式，不是另一份名單。對整批匯入時它是對的
+            工具，但那一年發生幾次；實際發生的是一個人、一筆錢。 */}
+        {batchMode && permissions.canManage ? <ActionForm onSubmit={recordReceipt} className={styles.batchForm}>
+          <div className={styles.formGrid}>
+            <Field label="收款日期"><Input type="date" value={receivedOn} onChange={(event) => setReceivedOn(event.target.value)} required disabled={pending !== null} /></Field>
+            <Field label="收款方式"><Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as DuesFinancePaymentMethod)} disabled={pending !== null}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+            <Field label="核對備註（選填）"><Input value={referenceNote} onChange={(event) => setReferenceNote(event.target.value)} maxLength={500} placeholder="例如：轉帳末五碼" disabled={pending !== null} /></Field>
+          </div>
+          <div className={styles.receiptList}>{visibleReceivables.filter((entry) => entry.outstandingAmount > 0).map((receivable) => <label className={styles.receiptRow} key={receivable.receivableId}>
+            <span><strong>{receivable.memberDisplayName}</strong><small>未收 {moneyFormatter.format(receivable.outstandingAmount)}</small></span>
+            <Input type="number" min="1" max={String(receivable.outstandingAmount)} step="1" value={receiptAmounts[receivable.receivableId] ?? ""} onChange={(event) => setReceiptAmounts((current) => ({ ...current, [receivable.receivableId]: event.target.value }))} placeholder="本次收款" disabled={pending !== null} />
+          </label>)}</div>
+          <Button type="submit" disabled={pending !== null || receiptTotal <= 0}>登錄收款 · 合計 {moneyFormatter.format(receiptTotal)}</Button>
+        </ActionForm> : <ul className={styles.rosterList}>
+          {visibleReceivables.length === 0 ? <li className={styles.rosterEmpty}>沒有符合的社員。</li> : visibleReceivables.map((receivable) => <li className={styles.rosterItem} key={receivable.receivableId}>
+            <div className={styles.rosterRow}>
+              <strong className={styles.rosterName}>{receivable.memberDisplayName}</strong>
+              <span className={styles.rosterFigures}>
+                應收 {moneyFormatter.format(receivable.receivableAmount)}
+                {receivable.receivedAmount > 0 && receivable.outstandingAmount > 0 && ` · 已收 ${moneyFormatter.format(receivable.receivedAmount)}`}
+                {receivable.outstandingAmount > 0 && ` · 未收 ${moneyFormatter.format(receivable.outstandingAmount)}`}
+              </span>
+              {receivable.outstandingAmount === 0
+                ? <Badge tone="success">已收清</Badge>
+                : permissions.canManage
+                  ? <Button
+                      type="button"
+                      className="button-secondary"
+                      disabled={pending !== null}
+                      aria-expanded={openReceipt === receivable.receivableId}
+                      onClick={() => openRowReceipt(receivable.receivableId, receivable.outstandingAmount)}
+                    >收款</Button>
+                  : <Badge tone={receivable.status === "partial" ? "warning" : "neutral"}>{receivableStatusLabels[receivable.status]}</Badge>}
+            </div>
+
+            {/* 金額預填未收額、日期預設今天、收款方式沿用上次 —— 全額繳清是最常見的
+                情況，而它現在是點兩下、零打字。 */}
+            {openReceipt === receivable.receivableId && <ActionForm className={styles.rowReceipt} onSubmit={(event) => submitRowReceipt(event, receivable.receivableId)}>
+              <div className={styles.formGrid}>
+                <Field label="本次收款"><Input type="number" min="1" max={String(receivable.outstandingAmount)} step="1" value={rowAmount} onChange={(event) => setRowAmount(event.target.value)} required autoFocus disabled={pending !== null} /></Field>
+                <Field label="收款日期"><Input type="date" value={receivedOn} onChange={(event) => setReceivedOn(event.target.value)} required disabled={pending !== null} /></Field>
+                <Field label="收款方式"><Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as DuesFinancePaymentMethod)} disabled={pending !== null}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+                <Field label="核對備註（選填）"><Input value={referenceNote} onChange={(event) => setReferenceNote(event.target.value)} maxLength={500} placeholder="例如：轉帳末五碼" disabled={pending !== null} /></Field>
+              </div>
+              <div className={styles.rowReceiptActions}>
+                <Button type="submit" disabled={pending !== null}>確認收款</Button>
+                <Button type="button" className="button-secondary" disabled={pending !== null} onClick={() => setOpenReceipt(null)}>取消</Button>
+              </div>
+            </ActionForm>}
+
+            {permissions.canManage && receivable.status !== "paid" && <details className={styles.rowDetails}>
+              <summary>調整應收金額</summary>
+              <ActionForm onSubmit={adjustReceivable}>
+                <input type="hidden" name="receivableId" value={receivable.receivableId} />
+                <Field label="調整金額"><Input name="amountDelta" type="number" step="1" min={String(-receivable.receivableAmount + receivable.receivedAmount)} required placeholder="可填負數" disabled={pending !== null} /></Field>
+                <Field label="原因"><Input name="reason" minLength={2} maxLength={500} required placeholder="例如：減免一部分社費" disabled={pending !== null} /></Field>
+                <Button type="submit" className="button-secondary" disabled={pending !== null}>儲存調整</Button>
+              </ActionForm>
+            </details>}
+          </li>)}
+        </ul>}
+      </Card>}
+    </section>
 
     <section aria-labelledby="dues-receipt-history-heading">
       <div className="section-heading"><div><p className="eyebrow">收款紀錄</p><h2 id="dues-receipt-history-heading">已登錄收款</h2></div><span>{ledger.receipts.length} 筆</span></div>

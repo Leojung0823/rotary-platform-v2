@@ -198,7 +198,7 @@ test("an officer sees finance only in management mode and a member sees only the
   await page.getByTestId("management-card-dues-finance").click();
   await expect(page).toHaveURL(new RegExp(`/clubs/${memberClubId}/dues\\?mode=management$`, "u"));
   await expect(page.getByRole("heading", { name: "社費與核銷" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "每位社員的社費狀態" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "收款名單" })).toBeVisible();
   await expect(page.getByText("本機 E2E 收款")).toBeVisible();
   await expect(page.getByText("本機財務頁面驗收代墊")).toBeVisible();
 
@@ -236,7 +236,7 @@ test("an officer sees finance only in management mode and a member sees only the
     await memberPage.goto(new URL(`/dues?clubId=${memberClubId}&mode=member`, baseURL).toString());
     await expect(memberPage.getByRole("heading", { name: "我的社費" })).toBeVisible();
     await expect(memberPage.getByRole("heading", { name: "應收與收款" })).toBeVisible();
-    await expect(memberPage.getByText("每位社員的社費狀態")).toHaveCount(0);
+    await expect(memberPage.getByText("收款名單")).toHaveCount(0);
     await expect(memberPage.getByRole("heading", { name: "社費與核銷" })).toHaveCount(0);
     await expect(memberPage.getByText("本機 E2E 收款")).toBeVisible();
     await expect(memberPage.getByText("本機財務頁面驗收代墊")).toBeVisible();
