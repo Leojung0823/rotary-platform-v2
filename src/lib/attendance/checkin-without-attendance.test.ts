@@ -115,3 +115,42 @@ describe("the guards read the definition the database runs", () => {
     }
   });
 });
+
+
+describe("不計入出席的活動，兩端的入口都還在", () => {
+  // #164 made check-in work for events that do not count towards attendance,
+  // and every function involved agrees -- open_event_checkin,
+  // open_dynamic_event_checkin and check_in_to_event_by_location never ask.
+  //
+  // Only the two buttons did. The officer's 管理簽到 was hidden, so the session
+  // could not be opened; the member's 本人簽到 was hidden, so there was nowhere
+  // to go. Both halves of the feature were unreachable for exactly the events
+  // #164 existed to serve, and it read as 「找不到簽到的方法」.
+  const management = readFileSync("src/components/events/event-management-panel.tsx", "utf8");
+  const memberEvents = readFileSync("src/app/(authenticated)/events/page.tsx", "utf8");
+
+  function conditionBefore(source: string, anchor: string) {
+    const at = source.indexOf(anchor);
+    expect(at, `${anchor} is gone`).toBeGreaterThan(-1);
+    // Anchored on the rendered element, not on the label: comments in these
+    // files quote the labels, and indexOf lands inside one.
+    return source.slice(source.lastIndexOf("{event.status ===", at), at);
+  }
+
+  it("lets an officer open check-in on an event that does not count", () => {
+    expect(conditionBefore(management, ">管理簽到</Link>"), "管理簽到 is hidden unless the event counts")
+      .not.toContain("counts_for_attendance");
+  });
+
+  it("lets a member reach check-in for one", () => {
+    expect(conditionBefore(memberEvents, 'href="/events/checkin">本人簽到'), "本人簽到 is hidden unless the event counts")
+      .not.toContain("counts_for_attendance");
+  });
+
+  it("matches what the database allows", () => {
+    for (const name of ["open_event_checkin", "open_dynamic_event_checkin", "check_in_to_event_by_location"]) {
+      expect(latestDefinition(name), `${name} gained a rule the buttons were copying`)
+        .not.toContain("counts_for_attendance");
+    }
+  });
+});
