@@ -47,7 +47,8 @@ insert into public.club_events (
 ) values
   ('89000000-0000-4000-8000-000000000001', '59000000-0000-4000-8000-000000000001', 'regular_meeting', 'GPS 有座標活動', now() + interval '1 hour', now() + interval '3 hours', now() + interval '30 minutes', true, 'published', 25.033964, 121.564468, '39000000-0000-0000-0000-000000000001', '39000000-0000-0000-0000-000000000001', now()),
   ('89000000-0000-4000-8000-000000000002', '59000000-0000-4000-8000-000000000001', 'regular_meeting', 'GPS 無座標活動', now() + interval '1 hour', now() + interval '3 hours', now() + interval '30 minutes', true, 'published', null, null, '39000000-0000-0000-0000-000000000001', '39000000-0000-0000-0000-000000000001', now()),
-  ('89000000-0000-4000-8000-000000000003', '59000000-0000-4000-8000-000000000002', 'regular_meeting', 'GPS 外社活動', now() + interval '1 hour', now() + interval '3 hours', now() + interval '30 minutes', true, 'published', 25.033964, 121.564468, '39000000-0000-0000-0000-000000000001', '39000000-0000-0000-0000-000000000001', now());
+  ('89000000-0000-4000-8000-000000000003', '59000000-0000-4000-8000-000000000002', 'regular_meeting', 'GPS 外社活動', now() + interval '1 hour', now() + interval '3 hours', now() + interval '30 minutes', true, 'published', 25.033964, 121.564468, '39000000-0000-0000-0000-000000000001', '39000000-0000-0000-0000-000000000001', now()),
+  ('89000000-0000-4000-8000-000000000004', '59000000-0000-4000-8000-000000000001', 'regular_meeting', 'GPS 還沒到時間的活動', now() + interval '5 hours', now() + interval '7 hours', now() + interval '4 hours', true, 'published', 25.033964, 121.564468, '39000000-0000-0000-0000-000000000001', '39000000-0000-0000-0000-000000000001', now());
 
 -- Distance helper must be a real great-circle metric, not a placeholder.
 do $$
@@ -84,15 +85,20 @@ begin
   end;
 end $$;
 
--- No session open yet: even a member standing at the venue cannot check in.
+-- 定位簽到不再等場次被開啟 —— 場次是 QR 的東西（一個短效、要輪替、要有人
+-- 關掉的 token），而定位簽到的憑證是定位本身。取代那條規則的是時間窗：
+-- 活動開始前一小時到結束後一小時。
+--
+-- 所以這裡驗的是視窗，不是場次：還沒到時間的活動即使人就站在座標上也不行，
+-- 而視窗內的活動不需要任何人先按下開啟。
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '19000000-0000-0000-0000-000000000002', true);
 do $$
 begin
   begin
     perform public.check_in_to_event_by_location(
-      '59000000-0000-4000-8000-000000000001', '89000000-0000-4000-8000-000000000001', 25.034864, 121.564468);
-    raise exception 'gps check-in succeeded without an active session';
+      '59000000-0000-4000-8000-000000000001', '89000000-0000-4000-8000-000000000004', 25.034864, 121.564468);
+    raise exception 'gps check-in succeeded five hours before the event started';
   exception when invalid_parameter_value then null;
   end;
 end $$;
