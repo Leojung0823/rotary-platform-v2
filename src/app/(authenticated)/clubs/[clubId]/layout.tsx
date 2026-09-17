@@ -15,12 +15,11 @@ export default async function ClubManagementLayout({ children }: { children: Rea
   // route. The child page and its RPC/RLS checks remain the authority; the
   // layout only prevents a member-mode URL from rendering a management page.
   //
-  // Platform mode passes for the same reason. current_has_club_permission
-  // grants superadmin and platform_admin every club permission in its first
-  // clause, so the database has always allowed this -- the layout was refusing
-  // something the rule permits, and the platform console links straight here
-  // with a 管理社員 button. A platform admin was being shown a door and then
-  // told it was not theirs.
+  // Platform mode passes too. A platform admin now carries every club in their
+  // management context -- resolve_my_experience_context reads the platform role,
+  // the way current_has_club_permission always has -- so they arrive here
+  // through the club switcher like anyone else. The mode they arrive in is
+  // still their own, and it is not member mode.
   if (mode !== null && !isManagementMode(mode) && mode !== "platform") redirect("/access-denied");
   return children;
 }

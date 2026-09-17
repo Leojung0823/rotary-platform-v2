@@ -6,15 +6,17 @@ const layout = readFileSync("src/app/(authenticated)/clubs/[clubId]/layout.tsx",
 const console_ = readFileSync("src/app/(authenticated)/platform/clubs/[clubId]/page.tsx", "utf8");
 
 /**
- * Club pages that decide access from the experience context instead of from the
- * database's answer.
+ * Club pages that decide access from the experience context.
  *
- * clubsForExperienceMode returns nothing for a platform admin -- they hold every
- * club permission but belong to no club -- so any page that gates on it refuses
- * them however the layout is configured. 社費 does, and making it stop needs a
- * club context it currently assumes exists; that is a separate change.
+ * This used to be a problem: clubsForExperienceMode returned nothing for a
+ * platform admin, so any page gating on it refused them. That is fixed at the
+ * source -- resolve_my_experience_context now carries every club for a platform
+ * role, the way current_has_club_permission always has -- so gating on the
+ * context and gating on the database now give the same answer.
  *
- * The list exists so the next page cannot quietly join it.
+ * The list stays because it is still worth knowing which pages ask the context
+ * rather than the database: they are the ones that break first if the two ever
+ * drift apart again.
  */
 const contextGatedByDesign = ["dues"];
 
@@ -94,5 +96,36 @@ describe("誰可以進來，由資料庫決定", () => {
       .sort();
     expect(gated, "another club page now refuses a platform admin on its own")
       .toEqual([...contextGatedByDesign].sort());
+  });
+});
+
+describe("平台管理員從社團選擇器進去", () => {
+  // The layout fix let them render the page; it did not give them a way to get
+  // there. clubsForExperienceMode("management") was empty, so the switcher had
+  // nothing to offer and every club page had to be reached by typing a URL.
+  //
+  // Fixed at the source instead of per page: the projection now reads the
+  // platform role, the way current_has_club_permission always has.
+  const projection = latestDefinition("resolve_my_experience_context");
+
+  it("puts every club in a platform admin's managed clubs", () => {
+    const managed = projection.slice(projection.indexOf("managed_clubs as ("), projection.indexOf("managed_only_clubs as ("));
+    expect(managed, "the projection still ignores the platform role")
+      .toMatch(/or public\.current_has_platform_role\(array\['superadmin', 'platform_admin'\]\)/u);
+  });
+
+  it("still requires a real assignment for everyone else", () => {
+    // Widening this to every caller would hand every member every club.
+    const managed = projection.slice(projection.indexOf("managed_clubs as ("), projection.indexOf("managed_only_clubs as ("));
+    expect(managed).toContain("club_operator_permissions");
+    expect(managed).toMatch(/role_key in \('president', 'secretary', 'finance'\)/u);
+  });
+
+  it("says the same thing the permission check says", () => {
+    // One rule, two readers. If these ever name different roles, a platform
+    // admin sees clubs they cannot act in, or acts in clubs they cannot see.
+    const roles = /array\['superadmin', 'platform_admin'\]/u;
+    expect(projection).toMatch(roles);
+    expect(latestDefinition("current_has_club_permission")).toMatch(roles);
   });
 });
