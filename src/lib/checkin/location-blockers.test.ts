@@ -65,22 +65,22 @@ describe("簽到頁要說出這裡為什麼是空的", () => {
       id: "long",
       starts_at: new Date(now.getTime() - 3 * HOUR).toISOString(),
       ends_at: new Date(now.getTime() + 30 * 60_000).toISOString(),
-    })).toBe("session_closed");
+    })).toBe("should_be_open");
   });
 
-  it("names the check-in session once everything on this side checks out", () => {
+  it("says it should be open once everything checks out", () => {
     // The one condition this page cannot see. Saying "everything here is fine"
     // without naming what is left is the answer the page already gave.
     expect(reasonFor({
       id: "e",
       starts_at: new Date(now.getTime() - 30 * 60_000).toISOString(),
       ends_at: new Date(now.getTime() + 90 * 60_000).toISOString(),
-    })).toBe("session_closed");
+    })).toBe("should_be_open");
     expect(reasonFor({
       id: "f",
       starts_at: new Date(now.getTime() + 59 * 60_000).toISOString(),
       ends_at: new Date(now.getTime() + 3 * HOUR).toISOString(),
-    }), "an event inside the window was called too early").toBe("session_closed");
+    }), "an event inside the window was called too early").toBe("should_be_open");
   });
 
   it("puts what someone can act on now at the top", () => {
@@ -117,7 +117,7 @@ describe("只在真的空的時候才解釋", () => {
 
   it("names every reason it can produce", () => {
     const component = readFileSync("src/components/events/location-checkin-diagnosis.tsx", "utf8");
-    for (const reason of ["no_venue", "too_early", "too_late", "session_closed"]) {
+    for (const reason of ["no_venue", "too_early", "too_late", "should_be_open"]) {
       expect(component, `${reason} has no sentence`).toContain(`${reason}:`);
     }
   });

@@ -9,7 +9,7 @@ import type { ClubEvent } from "@/lib/events/page-contract";
 export type LocationCheckinBlocker = Readonly<{
   eventId: string;
   title: string;
-  reason: "no_venue" | "too_early" | "too_late" | "session_closed";
+  reason: "no_venue" | "too_early" | "too_late" | "should_be_open";
 }>;
 
 const HOUR = 60 * 60 * 1000;
@@ -23,11 +23,11 @@ const LOOK_AHEAD_DAYS = 7;
  * Only published events the member can see, within a week either side -- an
  * event next month is not what someone standing at a venue is asking about.
  *
- * `session_closed` is what is left when this side can account for everything it
- * can see: the coordinates are set and the clock is inside the window, so the
- * only remaining condition is the one that lives on the officer's screen. It is
- * named rather than guessed at, because "everything here checks out" without
- * saying what is left is the answer the page already gives.
+ * `should_be_open` is what is left when every condition checks out. Location
+ * check-in no longer waits for an officer to open a session -- it is open for
+ * the length of the window -- so an event in this state is one the member
+ * should be able to check into, and seeing it here means something else is
+ * wrong. Saying that plainly beats sending them to find an officer.
  */
 export function locationCheckinBlockers(
   events: readonly ClubEvent[],
@@ -57,12 +57,12 @@ export function locationCheckinBlockers(
       if (at > ends + HOUR) {
         return { eventId: event.id, title: event.title, reason: "too_late" as const };
       }
-      return { eventId: event.id, title: event.title, reason: "session_closed" as const };
+      return { eventId: event.id, title: event.title, reason: "should_be_open" as const };
     })
     .sort((left, right) => {
       // What is actionable now first: a session someone can open, then the
       // clock, then the events that will never offer it.
-      const rank = { session_closed: 0, too_early: 1, no_venue: 2, too_late: 3 };
+      const rank = { should_be_open: 0, too_early: 1, no_venue: 2, too_late: 3 };
       return rank[left.reason] - rank[right.reason];
     })
     .slice(0, 6);
