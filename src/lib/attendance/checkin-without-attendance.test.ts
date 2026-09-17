@@ -154,3 +154,34 @@ describe("不計入出席的活動，兩端的入口都還在", () => {
     }
   });
 });
+
+
+describe("不要告訴幹部一扇沒有鎖的門是鎖的", () => {
+  // 「此活動未設定計入出席，因此不能開啟簽到。」 sat on the check-in management
+  // page. The button underneath was never disabled, and none of the three RPCs
+  // involved ask about attendance -- so the sentence had been false since #164.
+  // An officer read it and stopped, which is exactly what it was asking them to
+  // do, for a reason that no longer existed.
+  const page = readFileSync("src/app/(authenticated)/events/[eventId]/checkin/page.tsx", "utf8");
+  const rendered = page.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/gu, "");
+
+  it("no longer claims check-in cannot be opened", () => {
+    expect(rendered, "the page still says an event that does not count cannot open check-in")
+      .not.toContain("因此不能開啟簽到");
+  });
+
+  it("still says what not counting means", () => {
+    // Removing the sentence entirely would drop something true: the attendance
+    // rate is what changes, and an officer should know before they open it.
+    expect(rendered).toContain("不計入出席");
+    expect(rendered).toContain("出席率");
+  });
+
+  it("leaves the control that was never disabled alone", () => {
+    // The notice claimed a gate that was not there. Adding one now would make
+    // the old sentence true instead of removing a false one.
+    const controls = readFileSync("src/components/events/dynamic-checkin-controls.tsx", "utf8");
+    expect(controls, "the open button gained the gate the notice used to imply")
+      .not.toContain("counts_for_attendance");
+  });
+});

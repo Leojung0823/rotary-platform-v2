@@ -214,7 +214,14 @@ export default async function EventCheckinManagementPage({
       {errorMessages[query.error] ?? errorMessages.unexpected}
     </div>}
 
-    {!overview.event.counts_for_attendance && <div className="notice notice-info">此活動未設定計入出席，因此不能開啟簽到。</div>}
+    {/* 「此活動未設定計入出席，因此不能開啟簽到」 used to sit here. It was left
+        over from before #164, and by then it was simply untrue: the button
+        below is not disabled, and open_event_checkin, open_dynamic_event_checkin
+        and check_in_to_event_by_location none of them ask about attendance. An
+        officer who read it went away believing a door was locked while it stood
+        open. A notice that says a thing cannot be done has to be a thing that
+        cannot be done. */}
+    {!overview.event.counts_for_attendance && <div className="notice notice-info">此活動不計入出席，簽到仍然可以開啟；簽到紀錄不會計入出席率。</div>}
     {overview.event.status !== "published" && <div className="notice notice-info">活動狀態不是已發布，目前不能新增簽到。</div>}
     {!overview.event.checkin_window_open && <div className="notice notice-info">簽到管理僅允許在活動開始前 24 小時至結束後 24 小時內開啟。</div>}
 
