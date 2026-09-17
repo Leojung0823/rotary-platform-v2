@@ -109,14 +109,23 @@ describe("平台管理員從社團選擇器進去", () => {
   const projection = latestDefinition("resolve_my_experience_context");
 
   it("puts every club in a platform admin's managed clubs", () => {
-    const managed = projection.slice(projection.indexOf("managed_clubs as ("), projection.indexOf("managed_only_clubs as ("));
+    // Anchored on "\n  managed_clubs as (" -- the bare name also matches inside
+    // assigned_managed_clubs, and slicing from there reads the wrong CTE.
+    const managed = projection.slice(
+      projection.indexOf("\n  managed_clubs as ("),
+      projection.indexOf("\n  managed_only_clubs as ("),
+    );
+    expect(managed.length, "the widened set is gone").toBeGreaterThan(100);
     expect(managed, "the projection still ignores the platform role")
-      .toMatch(/or public\.current_has_platform_role\(array\['superadmin', 'platform_admin'\]\)/u);
+      .toMatch(/current_has_platform_role\(array\['superadmin', 'platform_admin'\]\)/u);
   });
 
   it("still requires a real assignment for everyone else", () => {
     // Widening this to every caller would hand every member every club.
-    const managed = projection.slice(projection.indexOf("managed_clubs as ("), projection.indexOf("managed_only_clubs as ("));
+    const managed = projection.slice(
+      projection.indexOf("assigned_managed_clubs as ("),
+      projection.indexOf("\n  managed_clubs as ("),
+    );
     expect(managed).toContain("club_operator_permissions");
     expect(managed).toMatch(/role_key in \('president', 'secretary', 'finance'\)/u);
   });
@@ -127,5 +136,47 @@ describe("平台管理員從社團選擇器進去", () => {
     const roles = /array\['superadmin', 'platform_admin'\]/u;
     expect(projection).toMatch(roles);
     expect(latestDefinition("current_has_club_permission")).toMatch(roles);
+  });
+});
+
+describe("進得去，不等於一登入就在裡面", () => {
+  // Giving a platform admin every club made can_manage true, and default_mode
+  // stops at 'management' before it reaches 'platform' -- so they landed inside
+  // some club's management shell instead of the platform workbench. A browser
+  // test caught it, reading 社務管理模式 where 平台管理模式 belonged.
+  //
+  // The fix is not to reorder the cases: someone who is both a club officer and
+  // a platform admin should still land in management. It is that the two
+  // questions are different. 「有人指派我管這個社」 decides where you land;
+  // 「我管得了」 decides what the switcher offers.
+  const projection = latestDefinition("resolve_my_experience_context");
+
+  it("lands a platform admin on the platform workbench", () => {
+    expect(projection, "the default mode is still decided by can_manage")
+      .toMatch(/when manages_by_assignment then 'management'/u);
+    expect(projection).toMatch(/when has_platform_access then 'platform'/u);
+  });
+
+  it("decides that from assignment, not from the widened set", () => {
+    expect(projection).toMatch(/exists \(select 1 from assigned_managed_clubs\) as manages_by_assignment/u);
+    // The assigned set must not itself consult the platform role -- that is the
+    // whole point of splitting them.
+    const assigned = projection.slice(
+      projection.indexOf("assigned_managed_clubs as ("),
+      projection.indexOf("\n  managed_clubs as ("),
+    );
+    expect(assigned.length, "the assigned set is gone").toBeGreaterThan(100);
+    expect(assigned, "the platform role leaks into the club-officer question")
+      .not.toContain("current_has_platform_role");
+  });
+
+  it("still offers the management mode it can use", () => {
+    // Landing on the workbench must not mean the club shell is unreachable.
+    expect(projection).toMatch(/case when can_manage then 'management'::text end/u);
+  });
+
+  it("keeps the switcher fed from the widened set", () => {
+    expect(projection).toMatch(/\n  managed_clubs as \([\s\S]{0,200}from assigned_managed_clubs/u);
+    expect(projection).toMatch(/current_has_platform_role\(array\['superadmin', 'platform_admin'\]\)/u);
   });
 });

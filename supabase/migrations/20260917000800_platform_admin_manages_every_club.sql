@@ -75,7 +75,7 @@ begin
     order by club.club_name, club.id
     limit 100
   ),
-  managed_clubs as (
+  assigned_managed_clubs as (
     select
       club.id as club_id,
       club.club_code,
@@ -105,16 +105,27 @@ begin
         and assignment.assignment_status = 'active'
         and assignment.role_key in ('president', 'secretary', 'finance')
     )
-    -- 平台管理員管得了每一個社。
-    --
-    -- current_has_club_permission 的第一個條件就是平台角色，所以資料庫一直都
-    -- 是這樣算的 —— 只有這份投影不是，於是平台管理員的社團選擇器是空的，
-    -- 每一條社務管理的路都進不去，而平台端的頁面還放著指過去的按鈕。
-    --
-    -- 放在這裡而不是在 layout 特例：脈絡要說出資料庫實際允許什麼，否則每一個
-    -- 從脈絡推導「我能管哪些社」的頁面都要各自再補一次例外。
-    or public.current_has_platform_role(array['superadmin', 'platform_admin'])
     order by club.club_name, club.id
+    limit 100
+  ),
+  -- 平台管理員管得了每一個社。
+  --
+  -- current_has_club_permission 的第一個條件就是平台角色，所以資料庫一直都是
+  -- 這樣算的 —— 只有這份投影不是，於是平台管理員的社團選擇器是空的，每一條
+  -- 社務管理的路都進不去，而平台端的頁面還放著指過去的按鈕。
+  --
+  -- 和「靠指派管理」分開，因為兩者決定的是不同的事：這一份決定選擇器裡有
+  -- 哪些社，assigned_managed_clubs 決定登入之後預設落在哪個模式。合成一個的
+  -- 話，平台管理員一登入就會掉進某一個社的管理介面，而不是平台工作台。
+  managed_clubs as (
+    select assigned.club_id, assigned.club_code, assigned.club_name
+    from assigned_managed_clubs as assigned
+    union
+    select club.id, club.club_code, club.club_name
+    from public.clubs as club
+    where club.club_status in ('provisioning', 'active')
+      and public.current_has_platform_role(array['superadmin', 'platform_admin'])
+    order by 3, 1
     limit 100
   ),
   managed_only_clubs as (
@@ -131,12 +142,16 @@ begin
     select
       exists (select 1 from member_clubs) as has_active_membership,
       exists (select 1 from managed_clubs) as can_manage,
+      -- 預設模式看的是「有人指派我管這個社」，不是「我管得了」。平台管理員
+      -- 管得了每一個社，但他登入之後該落在平台工作台。
+      exists (select 1 from assigned_managed_clubs) as manages_by_assignment,
       public.current_has_platform_role(array['superadmin', 'platform_admin']) as has_platform_access
   ),
   projection as (
     select
       flags.has_active_membership,
       flags.can_manage,
+      flags.manages_by_assignment,
       flags.has_platform_access,
       coalesce((
         select jsonb_agg(
@@ -171,7 +186,7 @@ begin
     'managed_only_clubs', managed_only_clubs,
     'default_mode', case
       when has_active_membership then 'member'
-      when can_manage then 'management'
+      when manages_by_assignment then 'management'
       when has_platform_access then 'platform'
       else null
     end,
