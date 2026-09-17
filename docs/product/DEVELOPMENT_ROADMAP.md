@@ -13,6 +13,7 @@
 - Staging Release plan `35177783006` 與 Go-Live `35177857319` 均使用同一個 exact SHA 並成功；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部通過。
 - staging health 為 `status=ok`、revision `49d419315bb2`、`configuration=true`、`database=true`、`issues=[]`；production 沒有修改。
 - 本次 exact SHA 也包含 `20260917000300_bank_statement_lines.sql` 與 `20260917000400_location_checkin_window.sql`；這些是並行功能合併後一併發布的最新主線內容。下一批仍是 E-03、E-10、E-06，再處理 E-07、E-05、E-11；E-08 production 與 E-09 recovery email 仍須另外決策。
+- hosted 唯讀抽查已確認社費社員頁與社務管理頁各自顯示正確的資料／操作範圍；服務計劃管理端的草稿沒有出現在社員端。因測試帳號同時具管理身份，仍不把這兩項的完整角色負向矩陣標成完成。
 
 ## 2026-09-17 文件同步基線（歷史；已被上方最新基線取代）
 

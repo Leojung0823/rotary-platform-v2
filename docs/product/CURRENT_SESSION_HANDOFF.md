@@ -11,6 +11,7 @@
 - Staging Release plan `35177783006` 與 Go-Live `35177857319` 全部成功，包含 migration apply、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance；health `issues=[]`，production 沒有修改。
 - 這個版本包含效能提交 `f4cddb6`，已停止平台扶輪社清單對每個目的頁的自動 RSC 預載；也包含並行合併的社費對帳單與定位簽到版本調整。
 - 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 diff check 通過；`verify:db` 因共用本機 Supabase 被其他 worktree 同時改動，在 `member_home_audience.sql` 發生 race，不能視為通過。
+- hosted 唯讀抽查確認社員社費頁只顯示本人資料與代墊申請，管理頁才顯示年度設定／收款／核銷工具；服務計劃管理端的草稿仍被社員端隱藏。測試帳號同時具管理身份，這不是一般社員負向驗收證據，也沒有提交財務資料。
 - 下一位代理先處理 E-03、E-10、E-06；仍不能把既有 LEO 配對當作乾淨 follow 證據，也不能把平台管理員頁的單次 LCP 觀測當成登入後社員／社務頁的前後因果比較。E-05、E-07、E-08、E-11 需要產品／真人／外部平台，E-09 仍暫緩。
 
 ## 2026-09-17 文件同步狀態（歷史；已被上方最新狀態取代）

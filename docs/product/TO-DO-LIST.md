@@ -18,6 +18,8 @@
 - staging `/api/health` 現場回報 `status=ok`、`revision=49d419315bb2`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
 - `f4cddb6` 已讓平台扶輪社清單的「建立扶輪社／查看」連結停止自動預載每個目的頁，減少無用的 RSC 背景請求；已部署並記錄在 `PERFORMANCE_IMPROVEMENT_LOG.md`。本輪沒有手動觸發或重跑 CI／Browser Smoke。
 - 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 `git diff --check` 通過；`npm run verify:db` 受到共用本機 Supabase 被其他 worktree 同時改動的 race 影響，在 `member_home_audience.sql` 報錯，未把它誤記為通過，也沒有重置共用資料庫。
+- 2026-09-17 hosted 唯讀驗收補充：社員模式的 `/dues?...&mode=member` 只顯示自己的應收、收款與代墊申請；社務管理模式的 `/clubs/{clubId}/dues?mode=management` 顯示年度設定、收款名單、收款紀錄與代墊管理。這次帳號同時具管理身份，沒有用它宣稱一般社員的負向權限已完成，也沒有送出任何財務 mutation。
+- 2026-09-17 hosted 服務計劃補充：管理頁已有可儲存草稿／發布的四大服務面向，社員頁目前顯示「本年度的服務計劃尚未發布」；草稿未外洩已驗證，但正式內容發布與另一個純社員帳號的負向驗收仍未完成。
 - 目前尚未因這次部署結案的外部待辦仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。E-01、E-02、E-04、E-12 維持已完成。
 
 ## 2026-09-17 文件同步基線（歷史；已被上方最新基線取代）
