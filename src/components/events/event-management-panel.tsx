@@ -103,7 +103,13 @@ export function EventManagementPanel({
               hasCover={Boolean(event.cover_image_path)}
             />}
 
-            {event.status === "published" && event.counts_for_attendance && <Link
+            {/* Not gated on counts_for_attendance. #164 made check-in work for
+                events that do not count towards attendance -- but this button
+                still asked, so an officer who unticked 計入出席 had no way to
+                open the check-in session at all, and both QR and 定位簽到 need
+                that session. The member's 本人簽到 was gated the same way, so
+                neither side of the feature was reachable for such an event. */}
+            {event.status === "published" && <Link
               className="button"
               href={`/events/${encodeURIComponent(event.id)}/checkin?clubId=${encodeURIComponent(selectedClub.club_id)}&mode=management`}
             >管理簽到</Link>}
