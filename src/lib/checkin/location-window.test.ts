@@ -5,21 +5,31 @@ import { definedFunctionNames, latestDefinition } from "@/lib/attendance/latest-
 const panel = readFileSync("src/components/events/location-checkin-panel.tsx", "utf8");
 const createForm = readFileSync("src/components/events/event-create-form.tsx", "utf8");
 
-describe("定位簽到只在活動開始前後一小時開放", () => {
+describe("定位簽到從活動開始前一小時，開到結束後一小時", () => {
   // It used to be 24 hours before the start to 24 hours after the end. A member
   // could "check in at the venue" from home the previous afternoon, which is
   // the one thing location check-in exists to prevent.
 
-  it("opens an hour before the start and closes an hour after it", () => {
-    const rule = latestDefinition("event_location_checkin_is_open");
-    expect(rule).toContain("now() >= p_starts_at - interval '1 hour'");
-    expect(rule).toContain("now() <= p_starts_at + interval '1 hour'");
+  it("opens an hour before the event starts", () => {
+    expect(latestDefinition("event_location_checkin_is_open"))
+      .toContain("now() >= p_starts_at - interval '1 hour'");
   });
 
-  it("measures the window from the start, not the end", () => {
-    // A three hour meeting would otherwise stay open for four.
-    expect(latestDefinition("event_location_checkin_is_open"), "the window reaches past the event")
-      .not.toContain("ends_at");
+  it("stays open until an hour after it ends", () => {
+    // The two ends measure different things on purpose. Closing an hour after
+    // the *start* would shut a two hour meeting halfway through, and someone
+    // who arrives late is still at the venue.
+    expect(latestDefinition("event_location_checkin_is_open"))
+      .toContain("now() <= p_ends_at + interval '1 hour'");
+    expect(latestDefinition("event_location_checkin_is_open"), "both ends are measured from the start")
+      .not.toMatch(/p_starts_at \+ interval/u);
+  });
+
+  it("is given both ends of the event to decide with", () => {
+    // A window that closes at the end cannot be computed from the start alone;
+    // the signature has to carry it.
+    expect(latestDefinition("event_location_checkin_is_open"))
+      .toMatch(/p_starts_at timestamptz,\s*p_ends_at timestamptz/u);
   });
 });
 
@@ -34,7 +44,7 @@ describe("看得到的，就簽得下去", () => {
   it("has both sides ask the one rule", () => {
     for (const name of readers) {
       expect(latestDefinition(name), `${name} decides the window for itself`)
-        .toContain("public.event_location_checkin_is_open(event.starts_at)");
+        .toContain("public.event_location_checkin_is_open(event.starts_at, event.ends_at)");
     }
   });
 
@@ -78,14 +88,14 @@ describe("看得到的，就簽得下去", () => {
 
 describe("時間窗變窄之後，它是「什麼都沒有」最常見的理由", () => {
   it("says so where a member is looking at nothing", () => {
-    expect(panel).toContain("活動開始前後一小時內");
+    expect(panel).toContain("活動開始前一小時，到結束後一小時");
     expect(panel, "the member is left without the alternative that does work")
       .toContain("QR");
   });
 
   it("says so where the officer sets the coordinates", () => {
     // The two screens describe one setting; they must not disagree about it.
-    expect(createForm).toContain("活動開始前後一小時");
+    expect(createForm).toContain("活動開始前一小時到結束後一小時");
     expect(createForm).toContain("場地 200 公尺內");
   });
 });

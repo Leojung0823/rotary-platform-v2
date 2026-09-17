@@ -1,20 +1,21 @@
 begin;
 
--- 定位簽到改成「活動開始前後一小時」。
+-- 定位簽到改成「活動開始前一小時，到結束後一小時」。
 --
 -- 原本是「開始前 24 小時到結束後 24 小時」。那個窗太寬：一場晚上的例會，
 -- 前一天下午人在家裡就簽得到了 —— 而定位簽到唯一的意義是「人真的在現場」。
 --
+-- 窗的兩端量的是不同的東西，而這是刻意的：開頭量到 starts_at，因為提早太多
+-- 就不算在現場；結尾量到 ends_at，因為晚到的人整場都還在現場。只用 starts_at
+-- 兩端對稱的話，一場兩小時的例會過了一半就不能簽了。
+--
 -- 這條規則本來抄在兩個地方：清單問一次，實際簽到再問一次。兩份各自寫著
 -- 同一個 interval，而它們哪天不一致的時候，社員會看到一個簽不下去的活動，
 -- 或者更糟：簽得下去卻不在清單上。收成一支函式，兩邊都問它。
---
--- 一個直接的後果要講清楚：例會 18:30 開始、20:30 結束的話，19:30 之後就
--- 不能再用定位簽到了。晚到的人要改用 QR。這是「前後一小時」這個決定本身
--- 帶來的，不是實作的取捨。
 
 create or replace function public.event_location_checkin_is_open(
-  p_starts_at timestamptz
+  p_starts_at timestamptz,
+  p_ends_at timestamptz
 )
 returns boolean
 language sql
@@ -22,11 +23,11 @@ stable
 set search_path = pg_catalog
 as $$
   select now() >= p_starts_at - interval '1 hour'
-     and now() <= p_starts_at + interval '1 hour'
+     and now() <= p_ends_at + interval '1 hour'
 $$;
 
-revoke all on function public.event_location_checkin_is_open(timestamptz) from public, anon;
-grant execute on function public.event_location_checkin_is_open(timestamptz) to authenticated;
+revoke all on function public.event_location_checkin_is_open(timestamptz, timestamptz) from public, anon;
+grant execute on function public.event_location_checkin_is_open(timestamptz, timestamptz) to authenticated;
 
 
 create or replace function public.list_my_location_checkin_events()
@@ -81,7 +82,7 @@ begin
      -- never invited to, in the one list that then lets them check into it.
      and public.event_includes_current_member(event.id)
      and event.venue_latitude is not null
-     and public.event_location_checkin_is_open(event.starts_at)
+     and public.event_location_checkin_is_open(event.starts_at, event.ends_at)
     join public.event_checkin_sessions as session
       on session.event_id = event.id
      and session.club_id = event.club_id
@@ -131,7 +132,7 @@ begin
   where event.id = p_event_id
     and event.club_id = p_club_id
     and event.event_status = 'published'
-    and public.event_location_checkin_is_open(event.starts_at)
+    and public.event_location_checkin_is_open(event.starts_at, event.ends_at)
   for share of event;
   if not found then
     raise exception using errcode = '22023', message = 'event_not_checkin_eligible';
