@@ -256,6 +256,14 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await cancelForm.getByLabel("取消原因").fill("staging 活動驗收完成，保留為可回收測試資料。");
     await cancelForm.getByRole("button", { name: "取消活動" }).click();
     await expect(page).toHaveURL(/success=event_cancelled/u, { timeout: 30_000 });
+    // Cancelled events are intentionally filed inside a collapsed archive so
+    // the live management list stays scannable. Open that archive before
+    // asserting the cancelled event's final state.
+    const archiveFold = page.locator("details.archive-fold").filter({
+      has: page.locator("article.card").filter({ hasText: eventTitle }),
+    });
+    await expect(archiveFold).toHaveCount(1);
+    await archiveFold.locator("summary").click();
     eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
     await expect(eventCard.getByText("已取消", { exact: true })).toBeVisible();
     await expect(eventCard.getByRole("button", { name: "取消活動" })).toHaveCount(0);
