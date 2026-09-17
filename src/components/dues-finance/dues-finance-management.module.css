@@ -85,3 +85,5 @@
   .rosterRow > button, .rosterRow > span:last-child { width: 100%; }
   .rowReceiptActions button { width: 100%; }
 }
+.rememberKey { display: flex; align-items: flex-start; gap: 9px; min-height: 44px; color: var(--muted); font-size: var(--text-small); }
+.rememberKey input { margin-top: 3px; flex: 0 0 auto; }

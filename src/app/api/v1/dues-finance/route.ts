@@ -93,6 +93,14 @@ function rpcArgs(mutation: DuesFinanceMutation) {
         p_approval_note: mutation.approvalNote,
         p_idempotency_key: mutation.idempotencyKey,
       }] as const;
+    case "set_remit_key":
+      return ["set_membership_remit_key", {
+        p_club_id: mutation.clubId,
+        p_membership_id: mutation.membershipId,
+        p_key_kind: mutation.keyKind,
+        p_key_value: mutation.keyValue,
+        p_note: mutation.note,
+      }] as const;
     case "reverse_reconciliation":
       return ["reverse_dues_reconciliation", {
         p_club_id: mutation.clubId,
