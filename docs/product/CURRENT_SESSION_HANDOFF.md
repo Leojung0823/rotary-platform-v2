@@ -7,7 +7,7 @@
 
 現場核對結果：
 
-- 現場 `origin/main` 為 `2512d8d91ea68840bf0ec13feae030fe0821d6b5`，目前沒有 open PR；這是文件同步提交，staging 產品 runtime 仍為已部署的 `49d419315bb2`（產品程式 SHA `49d419315bb2507960d48d741231d9f8faef435a`）。
+- 本節所依據的產品程式基準是已部署的 `49d419315bb2507960d48d741231d9f8faef435a`，staging runtime 為 `49d419315bb2`；後續 `main` 的文件同步不會改變 staging runtime。最新主線 SHA 與 open PR 請現場核對。
 - Staging Release plan `35177783006` 與 Go-Live `35177857319` 全部成功，包含 migration apply、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance；health `issues=[]`，production 沒有修改。
 - 這個版本包含效能提交 `f4cddb6`，已停止平台扶輪社清單對每個目的頁的自動 RSC 預載；也包含並行合併的社費對帳單與定位簽到版本調整。
 - 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 diff check 通過；`verify:db` 因共用本機 Supabase 被其他 worktree 同時改動，在 `member_home_audience.sql` 發生 race，不能視為通過。

@@ -8,7 +8,7 @@
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄。
 
-- 現場 `origin/main` 為 `2512d8d91ea68840bf0ec13feae030fe0821d6b5`，沒有 open PR；這是文件同步提交，staging 產品 runtime 仍為已部署的 `49d419315bb2`（產品程式 SHA `49d419315bb2507960d48d741231d9f8faef435a`）。
+- 本節所依據的產品程式基準是已部署的 `49d419315bb2507960d48d741231d9f8faef435a`，staging runtime 為 `49d419315bb2`；後續 `main` 的文件同步不會改變 staging runtime。最新主線 SHA 與 open PR 請現場核對。
 - `main` 已包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce`：平台扶輪社清單不再預載每個社團詳細頁／建立頁，避免無用的 RSC 背景請求。
 - Staging Release plan `35177783006` 與 Go-Live `35177857319` 均使用同一個 exact SHA 並成功；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部通過。
 - staging health 為 `status=ok`、revision `49d419315bb2`、`configuration=true`、`database=true`、`issues=[]`；production 沒有修改。
