@@ -7,7 +7,7 @@
 
 現場核對結果：
 
-- GitHub `origin/main`：`cdb835b736cb91a3888bd7241ba96c653a0dc555`；PR #193 已一般 merge，沒有 open PR。
+- GitHub `origin/main`：`b3dbede45188aae0cc1885bae3d33a7cdcbe689a`；PR #193 已一般 merge，沒有 open PR。這是本次文件同步後的主線 SHA；staging 產品 runtime 仍是 `cdb835b`。
 - 這次交付把社員自己的社費入口移到 `/me?mode=member`，把「申請代墊核銷」移到 `/interact`，並以 `#advance-application` 保留直達申請卡；社員首頁不再有重複入口。變更檔案包含 `src/app/(authenticated)/me/page.tsx`、`src/app/(authenticated)/interact/page.tsx`、`src/components/dues-finance/dues-finance-member.tsx`、對應 E2E 與單元測試。
 - Staging Release `35174571980` plan 成功；預覽 migration 為 `20260917000200_membership_remit_keys.sql`。Staging Go-Live `35174879274` 成功套用 migration、部署、等待 exact revision、HTTPS smoke 與 hosted member acceptance。
 - staging `/api/health`：`status=ok`、`revision=cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。

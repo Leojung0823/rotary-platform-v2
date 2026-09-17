@@ -8,7 +8,7 @@
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄。
 
-- `origin/main` 為 `cdb835b736cb91a3888bd7241ba96c653a0dc555`；PR #193 已一般 merge，現在沒有 open PR。
+- `origin/main` 為 `b3dbede45188aae0cc1885bae3d33a7cdcbe689a`；PR #193 已一般 merge，現在沒有 open PR。這是本次文件同步後的主線 SHA；staging 產品 runtime 仍是 `cdb835b`。
 - 社員的財務入口已按產品分區：`/me?mode=member` 放「我的社費」，`/interact` 放「申請代墊核銷」，並移除社員首頁重複入口。既有 feature flag、登入、角色、RLS 與社團隔離沒有放寬。
 - Staging Release plan `35174571980` 與 Go-Live `35174879274` 使用同一個 exact SHA，migration `20260917000200_membership_remit_keys.sql` 已套用；Go-Live 的 migration、部署、HTTPS smoke 與 hosted member acceptance 均成功。
 - staging health 為 `status=ok`、revision `cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
