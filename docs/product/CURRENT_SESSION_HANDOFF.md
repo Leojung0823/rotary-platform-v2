@@ -3,6 +3,17 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-17 最新狀態（社費導覽修正已發布；本節優先）
+
+現場核對結果：
+
+- GitHub `origin/main`：`cdb835b736cb91a3888bd7241ba96c653a0dc555`；PR #193 已一般 merge，沒有 open PR。
+- 這次交付把社員自己的社費入口移到 `/me?mode=member`，把「申請代墊核銷」移到 `/interact`，並以 `#advance-application` 保留直達申請卡；社員首頁不再有重複入口。變更檔案包含 `src/app/(authenticated)/me/page.tsx`、`src/app/(authenticated)/interact/page.tsx`、`src/components/dues-finance/dues-finance-member.tsx`、對應 E2E 與單元測試。
+- Staging Release `35174571980` plan 成功；預覽 migration 為 `20260917000200_membership_remit_keys.sql`。Staging Go-Live `35174879274` 成功套用 migration、部署、等待 exact revision、HTTPS smoke 與 hosted member acceptance。
+- staging `/api/health`：`status=ok`、`revision=cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- PR #193 的 CI／Quality／Database／Browser Smoke 全部成功；沒有手動重跑 CI。之後若只改文件，不需重新部署 staging。
+- 下一位代理先處理 E-03、E-10、E-06；仍不能把既有 LEO 配對當作乾淨 follow 證據，也不能把單次 LCP 觀測當成前後因果比較。E-05、E-07、E-08、E-11 需要產品／真人／外部平台，E-09 仍暫緩。
+
 ## 2026-09-17 最新狀態（本節優先於下面的歷史紀錄）
 
 這次以 GitHub `origin/main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 重新核對：

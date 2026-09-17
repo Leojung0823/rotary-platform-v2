@@ -8,6 +8,18 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-17 最新基線（社費導覽修正已發布；本節優先）
+
+本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄，不得覆蓋本節。
+
+- `origin/main` 為 `cdb835b736cb91a3888bd7241ba96c653a0dc555`；PR #193 已以一般 merge 合併，沒有 open PR。
+- 本輪社費 UI 修正已隨 PR #193 進入 `main`：`/me?mode=member` 顯示「我的社費」，`/interact` 顯示「申請代墊核銷」；首頁不再重複顯示社費入口，申請卡提供 `#advance-application` 錨點。兩個入口仍受既有 `dues_finance_v1` 旗標控制，沒有改登入、權限或社團隔離。
+- Staging Release plan `35174571980` 與 Staging Go-Live `35174879274` 使用同一個 exact SHA `cdb835b736cb91a3888bd7241ba96c653a0dc555`。plan 預覽的待套用 migration 是 `20260917000200_membership_remit_keys.sql`；Go-Live 已成功套用、部署並完成 exact revision wait、HTTPS smoke 與 hosted member acceptance。
+- staging `/api/health` 現場回報 `status=ok`、`revision=cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- PR #193 的 CI、Quality、Database 與 Browser Smoke 全部通過；本輪沒有手動重跑 CI。Go-Live 的受控部署檢查全部成功。
+- `20260917000200_membership_remit_keys.sql` 只新增末五碼／後四碼識別表、索引與受權限保護的 RPC；不存完整帳號、不改既有資料列，並已通過 release verification。
+- 目前尚未因這次部署結案的外部待辦仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。E-01、E-02、E-04、E-12 維持已完成。
+
 ## 2026-09-17 文件同步基線（本節覆蓋下面的歷史快照）
 
 本次以 GitHub `main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 交叉核對：

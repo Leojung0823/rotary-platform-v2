@@ -4,6 +4,16 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-17 最新基線（社費導覽修正已發布；本節優先）
+
+本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄。
+
+- `origin/main` 為 `cdb835b736cb91a3888bd7241ba96c653a0dc555`；PR #193 已一般 merge，現在沒有 open PR。
+- 社員的財務入口已按產品分區：`/me?mode=member` 放「我的社費」，`/interact` 放「申請代墊核銷」，並移除社員首頁重複入口。既有 feature flag、登入、角色、RLS 與社團隔離沒有放寬。
+- Staging Release plan `35174571980` 與 Go-Live `35174879274` 使用同一個 exact SHA，migration `20260917000200_membership_remit_keys.sql` 已套用；Go-Live 的 migration、部署、HTTPS smoke 與 hosted member acceptance 均成功。
+- staging health 為 `status=ok`、revision `cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- 目前 roadmap 的下一批不是再做入口，而是完成 E-03（LINE follow 精確配對真人核對）、E-10（多社／角色負向矩陣）、E-06（同條件效能前後量測）；之後才處理 E-07 實機／M1、E-05 額度政策與 E-11 Rich Menu 外部設定。E-08 production 與 E-09 recovery email 仍須另外決策。
+
 ## 2026-09-17 最新基線（覆蓋下面的 2026-09-16／2026-09-15 快照）
 
 - 本次程式修正已在 staging Go-Live 以 exact SHA `3e955553d7ee62dc02d33ea584006b9424704dad` 發布；本文件提交後請以
