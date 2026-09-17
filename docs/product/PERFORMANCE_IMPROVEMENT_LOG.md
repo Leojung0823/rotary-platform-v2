@@ -10,8 +10,8 @@
 | 項目 | 結果 |
 |---|---|
 | 測試站 | `https://rotary-platform-v2-mrha.onrender.com` |
-| 文件同步前的 origin/main | `4e1a8ed368c6d1b1b30821643976627fa22ff0f5`（本文件提交後請現場核對；未重新部署） |
-| 目前 staging runtime | `36f32f8a44e1` |
+| 文件更新時的 origin/main | `49d419315bb2507960d48d741231d9f8faef435a`（本文件提交後主線會前進；請再以 `git rev-parse origin/main` 核對） |
+| 目前 staging runtime | `49d419315bb2` |
 | 本次 `/login` 量測時 runtime | `1ef38bb50407`（由相鄰時間的 `/api/health` 核對；trace 本身未暴露 revision） |
 | 量測頁面 | `/login`（未登入） |
 | 工具 | Chrome DevTools Performance trace + `PerformanceNavigationTiming` |
@@ -32,7 +32,7 @@
 Chrome 登入 session 量到社員首頁與社務管理頁（條件與限制見下表）。這次沒有證據支持把登入頁或
 登入後首頁改成公開快取。
 
-### 2026-09-17 Next Image 修正後 staging DOM 驗收
+### 2026-09-17 Next Image 修正後 staging DOM 驗收（歷史 runtime `36f32f8`）
 
 這次部署的是 `main` exact SHA `36f32f8a44e121689d7a01836d75dcbd99e4a5ee`；Staging Release
 `35121647301` 與 Staging Go-Live `35121777337` 均成功。相鄰 staging `/api/health` 核對為
@@ -65,6 +65,33 @@ verification、migration guard、verification manifest、`git diff --check`；`m
 本機六個 role-shell 尺寸共 `18 passed`；自動 CI `35123956529` 與 Browser Smoke `35123956508` 均成功。
 這是測試檔修正，沒有新增 migration，因此沒有重新部署 staging；目前 staging 產品 runtime 仍是 `36f32f8a44e1`。
 
+### 2026-09-17 平台扶輪社清單預載入修正後量測
+
+這次量測使用的 staging runtime 是 `122396f46994`（完整 main SHA
+`122396f469940af1c5f6199df268dbfa320a447b`）；Staging Release plan
+`35177558140` 成功，實際 Go-Live `35177534747` 成功。之後 `main` 又前進到
+`49d4193`，並由 Go-Live `35177857319` 成功部署；因此下面的數字仍只代表
+`122396f` 的量測條件，不是 `49d4193` 的新 CWV。
+
+用已登入的**平台管理員** Chrome session，在
+`/platform/clubs?mode=platform` 以 Chrome DevTools Performance trace 重新載入；CPU `1x`、未設定網路限速。
+這不是社員首頁或社務管理頁的 E-06 正確身份量測，因此不拿來結案 E-06。
+
+| 項目 | 修正後觀測值 |
+|---|---:|
+| LCP | 1,019 ms |
+| LCP TTFB | 319 ms |
+| LCP render delay | 700 ms |
+| CLS | 0.00 |
+| FCP | 未量測 |
+| INP | 未量測 |
+| 網路請求數 | 16 |
+
+本次把「建立扶輪社」與每一列「查看」的 Next `Link` 設為 `prefetch={false}`。部署後網路清單中沒有再看到
+每個社團詳細頁／建立頁的背景 RSC 預載請求；先前相同頁面的觀察為 23 個請求且包含多個 RSC 預載。這證明
+不必要的背景請求已消失，但前後 runtime、快取與頁面狀態不完全相同，LCP 從先前觀察的 1,107 ms 降到
+1,019 ms 只能記為方向性觀察，不能宣稱這 88 ms 全部由本修正造成。
+
 ### 2026-09-17 量測身份與工具限制補充
 
 - Chrome DevTools MCP 目前可見的兩個 staging 頁面，雖然 URL 分別帶有 `mode=member` 與 `mode=management`，
@@ -72,7 +99,7 @@ verification、migration guard、verification manifest、`git diff --check`；`m
 - 另一個已登入社員的 Chrome session 已用來確認社員／管理模式、草稿隔離與旗標關閉狀態；該瀏覽器介面無法提供有效的
   `PerformanceNavigationTiming`／Paint 資料。故本輪沒有新增可比的登入後 CWV，E-06 仍維持「未量測／待正確 DevTools 身份」。
 
-### 2026-09-16 已登入 staging 基線
+### 2026-09-16 已登入 staging 基線（歷史）
 
 同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未設定網路限速；
 staging `/api/health` 在量測後核對為 `1ef38bb50407`。數字來自 Chrome DevTools Performance trace，
@@ -142,6 +169,9 @@ guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `P
   但 FCP／TTFB 仍未量測，不能只用這次 LCP 宣稱整體效能已改善。
 - 管理頁的 637 ms TTFB 與 1,140 ms render delay 是基線訊號，不足以直接判定是資料庫慢；要先做同一
   revision 的修改後 trace，並用 server timing／請求瀑布拆分文件等待與前端繪製。
+- 平台扶輪社清單已在 `f4cddb6` 加上兩個 `prefetch={false}`：部署後同一頁的背景 RSC 預載請求由觀察到的
+  多筆降為 0，總請求由 23 降為 16。這是已證明的請求量改善；LCP 只作方向性觀察，不能替代社員／社務管理
+  頁的同條件前後量測。
 - 2026-09-16 先前渲染成「平台管理工作台」的 trace（LCP `1,490 ms`／`1,523 ms`）仍全部排除，不納入效能基準；
   本輪已重新確認目標是 LEO 的社員首頁並取得有效 LCP，但 FCP／TTFB 尚未補齊。下次量測仍要先確認畫面標題與導覽是目標角色。
 - Trace 的 render-blocking CSS 與約 14.4 kB legacy JavaScript 是後續候選項，不在沒有前後證據時大改。
@@ -187,6 +217,8 @@ guard、verification manifest 與 `git diff --check` 均通過。瀏覽器的 `P
   `965abc8` 通過本機六尺寸 `18 passed`，自動 CI `35123956529` 與 Browser Smoke `35123956508` 也成功；
   因為只改測試檔，沒有重新部署 staging。
 - 最新社員首頁／管理頁 CWV 前後比較：未量測；保留 2026-09-16 數字作為不同條件的歷史基線，不宣稱因果改善。
+- 平台扶輪社清單的 `prefetch={false}` 修正由 `f4cddb6` 提交，已隨 `122396f` 部署並包含在目前 `49d4193` staging runtime；Chrome DevTools 觀察到背景 RSC 預載消失，
+  但 E-06 的社員首頁／社務管理同條件 FCP／TTFB／LCP 前後比較仍未完成。
 
 ### 2026-09-16
 

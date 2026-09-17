@@ -3,18 +3,17 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-17 最新狀態（社費導覽修正已發布；本節優先）
+## 2026-09-17 最新狀態（效能修正與並行功能已發布；本節優先）
 
 現場核對結果：
 
-- PR #193 已一般 merge，沒有 open PR；最新主線 SHA 請現場執行 `git rev-parse origin/main` 核對。staging 產品 runtime 仍是 `cdb835b`。
-- 這次交付把社員自己的社費入口移到 `/me?mode=member`，把「申請代墊核銷」移到 `/interact`，並以 `#advance-application` 保留直達申請卡；社員首頁不再有重複入口。變更檔案包含 `src/app/(authenticated)/me/page.tsx`、`src/app/(authenticated)/interact/page.tsx`、`src/components/dues-finance/dues-finance-member.tsx`、對應 E2E 與單元測試。
-- Staging Release `35174571980` plan 成功；預覽 migration 為 `20260917000200_membership_remit_keys.sql`。Staging Go-Live `35174879274` 成功套用 migration、部署、等待 exact revision、HTTPS smoke 與 hosted member acceptance。
-- staging `/api/health`：`status=ok`、`revision=cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
-- PR #193 的 CI／Quality／Database／Browser Smoke 全部成功；沒有手動重跑 CI。之後若只改文件，不需重新部署 staging。
-- 下一位代理先處理 E-03、E-10、E-06；仍不能把既有 LEO 配對當作乾淨 follow 證據，也不能把單次 LCP 觀測當成前後因果比較。E-05、E-07、E-08、E-11 需要產品／真人／外部平台，E-09 仍暫緩。
+- 現場 `origin/main` 為 `49d419315bb2507960d48d741231d9f8faef435a`，目前沒有 open PR；staging 已部署同一個 exact SHA，runtime 為 `49d419315bb2`。
+- Staging Release plan `35177783006` 與 Go-Live `35177857319` 全部成功，包含 migration apply、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance；health `issues=[]`，production 沒有修改。
+- 這個版本包含效能提交 `f4cddb6`，已停止平台扶輪社清單對每個目的頁的自動 RSC 預載；也包含並行合併的社費對帳單與定位簽到版本調整。
+- 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 diff check 通過；`verify:db` 因共用本機 Supabase 被其他 worktree 同時改動，在 `member_home_audience.sql` 發生 race，不能視為通過。
+- 下一位代理先處理 E-03、E-10、E-06；仍不能把既有 LEO 配對當作乾淨 follow 證據，也不能把平台管理員頁的單次 LCP 觀測當成登入後社員／社務頁的前後因果比較。E-05、E-07、E-08、E-11 需要產品／真人／外部平台，E-09 仍暫緩。
 
-## 2026-09-17 最新狀態（本節優先於下面的歷史紀錄）
+## 2026-09-17 文件同步狀態（歷史；已被上方最新狀態取代）
 
 這次以 GitHub `origin/main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 重新核對：
 

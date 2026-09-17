@@ -4,17 +4,17 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
-## 2026-09-17 最新基線（社費導覽修正已發布；本節優先）
+## 2026-09-17 最新基線（效能修正與並行功能已發布；本節優先）
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄。
 
-- PR #193 已一般 merge，現在沒有 open PR；最新主線 SHA 請現場執行 `git rev-parse origin/main` 核對。staging 產品 runtime 仍是 `cdb835b`。
-- 社員的財務入口已按產品分區：`/me?mode=member` 放「我的社費」，`/interact` 放「申請代墊核銷」，並移除社員首頁重複入口。既有 feature flag、登入、角色、RLS 與社團隔離沒有放寬。
-- Staging Release plan `35174571980` 與 Go-Live `35174879274` 使用同一個 exact SHA，migration `20260917000200_membership_remit_keys.sql` 已套用；Go-Live 的 migration、部署、HTTPS smoke 與 hosted member acceptance 均成功。
-- staging health 為 `status=ok`、revision `cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
-- 目前 roadmap 的下一批不是再做入口，而是完成 E-03（LINE follow 精確配對真人核對）、E-10（多社／角色負向矩陣）、E-06（同條件效能前後量測）；之後才處理 E-07 實機／M1、E-05 額度政策與 E-11 Rich Menu 外部設定。E-08 production 與 E-09 recovery email 仍須另外決策。
+- 現場 `origin/main` 為 `49d419315bb2507960d48d741231d9f8faef435a`，沒有 open PR；staging 已部署同一個 exact SHA，最新 runtime 為 `49d419315bb2`。
+- `main` 已包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce`：平台扶輪社清單不再預載每個社團詳細頁／建立頁，避免無用的 RSC 背景請求。
+- Staging Release plan `35177783006` 與 Go-Live `35177857319` 均使用同一個 exact SHA 並成功；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部通過。
+- staging health 為 `status=ok`、revision `49d419315bb2`、`configuration=true`、`database=true`、`issues=[]`；production 沒有修改。
+- 本次 exact SHA 也包含 `20260917000300_bank_statement_lines.sql` 與 `20260917000400_location_checkin_window.sql`；這些是並行功能合併後一併發布的最新主線內容。下一批仍是 E-03、E-10、E-06，再處理 E-07、E-05、E-11；E-08 production 與 E-09 recovery email 仍須另外決策。
 
-## 2026-09-17 最新基線（覆蓋下面的 2026-09-16／2026-09-15 快照）
+## 2026-09-17 文件同步基線（歷史；已被上方最新基線取代）
 
 - 本次程式修正已在 staging Go-Live 以 exact SHA `3e955553d7ee62dc02d33ea584006b9424704dad` 發布；本文件提交後請以
   `git rev-parse origin/main` 現場核對，本節固定記錄產品與 staging 版本，避免把兩者混為一談。
@@ -46,7 +46,7 @@
   `/club-affairs?mode=member`，顯示 `HAPPY／虛擬扶輪社` 的社務與年度服務計劃；切回後資料也回到 PANCHIAO。這完成 active-club
   cookie 修正的正向證據，但 E-10 的停權／退社／外社執行秘書負向矩陣仍未完成。
 
-## 2026-09-17 本輪開發修正（最新）
+## 2026-09-17 本輪開發修正（歷史；已被上方最新基線取代）
 
 - 本輪程式提交為 `15bfd0af2919bc8f45f401266e1855569f106ecb`，已隨 Go-Live `35130278609` 發布在 staging；文件更新後 main
   會再前進，請以 `git rev-parse origin/main` 現場核對。production 沒有修改。
@@ -134,7 +134,7 @@
 Staging Go-Live `35083792540` 已發布產品程式 `1ef38bb`。後續主線只有文件同步，尚未重新部署。
 社務 AI 助理仍沒有可執行企劃，暫不擅自開發。
 
-## 2026-09-17 已部署 staging 基準（產品程式）
+## 歷史：2026-09-17 已部署 staging 基準（產品程式 `36f32f8`）
 
 - Staging Release plan `35121647301` 與 Go-Live `35121777337` 使用同一個 `main` exact SHA
   `36f32f8a44e121689d7a01836d75dcbd99e4a5ee`，均通過 staging environment 人工核准並成功完成。
@@ -559,7 +559,7 @@ PR-01c 不做：
 
 1. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
 2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：本機已補撤銷管理者、停權、退社的 role-shell 負向測試；仍需 staging 真人確認雙重社籍、跨社執行秘書、資料隔離與管理權限不越權。
-3. **E-06：登入後管理頁效能量測** `[>]`：已部署社員首頁圖片提示修正；真實社員頁已核對為 1 張 hero 圖片／1 個 preload，並觀測到 LCP `1.30 s`／CLS `0.01`。但同一 runtime／快取條件下的 FCP／TTFB／LCP／INP 前後比較仍未完成，先補齊社員頁可比數據，再拆管理頁文件等待與 render pipeline。
+3. **E-06：登入後管理頁效能量測** `[>]`：`f4cddb6` 已部署並移除平台扶輪社清單不必要的 RSC 預載；Chrome DevTools 觀察到該頁請求由 23 筆降為 16 筆。這不是社員首頁／社務管理頁的量測，且同一 runtime／快取條件下的 FCP／TTFB／LCP／INP 前後比較仍未完成，先補齊正確身份的可比數據，再拆管理頁文件等待與 render pipeline。
 4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
 5. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次 rollout 只啟用 PANCHIAO-ELITE，已完成。
 6. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging，待各社 OA 設定與真人驗收。

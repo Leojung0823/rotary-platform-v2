@@ -8,19 +8,19 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
-## 2026-09-17 最新基線（社費導覽修正已發布；本節優先）
+## 2026-09-17 最新基線（效能修正與並行功能已發布；本節優先）
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄，不得覆蓋本節。
 
-- PR #193 已以一般 merge 合併，沒有 open PR；最新主線 SHA 請現場執行 `git rev-parse origin/main` 核對。staging 產品 runtime 仍是下方記錄的 `cdb835b`。
-- 本輪社費 UI 修正已隨 PR #193 進入 `main`：`/me?mode=member` 顯示「我的社費」，`/interact` 顯示「申請代墊核銷」；首頁不再重複顯示社費入口，申請卡提供 `#advance-application` 錨點。兩個入口仍受既有 `dues_finance_v1` 旗標控制，沒有改登入、權限或社團隔離。
-- Staging Release plan `35174571980` 與 Staging Go-Live `35174879274` 使用同一個 exact SHA `cdb835b736cb91a3888bd7241ba96c653a0dc555`。plan 預覽的待套用 migration 是 `20260917000200_membership_remit_keys.sql`；Go-Live 已成功套用、部署並完成 exact revision wait、HTTPS smoke 與 hosted member acceptance。
-- staging `/api/health` 現場回報 `status=ok`、`revision=cdb835b736cb`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
-- PR #193 的 CI、Quality、Database 與 Browser Smoke 全部通過；本輪沒有手動重跑 CI。Go-Live 的受控部署檢查全部成功。
-- `20260917000200_membership_remit_keys.sql` 只新增末五碼／後四碼識別表、索引與受權限保護的 RPC；不存完整帳號、不改既有資料列，並已通過 release verification。
+- 現場 `origin/main` 為 `49d419315bb2507960d48d741231d9f8faef435a`，目前沒有 open PR。此 SHA 已包含效能修正 `f4cddb6803f400b0466051da0cbe895ea5187fce`，以及並行合併的社費對帳單／定位簽到版本調整。
+- Staging Release plan `35177783006` 與 Staging Go-Live `35177857319` 使用同一個 exact SHA `49d419315bb2507960d48d741231d9f8faef435a`；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部成功。
+- 這次 Go-Live 包含 `20260917000300_bank_statement_lines.sql` 與 `20260917000400_location_checkin_window.sql`；production 沒有修改。
+- staging `/api/health` 現場回報 `status=ok`、`revision=49d419315bb2`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
+- `f4cddb6` 已讓平台扶輪社清單的「建立扶輪社／查看」連結停止自動預載每個目的頁，減少無用的 RSC 背景請求；已部署並記錄在 `PERFORMANCE_IMPROVEMENT_LOG.md`。本輪沒有手動觸發或重跑 CI／Browser Smoke。
+- 本機 typecheck、lint、Vitest、build、migration guard、verification manifest 與 `git diff --check` 通過；`npm run verify:db` 受到共用本機 Supabase 被其他 worktree 同時改動的 race 影響，在 `member_home_audience.sql` 報錯，未把它誤記為通過，也沒有重置共用資料庫。
 - 目前尚未因這次部署結案的外部待辦仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。E-01、E-02、E-04、E-12 維持已完成。
 
-## 2026-09-17 文件同步基線（本節覆蓋下面的歷史快照）
+## 2026-09-17 文件同步基線（歷史；已被上方最新基線取代）
 
 本次以 GitHub `main`、GitHub Actions、staging `/api/health` 與已登入社員頁 DOM 交叉核對：
 
@@ -81,7 +81,7 @@
   這次 runtime 為 `bd8a8e9d0205`、快取未停用，不能直接宣稱相較舊 runtime 的因果改善。
 - 以上只補充本機證據，不把 E-03、E-06、E-07、E-10、E-11 的真人／外部驗收改標成完成。
 
-## 2026-09-16 最新掃描（本節覆蓋下面的歷史快照）
+## 2026-09-16 最新掃描（歷史；已被上方最新基線取代）
 
 本次以 GitHub `Leojung0823/rotary-platform-v2` 的 `origin/main`、GitHub Actions 與 staging
 實際健康檢查交叉核對；舊的 2026-09-15 段落保留作為歷史紀錄，不再當作目前狀態。
