@@ -71,17 +71,17 @@ describe("the member events page offers no way into management", () => {
   it("offers it on the member's own condition, not on an empty row", () => {
     // 本人簽到 and 管理簽到 shared a wrapper gated on counts_for_attendance. With
     // 管理簽到 gone, an officer who is not a member of this club would have been
-    // shown an empty .form-actions strip.
+    // shown an empty .form-actions strip -- so the row now carries 本人簽到's own
+    // condition.
     //
-    // Read forwards from the wrapper to the label rather than backwards from
-    // the label: 400 characters back reaches the notice above, whose own
-    // condition is `!selectedClub.can_register` -- so the first version of this
-    // guard passed while reading a different line entirely.
-    const at = list.indexOf("本人簽到");
-    const wrapper = list.lastIndexOf("counts_for_attendance", at);
-    expect(wrapper, "the check-in row no longer follows counts_for_attendance").toBeGreaterThan(-1);
-    const condition = list.slice(wrapper, at);
-    expect(condition.length, "the label moved away from its wrapper").toBeLessThan(200);
+    // Anchored on the block, not on a neighbouring token: reading 400 characters
+    // back from the label reached the notice above it, whose own condition is
+    // `!selectedClub.can_register`, and an earlier version of this guard was
+    // quietly reading that instead.
+    const at = list.indexOf('href="/events/checkin">本人簽到');
+    expect(at, "the member events page no longer offers 本人簽到").toBeGreaterThan(-1);
+    const condition = list.slice(list.lastIndexOf("{event.status ===", at), at);
+    expect(condition.length, "the label moved away from its condition").toBeLessThan(260);
     expect(condition, "the row is not gated on the member's own ability to check in")
       .toMatch(/&&\s*selectedClub\.can_register/u);
   });
