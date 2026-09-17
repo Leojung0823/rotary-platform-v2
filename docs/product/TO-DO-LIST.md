@@ -12,7 +12,7 @@
 
 本節以 GitHub `origin/main`、PR 狀態、Staging Release、Staging Go-Live 與 staging `/api/health` 現場核對；下面較早的 2026-09-17 段落是歷史紀錄，不得覆蓋本節。
 
-- 本輪產品發布所依據的程式基準為 `855054b2e26c8be910fc77d0d9ef16295b48ad8d`，並以 `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 補上管理驗收的外層 archive summary 定位；文件同步後 `main` 若再前進，請以 `git rev-parse origin/main` 現場核對，staging runtime 仍以 health 為準，目前沒有 open PR。
+- 本輪產品發布所依據的程式基準為 `855054b2e26c8be910fc77d0d9ef16295b48ad8d`，並以 `34325dc0e4512c51e1cf764ccff6ed371fe1baab` 補上管理驗收的外層 archive summary 定位；文件同步後 `main` 若再前進，請以 `git rev-parse origin/main` 現場核對，staging runtime 仍以 health 為準。掃描時另有平行 PR #198，與本輪發布無關。
 - `855054b` 的活動規則修正已包含在 staging；新增 migration `20260917000500_event_rules_say_which_one.sql` 已成功套用，允許補登已開始的活動、回報欄位級錯誤，並保留不計入出席活動的簽到入口。
 - Staging Release plan `35183479207` 與 Staging Go-Live `35183554898` 使用 exact SHA `34325dc0e4512c51e1cf764ccff6ed371fe1baab`；migration、部署、exact revision wait、HTTPS smoke 與 hosted member acceptance 全部成功。
 - staging `/api/health` 現場回報 `status=ok`、`revision=34325dc0e451`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
