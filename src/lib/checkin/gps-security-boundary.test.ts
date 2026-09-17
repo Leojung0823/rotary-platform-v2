@@ -63,9 +63,26 @@ describe("GPS check-in database boundary", () => {
     expect(gps).not.toMatch(/alter table public\.event_attendances[\s\S]{0,200}add column (latitude|longitude|distance)/u);
   });
 
-  it("binds a GPS attendance to an open session and keeps the canonical method set closed", () => {
+  it("keeps the canonical method set closed", () => {
     expect(gps).toContain("check (checkin_method in ('qr', 'manual', 'gps'))");
-    expect(gps).toContain("(checkin_method in ('qr', 'gps') and checkin_session_id is not null)");
+  });
+
+  it("no longer binds a GPS attendance to an open session, and says why", () => {
+    // It used to. The session is QR's: a short-lived token on a screen that has
+    // to rotate and has to be closeable. A GPS check-in has nothing of the sort
+    // to protect -- its credential is the fix itself -- and requiring one meant
+    // a member standing at the venue saw nothing until an officer remembered to
+    // press a button.
+    //
+    // Read from the live constraint, not from the migration that introduced it:
+    // this file pinned the old text and would have gone on describing a rule
+    // that had been replaced.
+    const current = readFileSync(
+      "supabase/migrations/20260917000600_location_checkin_needs_no_session.sql", "utf8",
+    );
+    expect(current).toMatch(/checkin_method = 'qr' and checkin_session_id is not null/u);
+    expect(current, "gps was let go of the session and qr came with it")
+      .toMatch(/or \(checkin_method = 'gps'\)/u);
   });
 
   it("verifies membership, tenancy and event eligibility before measuring distance", () => {
@@ -74,7 +91,13 @@ describe("GPS check-in database boundary", () => {
     // the live function the first time it was replaced.
     const rpc = latestDefinition("check_in_to_event_by_location");
     expect(rpc).toContain("active_membership_required");
-    expect(rpc).toContain("checkin_session_not_active");
+    // The session requirement was here. What replaced it is the window: a GPS
+    // check-in is accepted only between an hour before the event starts and an
+    // hour after it ends, which is the thing "被人開啟" was standing in for.
+    expect(rpc, "nothing bounds a GPS check-in in time")
+      .toContain("public.event_location_checkin_is_open(event.starts_at, event.ends_at)");
+    expect(rpc, "the session requirement came back without this guard noticing")
+      .not.toContain("checkin_session_not_active");
     expect(rpc).toContain("event_not_checkin_eligible");
     expect(rpc).toContain("security definer");
     expect(rpc).toContain("pg_advisory_xact_lock");

@@ -99,3 +99,39 @@ describe("時間窗變窄之後，它是「什麼都沒有」最常見的理由"
     expect(createForm).toContain("場地 200 公尺內");
   });
 });
+
+describe("時間到就能簽，不必等人手動開啟", () => {
+  // Location check-in required an active check-in session -- an officer pressing
+  // 開啟. That session exists for QR: a short-lived token on a screen that has to
+  // rotate and has to be closeable. Location check-in has nothing of the sort to
+  // protect; its credential is the GPS fix, and the window already bounds it.
+  //
+  // So this is not a scheduler that opens sessions unattended (which would mint
+  // QR tokens with nobody watching). It is the dependency removed.
+
+  it("does not make the member wait for a session", () => {
+    expect(latestDefinition("list_my_location_checkin_events"), "the list still waits for an officer")
+      .not.toContain("event_checkin_sessions");
+  });
+
+  it("does not refuse a check-in for want of one", () => {
+    expect(latestDefinition("check_in_to_event_by_location"))
+      .not.toContain("checkin_session_not_active");
+  });
+
+  it("still records the session when one happens to be open", () => {
+    // Dropping the link entirely would lose the tie between a QR session and
+    // the check-ins that happened during it.
+    expect(latestDefinition("check_in_to_event_by_location")).toContain("target_session.id");
+  });
+
+  it("keeps QR needing one, because that is what a token is for", () => {
+    expect(latestDefinition("check_in_to_dynamic_event")).toContain("event_checkin_sessions");
+  });
+
+  it("lets the attendance row carry no session for gps, and still demands one for qr", () => {
+    const migration = readFileSync("supabase/migrations/20260917000600_location_checkin_needs_no_session.sql", "utf8");
+    expect(migration).toMatch(/checkin_method = 'qr' and checkin_session_id is not null/u);
+    expect(migration).toMatch(/or \(checkin_method = 'gps'\)/u);
+  });
+});

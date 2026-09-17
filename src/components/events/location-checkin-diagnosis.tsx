@@ -5,7 +5,7 @@ const blockerText: Record<LocationCheckinBlocker["reason"], string> = {
   no_venue: "這場沒有設定場地座標，只能掃 QR。請幹部在活動裡補上座標。",
   too_early: "還沒開放。定位簽到從活動開始前一小時才打開。",
   too_late: "已經過了。定位簽到到活動結束後一小時為止。",
-  session_closed: "座標和時間都符合了。剩下的是幹部還沒開啟這場的簽到 —— 請他到活動卡片按「管理簽到 → 開啟」。",
+  should_be_open: "座標和時間都符合，這場現在就能簽。如果這裡還是沒出現，請重新整理一次。",
 };
 
 /**
