@@ -1,9 +1,22 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { latestDefinition } from "@/lib/attendance/latest-definition";
 
 const layout = readFileSync("src/app/(authenticated)/clubs/[clubId]/layout.tsx", "utf8");
 const console_ = readFileSync("src/app/(authenticated)/platform/clubs/[clubId]/page.tsx", "utf8");
+
+/**
+ * Club pages that decide access from the experience context instead of from the
+ * database's answer.
+ *
+ * clubsForExperienceMode returns nothing for a platform admin -- they hold every
+ * club permission but belong to no club -- so any page that gates on it refuses
+ * them however the layout is configured. 社費 does, and making it stop needs a
+ * club context it currently assumes exists; that is a separate change.
+ *
+ * The list exists so the next page cannot quietly join it.
+ */
+const contextGatedByDesign = ["dues"];
 
 describe("介面不要比資料庫嚴格", () => {
   // A platform admin holds every club permission -- current_has_club_permission
@@ -39,5 +52,47 @@ describe("介面不要比資料庫嚴格", () => {
     // and the wrong one: the platform admin genuinely needs the page.
     expect(console_).toContain("管理社員");
     expect(console_).toMatch(/\/clubs\/\$\{clubId\}\/members\?mode=management/u);
+  });
+});
+
+
+describe("誰可以進來，由資料庫決定", () => {
+  // Every club sub-page is behind one layout and then its own RPC. A page that
+  // instead asks "which clubs may I manage" of the experience context is asking
+  // a different question -- one a platform admin answers with "none" while the
+  // database answers "all of them".
+  const clubPages = (() => {
+    const base = "src/app/(authenticated)/clubs/[clubId]";
+    return readdirSync(base, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .flatMap((entry) => {
+        const path = `${base}/${entry.name}/page.tsx`;
+        return existsSync(path) ? [{ name: entry.name, source: readFileSync(path, "utf8") }] : [];
+      });
+  })();
+
+  it("is reading a real set of pages", () => {
+    expect(clubPages.length).toBeGreaterThan(6);
+    expect(clubPages.map((page) => page.name)).toContain("members");
+    expect(clubPages.map((page) => page.name)).toContain("operators");
+  });
+
+  it("leaves 管理社員 and 管理執行秘書 to the layout and the RPC", () => {
+    // The two the platform console links to. Neither may add a gate of its own.
+    for (const name of ["members", "operators"]) {
+      const page = clubPages.find((entry) => entry.name === name);
+      expect(page, `${name} is gone`).toBeTruthy();
+      expect(page!.source, `${name} decides access for itself`)
+        .not.toContain("clubsForExperienceMode");
+    }
+  });
+
+  it("keeps the list of context-gated pages from growing quietly", () => {
+    const gated = clubPages
+      .filter((page) => page.source.includes("clubsForExperienceMode"))
+      .map((page) => page.name)
+      .sort();
+    expect(gated, "another club page now refuses a platform admin on its own")
+      .toEqual([...contextGatedByDesign].sort());
   });
 });
