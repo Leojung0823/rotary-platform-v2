@@ -36,6 +36,21 @@ function rotaryYearLabel(year: number | null) {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
+/**
+ * Hidden for now at the club's request, not removed.
+ *
+ * 帳號狀態 and the LINE 通知連接 card say things a member cannot act on, and the
+ * privacy settings are held back until the club has decided what they should
+ * say. Everything behind these still loads and still saves -- turning any of
+ * them back on is this constant, not a rebuild.
+ *
+ * Three constants rather than one, because they are three decisions: the next
+ * person has to be able to bring back one without the others.
+ */
+const SHOW_ACCOUNT_STATUS = false;
+const SHOW_LINE_NOTICE_CARD = false;
+const SHOW_PRIVACY_SETTINGS = false;
+
 export default async function IdentityCenterPage({
   searchParams,
 }: {
@@ -123,7 +138,7 @@ export default async function IdentityCenterPage({
     <div className="metric-grid">
       <Card><span className="metric-label">資料完成度</span><strong className="metric-value">{completed * 25}%</strong></Card>
       <Card><span className="metric-label">LINE Login</span><strong className="metric-value metric-text">{center.line_identity?.status === "active" ? "已綁定" : "未綁定"}</strong></Card>
-      <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>
+      {SHOW_ACCOUNT_STATUS && <Card><span className="metric-label">帳號狀態</span><strong className="metric-value metric-text">{center.account.status === "active" && center.account.has_active_access ? "可使用" : "受限制"}</strong></Card>}
     </div>
 
     {duesFinance.enabled && <Card>
@@ -137,7 +152,7 @@ export default async function IdentityCenterPage({
       <p>查看自己的年度應收、收款、未繳，以及代墊申請與核銷狀態。</p>
     </Card>}
 
-    {lineOaOnboarding.enabled && <Card>
+    {SHOW_LINE_NOTICE_CARD && lineOaOnboarding.enabled && <Card>
       <div className="section-heading">
         <div>
           <p className="eyebrow">本社 LINE 官方帳號</p>
@@ -148,56 +163,7 @@ export default async function IdentityCenterPage({
       <p>加入目前所在社的官方帳號，並確認是否已連接到您的社員身份。</p>
     </Card>}
 
-    {birthdayEnabled && <Card>
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">生日祝福</p>
-          <h2>生日公開設定</h2>
-        </div>
-        <Link className="button button-secondary" href={`/birthdays?mode=${pageMode}`} prefetch={false}>查看生日名單</Link>
-      </div>
-      <p>每個扶輪社分開設定。新加入的社籍預設公開月、日；既有尚未設定的社籍仍不公開，請由您確認後再公開。</p>
-      {birthdayPreferences === null ? <Notice tone="error">目前無法載入生日公開設定，請稍後重新整理。</Notice>
-        : birthdayPreferences.length === 0 ? <p className="subtle">目前沒有可設定的有效扶輪社社籍。</p>
-          : <div className="form-stack">
-            {birthdayPreferences.map((preference) => <Card key={preference.membershipId}>
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">{preference.clubCode}</p>
-                  <h3>{preference.clubName}</h3>
-                </div>
-                 <span>{preference.hasPreference ? "已建立設定" : "尚未確認（目前不公開）"}</span>
-              </div>
-              {!preference.hasBirthDate && <Notice>
-                尚未填寫生日。先在下方基本資料填寫生日，才能出現在同社生日名單。
-              </Notice>}
-              <form action={setBirthdayPreferenceAction} className="form-stack">
-                <input type="hidden" name="clubId" value={preference.clubId} />
-                <input type="hidden" name="returnTo" value="me" />
-                {query.mode && <input type="hidden" name="mode" value={query.mode} />}
-                <label className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    name="isListed"
-                    defaultChecked={preference.isListed}
-                    disabled={!preference.hasBirthDate}
-                  />
-                  <span><strong>在同社生日名單顯示我的月、日</strong><small>關閉後，同社社員看不到您的生日，也不能新增生日祝福。</small></span>
-                </label>
-                <label className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    name="allowWishes"
-                    defaultChecked={preference.allowWishes}
-                    disabled={!preference.hasBirthDate}
-                  />
-                  <span><strong>允許同社社員寫生日祝福</strong><small>關閉後，新的與既有的生日祝福都不會顯示給同社社員。</small></span>
-                </label>
-                <Button type="submit" disabled={!preference.hasBirthDate}>儲存這個社的生日設定</Button>
-              </form>
-            </Card>)}
-          </div>}
-    </Card>}
+
 
     {ledger?.selected_club_id && ledger.totals && <Card>
       <div className="section-heading">
@@ -293,8 +259,12 @@ export default async function IdentityCenterPage({
       </Card>
     </div>
 
-    <Card>
-      <h2>通知與名冊隱私</h2>
+    {/* 一個地方。生日公開設定本來是另一張卡片、另一個標題、另一顆儲存按鈕，
+        而它問的是同一件事：同社社員看得到我的什麼。分成兩處的結果是社友改了
+        一邊、以為兩邊都改了。 */}
+    {SHOW_PRIVACY_SETTINGS && <Card>
+      <h2>隱私設定</h2>
+      <p>同社社員看得到您的哪些資料，以及平台用什麼方式通知您。</p>
       <form action={updateIdentitySettingsAction} className="two-column">
         <div className="form-stack">
           <h3>通知</h3>
@@ -329,7 +299,58 @@ export default async function IdentityCenterPage({
           <Button type="submit">儲存設定</Button>
         </div>
       </form>
-    </Card>
+
+      {birthdayEnabled && <section className="form-stack">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">生日祝福</p>
+          <h3>生日公開設定</h3>
+        </div>
+        <Link className="button button-secondary" href={`/birthdays?mode=${pageMode}`} prefetch={false}>查看生日名單</Link>
+      </div>
+      <p>每個扶輪社分開設定。新加入的社籍預設公開月、日；既有尚未設定的社籍仍不公開，請由您確認後再公開。</p>
+      {birthdayPreferences === null ? <Notice tone="error">目前無法載入生日公開設定，請稍後重新整理。</Notice>
+        : birthdayPreferences.length === 0 ? <p className="subtle">目前沒有可設定的有效扶輪社社籍。</p>
+          : <div className="form-stack">
+            {birthdayPreferences.map((preference) => <Card key={preference.membershipId}>
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">{preference.clubCode}</p>
+                  <h3>{preference.clubName}</h3>
+                </div>
+                 <span>{preference.hasPreference ? "已建立設定" : "尚未確認（目前不公開）"}</span>
+              </div>
+              {!preference.hasBirthDate && <Notice>
+                尚未填寫生日。先在下方基本資料填寫生日，才能出現在同社生日名單。
+              </Notice>}
+              <form action={setBirthdayPreferenceAction} className="form-stack">
+                <input type="hidden" name="clubId" value={preference.clubId} />
+                <input type="hidden" name="returnTo" value="me" />
+                {query.mode && <input type="hidden" name="mode" value={query.mode} />}
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    name="isListed"
+                    defaultChecked={preference.isListed}
+                    disabled={!preference.hasBirthDate}
+                  />
+                  <span><strong>在同社生日名單顯示我的月、日</strong><small>關閉後，同社社員看不到您的生日，也不能新增生日祝福。</small></span>
+                </label>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    name="allowWishes"
+                    defaultChecked={preference.allowWishes}
+                    disabled={!preference.hasBirthDate}
+                  />
+                  <span><strong>允許同社社員寫生日祝福</strong><small>關閉後，新的與既有的生日祝福都不會顯示給同社社員。</small></span>
+                </label>
+                <Button type="submit" disabled={!preference.hasBirthDate}>儲存這個社的生日設定</Button>
+              </form>
+            </Card>)}
+          </div>}
+    </section>}
+    </Card>}
 
   </div>;
 }
