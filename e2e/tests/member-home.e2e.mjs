@@ -33,11 +33,11 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     // The member shell owns one Next Image hint; duplicate hints were the
     // hosted-streaming regression this assertion is meant to catch.
     await expect(memberPage.locator('link[rel="preload"][as="image"][href="/hero-mountains.webp"]')).toHaveCount(1);
-    await expect(memberPage.getByRole("heading", { name: "加入「本機 Shell 社員社」LINE 官方帳號" })).toBeVisible();
-    await expect(memberPage.getByRole("link", { name: "綁定 LINE 身份" })).toHaveAttribute(
-      "href",
-      "/api/auth/line/start?flow=bind&returnTo=%2Fme%2Fline-oa",
-    );
+    // The old home card was replaced by the task list. This fixture has no
+    // LINE Login identity, so binding is the first actionable task.
+    const bindingTask = memberPage.getByRole("link", { name: "先綁定 LINE 身份" });
+    await expect(bindingTask).toBeVisible();
+    await expect(bindingTask).toHaveAttribute("href", "/me/line-oa");
     await expect(memberPage.getByRole("link", { name: "加入本社 LINE" })).toHaveCount(0);
     await expect(memberPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
     await expect(memberPage.getByRole("heading", { name: "本機社員首頁例會" })).toBeVisible();
