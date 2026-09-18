@@ -6,9 +6,10 @@
 
 ## 2026-09-18 最新現場基線（本節優先）
 
-- `origin/main` 與 staging 目前都已核對為 `5ba1e273c8e88344b47b92120fc1a4431be820a8`；PR #202 已合併，修正平台管理員進入社務管理頁的路由邊界。Staging Release `35234886243` 與 Go-Live `35235024918` 使用同一個 exact SHA 並成功，staging health 為 `status=ok`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- `origin/main` 為 `a0d344b407e75b5e2eb211078b57621f58951f8e`；staging 仍是 `5ba1e273c8e88344b47b92120fc1a4431be820a8`。PR #202 已合併，另加入 LINE OA 待辦整合；Staging Release `35234886243` 與 Go-Live `35235024918` 使用前一個 exact SHA 並成功，staging health 為 `status=ok`、`issues=[]`、`warnings=[]`；production 沒有修改。
 - 目前沒有 open PR。最近主線的 #199、#200、#201、#202 已完成合併與 staging 發布；文件同步後不需要重新部署。
-- 首頁「待辦提醒」目前沒有 LINE OA 未加入項目；未配對社員使用獨立的 LINE OA onboarding 卡與 `/me/line-oa`。若產品要把它列入待辦，需另立明確的 UX／資料契約，不能把目前的獨立引導誤報成已完成。
+- LINE OA 待辦已完成主線程式：資料庫的五種既有待辦不變，首頁以 caller-only onboarding projection 追加一項，顯示未綁定、未加入、待配對或衝突狀態，完成配對後消失；入口為 `/me/line-oa`。這項程式尚未發布到 staging，下一步是 staging Go-Live 後用未配對真人帳號驗收「出現 → 完成配對 → 消失」，不能把主線程式完成誤報成 hosted 完成。
+- 本輪本機驗證：typecheck、lint、Vitest `193` 檔／`1445` tests、build、migration guard、verification manifest 通過；`verify:db` 因本機 Docker／Supabase reset 無回應中止，沒有把它當成綠燈。沒有手動觸發 CI／Browser Smoke。
 - 下一步仍分兩類：E-03、E-10、E-06 可在條件具備時繼續驗收；E-05、E-07、E-08、E-11 需要產品、真人、實機或外部 LINE OA 設定；E-09 維持暫緩。沒有外部證據的項目不改標成完成。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
