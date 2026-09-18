@@ -12,7 +12,8 @@
 
 本節以 GitHub `origin/main`、GitHub Actions 與 staging `/api/health` 現場核對；下面較早內容保留作為歷史證據。
 
-- 本節記錄的最新程式基線是 `211b363526ca1398f2cba49708d9c7a0dfca1422`（PR #202 已合併，另加入 LINE OA 待辦整合）；後續只更新文件時，請用 `git rev-parse origin/main` 核對文件 head。目前沒有 open PR。
+- Staging runtime 基線仍是 `211b363526ca1398f2cba49708d9c7a0dfca1422`（PR #202 已合併，另加入 LINE OA 待辦整合）；目前主線文件／測試 head 是 `16fcc258bb8db4d8541d8fce9326b7f974aac6ab`，後續仍請用 `git rev-parse origin/main` 現場核對。目前沒有 open PR。
+- `16fcc25` 只修正 `member-home` E2E 對舊版 LINE 首頁卡片的過時斷言，沒有改 runtime、資料庫或權限；前一輪 Browser Smoke `35310867689` 的 6 個失敗均集中在該舊斷言，另外 183 個測試通過。修正後的自動 CI `35312050355` 與 Browser Smoke `35312050315` 正在執行，不能在結果出來前標成全綠。
 - Staging Release `35308584458` 成功；第一次 Go-Live `35308757890` 因 Render 免費方案在等待窗口內尚未切換而失敗，未進入 smoke／hosted acceptance。取消卡住的 Render deploy 後，以同一個 exact SHA 重跑 Go-Live `35309848544` 並全部成功；staging `/api/health` 現場回報 `status=ok`、`revision=211b363526ca`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - #199、#200、#201、#202 已進入 `main`；這些最近變更沒有新增本輪未發布的 migration。後續若只更新文件，不需重新部署 staging。
 - 首頁資料庫待辦投影仍只有 `event_response`、`dues_outstanding`、`birthday_wish`、`unread_messages`、`profile_incomplete` 五種；主線 `211b363` 已在應用層以同一個 caller-only `get_my_line_oa_onboarding_status` RPC 追加 LINE OA 任務。未綁定、未加入、已加入待配對、資料衝突會顯示不同文字；已配對、OA 未驗證或查詢失敗不顯示。任務連到 `/me/line-oa`，且和首頁原本的資料查詢用 `Promise.all` 同時執行。這個版本已部署到 staging；仍需用乾淨真人帳號驗收「未加入時出現、完成配對後消失」。
