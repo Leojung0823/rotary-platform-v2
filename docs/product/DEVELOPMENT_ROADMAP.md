@@ -7,7 +7,7 @@
 ## 2026-09-18 最新現場基線（本節優先）
 
 - Staging runtime 基線仍是 `211b363526ca1398f2cba49708d9c7a0dfca1422`；本輪程式／測試修正為 `16fcc25`、`5f794e1`。PR #202 已合併，另加入 LINE OA 待辦整合；Staging Release `35308584458` 成功，第一次 Go-Live `35308757890` 因 Render 切換超時失敗，重跑 Go-Live `35309848544` 後 migration、部署、exact revision、HTTPS smoke 與 hosted acceptance 全部成功。staging health 為 `status=ok`、`revision=211b363526ca`、`issues=[]`、`warnings=[]`；production 沒有修改。`main` head 請用 `git rev-parse origin/main` 現場核對。
-- `16fcc25`、`5f794e1` 只修正 `member-home` E2E 對舊版 LINE 首頁卡片的過時斷言，沒有改 runtime、資料庫或權限。前一輪 `35310867689` 有 6 個舊斷言失敗；更新一次後 `35312050315` 剩 1 個漏網舊斷言失敗，另有 1 個標籤測試 retry 後通過的 flaky。最新自動 CI `35313186838` 與 Browser Smoke `35313186884` 正在執行，不能在結果出來前標成全綠。
+- `16fcc25`、`5f794e1` 只修正 `member-home` E2E 對舊版 LINE 首頁卡片的過時斷言，沒有改 runtime、資料庫或權限。前一輪 `35310867689` 有 6 個舊斷言失敗；更新一次後 `35312050315` 剩 1 個漏網舊斷言失敗，另有 1 個標籤測試 retry 後通過的 flaky。最新自動 CI `35313186838` 與 Browser Smoke `35313186884` 均成功，Browser Smoke 的 member-browser-smoke 與 rollback checks 也都成功。
 - 目前沒有 open PR。最近主線的 #199、#200、#201、#202 已完成合併與 staging 發布；文件同步後不需要重新部署。
 - LINE OA 待辦已完成並部署：資料庫的五種既有待辦不變，首頁以 caller-only onboarding projection 追加一項，顯示未綁定、未加入、待配對或衝突狀態，完成配對後消失；入口為 `/me/line-oa`。下一步仍是用未配對真人帳號驗收「出現 → 完成配對 → 消失」，不能只用 Go-Live 的一般 hosted acceptance 取代這條功能專項證據。
 - 本輪補上本機瀏覽器 fixture：以「LINE Login 已綁定、但沒有 OA follower」社員驗證首頁待辦會顯示「加入本社 LINE OA」並連到 `/me/line-oa`。這是回歸測試覆蓋，不等於 staging 真人配對驗收。
