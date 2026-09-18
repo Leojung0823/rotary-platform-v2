@@ -6,7 +6,7 @@
 
 ## 2026-09-18 最新現場基線（本節優先）
 
-- `origin/main` 為 `211b363526ca1398f2cba49708d9c7a0dfca1422`；staging 已部署同一個 exact SHA。PR #202 已合併，另加入 LINE OA 待辦整合；Staging Release `35308584458` 成功，第一次 Go-Live `35308757890` 因 Render 切換超時失敗，重跑 Go-Live `35309848544` 後 migration、部署、exact revision、HTTPS smoke 與 hosted acceptance 全部成功。staging health 為 `status=ok`、`revision=211b363526ca`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- 本節記錄的最新程式基線是 `211b363526ca1398f2cba49708d9c7a0dfca1422`；staging 已部署同一個 exact SHA。PR #202 已合併，另加入 LINE OA 待辦整合；Staging Release `35308584458` 成功，第一次 Go-Live `35308757890` 因 Render 切換超時失敗，重跑 Go-Live `35309848544` 後 migration、部署、exact revision、HTTPS smoke 與 hosted acceptance 全部成功。staging health 為 `status=ok`、`revision=211b363526ca`、`issues=[]`、`warnings=[]`；production 沒有修改。文件 head 請用 `git rev-parse origin/main` 現場核對。
 - 目前沒有 open PR。最近主線的 #199、#200、#201、#202 已完成合併與 staging 發布；文件同步後不需要重新部署。
 - LINE OA 待辦已完成並部署：資料庫的五種既有待辦不變，首頁以 caller-only onboarding projection 追加一項，顯示未綁定、未加入、待配對或衝突狀態，完成配對後消失；入口為 `/me/line-oa`。下一步仍是用未配對真人帳號驗收「出現 → 完成配對 → 消失」，不能只用 Go-Live 的一般 hosted acceptance 取代這條功能專項證據。
 - 本輪本機驗證：typecheck、lint、Vitest `193` 檔／`1445` tests、build、migration guard、verification manifest 通過；`verify:db` 因本機 Docker／Supabase reset 無回應中止，沒有把它當成綠燈。沒有手動觸發 CI／Browser Smoke。
