@@ -12,7 +12,7 @@
 
 本節以 GitHub `origin/main`、GitHub Actions 與 staging `/api/health` 現場核對；下面較早內容保留作為歷史證據。
 
-- Staging runtime 基線仍是 `211b363526ca1398f2cba49708d9c7a0dfca1422`（PR #202 已合併，另加入 LINE OA 待辦整合）；目前主線文件／測試 head 是 `16fcc258bb8db4d8541d8fce9326b7f974aac6ab`，後續仍請用 `git rev-parse origin/main` 現場核對。目前沒有 open PR。
+- Staging runtime 基線仍是 `211b363526ca1398f2cba49708d9c7a0dfca1422`（PR #202 已合併，另加入 LINE OA 待辦整合）；最近程式／測試 commit 是 `16fcc258bb8db4d8541d8fce9326b7f974aac6ab`，目前 `main` 文件 head 是 `6982551bcfe9bdbeb891da9bd04fe7a6df562247`，後續仍請用 `git rev-parse origin/main` 現場核對。目前沒有 open PR。
 - `16fcc25` 只修正 `member-home` E2E 對舊版 LINE 首頁卡片的過時斷言，沒有改 runtime、資料庫或權限；前一輪 Browser Smoke `35310867689` 的 6 個失敗均集中在該舊斷言，另外 183 個測試通過。修正後的自動 CI `35312050355` 與 Browser Smoke `35312050315` 正在執行，不能在結果出來前標成全綠。
 - Staging Release `35308584458` 成功；第一次 Go-Live `35308757890` 因 Render 免費方案在等待窗口內尚未切換而失敗，未進入 smoke／hosted acceptance。取消卡住的 Render deploy 後，以同一個 exact SHA 重跑 Go-Live `35309848544` 並全部成功；staging `/api/health` 現場回報 `status=ok`、`revision=211b363526ca`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - #199、#200、#201、#202 已進入 `main`；這些最近變更沒有新增本輪未發布的 migration。後續若只更新文件，不需重新部署 staging。
