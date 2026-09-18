@@ -1,8 +1,15 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-17（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-18（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
+
+## 2026-09-18 最新現場基線（本節優先）
+
+- `origin/main` 與 staging 目前都已核對為 `5ba1e273c8e88344b47b92120fc1a4431be820a8`；PR #202 已合併，修正平台管理員進入社務管理頁的路由邊界。Staging Release `35234886243` 與 Go-Live `35235024918` 使用同一個 exact SHA 並成功，staging health 為 `status=ok`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- 目前沒有 open PR。最近主線的 #199、#200、#201、#202 已完成合併與 staging 發布；文件同步後不需要重新部署。
+- 首頁「待辦提醒」目前沒有 LINE OA 未加入項目；未配對社員使用獨立的 LINE OA onboarding 卡與 `/me/line-oa`。若產品要把它列入待辦，需另立明確的 UX／資料契約，不能把目前的獨立引導誤報成已完成。
+- 下一步仍分兩類：E-03、E-10、E-06 可在條件具備時繼續驗收；E-05、E-07、E-08、E-11 需要產品、真人、實機或外部 LINE OA 設定；E-09 維持暫緩。沒有外部證據的項目不改標成完成。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
 

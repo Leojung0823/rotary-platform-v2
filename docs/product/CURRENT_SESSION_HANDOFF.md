@@ -1,7 +1,14 @@
-# 交接筆記（持續更新；最新核對 2026-09-17；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-09-18；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-09-18 最新現場狀態（本節優先）
+
+- `origin/main`／本機 `main`：`5ba1e273c8e88344b47b92120fc1a4431be820a8`；目前沒有 open PR。PR #202 已合併，修正平台管理員進入社務管理頁的路由邊界。
+- Staging Release `35234886243`、Staging Go-Live `35235024918` 使用同一個 exact SHA 並成功；staging `/api/health` 為 `status=ok`、`revision=5ba1e273c8e8`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- 首頁「待辦提醒」目前不包含 LINE OA 未加入狀態。現有程式會在 feature flag 開啟、OA 已完成驗證且提醒尚未被個人節流隱藏時，另外顯示 LINE OA onboarding 卡；明確入口是 `/me/line-oa`。因此「沒有出現在待辦卡」是目前設計，不可當成 follow webhook 或配對故障的證據。
+- 仍需外部條件的項目：E-03 follow 自動配對真人核對、E-05 額度政策、E-06 同條件登入後效能量測、E-07 實機／M1、E-08 production 決策、E-10 多社／角色負向矩陣、E-11 各社 Rich Menu／OA 設定；E-09 recovery email 依產品決定暫緩。
 
 ## 2026-09-17 最新狀態（簽到可用性說明修正已發布；本節優先）
 
