@@ -5,9 +5,9 @@
 
 ## 2026-09-18 最新現場狀態（本節優先）
 
-- `origin/main`／本機 `main`：`a0d344b407e75b5e2eb211078b57621f58951f8e`；目前沒有 open PR。PR #202 已合併，本輪另加入 LINE OA 待辦整合。
-- Staging Release `35234886243`、Staging Go-Live `35235024918` 使用同一個 exact SHA 並成功；staging `/api/health` 為 `status=ok`、`revision=5ba1e273c8e8`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
-- 首頁「待辦提醒」現在會在 `line_oa_onboarding_v1` 開啟、OA 已驗證且 caller-only onboarding RPC 回報未完成時，追加 LINE OA 任務；未綁定、未加入、已加入待配對與資料衝突會分別顯示，已配對者消失。資料庫待辦投影仍維持五種，沒有新增 migration 或改權限；任務入口是 `/me/line-oa`。這個修正目前只在 main `a0d344b`，staging 仍是 `5ba1e273c8e8`，尚未做 hosted 真人驗收。
+- `origin/main`／本機 `main`：`211b363526ca1398f2cba49708d9c7a0dfca1422`；目前沒有 open PR。PR #202 已合併，本輪另加入 LINE OA 待辦整合。
+- Staging Release `35308584458` 成功；第一次 Go-Live `35308757890` 因 Render 免費方案切換超時失敗，取消卡住的 Render deploy 後，重跑 Go-Live `35309848544` 使用同一個 exact SHA 並全部成功；staging `/api/health` 為 `status=ok`、`revision=211b363526ca`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- 首頁「待辦提醒」現在會在 `line_oa_onboarding_v1` 開啟、OA 已驗證且 caller-only onboarding RPC 回報未完成時，追加 LINE OA 任務；未綁定、未加入、已加入待配對與資料衝突會分別顯示，已配對者消失。資料庫待辦投影仍維持五種，沒有新增 migration 或改權限；任務入口是 `/me/line-oa`。這個修正已部署到 staging，但仍需用乾淨真人帳號驗收「未加入時出現、完成配對後消失」。
 - 本輪已通過 typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、migration guard 與 verification manifest；`verify:db` 因本機 Docker／Supabase reset 無回應而中止，需恢復本機 runtime 後補跑。沒有手動觸發 CI 或 Browser Smoke。
 - 2026-09-18 再次嘗試外部驗收：Chrome DevTools MCP staging 頁面沒有登入 session，進入管理頁即回 `/login`；桌面 Chrome 的既有登入頁是平台管理員，不採用其效能數字作社員／社務證據；iPhone 鏡像停在解鎖畫面，尚未有真實手機測試結果。
 - 仍需外部條件的項目：E-03 follow 自動配對真人核對、E-05 額度政策、E-06 同條件登入後效能量測、E-07 實機／M1、E-08 production 決策、E-10 多社／角色負向矩陣、E-11 各社 Rich Menu／OA 設定；E-09 recovery email 依產品決定暫緩。

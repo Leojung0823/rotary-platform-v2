@@ -12,10 +12,10 @@
 
 本節以 GitHub `origin/main`、GitHub Actions 與 staging `/api/health` 現場核對；下面較早內容保留作為歷史證據。
 
-- `origin/main` 與本機 `main` 目前都是 `a0d344b407e75b5e2eb211078b57621f58951f8e`（PR #202 已合併，另加入 LINE OA 待辦整合）。目前沒有 open PR。
-- Staging Release `35234886243` 與 Staging Go-Live `35235024918` 都使用同一個 exact SHA `5ba1e273c8e88344b47b92120fc1a4431be820a8`，兩者均成功；staging `/api/health` 現場回報 `status=ok`、`revision=5ba1e273c8e8`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- `origin/main` 與本機 `main` 目前都是 `211b363526ca1398f2cba49708d9c7a0dfca1422`（PR #202 已合併，另加入 LINE OA 待辦整合）。目前沒有 open PR。
+- Staging Release `35308584458` 成功；第一次 Go-Live `35308757890` 因 Render 免費方案在等待窗口內尚未切換而失敗，未進入 smoke／hosted acceptance。取消卡住的 Render deploy 後，以同一個 exact SHA 重跑 Go-Live `35309848544` 並全部成功；staging `/api/health` 現場回報 `status=ok`、`revision=211b363526ca`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - #199、#200、#201、#202 已進入 `main`；這些最近變更沒有新增本輪未發布的 migration。後續若只更新文件，不需重新部署 staging。
-- 首頁資料庫待辦投影仍只有 `event_response`、`dues_outstanding`、`birthday_wish`、`unread_messages`、`profile_incomplete` 五種；主線 `a0d344b` 已在應用層以同一個 caller-only `get_my_line_oa_onboarding_status` RPC 追加 LINE OA 任務。未綁定、未加入、已加入待配對、資料衝突會顯示不同文字；已配對、OA 未驗證或查詢失敗不顯示。任務連到 `/me/line-oa`，且和首頁原本的資料查詢用 `Promise.all` 同時執行。Staging 尚未部署這個主線 SHA，不能把它寫成 hosted 已驗收。
+- 首頁資料庫待辦投影仍只有 `event_response`、`dues_outstanding`、`birthday_wish`、`unread_messages`、`profile_incomplete` 五種；主線 `211b363` 已在應用層以同一個 caller-only `get_my_line_oa_onboarding_status` RPC 追加 LINE OA 任務。未綁定、未加入、已加入待配對、資料衝突會顯示不同文字；已配對、OA 未驗證或查詢失敗不顯示。任務連到 `/me/line-oa`，且和首頁原本的資料查詢用 `Promise.all` 同時執行。這個版本已部署到 staging；仍需用乾淨真人帳號驗收「未加入時出現、完成配對後消失」。
 - 本輪本機驗證：typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、`check:migrations`、`check:db-verifications` 通過；`verify:db` 因本機 Docker／Supabase reset 長時間無回應而中止，未宣稱通過。沒有手動觸發 CI 或 Browser Smoke。
 - 本輪再次嘗試 E-06／E-07：Chrome DevTools MCP 的 staging 頁面沒有登入 session，開管理頁會回到 `/login`；桌面 Chrome 的既有頁面是平台管理員，不採用其數字冒充社員／社務效能；iPhone 鏡像停在「解鎖你的 iPhone」，沒有產生實機驗收證據。E-06 與 E-07 維持未結案。
 - 尚未結案且需要外部條件／產品決定的項目仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。這些不能只靠本機程式修改誠實結案。
