@@ -1,4 +1,5 @@
 import { APP_TIME_ZONE } from "@/lib/time";
+import type { LineOaOnboardingStatus } from "@/lib/line/oa-onboarding";
 import { memberHomePrimaryAction } from "@/lib/member-home";
 import { pendingTaskUrgency } from "@/lib/member-home/pending-task-urgency";
 import type {
@@ -122,6 +123,58 @@ export function tasksFrom(tasks: readonly MemberHomePendingTask[]): readonly Por
       href: task.actionPath,
     };
   });
+}
+
+/**
+ * LINE OA onboarding is a caller-only projection, not part of the shared home
+ * projection. Keep it as a separate task so the database task contract does
+ * not gain a second identity lookup, while the member still sees one coherent
+ * list of things that need attention.
+ */
+export function lineOaTaskFrom(status: LineOaOnboardingStatus): PortalTask | null {
+  if (!status.oaAvailable || status.pairStatus === "paired") return null;
+
+  if (status.pairStatus === "conflict") {
+    return {
+      icon: "user",
+      title: "LINE 身份待確認",
+      detail: "請社務幹部協助處理",
+      status: null,
+      tone: "neutral",
+      href: "/me/line-oa",
+    };
+  }
+
+  if (!status.lineLoginBound) {
+    return {
+      icon: "user",
+      title: "先綁定 LINE 身份",
+      detail: "完成後才能確認本社好友身份",
+      status: null,
+      tone: "neutral",
+      href: "/me/line-oa",
+    };
+  }
+
+  if (status.friendStatus === "following") {
+    return {
+      icon: "bell",
+      title: "LINE OA 待完成配對",
+      detail: "已加入本社 LINE，等待身份確認",
+      status: null,
+      tone: "neutral",
+      href: "/me/line-oa",
+    };
+  }
+
+  return {
+    icon: "bell",
+    title: status.friendStatus === "unfollowed" ? "重新加入本社 LINE OA" : "加入本社 LINE OA",
+    detail: "加入後可接收本社重要通知",
+    status: null,
+    tone: "neutral",
+    href: "/me/line-oa",
+  };
 }
 
 export function announcementsFrom(

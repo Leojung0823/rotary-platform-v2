@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { Notice } from "@/components/ui";
-import { MemberLineOaOnboarding, MemberLineOaOnboardingLoading } from "@/components/member-line-oa-onboarding";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { resolveMemberHomeProjection } from "@/lib/member-home.server";
+import { resolveLineOaOnboardingStatus } from "@/lib/line/oa-onboarding.server";
 import { APP_TIME_ZONE } from "@/lib/time";
 import type { Identity } from "@/lib/auth";
 import type { ClubContext } from "@/lib/experience-context";
@@ -10,6 +10,7 @@ import {
   announcementsFrom,
   entriesFrom,
   featuredEventFrom,
+  lineOaTaskFrom,
   tasksFrom,
   upcomingEventsFrom,
 } from "@/lib/member-portal/from-projection";
@@ -53,28 +54,36 @@ async function PortalBody({
   features: Features;
   messagesHref: string;
 }) {
-  const resolution = await resolveMemberHomeProjection(activeClub.clubId);
+  const [resolution, lineOaResolution] = await Promise.all([
+    resolveMemberHomeProjection(activeClub.clubId),
+    features.lineOaOnboarding
+      ? resolveLineOaOnboardingStatus(activeClub.clubId)
+      : Promise.resolve(null),
+  ]);
   if (!resolution.ok) {
     return <Notice tone="error">目前無法載入社員首頁資料，請稍後重新整理。</Notice>;
   }
 
   const { projection } = resolution;
   const covers = await signCoverImageUrls([projection.primaryEvent?.coverImagePath]);
+  const lineOaTask = lineOaResolution?.ok ? lineOaTaskFrom(lineOaResolution.status) : null;
+  // Put the one task that unlocks club notifications first. The home list is
+  // intentionally capped at five rows, so an unfinished OA setup cannot be
+  // hidden behind five older reminders.
+  const tasks = lineOaTask
+    ? [lineOaTask, ...tasksFrom(projection.pendingTasks)].slice(0, 5)
+    : tasksFrom(projection.pendingTasks);
 
   return <MemberPortalBody
     featuredEvent={projection.primaryEvent === null
       ? null
       : featuredEventFrom(projection.primaryEvent, covers.get(projection.primaryEvent.coverImagePath ?? ""))}
     upcomingEvents={upcomingEventsFrom(projection.upcomingEvents)}
-    tasks={tasksFrom(projection.pendingTasks)}
+    tasks={tasks}
     announcements={features.messageCentre ? announcementsFrom(projection, activeClub.clubId) : []}
     messagesHref={messagesHref}
     entries={entriesFrom(activeClub.clubId, features)}
-  >
-    {features.lineOaOnboarding && <Suspense fallback={<MemberLineOaOnboardingLoading />}>
-      <MemberLineOaOnboarding clubId={activeClub.clubId} />
-    </Suspense>}
-  </MemberPortalBody>;
+  />;
 }
 
 /**
