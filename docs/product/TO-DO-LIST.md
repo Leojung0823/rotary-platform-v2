@@ -16,6 +16,7 @@
 - Staging Release `35234886243` 與 Staging Go-Live `35235024918` 都使用同一個 exact SHA `5ba1e273c8e88344b47b92120fc1a4431be820a8`，兩者均成功；staging `/api/health` 現場回報 `status=ok`、`revision=5ba1e273c8e8`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - #199、#200、#201、#202 已進入 `main`；這些最近變更沒有新增本輪未發布的 migration。後續若只更新文件，不需重新部署 staging。
 - 首頁目前的「待辦提醒」資料來源仍只有 `event_response`、`dues_outstanding`、`birthday_wish`、`unread_messages`、`profile_incomplete` 五種。**沒有加入本社 LINE OA 的社員目前不會出現在這張待辦卡**；若 `line_oa_onboarding_v1` 開啟、OA 已驗證且提醒尚未被個人節流隱藏，會在首頁另外看到 LINE OA 引導卡，並可從 `/me/line-oa` 進入。這是現況設計，不是已完成的「LINE OA 待辦」功能。
+- 本輪再次嘗試 E-06／E-07：Chrome DevTools MCP 的 staging 頁面沒有登入 session，開管理頁會回到 `/login`；桌面 Chrome 的既有頁面是平台管理員，不採用其數字冒充社員／社務效能；iPhone 鏡像停在「解鎖你的 iPhone」，沒有產生實機驗收證據。E-06 與 E-07 維持未結案。
 - 尚未結案且需要外部條件／產品決定的項目仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。這些不能只靠本機程式修改誠實結案。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
