@@ -5,8 +5,8 @@
 
 ## 2026-09-18 最新現場狀態（本節優先）
 
-- Staging runtime 基線仍是 `211b363526ca1398f2cba49708d9c7a0dfca1422`；最近程式／測試 commit 是 `16fcc258bb8db4d8541d8fce9326b7f974aac6ab`，目前沒有 open PR。PR #202 已合併，本輪另加入 LINE OA 待辦整合；`main` head 請用 `git rev-parse origin/main` 現場核對。
-- `16fcc25` 只修正 `member-home` E2E 對舊版 LINE 首頁卡片的過時斷言，沒有改 runtime、資料庫或權限；前一輪 Browser Smoke `35310867689` 的 6 個失敗均集中在該舊斷言，另外 183 個測試通過。修正後的自動 CI `35312050355` 與 Browser Smoke `35312050315` 正在執行，不能在結果出來前標成全綠。
+- Staging runtime 基線仍是 `211b363526ca1398f2cba49708d9c7a0dfca1422`；本輪程式／測試修正為 `16fcc25`、`5f794e1`，目前沒有 open PR。PR #202 已合併，本輪另加入 LINE OA 待辦整合；`main` head 請用 `git rev-parse origin/main` 現場核對。
+- `16fcc25`、`5f794e1` 只修正 `member-home` E2E 對舊版 LINE 首頁卡片的過時斷言，沒有改 runtime、資料庫或權限。前一輪 `35310867689` 有 6 個舊斷言失敗；更新一次後 `35312050315` 剩 1 個漏網舊斷言失敗，另有 1 個標籤測試 retry 後通過的 flaky。最新自動 CI `35313186838` 與 Browser Smoke `35313186884` 正在執行，不能在結果出來前標成全綠。
 - Staging Release `35308584458` 成功；第一次 Go-Live `35308757890` 因 Render 免費方案切換超時失敗，取消卡住的 Render deploy 後，重跑 Go-Live `35309848544` 使用同一個 exact SHA 並全部成功；staging `/api/health` 為 `status=ok`、`revision=211b363526ca`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - 首頁「待辦提醒」現在會在 `line_oa_onboarding_v1` 開啟、OA 已驗證且 caller-only onboarding RPC 回報未完成時，追加 LINE OA 任務；未綁定、未加入、已加入待配對與資料衝突會分別顯示，已配對者消失。資料庫待辦投影仍維持五種，沒有新增 migration 或改權限；任務入口是 `/me/line-oa`。這個修正已部署到 staging，但仍需用乾淨真人帳號驗收「未加入時出現、完成配對後消失」。
 - 本輪補上本機瀏覽器 fixture：新增「LINE Login 已綁定、但沒有 OA follower」社員，`member-home` E2E 會確認首頁待辦顯示「加入本社 LINE OA」並指向 `/me/line-oa`。這只增加本機回歸覆蓋，不改資料庫結構，也不取代 staging 真人驗收。
