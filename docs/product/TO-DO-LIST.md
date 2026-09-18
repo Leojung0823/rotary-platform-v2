@@ -20,6 +20,7 @@
 - 本輪本機驗證：typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、`check:migrations`、`check:db-verifications` 通過；`verify:db` 因本機 Docker／Supabase reset 長時間無回應而中止，未宣稱通過。沒有手動觸發 CI 或 Browser Smoke。
 - 本輪再次嘗試 E-06／E-07：Chrome DevTools MCP 的 staging 頁面沒有登入 session，開管理頁會回到 `/login`；桌面 Chrome 的既有頁面是平台管理員，不採用其數字冒充社員／社務效能；iPhone 鏡像停在「解鎖你的 iPhone」，沒有產生實機驗收證據。E-06 與 E-07 維持未結案。
 - 尚未結案且需要外部條件／產品決定的項目仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。這些不能只靠本機程式修改誠實結案。
+- 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；平台管理員直接進 PANCHIAO 社費頁被後端拒絕，符合「必須有該社財務權限」的邊界。仍需用具 `finance.read` 的社務帳號驗收社費資料與報表，不把旗標開啟當成完整結案。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
 
@@ -521,8 +522,7 @@ production 沒有修改。
 這些是需要另外開發與驗證的產品功能，不應誤寫成「等外部設定」：
 
 - `[>]` 社費、收款與核銷（應收、部分收款、代墊、核銷）已在 PR #108 合併並包含在目前 staging，待 hosted／角色邊界驗收。
-  2026-09-16 以 LEO 秘書帳號抽查管理路徑得到 404；管理工具也未顯示社費入口，核對後是 `dues_finance_v1` 旗標尚未開啟，
-  不是路由缺失。需先由平台管理員在 staging 開旗標，再用具 `finance.read` 的角色驗收。
+  2026-09-18 已開啟 staging `dues_finance_v1`；下一步是用具 `finance.read` 的社務帳號驗收管理頁、社員個人查詢、報表、空資料與跨社拒絕。
 - `[>]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）已在 PR #108 合併並包含在目前 staging，待 hosted／權限與空資料驗收。
 - `[>]` LINE Rich Menu 與完整 OA 整合已在 PR #107 合併並包含在目前 staging，待各社 OA 外部設定（見 E-11）。
 - `[>]` 手機 Web App（安裝、離線提示與推播準備）已在 PR #109 合併，待真實手機驗收。
