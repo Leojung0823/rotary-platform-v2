@@ -45,6 +45,18 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     await expect(memberPage).toHaveURL(/\/events\/checkin/u);
     await memberContext.close();
 
+    const lineOaContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const lineOaPage = await lineOaContext.newPage();
+    await login(lineOaPage, "e2e-shell-line-oa-unpaired@example.test");
+    await expect(lineOaPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
+    // This account has a bound LINE Login identity but no follower row. The
+    // homepage task must tell the member to add the OA instead of silently
+    // treating the account as complete.
+    const lineOaTask = lineOaPage.getByRole("link", { name: /加入本社 LINE OA/u });
+    await expect(lineOaTask).toBeVisible();
+    await expect(lineOaTask).toHaveAttribute("href", "/me/line-oa");
+    await lineOaContext.close();
+
     const multiContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const multiPage = await multiContext.newPage();
     await login(multiPage, "e2e-shell-multi@example.test");

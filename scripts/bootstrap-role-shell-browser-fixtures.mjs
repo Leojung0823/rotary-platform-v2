@@ -71,6 +71,27 @@ async function accountFor(email, displayName) {
   return { ...account.data, authUserId: user.id };
 }
 
+async function addLineIdentityFixture({ account, providerSubject, displayName, email }) {
+  const existing = await admin.from("line_identities")
+    .select("id")
+    .eq("app_account_id", account.id)
+    .eq("identity_status", "active")
+    .maybeSingle();
+  if (existing.error) fail("could not inspect local LINE identity fixture");
+  if (existing.data) return;
+
+  const identity = await admin.from("line_identities").insert({
+    person_id: account.person_id,
+    app_account_id: account.id,
+    provider_subject: providerSubject,
+    display_name: displayName,
+    email,
+    identity_status: "active",
+    last_login_at: new Date().toISOString(),
+  });
+  if (identity.error) fail("could not create local LINE identity fixture");
+}
+
 async function clubFor(id, code, name, createdBy) {
   const existing = await admin.from("clubs").select("id").eq("club_code", code).maybeSingle();
   if (existing.error) fail("could not inspect local fixture club");
@@ -652,6 +673,7 @@ const [memberClub, secondMemberClub, managedClub, birthdayV2Club] = await Promis
 
 const fixtures = Object.fromEntries(await Promise.all([
   ["ordinary", "e2e-shell-ordinary@example.test", "一般社員"],
+  ["lineOaUnpaired", "e2e-shell-line-oa-unpaired@example.test", "已綁定但未加入 OA 的社員"],
   ["multi", "e2e-shell-multi@example.test", "多社社員"],
   ["memberManager", "e2e-shell-member-manager@example.test", "社員管理者"],
   ["management", "e2e-shell-management@example.test", "純社務管理者"],
@@ -671,6 +693,7 @@ const birthdayV2Recipient = await accountFor(
 );
 
 await addMembership({ clubId: memberClub.id, account: fixtures.ordinary, createdBy });
+await addMembership({ clubId: memberClub.id, account: fixtures.lineOaUnpaired, createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.multi, createdBy });
 await addMembership({ clubId: secondMemberClub.id, account: fixtures.multi, createdBy });
 await addMembership({ clubId: memberClub.id, account: fixtures.memberManager, createdBy });
@@ -708,6 +731,12 @@ await addMemberTagFixture({
 await configureLineOaFixture({
   clubId: memberClub.id,
   email: "e2e-shell-member-manager@example.test",
+});
+await addLineIdentityFixture({
+  account: fixtures.lineOaUnpaired,
+  providerSubject: "U-e2e-shell-line-oa-unpaired",
+  displayName: "已綁定但未加入 OA 的社員",
+  email: "e2e-shell-line-oa-unpaired@example.test",
 });
 await addBlessingIouLedgerFixture({
   clubId: memberClub.id,
