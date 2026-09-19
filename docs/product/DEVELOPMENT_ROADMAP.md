@@ -2,6 +2,17 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新核對（`e7e512d` 後）
+
+- `git fetch origin --prune` 後，`main`／`origin/main` exact SHA 都是
+  `e7e512d99606568520fefe48e17b55916f5e044b`；目前沒有 open PR。
+- 文件同步的自動 CI `35468519910`、Browser Smoke `35468519907` 均成功；程式提交 `0ddb8a0` 的 CI
+  `35468492760` 已成功，但 Browser Smoke `35468492778` 在本次核對時仍執行中，不能當成完成證據。
+- staging health 仍是 `revision=07002d81be23`、`status=ok`、`issues=[]`。最新主線未部署，因 GitHub staging
+  `SUPABASE_ACCESS_TOKEN` 尚未取得 `vmmzdautcsgknhyqrsto` 的授權；production 沒有修改。
+- 因此下一個可執行順序仍是：先修復 staging 授權後，部署最新 exact SHA，再跑社費／生日設定／一般社員拒絕的受保護 hosted acceptance；
+  另外 E-03、E-06、E-07、E-08、E-10、E-11 仍分別需要真人、登入效能 session、實機、產品決策或外部 LINE OA 設定。
+
 ## 2026-09-20 最新核對（main 自動檢查已完成）
 
 - `origin/main` 與本機 `main` 都是 `4d2da7a12a6c290a77a6f7a5f3460076166353a8`；自動 CI `35466606215`、Browser Smoke `35466606217` 均成功，沒有手動觸發。

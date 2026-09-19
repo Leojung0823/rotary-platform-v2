@@ -2,6 +2,19 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新核對（`e7e512d` 後）
+
+- `git fetch origin --prune` 後，`main` 與 `origin/main` 都是 exact SHA
+  `e7e512d99606568520fefe48e17b55916f5e044b`；目前沒有 open PR。
+- 文件同步提交的自動 CI `35468519910` 與 Browser Smoke `35468519907` 均成功。
+  `0ddb8a0` 的 CI `35468492760` 已成功；其 Browser Smoke `35468492778` 在本次核對時仍執行中，不能先當成通過。
+- staging `/api/health` 現場仍回報 `revision=07002d81be23`、`status=ok`、`issues=[]`；最新主線尚未部署。
+  Staging Go-Live 的阻塞仍是 GitHub environment secret `SUPABASE_ACCESS_TOKEN` 無法授權 staging project
+  `vmmzdautcsgknhyqrsto`，不是產品程式錯誤。production 沒有修改。
+- 工作樹只保留既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`；本輪沒有讀寫、覆蓋或提交它。
+- E-05「LINE 額度超過時停止並提示」已結案；目前真正未結案的外部／決策項目仍是 E-03、E-06、E-07、E-08、E-10、E-11，
+  以及尚未在最新 staging runtime 執行的社費 hosted acceptance。E-09 依產品決定暫緩。
+
 ## 2026-09-20 最新核對（main 自動檢查已完成）
 
 - `origin/main` 與本機 `main` 現在都是 `4d2da7a12a6c290a77a6f7a5f3460076166353a8`；自動 CI `35466606215` 與 Browser Smoke `35466606217` 均已成功，沒有手動觸發。
