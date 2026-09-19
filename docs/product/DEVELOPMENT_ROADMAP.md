@@ -6,8 +6,8 @@
 
 ## 2026-09-20 最新核對（生日設定獨立顯示已發布）
 
-- 最新 `origin/main` 為 `95ee285c0874eeb141308df2102d2ab22866609b`（本次文件同步提交），沒有 open PR；生日修正的產品 commit／staging runtime
-  為 `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`。工作樹既有的未追蹤外部企劃書未納入本輪。
+- 本節的產品與 staging 證據對應產品 commit／staging runtime `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`；後續文件同步 commit
+  只更新紀錄、不重新部署，最新 `origin/main` 請以現場 `git rev-parse origin/main` 核對。沒有 open PR；工作樹既有的未追蹤外部企劃書未納入本輪。
 - 這次修正 `src/app/(authenticated)/me/page.tsx`：生日公開設定不再被關閉中的通用隱私卡片連帶隱藏；通用通知／名冊隱私仍保持關閉。
   `src/lib/privacy-in-one-place.test.ts` 已補上顯示邊界回歸，沒有新增 migration 或改權限。
 - 本機完整 Vitest `196` 檔／`1459` tests、typecheck、lint（既有 warning）、build 通過；自動 CI `35459107612` 成功。

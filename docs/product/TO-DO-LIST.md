@@ -10,8 +10,8 @@
 
 ## 2026-09-20 最新核對（生日設定獨立顯示修正已發布）
 
-- 權威主線目前是 `95ee285c0874eeb141308df2102d2ab22866609b`（本次文件同步提交），目前沒有 open PR；生日修正的產品 commit／staging runtime
-  仍是 `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`。工作樹仍只保留既有、未追蹤的
+- 本節的產品與 staging 證據對應產品 commit／staging runtime `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`；後續文件同步 commit
+  只更新紀錄、不重新部署，最新 `origin/main` 請以現場 `git rev-parse origin/main` 核對。目前沒有 open PR。工作樹仍只保留既有、未追蹤的
   `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪沒有讀寫或納入它。
 - 本輪真正修正的缺口是：生日公開設定原本被 `SHOW_PRIVACY_SETTINGS = false` 一起隱藏，導致生日旗標已開啟但社員在「我的」頁看不到設定。
   現在生日設定是獨立卡片；通用「通知／名冊隱私」仍維持關閉，沒有放寬其他設定。
