@@ -8,7 +8,7 @@
 - 產品已確認 LINE 推播遇到 429／方案額度上限時採「停止並提示」，不採「繼續送並只記錄」。同一批仍可用同一 retry key 安全重試一次；確認仍為 `rate_limited` 後，停止剩餘批次。
 - 已新增 `20260919000100_line_oa_quota_notice.sql` 與 `get_line_oa_quota_notice(uuid)`。它只讓 `oa.read` 的社務管理者讀取最新會員訊息推播額度失敗，排除 Rich Menu；成功或其他結果後提醒自動消失，沒有把維運訊息放進一般社員訊息中心。
 - `/clubs/[clubId]/line-oa?mode=management` 現在會顯示「LINE 推播已暫停」與部分送達數字；手動送出原本已有即時錯誤提示。`src/lib/line/quota-notice.ts` 負責 bounded projection parsing。
-- 本輪已完成程式／verification 檔／單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行，尚未 staging Go-Live。下一步只需用本輪 exact SHA 做 staging 發布，再用管理幹部與一般社員各一個帳號驗收提示的可見範圍；不做真實社員額度壓力測試。
+- 本輪已完成程式／verification 檔／單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`；staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可讀取 LINE OA 設定與推播紀錄，最新紀錄為 `sent`，所以目前未顯示額度提醒；不要為了驗收硬打真實額度。下一步是取得不消耗正式額度的 rate-limited UI 專項證據，確認管理幹部可見、一般社員不可見。
 
 ## 2026-09-18 最新現場狀態（本節優先）
 

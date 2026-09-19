@@ -8,7 +8,7 @@
 
 - LINE 推播遇到 429／方案額度上限時，產品決定採「停止並提示」：同一批沿用 retry key 安全重試一次，仍是 `rate_limited` 就停止後續批次，不盲目繼續送。
 - 手動推播會在管理頁立即顯示錯誤；排程、活動與訊息中心推播會把部分送達寫入既有 `line_push_logs`，並由新的 `get_line_oa_quota_notice` 在社務管理 → LINE OA 頁面提醒有 `oa.read` 的管理幹部。一般社員不會在訊息中心看到這個維運提醒。
-- 本輪已完成程式、migration、verification 檔與單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行。尚未以本輪 SHA 做 staging Go-Live，所以 E-05 仍是「程式完成、等待 staging 驗收」，不是已部署完成。未用真實社員做額度壓力測試。
+- 本輪已完成程式、migration、verification 檔與單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`，staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可正常讀取 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，目前沒有額度警示。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 rate-limited UI 專項證據。
 
 ## 2026-09-18 最新現場基線（本節優先）
 
