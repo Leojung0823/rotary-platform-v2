@@ -2,6 +2,14 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新補充（`0c8eda1`：E-10 負向角色 hosted acceptance 已可執行）
+
+- 受保護的 `Staging Management Acceptance` 新增手動 `expect_negative_roles` 開關；只有明確開啟且三組保留 staging 測試身份都通過前置檢查時，才會跑停權、退社與外社執行秘書的負向案例。
+- 案例驗證的是後端結果：停權／退社帳號登入導向 `/access-denied` 且沒有主要導覽；外社執行秘書登入後直接開啟目標社管理社員頁也導向 `/access-denied`。一般社員的既有拒絕案例仍保留。
+- 本機完整檢查已通過：typecheck、lint（既有 warning）、Vitest `197` 檔／`1468` tests、build、`verify:db`、migration guard、verification manifest、diff check。
+- 目前沒有 hosted 結果；staging 仍是 `07002d81be23`，所以 E-10 仍是「程式與驗收工具完成、等待外部身份／部署／執行」而非 `[x]`。不會因 workflow 開關存在就把權限驗收標成完成。
+- 不要把測試帳號或密碼寫入文件／repo；只使用 GitHub staging environment secrets，名稱見 workflow。
+
 ## 2026-09-20 最新核對（`351e88a`）
 
 - `git fetch origin --prune` 後，`main`／`origin/main` exact SHA 都是

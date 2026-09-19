@@ -3,6 +3,16 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：`0c8eda1` 已補 E-10 負向 hosted 驗收入口
+
+- `main`／`origin/main` exact SHA 為 `0c8eda142fa38a2dc07d182c58753efa78f74cbd`；本輪沒有手動觸發 CI／Browser Smoke，沒有 open PR。
+- `.github/workflows/staging-management-acceptance.yml` 新增 `expect_negative_roles`（預設 `false`）。開啟時，需在 GitHub `staging` environment 以 secret 提供三組互不相同且保留測試網域的帳號：
+  `STAGING_TEST_SUSPENDED_*`、`STAGING_TEST_ENDED_*`、`STAGING_TEST_OUTSIDER_SECRETARY_*`。
+- 測試前置會 fail closed：缺任何一組、密碼太短、使用真實網域或身份重複都不會進入 Playwright。Playwright 只驗證 `/access-denied` 與目標社管理網址拒絕，不會建立、修改或刪除 staging 資料。
+- 目前**尚未執行**這個選項，因為 staging 尚未部署 `0c8eda1`，且三組外部測試身份尚未準備；E-10 不能標結案。不要為了驗收使用真實社員帳號。
+- 本機證據：typecheck、lint（既有 warning）、Vitest `197`／`1468`、build、`verify:db`、migration guard、verification manifest、diff check 通過。
+- staging release 仍卡在 GitHub `SUPABASE_ACCESS_TOKEN` 對 `vmmzdautcsgknhyqrsto` 授權失敗；production 未修改。既有未追蹤 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不可加入提交。
+
 ## 2026-09-20 最新接力補充：`351e88a` 與 staging 發布阻塞
 
 - `git fetch origin --prune` 後，`main`／`origin/main` 都是

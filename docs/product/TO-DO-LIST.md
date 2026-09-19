@@ -2,6 +2,15 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新核對（`0c8eda1`；E-10 負向驗收入口已補齊）
+
+- `main`／`origin/main` 已同步至 `0c8eda142fa38a2dc07d182c58753efa78f74cbd`；本輪沒有手動觸發 CI 或 Browser Smoke，沒有 open PR。
+- 新增受保護 management acceptance 的 `expect_negative_roles` 選項。開啟後才會讀取三組保留的 staging 測試帳號，驗證：停權社員登入被拒、退社社員登入被拒、外社執行秘書不能開啟目標社的管理社員頁；未開啟時不讀取也不執行這組流程。
+- 驗收前置會拒絕非保留測試網域、短密碼、重複身份或只設定一半的憑證；沒有把任何帳號、密碼或 secret 寫入 repo。相關檔案為 `.github/workflows/staging-management-acceptance.yml`、`e2e/tests/staging-management-acceptance.e2e.mjs` 與 `src/lib/staging-management-acceptance.mjs`。
+- 本機 typecheck、lint（既有 `readdirSync` warning）、Vitest `197` 檔／`1468` tests、build、`verify:db`、migration guard、verification manifest、`git diff --check` 均通過。
+- 這只是把 E-10 的 hosted 驗收工具補成可執行入口，**不是 hosted 結案證據**。目前 staging health 仍為 `revision=07002d81be23`；要先修復 `SUPABASE_ACCESS_TOKEN`、部署此 exact SHA，再準備三個互不相同的保留測試身份並用 `expect_negative_roles=true` 執行。E-10 維持 `[>]`。
+- 既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 仍未讀寫、未提交。
+
 ## 2026-09-20 最新核對（`351e88a`）
 
 - `git fetch origin --prune` 後，`main` 與 `origin/main` 都是 exact SHA
