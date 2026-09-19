@@ -10,6 +10,14 @@
 - 手動推播會在管理頁立即顯示錯誤；排程、活動與訊息中心推播會把部分送達寫入既有 `line_push_logs`，並由新的 `get_line_oa_quota_notice` 在社務管理 → LINE OA 頁面提醒有 `oa.read` 的管理幹部。一般社員不會在訊息中心看到這個維運提醒。
 - 本輪已完成程式、migration、verification 檔與單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`，staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可正常讀取 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，目前沒有額度警示。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 rate-limited UI 專項證據。
 
+## 2026-09-19 最新現場核對（本節優先）
+
+- 文件更新前現場核對的產品／staging exact SHA 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`；Staging Go-Live `35440209578` 成功，staging `/api/health` 回報 `revision=8f109d0fba57`、`status=ok`、`issues=[]`，production 沒有修改。本文件提交後 `main` 會再前進，最新主線請現場以 `git rev-parse origin/main` 核對。
+- Staging Management Acceptance `35440318825` 成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。這完成管理模式的 hosted 正向流程，但不等於社費、服務計劃的完整角色矩陣或 E-10 負向矩陣完成。
+- 已登入 staging 的唯讀抽查確認：LINE OA 管理頁最新推播為 `sent`、目前沒有額度提醒；社費管理頁可讀取 2026–27 年度與 CSV／Excel／PDF 匯出入口；社員「我的」頁有社費入口與代墊申請；服務計劃管理草稿不會出現在社員頁。未為測試硬打真實 429。
+- Chrome DevTools MCP 目前沒有 staging 登入 session，導向管理頁會回 `/login`；因此 E-06 登入後 LCP／FCP／TTFB／INP 仍是**未量測**。桌面 Chrome 只作畫面唯讀驗收，不把非 DevTools trace 的數字當效能證據。
+- 路線圖下一步是補 E-03、E-05 的專項外部證據、E-06 可比效能數據與 E-10 負向矩陣；E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。
+
 ## 2026-09-18 最新現場基線（本節優先）
 
 - Staging runtime 基線仍是 `211b363526ca1398f2cba49708d9c7a0dfca1422`；本輪程式／測試修正為 `16fcc25`、`5f794e1`。PR #202 已合併，另加入 LINE OA 待辦整合；Staging Release `35308584458` 成功，第一次 Go-Live `35308757890` 因 Render 切換超時失敗，重跑 Go-Live `35309848544` 後 migration、部署、exact revision、HTTPS smoke 與 hosted acceptance 全部成功。staging health 為 `status=ok`、`revision=211b363526ca`、`issues=[]`、`warnings=[]`；production 沒有修改。`main` head 請用 `git rev-parse origin/main` 現場核對。
