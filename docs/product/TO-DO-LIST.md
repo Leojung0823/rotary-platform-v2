@@ -10,7 +10,7 @@
 
 ## 2026-09-19 最新核對（E-05 已結案）
 
-- `main` 與 `origin/main` 最新提交為 `9a06aa323641d5251eda567715ac30efd371c953`；這是額度驗收完成後的文件同步提交。staging 目前仍是已發布的 `e7a38b50744243841b430ff9ebab4c9be9a12d37`，Go-Live `35445662577` 以同一個 exact SHA 完成 migration、部署、health、HTTPS smoke 與 hosted acceptance；文件-only 提交不需重新部署 staging。
+- `main` 已在額度驗收後完成進度文件同步與本次版本分界修正；精確 SHA 請用本文件標頭的 `git rev-parse origin/main` 現場核對。staging 目前仍是已發布的 `e7a38b50744243841b430ff9ebab4c9be9a12d37`，Go-Live `35445662577` 以同一個 exact SHA 完成 migration、部署、health、HTTPS smoke 與 hosted acceptance；文件-only 提交不需重新部署 staging。
 - staging `/api/health` 現場回報 `status=ok`、`environment=staging`、`revision=e7a38b507442`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
 - E-05 專項驗收 `35445780317` 成功：建立合成 `rate_limited` push log、不呼叫 LINE API；管理幹部看到「LINE 推播已暫停」與部分送達數字，一般社員無法進入管理頁且看不到提醒；fixture cleanup 成功。
 - E-05 第一次專項 run `35445453225` 失敗原因已修正：workflow 漏裝根目錄 `@supabase/supabase-js`，新增 `npm ci` 與 workflow 順序測試；不是產品程式或資料庫問題。
