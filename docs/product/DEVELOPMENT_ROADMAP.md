@@ -4,23 +4,30 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
-## 2026-09-19 最新核對（E-05 已結案）
+## 2026-09-19 最新核對（E-05 已結案；推播受眾隔離已修正）
 
-- `main` 已在額度驗收後完成進度文件同步與本次版本分界修正；精確 SHA 請用本文件標頭的 `git rev-parse origin/main` 現場核對。Staging 目前仍是已發布的 `e7a38b50744243841b430ff9ebab4c9be9a12d37`，Go-Live `35445662577` 已以同一個 SHA 完成，health 回報 `revision=e7a38b507442`、`issues=[]`，production 沒有修改；文件-only 提交不需重新部署 staging。
+- 程式提交 `d9468bdc291926eab80e1034c4846efc175460f0` 已推上 `main`，並由 Staging Go-Live `35446974648` 以 exact SHA 完成；文件後續提交會讓 `main` 再前進，精確 SHA 請以 `git rev-parse origin/main` 現場核對。staging health 回報 `revision=d9468bdc2919`、`status=ok`、`issues=[]`，production 沒有修改。
 - LINE 額度專項 `35445780317` 已成功：只使用 staging 合成 `rate_limited` push log，不呼叫 LINE API；管理幹部看到停止提示與部分送達數字，一般社員不可見，cleanup 成功。
 - E-05 現在標記為 `[x]`。第一次 run `35445453225` 的依賴安裝缺口已在 `e7a38b5` 修正，並由 workflow 順序測試鎖定。
 - 下一個可執行順序是 E-03 真人身份核對、E-10 負向角色矩陣與 E-06 可比效能量測；E-07、E-08、E-11 仍需要實機、產品決策或外部 OA 設定，E-09 維持暫緩。
+
+## 2026-09-19 LINE OA 推播受眾隔離修正
+
+- 實際掃描發現共同推播 loader 原本只看 follower 的 `following` 狀態，沒有再確認 follower 對應社員目前仍是該社的 active membership；退社／停權／外社或尚未配對的舊 follower row 可能被納入全社推播。
+- 已修正 `src/lib/line/oa-dispatch.ts`：同時查詢該社 active memberships，只保留 active person 的 following follower，並對 OA user id 去重；手動廣播與既有 API 推播因此共用同一個受眾邊界。
+- 新增 `src/lib/line/oa-dispatch.test.ts` 回歸測試；沒有修改登入、RLS、權限、社團隔離規則，也沒有新增 migration。
+- 本機 typecheck、lint、完整 Vitest `196` 檔／`1456` tests、build、verify:db、migration guard、verification manifest、diff check 均通過；staging Go-Live `35446974648` 已成功。
 
 ## 2026-09-19 E-05 決策與實作進度（本節優先）
 
 - LINE 推播遇到 429／方案額度上限時，產品決定採「停止並提示」：同一批沿用 retry key 安全重試一次，仍是 `rate_limited` 就停止後續批次，不盲目繼續送。
 - 手動推播會在管理頁立即顯示錯誤；排程、活動與訊息中心推播會把部分送達寫入既有 `line_push_logs`，並由新的 `get_line_oa_quota_notice` 在社務管理 → LINE OA 頁面提醒有 `oa.read` 的管理幹部。一般社員不會在訊息中心看到這個維運提醒。
 - 本輪新增受保護的 `Staging LINE Quota Notice Acceptance` workflow：只允許 `workflow_dispatch`、`main`、exact SHA、staging environment 與測試社團；以合成資料驗證管理員看到提示，不呼叫 LINE API，完成後只清除自身 marker 資料。若測試社團已有啟用中的 OA，會 fail closed，不會覆蓋既有設定。workflow 另固定先安裝根目錄依賴，避免 fixture 載入失敗。
-- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。Staging Go-Live `35445662577` 的 runtime 為 `e7a38b507442`，`/api/health` 回報 `status=ok`、`issues=[]`。額度專項 `35445780317` 已成功完成管理員／社員 UI 驗收與 cleanup；未用真實社員做額度壓力測試，也不為測試消耗正式額度。
+- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。Staging Go-Live `35446974648` 的 runtime 為 `d9468bdc2919`，`/api/health` 回報 `status=ok`、`issues=[]`。額度專項 `35445780317` 已成功完成管理員／社員 UI 驗收與 cleanup；未用真實社員做額度壓力測試，也不為測試消耗正式額度。
 
 ## 2026-09-19 最新現場核對（本節優先）
 
-- 2026-09-19 最新 staging runtime exact SHA 為 `e7a38b50744243841b430ff9ebab4c9be9a12d37`；Staging Go-Live `35445662577` 成功，`/api/health` 回報 `revision=e7a38b507442`、`status=ok`、`issues=[]`，production 沒有修改。自動 CI／Browser Smoke 由 push 產生，本輪沒有手動觸發或重跑。
+- 2026-09-19 最新 staging runtime exact SHA 為 `d9468bdc291926eab80e1034c4846efc175460f0`；Staging Go-Live `35446974648` 成功，`/api/health` 回報 `revision=d9468bdc2919`、`status=ok`、`issues=[]`，production 沒有修改。自動 CI／Browser Smoke 由 push 產生，本輪沒有手動觸發或重跑。
 - Staging Management Acceptance `35440318825` 成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。這完成管理模式的 hosted 正向流程，但不等於社費、服務計劃的完整角色矩陣或 E-10 負向矩陣完成。
 - 本機針對性瀏覽器驗收補充通過：`officer-mode-1440` 9 passed／1 intentional skip，涵蓋模式邊界、跨社管理路徑拒絕、社費與 CSV／Excel／PDF 匯出及無社籍執行秘書；`interact-hub-1440`／`375` 共 4 passed；`line-oa-rich-menu-1440` 1 passed；`line-oa-audience-1440` 5 passed，涵蓋額度停止提示只給管理幹部、一般社員被拒絕。這些只作本機回歸證據，不取代 staging 真人與各社 OA 驗收。
 - 已登入 staging 的唯讀抽查確認：LINE OA 管理頁最新推播為 `sent`、目前沒有額度提醒；社費管理頁可讀取 2026–27 年度與 CSV／Excel／PDF 匯出入口；社員「我的」頁有社費入口與代墊申請；服務計劃管理草稿不會出現在社員頁。未為測試硬打真實 429。

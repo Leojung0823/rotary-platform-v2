@@ -3,12 +3,19 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-19 最新核對（E-05 已結案）
+## 2026-09-19 最新核對（E-05 已結案；推播受眾隔離已修正）
 
-- `main`／`origin/main` 已在額度驗收後完成進度文件同步與本次版本分界修正；精確 SHA 請用本文件標頭的 `git rev-parse origin/main` 現場核對。staging 目前仍是已發布的 `e7a38b50744243841b430ff9ebab4c9be9a12d37`，Go-Live `35445662577` 已用同一個 exact SHA 完成，`/api/health` 為 `status=ok`、`revision=e7a38b507442`、`issues=[]`；文件-only 提交不需重新部署 staging。
+- 程式提交 `d9468bdc291926eab80e1034c4846efc175460f0` 已推上 `main`，並由 Staging Go-Live `35446974648` 以同一個 exact SHA 完成；文件後續提交會讓 `main` 再前進，精確主線 SHA 請以 `git rev-parse origin/main` 現場核對。staging `/api/health` 為 `status=ok`、`revision=d9468bdc2919`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；文件-only 提交不需重新部署 staging。
 - LINE 額度專項 `35445780317` 成功：合成 rate-limited push log、管理幹部看到停止提示與部分送達數字、一般社員無法看到、cleanup 成功；沒有呼叫 LINE API，也沒有修改 production。
 - 第一次專項 `35445453225` 因 workflow 漏裝根目錄 `@supabase/supabase-js` 失敗；已在 `e7a38b5` 加入 `npm ci`，並由 `staging-line-quota-acceptance-workflow.test.ts` 鎖定 seed 必須在依賴安裝之後。
 - E-05 已從待驗收清單移除。接下來仍需 E-03 follow 正確身份真人核對、E-06 登入後可比效能數據、E-10 多社／停權／退社／外社負向矩陣；E-07、E-08、E-11 需外部實機／產品／LINE OA 條件，E-09 維持暫緩。
+
+## 2026-09-19 LINE OA 推播受眾隔離修正
+
+- 實際掃描發現共同推播 loader 原本只看 follower 的 `following` 狀態，沒有再確認 follower 對應社員目前仍是該社的 active membership；退社／停權／外社或尚未配對的舊 follower row 可能被納入全社推播。
+- 已修正 `src/lib/line/oa-dispatch.ts`：同時查詢該社 active memberships，只保留 active person 的 following follower，並對 OA user id 去重；手動廣播與既有 API 推播共用這個受眾邊界。
+- 新增 `src/lib/line/oa-dispatch.test.ts` 回歸測試；沒有修改登入、RLS、權限、社團隔離規則，也沒有新增 migration。
+- 本機 typecheck、lint、完整 Vitest `196` 檔／`1456` tests、build、verify:db、migration guard、verification manifest、diff check 均通過；Staging Go-Live `35446974648` 已成功。
 
 ## 2026-09-19 E-05 決策與實作進度（本節優先）
 
@@ -18,7 +25,7 @@
 - 已新增 `20260919000100_line_oa_quota_notice.sql` 與 `get_line_oa_quota_notice(uuid)`。它只讓 `oa.read` 的社務管理者讀取最新會員訊息推播額度失敗，排除 Rich Menu；成功或其他結果後提醒自動消失，沒有把維運訊息放進一般社員訊息中心。
 - `/clubs/[clubId]/line-oa?mode=management` 現在會顯示「LINE 推播已暫停」與部分送達數字；手動送出原本已有即時錯誤提示。`src/lib/line/quota-notice.ts` 負責 bounded projection parsing。
 - 本輪新增 `.github/workflows/staging-line-quota-acceptance.yml`、`scripts/staging-line-quota-acceptance-fixture.mjs` 與 `e2e/tests/staging-line-quota-acceptance.e2e.mjs`。它只對名稱／代碼明確是 staging/test 的測試社團建立合成 OA 與 `rate_limited` push log，讓受保護 hosted browser 驗收管理員提示；不呼叫 LINE API，驗收後只清除自身 marker，遇到既有啟用 OA 或非 fixture 子資料會停止。workflow 已補上根目錄 `npm ci`，並於 `35445780317` 成功執行。
-- 本輪已完成程式／verification 檔／單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。現場核對 staging Go-Live `35440209578` 的 runtime 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`；staging `/api/health` 回報 `revision=8f109d0fba57`、`issues=[]`。本段核對時的主線基準為 `b49ae9e8db6337b19058d3033c67bbdfb04b6184`，後續未重新部署 staging；最新主線請以 `git rev-parse origin/main` 現場核對。已登入的社務管理頁顯示 25 位社員、15 位已配對、10 位未配對；最新推播為 `sent`，所以目前未顯示額度提醒；不要為了驗收硬打真實額度。本機隔離 fixture 已確認管理幹部看到 rate-limited 提醒與部分送達數字，一般社員被拒絕且看不到提醒；本輪已把 fixture 固定在 `line-oa-audience-1440`，最新一次 `5 passed`。下一步只剩不消耗正式額度的 staging UI 專項證據。
+- 本輪已完成程式／verification 檔／單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。現場核對 staging Go-Live `35446974648` 的 runtime 為 `d9468bdc291926eab80e1034c4846efc175460f0`；staging `/api/health` 回報 `revision=d9468bdc2919`、`issues=[]`。已登入的社務管理頁最新推播為 `sent`，所以目前未顯示額度提醒；不要為了驗收硬打真實額度。本機隔離 fixture 與受保護 staging run `35445780317` 已確認管理幹部看到 rate-limited 提醒與部分送達數字，一般社員被拒絕且看不到提醒，cleanup 成功。
 
 ## 2026-09-19 最新現場核對（本節優先）
 
