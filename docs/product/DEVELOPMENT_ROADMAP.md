@@ -1,8 +1,14 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-18（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-19（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
+
+## 2026-09-19 E-05 決策與實作進度（本節優先）
+
+- LINE 推播遇到 429／方案額度上限時，產品決定採「停止並提示」：同一批沿用 retry key 安全重試一次，仍是 `rate_limited` 就停止後續批次，不盲目繼續送。
+- 手動推播會在管理頁立即顯示錯誤；排程、活動與訊息中心推播會把部分送達寫入既有 `line_push_logs`，並由新的 `get_line_oa_quota_notice` 在社務管理 → LINE OA 頁面提醒有 `oa.read` 的管理幹部。一般社員不會在訊息中心看到這個維運提醒。
+- 本輪已完成程式、migration、verification 檔與單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行。尚未以本輪 SHA 做 staging Go-Live，所以 E-05 仍是「程式完成、等待 staging 驗收」，不是已部署完成。未用真實社員做額度壓力測試。
 
 ## 2026-09-18 最新現場基線（本節優先）
 
@@ -13,7 +19,7 @@
 - 本輪補上本機瀏覽器 fixture：以「LINE Login 已綁定、但沒有 OA follower」社員驗證首頁待辦會顯示「加入本社 LINE OA」並連到 `/me/line-oa`。這是回歸測試覆蓋，不等於 staging 真人配對驗收。
 - 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；目前只確認平台管理員沒有該社財務頁權限，仍要用 `finance.read` 社務帳號驗收社費與報表。
 - 本輪本機驗證：typecheck、lint、Vitest `193` 檔／`1445` tests、build、migration guard、verification manifest 通過；`verify:db` 因本機 Docker／Supabase reset 無回應中止，沒有把它當成綠燈。沒有手動觸發 CI／Browser Smoke。
-- 下一步仍分兩類：E-03、E-10、E-06 可在條件具備時繼續驗收；E-05、E-07、E-08、E-11 需要產品、真人、實機或外部 LINE OA 設定；E-09 維持暫緩。沒有外部證據的項目不改標成完成。
+- 下一步仍分兩類：E-03、E-10、E-06 可在條件具備時繼續驗收；E-05 已完成產品決策與程式，待 staging 管理頁驗收；E-07、E-08、E-11 需要真人、實機或外部 LINE OA 設定；E-09 維持暫緩。沒有外部證據的項目不改標成完成。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
 
@@ -557,7 +563,7 @@ PR-01c 不做：
 [已完成 E-01] Flex staging 發布／旗標／真人收訊
 [已完成 E-02] 生日邀請實際送達／冪等重跑
 [外部待辦 E-03] LINE Login identity follow 自動配對真人驗收
-[已決定 E-04] 本次 rollout 只啟用 PANCHIAO-ELITE，HAPPY 不使用；[外部待辦 E-05] 推播額度政策
+[已決定 E-04] 本次 rollout 只啟用 PANCHIAO-ELITE，HAPPY 不使用；[已完成程式、待 staging 驗收 E-05] 推播額度採停止並提示
 [外部待辦 E-06／E-07／E-10] 效能量測／實機與 M1／雙重社籍驗收
 [產品決策 E-08／E-09] production 準備／Recovery email（若重啟）
 [後續開發／外部待辦 E-11] LINE Rich Menu／完整 OA 整合
@@ -572,7 +578,7 @@ PR-01c 不做：
 2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：本機已補撤銷管理者、停權、退社的 role-shell 負向測試；仍需 staging 真人確認雙重社籍、跨社執行秘書、資料隔離與管理權限不越權。
 3. **E-06：登入後管理頁效能量測** `[>]`：`f4cddb6` 已部署並移除平台扶輪社清單不必要的 RSC 預載；Chrome DevTools 觀察到該頁請求由 23 筆降為 16 筆。這不是社員首頁／社務管理頁的量測，且同一 runtime／快取條件下的 FCP／TTFB／LCP／INP 前後比較仍未完成，先補齊正確身份的可比數據，再拆管理頁文件等待與 render pipeline。
 4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
-5. **E-05：LINE 推播額度與超額政策** `[!]`：產品決定超額行為；E-04 本次 rollout 只啟用 PANCHIAO-ELITE，已完成。
+5. **E-05：LINE 推播額度與超額政策** `[>]`：政策已定為停止並提示；本輪已補管理頁提醒與安全邊界，待 staging Go-Live 後由管理幹部驗收「429 顯示、一般社員不可見、下一次成功後清除」。
 6. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging，待各社 OA 設定與真人驗收。
 7. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 8. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。

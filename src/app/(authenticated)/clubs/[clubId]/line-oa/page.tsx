@@ -28,6 +28,10 @@ import {
 import { safeMessage } from "@/lib/validation";
 import type { MemberRow } from "../members/page";
 import { APP_TIME_ZONE } from "@/lib/time";
+import {
+  describeLineOaQuotaNotice,
+  parseLineOaQuotaNotice,
+} from "@/lib/line/quota-notice";
 
 type OaAdmin = {
   account: {
@@ -81,7 +85,7 @@ export default async function LineOaPage({
   const { clubId } = await params;
   const query = await searchParams;
   const supabase = await createClient();
-  const [oaResult, membersResult, tagsResult, flexFlag, richMenuFlag] = await Promise.all([
+  const [oaResult, membersResult, tagsResult, flexFlag, richMenuFlag, quotaNoticeResult] = await Promise.all([
     supabase.rpc("get_line_oa_admin", { p_club_id: clubId }),
     supabase.rpc("list_club_members", {
       p_club_id: clubId,
@@ -91,10 +95,14 @@ export default async function LineOaPage({
     supabase.rpc("list_club_member_tags", { p_club_id: clubId }),
     evaluateCurrentFeatureFlag({ key: "line_oa_flex_templates_v1", subjectUuid: clubId }),
     evaluateCurrentFeatureFlag({ key: "line_rich_menu_v1", subjectUuid: clubId }),
+    supabase.rpc("get_line_oa_quota_notice", { p_club_id: clubId }),
   ]);
   if (oaResult.error)
     return <Notice tone="error">您沒有查看 LINE OA 的權限。</Notice>;
   const oa = oaResult.data as OaAdmin;
+  const quotaNotice = quotaNoticeResult.error
+    ? null
+    : parseLineOaQuotaNotice(quotaNoticeResult.data);
   const members = (membersResult.data ?? []) as MemberRow[];
   // Addressing a tag means selecting named members, so the picker is offered
   // only to someone who may already see the roster. An OA manager without
@@ -192,6 +200,13 @@ export default async function LineOaPage({
       {query.success && (
         <Notice tone="success">
           {query.success === "bulk_paired" ? bulkPairedMessage() : success[query.success]}
+        </Notice>
+      )}
+      {quotaNotice && (
+        <Notice tone="error">
+          <strong>LINE 推播已暫停：</strong>
+          已達 LINE 的推播頻率或方案額度上限，系統已停止後續批次。{describeLineOaQuotaNotice(quotaNotice)}
+          請先確認方案額度，再查看下方推播紀錄後決定是否重試；系統不會盲目把剩餘批次送出。
         </Notice>
       )}
       <div className="two-column">

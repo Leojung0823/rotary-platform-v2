@@ -1,12 +1,19 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-18（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-19（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
 的舊掃描結果；那份檔案屬於獨立 worktree，不是權威 repo 的版本。
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
+
+## 2026-09-19 E-05 決策與實作進度（本節優先）
+
+- **產品決策已確認**：LINE 回報推播頻率／方案額度上限（429）時，採「停止並提示」，不採「繼續送並只記錄」。現有同一批次最多重試一次且沿用同一個 retry key；確認仍是 `rate_limited` 後，立即停止後續批次。
+- **本輪已補上管理提醒**：`get_line_oa_quota_notice` 只允許有 `oa.read` 的社務管理幹部讀取，讀取最新一筆會員訊息推播紀錄；若最新結果是 `rate_limited`，`/clubs/<clubId>/line-oa?mode=management` 顯示醒目錯誤通知與部分送達數字。手動送出仍會在返回頁面立即提示；下一次推播有其他結果後，舊提醒自動消失。
+- **資料隔離**：提醒不寫入全社訊息中心，不會送給一般社員；只透過該社的管理頁投影顯示。通知投影不含 access token、channel secret 或 provider request id。
+- **目前狀態**：程式、migration、verification 與單元測試已完成，尚未以本輪 SHA 做 staging Go-Live；未用真實社員做額度壓力測試。待 staging 發布後核對管理幹部可見、一般社員不可見，以及最新成功推播會清除提醒。
 
 ## 2026-09-18 現場基線（本節優先）
 
@@ -20,7 +27,7 @@
 - 本輪補強了本機瀏覽器驗收 fixture：新增「LINE Login 已綁定、但尚未加入 OA」社員，`member-home` E2E 會確認首頁待辦出現「加入本社 LINE OA」並連到 `/me/line-oa`。這是本機回歸證據，不取代 staging 真人驗收；本輪沒有修改資料庫結構。
 - 本輪本機驗證：typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、`check:migrations`、`check:db-verifications` 通過；`verify:db` 因本機 Docker／Supabase reset 長時間無回應而中止，未宣稱通過。沒有手動觸發 CI 或 Browser Smoke。
 - 本輪再次嘗試 E-06／E-07：Chrome DevTools MCP 的 staging 頁面沒有登入 session，開管理頁會回到 `/login`；桌面 Chrome 的既有頁面是平台管理員，不採用其數字冒充社員／社務效能；iPhone 鏡像停在「解鎖你的 iPhone」，沒有產生實機驗收證據。E-06 與 E-07 維持未結案。
-- 尚未結案且需要外部條件／產品決定的項目仍是 E-03、E-05、E-06、E-07、E-08、E-10、E-11；E-09 依產品決定暫緩。這些不能只靠本機程式修改誠實結案。
+- 尚未結案且需要外部條件／產品決定的項目仍是 E-03、E-06、E-07、E-08、E-10、E-11；E-05 的產品決策已完成，現在只等本輪 staging 發布與管理頁驗收；E-09 依產品決定暫緩。這些不能只靠本機程式修改誠實結案。
 - 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；平台管理員直接進 PANCHIAO 社費頁被後端拒絕，符合「必須有該社財務權限」的邊界。仍需用具 `finance.read` 的社務帳號驗收社費資料與報表，不把旗標開啟當成完整結案。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
@@ -440,10 +447,11 @@ production 沒有修改。
   `LINE_OA_HAPPY_*` server secrets；不能把 PANCHIAO 的 key 改名或跨社 fallback。
 - **完成證據**：本次啟用的社通過 LINE `/v2/bot/info` Basic ID 核對、webhook Verify、follow 與指定對象推播驗收。
 
-### E-05 LINE 推播額度與超額政策 `[!]`
+### E-05 LINE 推播額度與超額政策 `[>]`
 
-- **外部動作**：由產品／平台管理員確認目前 LINE 方案、每月額度與 429 行為，決定超額時「停止並提示」或「照送並記錄」。
-- **完成證據**：決策寫入產品文件；必要時用受控測試驗證 500 人分批、429、重試與部分送達紀錄，不拿真實社員做壓力測試。
+- **產品決策已確認**：超額／429 時停止後續批次並提示社務管理幹部；不把剩餘批次繼續送出。既有一次同 retry key 的安全重試保留給可恢復的 provider 回應，重試後仍是 429 就停止。
+- **程式已完成**：429 分類、部分送達紀錄、停止批次、手動送出頁提示，以及管理頁最新額度提醒均已具備；提醒只給 `oa.read` 管理者，不進一般社員的訊息中心。
+- **完成證據**：本機單元測試已驗證 500 人分批、429、重試與部分送達；資料庫 verification 檔已新增，但本輪 `verify:db` 因本機 Docker reset 卡住尚未執行。staging Go-Live 後再驗收管理頁提示與成功後清除。不得用真實社員做壓力測試。
 
 ### E-06 登入後管理頁效能量測 `[>]`
 

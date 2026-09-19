@@ -1,7 +1,14 @@
-# 交接筆記（持續更新；最新核對 2026-09-18；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-09-19；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-09-19 E-05 決策與實作進度（本節優先）
+
+- 產品已確認 LINE 推播遇到 429／方案額度上限時採「停止並提示」，不採「繼續送並只記錄」。同一批仍可用同一 retry key 安全重試一次；確認仍為 `rate_limited` 後，停止剩餘批次。
+- 已新增 `20260919000100_line_oa_quota_notice.sql` 與 `get_line_oa_quota_notice(uuid)`。它只讓 `oa.read` 的社務管理者讀取最新會員訊息推播額度失敗，排除 Rich Menu；成功或其他結果後提醒自動消失，沒有把維運訊息放進一般社員訊息中心。
+- `/clubs/[clubId]/line-oa?mode=management` 現在會顯示「LINE 推播已暫停」與部分送達數字；手動送出原本已有即時錯誤提示。`src/lib/line/quota-notice.ts` 負責 bounded projection parsing。
+- 本輪已完成程式／verification 檔／單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行，尚未 staging Go-Live。下一步只需用本輪 exact SHA 做 staging 發布，再用管理幹部與一般社員各一個帳號驗收提示的可見範圍；不做真實社員額度壓力測試。
 
 ## 2026-09-18 最新現場狀態（本節優先）
 
@@ -13,7 +20,7 @@
 - 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；平台管理員直接進社費管理頁被後端拒絕，符合財務權限邊界。社費仍待具 `finance.read` 的社務帳號 hosted 驗收。
 - 本輪已通過 typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、migration guard 與 verification manifest；`verify:db` 因本機 Docker／Supabase reset 無回應而中止，需恢復本機 runtime 後補跑。沒有手動觸發 CI 或 Browser Smoke。
 - 2026-09-18 再次嘗試外部驗收：Chrome DevTools MCP staging 頁面沒有登入 session，進入管理頁即回 `/login`；桌面 Chrome 的既有登入頁是平台管理員，不採用其效能數字作社員／社務證據；iPhone 鏡像停在解鎖畫面，尚未有真實手機測試結果。
-- 仍需外部條件的項目：E-03 follow 自動配對真人核對、E-05 額度政策、E-06 同條件登入後效能量測、E-07 實機／M1、E-08 production 決策、E-10 多社／角色負向矩陣、E-11 各社 Rich Menu／OA 設定；E-09 recovery email 依產品決定暫緩。
+- 仍需外部條件的項目：E-03 follow 自動配對真人核對、E-05 staging 額度提醒驗收、E-06 同條件登入後效能量測、E-07 實機／M1、E-08 production 決策、E-10 多社／角色負向矩陣、E-11 各社 Rich Menu／OA 設定；E-09 recovery email 依產品決定暫緩。
 
 ## 2026-09-17 最新狀態（簽到可用性說明修正已發布；本節優先）
 
@@ -366,7 +373,7 @@ Plan `33642182951`（sha `338c50c`）與 Go-Live `33644157634` 都已成功，st
   **更動 LINE channel 設定要先取得使用者同意**，本輪沒有動。
 - staging 真實推播驗收：實際收到訊息、推播紀錄為 `sent` 且有 provider request id、
   `/api/health` 不再出現由 `STAGING_LINE_OA_IS_MOCK` 產生的 `DEPLOYMENT_WARNING`。
-- 每月推播額度的超額行為要由產品決定；平台目前不會預先擋下超額送出。
+- 每月推播額度政策已由產品決定為「停止並提示」；程式會保留部分送達紀錄，並在管理頁提醒 `oa.read` 幹部。這項程式尚待本輪 staging 發布後驗收。
 
 本輪本機驗證（2026-09-02）：
 
