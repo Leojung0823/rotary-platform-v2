@@ -597,16 +597,15 @@ PR-01c 不做：
 
 ## Current Next Actions
 
-唯一的外部待辦清單是 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12；執行順序如下：
+目前仍未結案的項目，完整清單與證據以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準；E-01、E-02、E-04、E-05、E-12 已完成，E-09 依產品決定暫緩。下一步不是重新開發 E-05，而是依照外部條件依序補驗收：
 
-1. **E-03：follow 自動配對真人驗收** `[>]`：確認曾以 LINE Login 登入的社員對到正確 person，再測多社／外社／停權／退社。
-2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：本機已補撤銷管理者、停權、退社的 role-shell 負向測試；仍需 staging 真人確認雙重社籍、跨社執行秘書、資料隔離與管理權限不越權。
-3. **E-06：登入後管理頁效能量測** `[>]`：`f4cddb6` 已部署並移除平台扶輪社清單不必要的 RSC 預載；Chrome DevTools 觀察到該頁請求由 23 筆降為 16 筆。這不是社員首頁／社務管理頁的量測，且同一 runtime／快取條件下的 FCP／TTFB／LCP／INP 前後比較仍未完成，先補齊正確身份的可比數據，再拆管理頁文件等待與 render pipeline。
-4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
-5. **E-05：LINE 推播額度與超額政策** `[x]`：政策已定為停止並提示；staging 專項 `35445780317` 已用 exact SHA 驗收管理幹部提示、一般社員隔離與 cleanup，未呼叫 LINE API。
-6. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging，待各社 OA 設定與真人驗收。
-7. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
-8. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
-9. **E-12：staging 受控 logical backup** `[x]`：`34912448897` 已成功匯出、加密、下載、驗證並清除 GitHub artifact；未來破壞性 migration 前重做。
+1. **E-03：follow 自動配對真人驗收** `[>]`：用乾淨真人帳號確認 LINE Login 身份自動對到正確 person，再測多社／外社／停權／退社；目前程式與日期窗口防護已完成，缺的是人核對的證據。
+2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：本機已有撤銷管理者、停權、退社的 role-shell 負向測試；仍需 staging 真人確認雙重社籍、跨社執行秘書、資料隔離與管理權限不越權。
+3. **E-06：登入後管理頁效能量測** `[>]`：社員首頁單一 hero preload 修正已部署並完成 DOM 核對；仍缺同一帳號、同一社別、同一 runtime／快取條件下的 FCP／TTFB／LCP 前後比較，以及 INP。Chrome DevTools 沒有已登入 staging session 前，數字一律記為「未量測」，不得用 `/login` 或不同 runtime 的數字代替。
+4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題；自動化 Chromium 不取代真人實機與訪談。
+5. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging；仍待各社 OA 外部設定、旗標決策與真人手機驗收，不得把本機 mock 測試當成 LINE 發布證據。
+6. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起；在取得明確產品決策前不修改 production。
+7. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
+8. **非外部驗收項目**：社費／收款／核銷、財務報表、服務計劃與生日設定 UX 已有程式與 staging 基礎，但仍要依 `TO-DO-LIST.md` 的角色、空資料、發布／撤回與跨社矩陣逐項驗收；社務 AI 助理沒有已批准的可執行規格，不擅自開工。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。#124、#126、#127、#130、#132、#135、#139 與 #145 已隨 Go-Live `34912921064` 發布；#136–#141 與 #143／#144／#146／#147 是文件／發布工具變更。後續若只有文件同步，不需要重新部署 staging。
