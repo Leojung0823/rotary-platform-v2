@@ -4,21 +4,19 @@ import { describe, expect, it } from "vitest";
 const page = readFileSync("src/app/(authenticated)/me/page.tsx", "utf8");
 const backfill = readFileSync("supabase/migrations/20260917000700_privacy_defaults_all_public.sql", "utf8");
 
-describe("隱私設定只有一個地方", () => {
-  // 生日公開設定 was its own card, its own heading and its own save button, on
-  // the same page as 通知與名冊隱私 -- and it asks the same question: what can
-  // people in my club see about me. Two places meant changing one and believing
-  // both had changed.
+describe("隱私設定的顯示邊界", () => {
+  // 通用通知／名冊隱私仍由自己的開關控制；生日公開設定是已核准的獨立
+  // 功能，不能因通用隱私卡片關閉而一起被隱藏。
 
-  it("keeps the birthday settings inside the privacy section", () => {
+  it("keeps birthday settings outside the hidden generic privacy section", () => {
     const at = page.indexOf("SHOW_PRIVACY_SETTINGS && <Card>");
     expect(at, "there is no single privacy section").toBeGreaterThan(-1);
-    // The rendered heading, not the first mention: the comment introducing the
-    // merge quotes the name, and indexOf lands inside it. Fourth time this
-    // session that a guard has been fooled by prose sitting above the code.
+    const privacyEnd = page.indexOf("</Card>}", at);
+    expect(privacyEnd, "the generic privacy section has no closing boundary").toBeGreaterThan(at);
     const birthday = page.indexOf("<h3>生日公開設定</h3>");
     expect(birthday, "the birthday settings are gone entirely").toBeGreaterThan(-1);
-    expect(birthday, "the birthday settings sit outside the privacy section").toBeGreaterThan(at);
+    expect(birthday, "the birthday settings are still nested in the generic privacy section").toBeGreaterThan(privacyEnd);
+    expect(page).toContain("{birthdayEnabled && <Card>");
   });
 
   it("leaves one heading, not two cards", () => {
@@ -60,8 +58,7 @@ describe("先隱藏，但沒有拆掉", () => {
 
 describe("回填只補沒設定過的人", () => {
   // The club president decided on 2026-09-17 that memberships which had never
-  // set a preference should become public, knowing the settings are hidden and
-  // so members cannot currently turn it off. That decision is recorded.
+  // set a preference should become public. That decision is recorded.
   //
   // What it is not: overturning a choice someone made. A row that says false
   // says it because a person went in and said so.

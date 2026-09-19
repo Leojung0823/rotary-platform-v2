@@ -37,12 +37,14 @@ function rotaryYearLabel(year: number | null) {
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 /**
- * Hidden for now at the club's request, not removed.
+ * These three cards remain hidden at the club's request, not removed.
  *
  * 帳號狀態 and the LINE 通知連接 card say things a member cannot act on, and the
- * privacy settings are held back until the club has decided what they should
- * say. Everything behind these still loads and still saves -- turning any of
- * them back on is this constant, not a rebuild.
+ * general notification/privacy form is held back until the club has decided
+ * what it should say. Birthday visibility is a separate, product-approved
+ * setting and must remain visible when either birthday feature is enabled.
+ * Everything behind the three switches still loads and still saves -- turning
+ * any of them back on is this constant, not a rebuild.
  *
  * Three constants rather than one, because they are three decisions: the next
  * person has to be able to bring back one without the others.
@@ -259,9 +261,8 @@ export default async function IdentityCenterPage({
       </Card>
     </div>
 
-    {/* 一個地方。生日公開設定本來是另一張卡片、另一個標題、另一顆儲存按鈕，
-        而它問的是同一件事：同社社員看得到我的什麼。分成兩處的結果是社友改了
-        一邊、以為兩邊都改了。 */}
+    {/* 通用通知／名冊隱私目前仍由開關控制；生日公開設定是已核准的獨立功能，
+        不應該因通用隱私卡片關閉而一起消失。 */}
     {SHOW_PRIVACY_SETTINGS && <Card>
       <h2>隱私設定</h2>
       <p>同社社員看得到您的哪些資料，以及平台用什麼方式通知您。</p>
@@ -299,8 +300,10 @@ export default async function IdentityCenterPage({
           <Button type="submit">儲存設定</Button>
         </div>
       </form>
+    </Card>}
 
-      {birthdayEnabled && <section className="form-stack">
+    {birthdayEnabled && <Card>
+      <section className="form-stack">
       <div className="section-heading">
         <div>
           <p className="eyebrow">生日祝福</p>
@@ -349,7 +352,7 @@ export default async function IdentityCenterPage({
               </form>
             </Card>)}
           </div>}
-    </section>}
+      </section>
     </Card>}
 
   </div>;
