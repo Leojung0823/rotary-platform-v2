@@ -251,26 +251,6 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
   test("從管理總覽完成活動建立、封面上傳、發布與取消", async ({ page }) => {
     test.setTimeout(180_000);
 
-    // If the cancel action ever stalls on hosted staging, keep the failure
-    // diagnostic: a click that never created a request is a browser/form bug;
-    // a request with no response is a server-side stall. Do not log bodies or
-    // cookies because the protected run carries real credentials.
-    page.on("request", (request) => {
-      if (request.method() === "POST") {
-        console.log(`[staging-management] POST ${new URL(request.url()).pathname}`);
-      }
-    });
-    page.on("response", (response) => {
-      if (response.request().method() === "POST") {
-        console.log(`[staging-management] POST response ${response.status()} ${new URL(response.url()).pathname}`);
-      }
-    });
-    page.on("requestfailed", (request) => {
-      if (request.method() === "POST") {
-        console.log(`[staging-management] POST failed ${request.failure()?.errorText ?? "unknown"}`);
-      }
-    });
-
     await login(page, operatorEmail, operatorPassword);
     await openManagementOverview(page);
 
