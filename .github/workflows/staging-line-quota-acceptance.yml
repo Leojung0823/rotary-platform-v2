@@ -62,6 +62,9 @@ jobs:
           cache: npm
           cache-dependency-path: e2e/package-lock.json
 
+      - name: Install application dependencies
+        run: npm ci
+
       - name: Validate protected staging quota acceptance inputs
         run: node scripts/verify-staging-line-quota-acceptance-inputs.mjs
 

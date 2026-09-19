@@ -78,6 +78,10 @@ describe("staging LINE quota acceptance workflow safety", () => {
     expect(workflow).toContain("node scripts/staging-line-quota-acceptance-fixture.mjs seed");
     expect(workflow).toContain("node scripts/staging-line-quota-acceptance-fixture.mjs cleanup");
     expect(workflow).toContain("if: always()");
+    const dependenciesStep = workflow.indexOf("- name: Install application dependencies");
+    const seedStep = workflow.indexOf("node scripts/staging-line-quota-acceptance-fixture.mjs seed");
+    expect(dependenciesStep).toBeGreaterThanOrEqual(0);
+    expect(seedStep).toBeGreaterThan(dependenciesStep);
     expect(workflow).not.toContain("db push");
     expect(workflow).not.toContain("db reset");
     expect(workflow).not.toContain("production");
