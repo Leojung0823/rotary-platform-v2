@@ -23,7 +23,7 @@ export async function loadClubOaDispatchContext(
   clubId: string,
 ): Promise<{ ok: true; context: ClubOaDispatchContext } | { ok: false; reason: ClubOaDispatchFailure }> {
   const admin = createTrustedAdminClient();
-  const [accountResult, followersResult] = await Promise.all([
+  const [accountResult, membershipsResult, followersResult] = await Promise.all([
     admin
       .from("line_oa_accounts")
       .select("access_token_env_key")
@@ -31,15 +31,35 @@ export async function loadClubOaDispatchContext(
       .neq("account_status", "disabled")
       .maybeSingle(),
     admin
+      .from("club_memberships")
+      .select("person_id")
+      .eq("club_id", clubId)
+      .eq("membership_status", "active"),
+    admin
       .from("line_oa_followers")
-      .select("oa_user_id")
+      .select("oa_user_id, person_id")
       .eq("club_id", clubId)
       .eq("follower_status", "following"),
   ]);
 
-  if (accountResult.error || !accountResult.data || followersResult.error) {
+  if (accountResult.error || !accountResult.data || membershipsResult.error || followersResult.error) {
     return { ok: false, reason: "oa_not_configured" };
   }
+
+  // A follower row can outlive a membership (for example, after someone leaves
+  // the club) and can still be following the OA. It must not remain a broadcast
+  // recipient. Keep this boundary in the shared loader so manual broadcast,
+  // legacy API push, event push, and scheduled notifications cannot drift into
+  // different definitions of the club audience.
+  const activePersonIds = new Set(
+    (membershipsResult.data ?? [])
+      .map((row) => row.person_id)
+      .filter((personId): personId is string => typeof personId === "string" && personId.length > 0),
+  );
+  const activeFollowers = (followersResult.data ?? [])
+    .filter((row) => typeof row.person_id === "string" && activePersonIds.has(row.person_id))
+    .map((row) => row.oa_user_id)
+    .filter((oaUserId): oaUserId is string => typeof oaUserId === "string" && oaUserId.length > 0);
 
   let accessToken: string | undefined;
   if ((process.env.LINE_OA_MODE ?? "mock") === "line") {
@@ -54,7 +74,7 @@ export async function loadClubOaDispatchContext(
     ok: true,
     context: {
       accessToken,
-      followers: (followersResult.data ?? []).map((row) => row.oa_user_id),
+      followers: Array.from(new Set(activeFollowers)),
     },
   };
 }

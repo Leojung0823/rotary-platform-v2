@@ -1,6 +1,27 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { buildPushLogArgs } from "./oa-dispatch";
+import { describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  createTrustedAdminClient: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createTrustedAdminClient: mocks.createTrustedAdminClient,
+}));
+
+import { buildPushLogArgs, loadClubOaDispatchContext } from "./oa-dispatch";
+
+function queryResult(result: unknown) {
+  const chain = {
+    select: vi.fn(() => chain),
+    eq: vi.fn(() => chain),
+    neq: vi.fn(() => chain),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
+    then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+      Promise.resolve(result).then(resolve, reject),
+  };
+  return chain;
+}
 
 describe("LINE OA dispatch logging", () => {
   it("keeps a partial delivery visible even though the status column cannot say so", () => {
@@ -62,5 +83,39 @@ describe("LINE OA dispatch boundary", () => {
       expect(source).not.toContain("sendLineOaMessage");
       expect(source).not.toContain("readServerSecret");
     }
+  });
+
+  it("only exposes followers paired to active memberships", async () => {
+    const account = queryResult({ data: { access_token_env_key: "TEST_TOKEN" }, error: null });
+    const memberships = queryResult({
+      data: [{ person_id: "active-person" }],
+      error: null,
+    });
+    const followers = queryResult({
+      data: [
+        { oa_user_id: "Uactive", person_id: "active-person" },
+        { oa_user_id: "Uended", person_id: "ended-person" },
+        { oa_user_id: "Uunpaired", person_id: null },
+      ],
+      error: null,
+    });
+    const admin = {
+      from: vi.fn((table: string) => ({
+        "line_oa_accounts": account,
+        "club_memberships": memberships,
+        "line_oa_followers": followers,
+      }[table])),
+    };
+    mocks.createTrustedAdminClient.mockReturnValue(admin);
+
+    const result = await loadClubOaDispatchContext("club-id");
+
+    expect(result).toEqual({
+      ok: true,
+      context: { accessToken: undefined, followers: ["Uactive"] },
+    });
+    expect(admin.from).toHaveBeenCalledWith("club_memberships");
+    expect(memberships.eq).toHaveBeenCalledWith("membership_status", "active");
+    expect(followers.eq).toHaveBeenCalledWith("follower_status", "following");
   });
 });
