@@ -8,16 +8,13 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
-## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
+## 2026-09-20 最新核對（服務計劃 hosted 雙帳號驗收完成）
 
-- 本輪補強受保護的 `staging-management-acceptance`：加入獨立的 staging 一般社員測試帳號，實際驗證服務計劃「草稿不可見、發布後四類內容可見、撤回成草稿後再次消失」。兩個測試身份必須不同且只能使用保留測試帳號；沒有把 secret 寫入 repo。
-- 這個 hosted acceptance 尚未執行；需先把本輪 exact SHA 部署到 staging，再用 `TEST-STAGING-MANAGEMENT` 手動 workflow 驗證。它不改產品 runtime、資料庫、RLS、權限或外部 OA。
-- 本機完整測試結果：Vitest `196` 檔／`1458` tests、typecheck、lint（既有 1 個 warning）、build、verify:db、migration guard、verification manifest、diff check 均通過；Browser Smoke `35454239162` 已成功。
-
-- 本輪 commit `08c7dbe` 新增 `officer-mode-1440` 服務計劃 UI 驗收，證明同一份資料先存草稿時一般社員看不到，發布後才看得到標題與四大服務面向；定向 E2E 結果為 `1 passed`。
-- 本機完整 `verify:db` 已通過，並依正確順序重建 superadmin、role-shell fixture 與 local flags；typecheck、lint（既有 1 個 warning）、Vitest `196` 檔／`1456` tests、build、migration guard、verification manifest、diff check 均通過。
-- `scripts/bootstrap-role-shell-browser-fixtures.mjs` 另修正固定 quota fixture 的重跑邏輯：既有 `line_push_logs` 測試列直接沿用，不向 append-only 表要求 UPDATE 權限；沒有新增 migration、沒有放寬 RLS／權限。
-- 這只是本機回歸證據；staging 尚未重新部署，服務計劃仍待另一個一般社員帳號完成 hosted「發布後可見」驗收。原有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未納入本輪。
+- 產品與驗收 exact SHA `f72aa2db440ae8278cbe791411b17e9f1d0197b4` 已由 Staging Go-Live `35456273015` 部署；staging health 回報 `status=ok`、`revision=f72aa2db440a`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
+- Staging Management Acceptance `35456938712` 兩個測試全部成功：服務計劃草稿對一般社員不可見，發布後可見四大分類，重新存成草稿後再次隱藏；生日、文件建立／上傳／編輯、活動建立／封面／發布／取消也通過。
+- 前一次 run `35456431449` 的活動取消 redirect 曾逾時；本機重現成功，使用同一 exact SHA 重跑後 `35456938712` 全綠，沒有改活動 runtime。
+- 本機 typecheck、lint（既有 warning）、Vitest `196` 檔／`1458` tests、build、verify:db、migration guard、verification manifest、diff check 均通過；自動 CI `35456012202`、Browser Smoke `35456012210` 均成功，沒有手動重跑。
+- 既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未納入本輪；文件同步提交不需重新部署 staging。
 
 ## 2026-09-19 最新核對（E-05 已結案；推播受眾隔離已修正）
 
@@ -300,12 +297,13 @@ production 沒有修改。
   還沒驗過。那個開關是這個功能唯一的控制，必須確定它真的有效。
 - `[>]` **封存社員頁**。停用社友是否已移出主名單、封存時間是否正確（既有資料是回填的）、
   以及**復原一位社友後封存時間是否被清空**。
-- `[>]` **年度服務計劃 V2 的草稿隔離**。PR #124 已部署；用另一個社員帳號登入應該看不到幹部草稿，
+- `[x]` **年度服務計劃 V2 的草稿隔離**（Staging Management Acceptance `35456938712`）。
+  使用獨立一般社員帳號驗證：PR #124 已部署；社員看不到幹部草稿，
   只看到「本年度的服務計劃尚未發布」。2026-09-16 以 staging 的 LEO 秘書帳號抽查：社員頁確實只看到未發布提示；
   `/clubs/{clubId}/service-plan` 與 `?mode=member` 會被導向無法存取，只有 `?mode=management` 顯示管理工作台。
   同日已在管理工作台儲存四大分類的明確 staging 驗收草稿；切回社員模式後草稿標題沒有出現，仍只顯示未發布提示。
   隨後短暫發布該草稿，社員頁成功顯示四類內容，再儲存回草稿後恢復未發布提示；staging 現在維持未發布狀態。
-  這證明模式邊界、「未發布不外洩」與發布／撤回流程，但尚未完成另一個社員帳號的草稿隔離與正式內容發布驗收。這是該功能最要緊的邊界。
+  這已證明模式邊界、「未發布不外洩」與發布／撤回流程；staging 現在維持未發布狀態。
 - `[>]` **首頁活動封面**。需要該活動已上傳封面才看得到。
 - `[>]` **用地址查座標**。`GOOGLE_MAPS_API_KEY` 已於 2026-09-14 設入 Render staging，migration 與目前 release 已部署；
   尚待在活動表單輸入地址，確認台灣地址能正確填入座標，並確認一般社員不能觸發計費查詢。
@@ -576,7 +574,7 @@ production 沒有修改。
 - `[>]` 報表與匯出（社員、活動、出席、財務 Excel／PDF）已在 PR #108 合併並包含在目前 staging，待 hosted／權限與空資料驗收。
 - `[>]` LINE Rich Menu 與完整 OA 整合已在 PR #107 合併並包含在目前 staging，待各社 OA 外部設定（見 E-11）。
 - `[>]` 手機 Web App（安裝、離線提示與推播準備）已在 PR #109 合併，待真實手機驗收。
-- `[>]` 社務資訊與年度服務計劃已合併至 `main`（PR #111、#124）並包含在目前 staging，待 hosted 與角色邊界驗收。
+- `[x]` 社務資訊與年度服務計劃已合併至 `main`（PR #111、#124）並包含在目前 staging；hosted 與角色邊界由 `35456938712` 驗收完成。
 - `[ ]` 社務 AI 助理（摘要、公告草稿、會議紀錄與授權查詢）；目前沒有可執行企劃或已授權的 AI 服務規格，不能直接開發。
 
 ### 生日設定 UX 調整（產品決定 2026-09-12；PR #110 已合併並部署 staging，待 hosted／真人驗收）

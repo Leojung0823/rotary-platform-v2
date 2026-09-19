@@ -3,16 +3,13 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
+## 2026-09-20 最新核對（服務計劃 hosted 雙帳號驗收完成）
 
-- 本輪補強受保護的 `staging-management-acceptance`：新增獨立的 `STAGING_TEST_MEMBER_EMAIL/PASSWORD`，以兩個測試身份驗證服務計劃「草稿社員不可見 → 發布後四類內容可見 → 再存草稿後消失」。輸入驗證會要求兩個保留測試帳號不同，且不會印出 credential。
-- 這是驗收工具與 workflow 變更，不改產品 runtime、資料庫、RLS、權限或外部 OA；尚未執行 hosted run，必須在該 exact SHA 已部署 staging 後才可手動驗收。
-- 本機 typecheck、lint（既有 1 個 warning）、Vitest `196` 檔／`1458` tests、build、verify:db、migration guard、verification manifest、diff check 均通過。上一個主線自動 Browser Smoke `35454239162` 已成功。
-
-- commit `08c7dbe` 新增服務計劃本機 UI 驗收：管理者建立草稿後，普通社員看不到標題；管理者發布後，普通社員看到標題與四大服務面向。定向 `officer-mode-1440` 結果 `1 passed`。
-- 本機完整 `verify:db`、superadmin／role-shell fixture bootstrap、typecheck、lint（既有 1 個 warning）、Vitest `196` 檔／`1456` tests、build、migration guard、verification manifest 均通過。沒有手動觸發 CI／Browser Smoke。
-- fixture 另修正固定 quota log 重跑時不應 UPDATE append-only `line_push_logs` 的問題；沒有新增 migration、沒有改 RLS 或權限。
-- 本輪沒有部署 staging；staging 仍是 `d9468bdc2919`／Go-Live `35446974648`。服務計劃 hosted 一般社員發布後可見、E-03 真人 follow、E-06 登入後效能、E-07 實機、E-10 負向矩陣與 E-11 外部 OA 仍未結案。
+- 產品與驗收 exact SHA `f72aa2db440ae8278cbe791411b17e9f1d0197b4` 已由 Staging Go-Live `35456273015` 部署；staging `/api/health` 回報 `revision=f72aa2db440a`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- Staging Management Acceptance `35456938712` 兩個測試全部成功：獨立管理者建立服務計劃草稿時，一般社員看不到；發布後看到社員服務、職業服務、社區服務、國際服務四類內容；再存成草稿後重新隱藏。生日重跑、文件建立／上傳／編輯、活動建立／封面／發布／取消也通過。
+- 前一次 run `35456431449` 的活動取消 redirect 曾在 30 秒內逾時；本機 3001 fixture 重現成功，使用同一 exact SHA 重跑後全綠，沒有改活動 runtime。
+- 本機 typecheck、lint（既有 warning）、Vitest `196` 檔／`1458` tests、build、verify:db、migration guard、verification manifest、diff check 均通過；自動 CI `35456012202` 與 Browser Smoke `35456012210` 均成功，沒有手動重跑。
+- 服務計劃 hosted 角色／發布邊界已結案；E-03 真人 follow、E-06 登入後效能、E-07 實機、E-10 負向矩陣與 E-11 外部 OA 仍未結案。文件同步提交不需重新部署 staging。
 
 ## 2026-09-19 最新核對（E-05 已結案；推播受眾隔離已修正）
 
@@ -413,7 +410,7 @@ Plan `33642182951`（sha `338c50c`）與 Go-Live `33644157634` 都已成功，st
   **更動 LINE channel 設定要先取得使用者同意**，本輪沒有動。
 - staging 真實推播驗收：實際收到訊息、推播紀錄為 `sent` 且有 provider request id、
   `/api/health` 不再出現由 `STAGING_LINE_OA_IS_MOCK` 產生的 `DEPLOYMENT_WARNING`。
-- 每月推播額度政策已由產品決定為「停止並提示」；程式會保留部分送達紀錄，並在管理頁提醒 `oa.read` 幹部。這項程式尚待本輪 staging 發布後驗收。
+- 每月推播額度政策已由產品決定為「停止並提示」；程式會保留部分送達紀錄，並在管理頁提醒 `oa.read` 幹部。Staging 專項 `35445780317` 已驗收成功，沒有呼叫真實 LINE API，也沒有消耗正式額度。
 
 本輪本機驗證（2026-09-02）：
 

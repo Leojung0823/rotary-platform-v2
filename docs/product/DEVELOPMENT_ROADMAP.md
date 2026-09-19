@@ -4,16 +4,13 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
-## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
+## 2026-09-20 最新核對（服務計劃 hosted 雙帳號驗收完成）
 
-- 另補上受保護的 hosted acceptance 雙身份流程：服務計劃草稿由管理者建立後，一般社員不得看到；發布後要看到四類服務內容；重新存成草稿後又不得看到。驗收 workflow 會拒絕相同帳號、非保留測試信箱與不符合條件的秘密值；目前尚未在 staging 執行。
-- 本輪只改 workflow、E2E 驗收與其輸入安全測試，沒有改產品 runtime、資料庫、RLS 或外部 OA。Vitest `196` 檔／`1458` tests、typecheck、lint（既有 warning）、build、verify:db、migration guard、verification manifest 均通過；Browser Smoke `35454239162` 已成功。
-
-- 本輪 commit `08c7dbe` 新增 `officer-mode-1440` 的服務計劃 UI 驗收：社務管理者建立草稿後，一般社員看不到標題且只看到「本年度的服務計劃尚未發布」；管理者發布後，一般社員才看到標題與社員服務、職業服務、社區服務、國際服務四類內容。
-- 本機先完成完整 `verify:db`，再依序重建 superadmin、啟用 role-shell fixture、建立瀏覽器 fixture；定向 E2E `a service-plan manager keeps drafts private until publishing` 以 1 passed 通過。這是本機角色／發布隔離證據，不等於 staging 真人發布驗收。
-- 同時修正 `scripts/bootstrap-role-shell-browser-fixtures.mjs` 的 quota fixture 重跑問題：`line_push_logs` 對 service role 是 append-only，固定測試列已存在時直接沿用，不嘗試 UPDATE，也沒有放寬資料表權限。
-- 本輪 typecheck、lint（既有 1 個 `readdirSync` 未使用 warning）、Vitest `196` 檔／`1456` tests、build、verify:db、migration guard、verification manifest、diff check 均通過；沒有手動觸發 CI／Browser Smoke，也沒有部署 staging。
-- 目前 staging 仍是 Go-Live `35446974648` 的 runtime `d9468bdc2919`；本輪只補測試與 fixture，production 沒有修改。E-03、E-06、E-07、E-10、E-11 及產品決策項目仍依外部條件管理。
+- 產品與驗收使用的 exact SHA `f72aa2db440ae8278cbe791411b17e9f1d0197b4` 已由 Staging Go-Live `35456273015` 部署；staging `/api/health` 回報 `revision=f72aa2db440a`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- Staging Management Acceptance `35456938712` 的兩個測試全部成功：獨立管理者建立服務計劃草稿時，一般社員看不到；發布後看到標題與社員服務、職業服務、社區服務、國際服務；再存成草稿後重新隱藏。生日重跑、文件建立／上傳／編輯、活動建立／封面／發布／取消也通過。
+- 前一次 acceptance `35456431449` 唯一失敗是 staging 活動取消 redirect 在 30 秒內未完成；本機 3001 fixture 重現成功，使用同一 exact SHA 重跑 hosted acceptance 後全綠，沒有改活動 runtime。
+- 本機 typecheck、lint（既有 `readdirSync` 未使用 warning）、Vitest `196` 檔／`1458` tests、build、verify:db、migration guard、verification manifest、diff check 均通過；自動 CI `35456012202` 與 Browser Smoke `35456012210` 均成功，沒有手動重跑。
+- 服務計劃的 hosted 角色／發布邊界已結案；E-03、E-06、E-07、E-10、E-11 及產品決策項目仍依外部條件管理。文件同步提交不需重新部署 staging。
 
 ## 2026-09-19 最新核對（E-05 已結案；推播受眾隔離已修正）
 
