@@ -5,14 +5,16 @@
 
 ## 2026-09-20 最新接力補充：活動取消 hosted 核對與乾淨 staging 版本
 
-- 權威主線與乾淨 staging runtime 都是 `07002d81be23140b581ce5b92d0b55046b249b15`；Staging Release `35462618738`、Staging Go-Live
+- 權威主線目前是文件同步後的 `c4e0305c17202f76b54f3b95984b3e40c701d70c`；乾淨 staging runtime 仍是
+  `07002d81be23140b581ce5b92d0b55046b249b15`；Staging Release `35462618738`、Staging Go-Live
   `35462672034` 成功，health 回報 `revision=07002d81be23`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
   production 沒有修改，目前沒有 open PR。
 - `20260920000100_event_cancellation_qr_index.sql` 是唯一產品 migration：替取消活動觸發器的 event-scoped 動態 QR 撤銷加 partial index。
   本機 `verify:db`、migration history、verification manifest、diff check 均成功；沒有改權限或活動規則。
 - 活動取消曾在兩次 hosted acceptance 於 30 秒內沒有跳轉。診斷版 acceptance `35462472207`（產品行為同 f733，僅多驗收 log）三項全綠，且看到取消 POST 回 `303`；這證明表單有送出，問題是 hosted 間歇性等待，不是固定的 route typo。
 - 清掉診斷 log 後，乾淨版本 acceptance `35462819114` 又出現兩個 hosted flake：管理頁 4px 橫向溢出，以及取消 redirect 再次逾時。下一位代理應先收集 server-side request／DB timing，或把取消 action 的失敗呈現與 timeout 邊界做成可觀測、可重試；不要只把 acceptance timeout 拉長。
-- 自動 CI `35462613423` 成功；Browser Smoke `35462613524` 在本次交接時仍執行中，沒有手動重跑。工作樹的既有未追蹤 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不可納入。
+- 自動 CI `35462613423` 與 Browser Smoke `35463068436` 均已成功，都是 push 後自動執行，沒有手動重跑。工作樹的既有未追蹤
+  `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不可納入。
 
 接力優先順序：先釐清活動取消 hosted flake，再處理 E-03 真人 follow 身份核對、E-10 停權／退社／外社負向矩陣、E-06 同條件效能量測。E-07 需要解鎖的真實手機／M1，E-08 需要 production 決策，E-11 需要各社 OA／Rich Menu 外部設定，E-09 維持暫緩。
 
