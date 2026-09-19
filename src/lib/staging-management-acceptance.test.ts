@@ -138,4 +138,14 @@ describe("staging management acceptance workflow safety", () => {
     expect(stagingTest).toContain('社員服務');
     expect(stagingTest).toContain('儲存草稿');
   });
+
+  it("covers disposable finance mutations without adding service credentials", () => {
+    expect(stagingTest).toContain('社費管理頁完成部分收款、代墊與核銷');
+    expect(stagingTest).toContain('產生年度應收');
+    expect(stagingTest).toContain('部分收款');
+    expect(stagingTest).toContain('核銷已登錄。');
+    expect(stagingTest).toContain('staging 驗收資料回收');
+    expect(workflow).toContain('Disposable finance year partial receipt');
+    expect(workflow).not.toContain('SUPABASE_SERVICE_ROLE_KEY');
+  });
 });

@@ -102,5 +102,6 @@ jobs:
             echo "- A separate staging member could not see the service-plan draft, saw it after publish, and lost it after retraction."
             echo "- Birthday rerun and disposable archive create/upload/edit passed."
             echo "- Disposable event create/cover upload/publish/cancel passed."
+            echo "- Disposable finance year partial receipt, advance submission, reconciliation, member projection, and reversible cleanup passed."
             echo "- No screenshots, video, trace or HTML report were retained."
           } >> "$GITHUB_STEP_SUMMARY"

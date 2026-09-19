@@ -81,6 +81,39 @@ function dateTimeLocalFromNow(daysFromNow, hour, minute = 0) {
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(hour)}:${pad(minute)}`;
 }
 
+function dateOnlyFromNow(daysFromNow = 0) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + daysFromNow);
+  return date.toISOString().slice(0, 10);
+}
+
+async function createDisposableRotaryYear(page, clubId, theme) {
+  await page.goto(new URL(`/clubs/${clubId}/archives?mode=management`, baseURL).toString());
+  await expect(page.getByTestId("archive-management")).toBeVisible();
+
+  const startYear = await chooseUnusedYear(page);
+  const yearDetails = page.locator("details").filter({ hasText: "建立扶輪年度" }).first();
+  if (!(await yearDetails.evaluate((element) => element instanceof HTMLDetailsElement && element.open))) {
+    await yearDetails.locator("summary").click();
+  }
+  const yearForm = yearDetails.locator("form");
+  await yearForm.getByLabel("起始年份").fill(String(startYear));
+  await yearForm.getByLabel("年度主題").fill(theme);
+  await yearForm.getByRole("button", { name: "建立年度與清單" }).click();
+  await expect(page).toHaveURL(/success=year_created/u, { timeout: 30_000 });
+
+  await page.goto(new URL(`/clubs/${clubId}/dues?mode=management`, baseURL).toString());
+  await expect(page.getByRole("heading", { name: "社費與核銷" })).toBeVisible();
+  const yearLink = page.locator('nav[aria-label="社費扶輪年度"] a').filter({ hasText: String(startYear) }).first();
+  await expect(yearLink).toHaveCount(1);
+  const href = await yearLink.getAttribute("href");
+  if (!href) throw new Error("Disposable finance Rotary year link is missing.");
+  const yearUrl = new URL(href, baseURL);
+  await page.goto(yearUrl.toString());
+  await expect(page.getByRole("heading", { name: "社費與核銷" })).toBeVisible();
+  return { startYear, yearId: yearUrl.searchParams.get("yearId") };
+}
+
 async function smallPngBytes(page) {
   return page.evaluate(async () => {
     const canvas = document.createElement("canvas");
@@ -371,5 +404,101 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     } finally {
       await memberContext.close();
     }
+  });
+
+  test("社費管理頁完成部分收款、代墊與核銷", async ({ page, browser }) => {
+    test.setTimeout(180_000);
+
+    await login(page, operatorEmail, operatorPassword);
+    await openManagementOverview(page);
+    await page.getByTestId("management-card-dues-finance").click();
+    await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]{36}\/dues\?mode=management$/u);
+    const clubId = new URL(page.url()).pathname.split("/")[2];
+    expect(clubId).toMatch(/^[0-9a-f-]{36}$/u);
+
+    const { yearId } = await createDisposableRotaryYear(
+      page,
+      clubId,
+      `可回收社費驗收 ${Date.now()}`,
+    );
+    expect(yearId).toMatch(/^[0-9a-f-]{36}$/u);
+
+    const setup = page.locator("details").filter({ hasText: "年度設定 · 應收預設與個別應收" }).first();
+    if (!(await setup.evaluate((element) => element instanceof HTMLDetailsElement && element.open))) {
+      await setup.locator("summary").click();
+    }
+    await page.getByLabel("每位社員的年度社費").fill("5000");
+    await page.getByRole("button", { name: "儲存預設金額" }).click();
+    await expect(page.getByText("年度預設金額已儲存。", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    await page.getByLabel("產生年度應收的備註（選填）").fill("staging 財務驗收年度應收");
+    await page.getByRole("button", { name: "產生年度應收" }).click();
+    await expect(page.getByText("已為尚未建立應收的社員產生年度應收。", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    const firstReceiptButton = page.getByRole("button", { name: "收款", exact: true }).first();
+    await expect(firstReceiptButton).toBeVisible({ timeout: 30_000 });
+    const receiptRow = firstReceiptButton.locator("xpath=ancestor::li[1]");
+    const receiptMemberName = await receiptRow.locator("strong").first().textContent();
+    if (!receiptMemberName) throw new Error("The staging finance receipt member name is missing.");
+    await firstReceiptButton.click();
+    await page.getByLabel("本次收款").fill("2000");
+    await page.getByRole("button", { name: "確認收款", exact: true }).click();
+    await expect(page.getByText("收款已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("部分收款", { exact: true })).toBeVisible();
+
+    const advanceForm = page.locator("form").filter({ has: page.getByLabel("代墊社員") }).first();
+    const advanceDescription = `staging 財務驗收代墊 ${Date.now()}`;
+    await advanceForm.getByLabel("金額").fill("800");
+    await advanceForm.getByLabel("支出日期").fill(dateOnlyFromNow());
+    await advanceForm.getByLabel("支出說明").fill(advanceDescription);
+    await advanceForm.getByRole("button", { name: "送出代墊", exact: true }).click();
+    await expect(page.getByText("代墊申請已建立。", { exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(advanceDescription, { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "核准", exact: true }).last().click();
+    await expect(page.getByText("核銷已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("已結案", { exact: true })).toBeVisible();
+
+    const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const memberPage = await memberContext.newPage();
+    try {
+      await login(memberPage, memberEmail, memberPassword);
+      await memberPage.goto(new URL(`/dues?clubId=${clubId}&yearId=${yearId}&mode=member`, baseURL).toString());
+      await expect(memberPage.getByRole("heading", { name: "我的社費" })).toBeVisible();
+      await expect(memberPage.getByRole("heading", { name: "應收與收款" })).toBeVisible();
+      await expect(memberPage.getByText("年度社費", { exact: true })).toBeVisible();
+    } finally {
+      await memberContext.close();
+    }
+
+    // Keep the hosted test data explicitly reversible. The audit trail remains,
+    // but the synthetic receipt, reconciliation, and outstanding amount do not
+    // look like real money movement after this test finishes.
+    const receiptReversal = page.locator("details").filter({ hasText: "沖銷這筆收款" }).first();
+    await receiptReversal.locator("summary").click();
+    await receiptReversal.getByLabel("沖銷原因").fill("staging 驗收資料回收");
+    await receiptReversal.getByRole("button", { name: "保留紀錄並沖銷" }).click();
+    await expect(page.getByText("收款已沖銷，原紀錄仍保留。", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    const reconciliationReversal = page.locator("details").filter({ hasText: "反向" }).last();
+    await reconciliationReversal.locator("summary").click();
+    await reconciliationReversal.getByPlaceholder("反向原因").fill("staging 驗收資料回收");
+    await reconciliationReversal.getByRole("button", { name: "確認", exact: true }).click();
+    await expect(page.getByText("核銷已反向調整，原紀錄仍保留。", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    const returnedAdvance = page.locator("details").filter({ hasText: "退回申請" }).first();
+    await returnedAdvance.locator("summary").click();
+    await returnedAdvance.getByLabel("退回原因").fill("staging 驗收資料回收");
+    await returnedAdvance.getByRole("button", { name: "退回", exact: true }).click();
+    await expect(page.getByText("代墊已退回，社員可修改後重新送出。", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    await page.getByRole("button", { name: /^全部\s+\d+$/u }).click();
+    const receiptMemberRow = page.locator("li").filter({ hasText: receiptMemberName }).filter({ hasText: "調整應收金額" }).first();
+    const adjustment = receiptMemberRow.locator("details").filter({ hasText: "調整應收金額" }).first();
+    await adjustment.locator("summary").click();
+    await adjustment.getByLabel("調整金額").fill("-4999");
+    await adjustment.getByLabel("原因").fill("staging 驗收資料回收");
+    await adjustment.getByRole("button", { name: "儲存調整" }).click();
+    await expect(page.getByText("應收金額已調整。", { exact: true })).toBeVisible({ timeout: 30_000 });
   });
 });
