@@ -8,6 +8,14 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-20 最新補充（社費 hosted 驗收流程已補上，尚未執行）
+
+- 權威主線已推到 `0d529b0ddcecf5d3bab993b205e24158cc57465b`；工作樹仍只保留既有未追蹤的
+  `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪沒有讀寫或納入。
+- `.github/workflows/staging-management-acceptance.yml` 與 `e2e/tests/staging-management-acceptance.e2e.mjs` 已加入受保護的社費流程：建立獨立測試扶輪年度、設定年度應收、產生應收、做部分收款、送出代墊、核銷，並用沖銷／退回／調整回收合成資料；另用社員帳號確認只看到自己的投影。沒有加入 service-role 或資料庫直接寫入。
+- 本機 typecheck、lint、完整 Vitest `197` 檔／`1464` tests、build 與 targeted acceptance contract `16/16` 通過；本輪沒有手動觸發 CI／Browser Smoke，也沒有新增 migration。
+- 這只是把 hosted 驗收工具補齊，**不等於社費已結案**。目前 staging 的 `SUPABASE_ACCESS_TOKEN` 仍是 2026-08-31 的舊值，`/api/health` 仍為 `revision=07002d81be23`；待憑證更新後，要用這個 exact SHA 重新 Go-Live，再執行受保護 management acceptance，成功前維持社費 `[>]`。
+
 ## 2026-09-20 最新補充（活動取消安全邊界已推送；staging 等待憑證修復）
 
 - 權威主線目前為 `origin/main=163a3e512b7623baddb8150feb74616cc50bb47c`；工作樹只保留既有未追蹤的
