@@ -17,6 +17,7 @@
     "test:line-rich-menu": "playwright test tests/line-rich-menu.e2e.mjs --config=playwright.config.mjs --project=line-oa-rich-menu-1440",
     "test:staging": "playwright test tests/staging-member-acceptance.e2e.mjs --config=playwright.config.mjs --project=desktop-chromium",
     "test:staging-management": "playwright test tests/staging-management-acceptance.e2e.mjs --config=playwright.config.mjs --project=desktop-chromium",
+    "test:staging-line-quota": "playwright test tests/staging-line-quota-acceptance.e2e.mjs --config=playwright.config.mjs --project=desktop-chromium",
     "install:chromium": "playwright install --with-deps chromium"
   },
   "devDependencies": {

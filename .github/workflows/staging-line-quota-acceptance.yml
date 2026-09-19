@@ -1,0 +1,108 @@
+name: Staging LINE Quota Notice Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Enter the exact 40-character main commit SHA deployed to staging"
+        required: true
+        type: string
+      confirmation:
+        description: "Enter TEST-STAGING-LINE-QUOTA"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-line-quota-acceptance
+  cancel-in-progress: false
+
+jobs:
+  acceptance:
+    name: Hosted staging LINE quota notice acceptance
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+    env:
+      STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      STAGING_LINE_QUOTA_ACCEPTANCE_CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
+      STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
+      STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+      STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+      STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      E2E_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      E2E_REMOTE: "1"
+      E2E_SENSITIVE: "1"
+      APP_ENV: staging
+      TRUSTED_ADMIN_ENVIRONMENT: staging
+      STAGING_LINE_QUOTA_FIXTURE_ID: quota-${{ github.run_id }}
+
+    steps:
+      - name: Check out the exact acceptance revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Validate protected staging quota acceptance inputs
+        run: node scripts/verify-staging-line-quota-acceptance-inputs.mjs
+
+      - name: Seed synthetic quota-stop fixture
+        run: node scripts/staging-line-quota-acceptance-fixture.mjs seed
+
+      - name: Install isolated browser test dependencies
+        run: npm ci --prefix e2e
+
+      - name: Install Chromium and operating-system dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if timeout -k 30 240 npm --prefix e2e run install:chromium; then
+              exit 0
+            fi
+            echo "Chromium install attempt ${attempt} failed or stalled; retrying."
+            sudo pkill -9 -x apt-get 2>/dev/null || true
+            sudo pkill -9 -x dpkg 2>/dev/null || true
+            sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock 2>/dev/null || true
+            sudo dpkg --configure -a 2>/dev/null || true
+            sleep 20
+          done
+          echo "Chromium install did not succeed after 3 attempts."
+          exit 1
+
+      - name: Run protected hosted staging quota notice acceptance
+        run: npm --prefix e2e run test:staging-line-quota
+
+      - name: Clean up synthetic quota-stop fixture
+        if: always()
+        run: node scripts/staging-line-quota-acceptance-fixture.mjs cleanup
+
+      - name: Record successful staging quota notice acceptance
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Hosted staging LINE quota notice acceptance passed"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- A management operator saw the quota stop notice with partial-delivery counts."
+            echo "- The fixture used a synthetic database push log and made no LINE API request."
+            echo "- The synthetic OA account and push log were removed after the test."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -8,6 +8,7 @@
 - 產品已確認 LINE 推播遇到 429／方案額度上限時採「停止並提示」，不採「繼續送並只記錄」。同一批仍可用同一 retry key 安全重試一次；確認仍為 `rate_limited` 後，停止剩餘批次。
 - 已新增 `20260919000100_line_oa_quota_notice.sql` 與 `get_line_oa_quota_notice(uuid)`。它只讓 `oa.read` 的社務管理者讀取最新會員訊息推播額度失敗，排除 Rich Menu；成功或其他結果後提醒自動消失，沒有把維運訊息放進一般社員訊息中心。
 - `/clubs/[clubId]/line-oa?mode=management` 現在會顯示「LINE 推播已暫停」與部分送達數字；手動送出原本已有即時錯誤提示。`src/lib/line/quota-notice.ts` 負責 bounded projection parsing。
+- 本輪新增 `.github/workflows/staging-line-quota-acceptance.yml`、`scripts/staging-line-quota-acceptance-fixture.mjs` 與 `e2e/tests/staging-line-quota-acceptance.e2e.mjs`。它只對名稱／代碼明確是 staging/test 的測試社團建立合成 OA 與 `rate_limited` push log，讓受保護 hosted browser 驗收管理員提示；不呼叫 LINE API，驗收後只清除自身 marker，遇到既有啟用 OA 或非 fixture 子資料會停止。尚未手動執行 workflow。
 - 本輪已完成程式／verification 檔／單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。現場核對 staging Go-Live `35440209578` 的 runtime 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`；staging `/api/health` 回報 `revision=8f109d0fba57`、`issues=[]`。本段核對時的主線基準為 `b49ae9e8db6337b19058d3033c67bbdfb04b6184`，後續未重新部署 staging；最新主線請以 `git rev-parse origin/main` 現場核對。已登入的社務管理頁顯示 25 位社員、15 位已配對、10 位未配對；最新推播為 `sent`，所以目前未顯示額度提醒；不要為了驗收硬打真實額度。本機隔離 fixture 已確認管理幹部看到 rate-limited 提醒與部分送達數字，一般社員被拒絕且看不到提醒；本輪已把 fixture 固定在 `line-oa-audience-1440`，最新一次 `5 passed`。下一步只剩不消耗正式額度的 staging UI 專項證據。
 
 ## 2026-09-19 最新現場核對（本節優先）
@@ -17,7 +18,7 @@
 - 本機針對性瀏覽器驗收補充通過：`officer-mode-1440` 9 passed／1 intentional skip，涵蓋社員／社務模式、跨社管理路徑拒絕、社費與 CSV／Excel／PDF 匯出及無社籍執行秘書；`interact-hub-1440`／`375` 共 4 passed；`line-oa-rich-menu-1440` 1 passed；`line-oa-audience-1440` 5 passed，涵蓋額度停止提示的管理員可見性與社員拒絕。這些只作本機回歸證據，不取代 staging 真人與各社 OA 驗收。
 - 已登入 staging 的唯讀抽查確認：LINE OA 管理頁最新推播為 `sent`、目前沒有額度提醒；社費管理頁可讀取 2026–27 年度與 CSV／Excel／PDF 匯出入口；社員「我的」頁有社費入口與代墊申請；服務計劃管理草稿不會出現在社員頁。未為測試硬打真實 429。
 - Chrome DevTools MCP 目前沒有 staging 登入 session，導向管理頁會回 `/login`；因此 E-06 登入後 LCP／FCP／TTFB／INP 仍是**未量測**。桌面 Chrome 只作畫面唯讀驗收，不把非 DevTools trace 的數字當效能證據。
-- 下一位代理先處理 E-03、E-05 的專項外部證據、E-06 可比效能數據與 E-10 負向矩陣；E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。E-05 不要為取得畫面而消耗正式 LINE 額度。
+- 下一位代理先在最新 staging runtime 執行一次受保護的 `Staging LINE Quota Notice Acceptance`（輸入 exact SHA 與 `TEST-STAGING-LINE-QUOTA`），確認管理員看得到停止提示且 cleanup 成功；不要為取得畫面而消耗正式 LINE 額度。之後再處理 E-03 真人配對、E-06 可比效能數據與 E-10 負向矩陣；E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。
 
 ## 2026-09-18 最新現場狀態（本節優先）
 
