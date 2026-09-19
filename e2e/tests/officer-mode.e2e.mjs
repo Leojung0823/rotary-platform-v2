@@ -245,6 +245,53 @@ test("an officer sees finance only in management mode and a member sees only the
   }
 });
 
+test("a service-plan manager keeps drafts private until publishing", async ({ page, browser }, testInfo) => {
+  test.skip(testInfo.project.name !== "officer-mode-1440", "This flow mutates shared local service-plan fixtures.");
+  test.setTimeout(120_000);
+
+  const startYear = 2000 + (Date.now() % 200);
+  const title = `本機服務計劃驗收 ${Date.now()}`;
+  const serviceCategories = ["社員服務", "職業服務", "社區服務", "國際服務"];
+
+  await login(page, officerEmail);
+  await page.goto(new URL(`/clubs/${memberClubId}/service-plan?mode=management&year=${startYear}`, baseURL).toString());
+  await expect(page.getByRole("heading", { name: "年度服務計劃", level: 1 })).toBeVisible();
+
+  await page.getByLabel("計劃標題").fill(title);
+  await page.getByLabel("年度總覽").fill("本機驗收：先建立草稿，再由幹部確認後公開。");
+  await page.locator('textarea[name="memberInvitation"]').fill("本機驗收：社員可以在發布後查看四大服務面向。");
+  for (let index = 0; index < serviceCategories.length; index += 1) {
+    await page.getByLabel("年度目標").nth(index).fill(`${serviceCategories[index]}年度目標`);
+    await page.getByLabel("執行活動").nth(index).fill(`${serviceCategories[index]}執行活動`);
+    await page.getByLabel("最新成果").nth(index).fill(`${serviceCategories[index]}最新成果`);
+    await page.locator('textarea[name$="_memberParticipation"]').nth(index).fill(`${serviceCategories[index]}社員參與`);
+  }
+
+  await page.getByRole("button", { name: "儲存草稿" }).click();
+  await expect(page).toHaveURL(/success=saved/u, { timeout: 30_000 });
+
+  const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const memberPage = await memberContext.newPage();
+  try {
+    await login(memberPage, ordinaryMemberEmail);
+    await memberPage.goto(new URL(`/club-affairs?mode=member&year=${startYear}`, baseURL).toString());
+    await expect(memberPage.getByText("本年度的服務計劃尚未發布。", { exact: true })).toBeVisible();
+    await expect(memberPage.getByText(title, { exact: true })).toHaveCount(0);
+
+    await page.goto(new URL(`/clubs/${memberClubId}/service-plan?mode=management&year=${startYear}`, baseURL).toString());
+    await page.getByRole("button", { name: "發布給社員" }).click();
+    await expect(page).toHaveURL(/success=saved/u, { timeout: 30_000 });
+
+    await memberPage.goto(new URL(`/club-affairs?mode=member&year=${startYear}`, baseURL).toString());
+    await expect(memberPage.getByText(title, { exact: true })).toBeVisible();
+    for (const category of serviceCategories) {
+      await expect(memberPage.getByRole("heading", { name: category, exact: true })).toBeVisible();
+    }
+  } finally {
+    await memberContext.close();
+  }
+});
+
 test("an executive secretary reaches birthday management from the overview", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "officer-mode-1440", "This flow mutates shared local birthday fixtures.");
   test.setTimeout(90_000);

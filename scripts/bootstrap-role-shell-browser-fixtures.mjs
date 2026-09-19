@@ -459,9 +459,11 @@ async function addLineQuotaNoticeFixture({ clubId, requestedByAccount }) {
   const existing = await admin.from("line_push_logs").select("id").eq("id", id).maybeSingle();
   if (existing.error) fail("could not inspect local LINE quota notice fixture");
 
-  const result = existing.data
-    ? await admin.from("line_push_logs").update(values).eq("id", id)
-    : await admin.from("line_push_logs").insert({ id, ...values });
+  // line_push_logs is intentionally append-only to service-role clients. A
+  // rerun must reuse the fixed local acceptance row instead of trying to grant
+  // the bootstrap script UPDATE access just to refresh its timestamp.
+  if (existing.data) return;
+  const result = await admin.from("line_push_logs").insert({ id, ...values });
   if (result.error) fail("could not write local LINE quota notice fixture");
 }
 
