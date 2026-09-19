@@ -6,7 +6,7 @@
 
 ## 2026-09-19 最新核對（E-05 已結案）
 
-- `main` 最新 exact SHA 為 `e7a38b50744243841b430ff9ebab4c9be9a12d37`；Staging Go-Live `35445662577` 已以同一個 SHA 完成，health 回報 `revision=e7a38b507442`、`issues=[]`，production 沒有修改。
+- `main` 最新 exact SHA 為 `9a06aa323641d5251eda567715ac30efd371c953`；這是額度驗收完成後的文件同步提交。Staging 目前仍是已發布的 `e7a38b50744243841b430ff9ebab4c9be9a12d37`，Go-Live `35445662577` 已以同一個 SHA 完成，health 回報 `revision=e7a38b507442`、`issues=[]`，production 沒有修改；文件-only 提交不需重新部署 staging。
 - LINE 額度專項 `35445780317` 已成功：只使用 staging 合成 `rate_limited` push log，不呼叫 LINE API；管理幹部看到停止提示與部分送達數字，一般社員不可見，cleanup 成功。
 - E-05 現在標記為 `[x]`。第一次 run `35445453225` 的依賴安裝缺口已在 `e7a38b5` 修正，並由 workflow 順序測試鎖定。
 - 下一個可執行順序是 E-03 真人身份核對、E-10 負向角色矩陣與 E-06 可比效能量測；E-07、E-08、E-11 仍需要實機、產品決策或外部 OA 設定，E-09 維持暫緩。

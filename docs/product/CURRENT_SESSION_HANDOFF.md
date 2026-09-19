@@ -5,7 +5,7 @@
 
 ## 2026-09-19 最新核對（E-05 已結案）
 
-- `main`／`origin/main` 為 `e7a38b50744243841b430ff9ebab4c9be9a12d37`；staging Go-Live `35445662577` 已用同一個 exact SHA 完成，`/api/health` 為 `status=ok`、`revision=e7a38b507442`、`issues=[]`。
+- `main`／`origin/main` 為 `9a06aa323641d5251eda567715ac30efd371c953`；這是額度驗收完成後的文件同步提交。staging 目前仍是已發布的 `e7a38b50744243841b430ff9ebab4c9be9a12d37`，Go-Live `35445662577` 已用同一個 exact SHA 完成，`/api/health` 為 `status=ok`、`revision=e7a38b507442`、`issues=[]`；文件-only 提交不需重新部署 staging。
 - LINE 額度專項 `35445780317` 成功：合成 rate-limited push log、管理幹部看到停止提示與部分送達數字、一般社員無法看到、cleanup 成功；沒有呼叫 LINE API，也沒有修改 production。
 - 第一次專項 `35445453225` 因 workflow 漏裝根目錄 `@supabase/supabase-js` 失敗；已在 `e7a38b5` 加入 `npm ci`，並由 `staging-line-quota-acceptance-workflow.test.ts` 鎖定 seed 必須在依賴安裝之後。
 - E-05 已從待驗收清單移除。接下來仍需 E-03 follow 正確身份真人核對、E-06 登入後可比效能數據、E-10 多社／停權／退社／外社負向矩陣；E-07、E-08、E-11 需外部實機／產品／LINE OA 條件，E-09 維持暫緩。
