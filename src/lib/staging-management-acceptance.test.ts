@@ -141,6 +141,8 @@ describe("staging management acceptance workflow safety", () => {
 
   it("covers disposable finance mutations without adding service credentials", () => {
     expect(stagingTest).toContain('社費管理頁完成部分收款、代墊與核銷');
+    expect(stagingTest).toContain("expectFinanceDownloads");
+    expect(stagingTest).toContain("memberExport.status()).toBe(403)");
     expect(stagingTest).toContain('產生年度應收');
     expect(stagingTest).toContain('部分收款');
     expect(stagingTest).toContain('核銷已登錄。');

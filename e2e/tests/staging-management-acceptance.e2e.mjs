@@ -87,6 +87,37 @@ function dateOnlyFromNow(daysFromNow = 0) {
   return date.toISOString().slice(0, 10);
 }
 
+async function expectFinanceDownloads(page, expectedCsvText = null) {
+  const downloads = [
+    ["下載 CSV", "text/csv", "csv"],
+    ["下載 Excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"],
+    ["下載 PDF", "application/pdf", "pdf"],
+  ];
+
+  for (const [label, contentType, format] of downloads) {
+    const link = page.getByRole("link", { name: label });
+    await expect(link).toBeVisible();
+    const href = await link.getAttribute("href");
+    if (!href) throw new Error(`${label} link is missing its href.`);
+    expect(href).toContain(`format=${format}`);
+    const response = await page.request.get(new URL(href, baseURL).toString());
+    expect(response.status(), `${label} should return a protected finance download`).toBe(200);
+    expect(response.headers()["content-type"]).toContain(contentType);
+    expect(response.headers()["content-disposition"]).toContain("attachment");
+    expect(response.headers()["cache-control"]).toContain("no-store");
+    const body = await response.body();
+    if (format === "csv") {
+      const csv = body.toString("utf8");
+      expect(csv.codePointAt(0)).toBe(0xfeff);
+      if (expectedCsvText) expect(csv).toContain(expectedCsvText);
+    } else if (format === "xlsx") {
+      expect(body.subarray(0, 2).toString("ascii")).toBe("PK");
+    } else {
+      expect(body.subarray(0, 5).toString("ascii")).toBe("%PDF-");
+    }
+  }
+}
+
 async function createDisposableRotaryYear(page, clubId, theme) {
   await page.goto(new URL(`/clubs/${clubId}/archives?mode=management`, baseURL).toString());
   await expect(page.getByTestId("archive-management")).toBeVisible();
@@ -384,9 +415,10 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     expect(clubId).toMatch(/^[0-9a-f-]{36}$/u);
     await expect(page.getByRole("heading", { name: "社費與核銷" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "收款名單" })).toBeVisible();
-    for (const label of ["下載 CSV", "下載 Excel", "下載 PDF"]) {
-      await expect(page.getByRole("link", { name: label })).toBeVisible();
-    }
+    await expectFinanceDownloads(page);
+    const csvHref = await page.getByRole("link", { name: "下載 CSV" }).getAttribute("href");
+    if (!csvHref) throw new Error("Management CSV export link is missing.");
+    const managementCsvUrl = new URL(csvHref, baseURL);
 
     const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const memberPage = await memberContext.newPage();
@@ -398,6 +430,10 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
       await expect(memberPage.getByRole("heading", { name: "社費與核銷" })).toHaveCount(0);
       await expect(memberPage.getByRole("heading", { name: "收款名單" })).toHaveCount(0);
       await expect(memberPage.getByRole("button", { name: "送出代墊申請" })).toBeVisible();
+
+      const memberExport = await memberPage.request.get(managementCsvUrl.toString());
+      expect(memberExport.status()).toBe(403);
+      expect(memberExport.headers()["cache-control"]).toContain("no-store");
 
       await memberPage.goto(new URL(`/clubs/${clubId}/dues?mode=management`, baseURL).toString());
       await expect(memberPage).toHaveURL(/\/access-denied(?:\?|$)/u);
@@ -445,6 +481,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await page.getByRole("button", { name: "確認收款", exact: true }).click();
     await expect(page.getByText("收款已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("部分收款", { exact: true })).toBeVisible();
+    await expectFinanceDownloads(page, receiptMemberName);
 
     const advanceForm = page.locator("form").filter({ has: page.getByLabel("代墊社員") }).first();
     const advanceDescription = `staging 財務驗收代墊 ${Date.now()}`;
