@@ -3,6 +3,16 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：待辦掃描
+
+- 權威主線：`origin/main=3e9d8056c4ff25f41e1ce93a4b4b26027f1c2c82`；目前沒有 open PR。
+- staging runtime：`425a166e2469`；`/api/health` 為 `status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
+- 自動 Browser Smoke `35458088029` 的 `member-browser-smoke` 仍 `in_progress`；不要手動重跑或把未結束當成通過。
+- staging 社費頁已唯讀開啟並確認年度、匯出與代墊入口；該年度沒有測試應收資料，所以實際收款／沖銷、代墊／核銷與負向權限矩陣
+  仍待受保護 hosted acceptance。避免直接對現有社員留下未標記的財務測試資料。
+- 原始碼掃描沒有新增待登錄 TODO；後續接力先處理 E-03、E-10、E-06。E-07、E-11 要真人／實機／LINE 外部設定，E-08 是獨立
+  production 決策，E-09 依產品決定暫緩。
+
 ## 2026-09-20 最新交接（跨社管理深連結已修正並發布）
 
 - 最新主線與 staging runtime 都是 `425a166e2469db49ff8e6b995e04b066f011c926`；Staging Release

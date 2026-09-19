@@ -4,6 +4,17 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-20 待辦掃描補充
+
+- `origin/main` 為 `3e9d8056c4ff25f41e1ce93a4b4b26027f1c2c82`，目前沒有 open PR；staging health 的 deployed revision 為
+  `425a166e2469`，`issues=[]`。文件同步不需要重新部署產品程式。
+- 自動 Browser Smoke `35458088029` 的 member job 仍在執行，沒有被採用為通過證據，也沒有手動重跑。這不改變已成功的 CI、Staging
+  Release 與 Staging Go-Live 結果。
+- staging 社費頁已做唯讀核對：年度、財務匯出與社員代墊入口可用；因該 staging 年度目前沒有應收／收款／代墊資料，財務的實際
+  收款、沖銷、核銷與負向角色矩陣仍列為 hosted acceptance，不把「頁面能開」當成完整驗收。
+- 原始碼沒有發現待登錄的 TODO／FIXME；下一步仍依外部證據排序：E-03 正確身份配對、E-10 負向角色矩陣、E-06 同條件效能量測，
+  再處理 E-07 實機／M1、E-11 各社 OA／Rich Menu；E-08 production 需另立決策，E-09 維持暫緩。
+
 ## 2026-09-20 最新核對（跨社管理深連結已修正並發布）
 
 - `425a166e2469db49ff8e6b995e04b066f011c926` 已進入 `main`；Staging Release `35458106373` 與 Go-Live

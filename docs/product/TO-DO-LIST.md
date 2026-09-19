@@ -8,6 +8,20 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-20 最新掃描補充（待辦與 staging 現場）
+
+- `origin/main` 現場核對為 `3e9d8056c4ff25f41e1ce93a4b4b26027f1c2c82`；目前沒有 open PR。工作樹只保留既有、未追蹤的
+  `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪沒有讀寫或納入它。
+- staging `/api/health` 現場回報 `status=ok`、`revision=425a166e2469`、`configuration=true`、`database=true`、
+  `issues=[]`、`warnings=[]`；這是目前已部署的產品程式 revision，文件提交沒有重新部署 staging。
+- 自動 Browser Smoke `35458088029` 的 `member-browser-smoke` 仍是 `in_progress`，不能當成通過證據；沒有手動重跑，也沒有把它當成
+  阻塞產品 release 的理由。其餘同一 SHA 的 CI、Staging Release 與 Staging Go-Live 已成功。
+- 已登入 staging 的社務管理帳號唯讀檢查社費頁：`2026-27` 年度、CSV／Excel／PDF 入口、收款名單與代墊入口均能開啟；目前該年度是
+  0 筆應收、0 筆收款、0 筆代墊，因此**實際收款／沖銷、代墊／核銷及一般社員／外社／無 `finance.read` 的負向矩陣仍未驗收**。
+- 原始碼掃描沒有發現未登錄的 `TODO`／`FIXME` 產品工作；目前未結案清單仍以 E-03、E-06、E-07、E-08、E-10、E-11、社費 hosted
+  角色驗收、生日設定 hosted／真人驗收、Rich Menu 外部設定、手機與 M1 測試為主。這些需要真人、外部帳號、實機或產品決策，不能只靠
+  再寫本機程式誠實結案。
+
 ## 2026-09-20 最新核對（跨社管理深連結已修正並發布）
 
 - 程式提交 `425a166e2469db49ff8e6b995e04b066f011c926` 已推上 `main`；Staging Release
