@@ -5,6 +5,14 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
+## 2026-09-20 Chrome DevTools MCP 可用性確認（不是登入後基線）
+
+- Chrome DevTools MCP 已能對 staging 執行 Performance trace，但目前可用頁面只有未登入的 `/login`；沒有把它冒充社員首頁或社務管理頁的 E-06 證據。
+- 條件：staging、CPU `1x`、未設定網路限速、重新載入；trace URL 為 `https://rotary-platform-v2-mrha.onrender.com/login`。
+- 這次實測：LCP `652 ms`、LCP TTFB `112 ms`、CLS `0.00`；FCP、INP 未由這次 trace 取得。LCP 元素是登入頁文字，不是圖片。
+- DevTools 估算 render-blocking CSS 若移出關鍵路徑可省 FCP／LCP 約 `152 ms`；這只適用未登入登入頁，先不改，且不是登入後效能改善證據。
+- 因為沒有登入 session，社員首頁與社務管理頁的 LCP／FCP／TTFB／INP 仍寫「未量測」。要結案 E-06，仍需在同一 staging runtime、同一身份與相同快取條件下量兩個登入後頁面。
+
 ## 2026-09-18 主線／staging 核對
 
 - `main` 與 staging 已發布至 exact SHA `5ba1e273c8e88344b47b92120fc1a4431be820a8`；Staging Release `35234886243`、Go-Live `35235024918` 均成功，health `issues=[]`、`warnings=[]`。
