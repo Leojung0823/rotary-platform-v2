@@ -13,6 +13,11 @@
 - `05a456e` 為 staging member acceptance 增加獨立的 `expect_birthday_settings` 開關；開啟後會檢查 `/me?mode=member` 顯示「生日公開設定」、儲存按鈕、沒有誤顯示通用「隱私設定」，並檢查手機寬度沒有水平溢位。
 - 本機 `node --check` 與 staging acceptance contract `7/7` 通過；這只是驗收工具完成，尚未在最新 staging runtime 執行。部署後要同時開啟生日 V2 旗標，再以 `expect_birthday_settings=true` 跑受保護 staging acceptance。
 
+## 2026-09-20 最新補充（一般社員 hosted 越權拒絕驗收已補上）
+
+- `0ddb8a0` 將一般社員直接開啟 `/clubs/{clubId}/members?mode=member` 的拒絕檢查加入 management acceptance；預期後端導向 `/access-denied`，不是只靠前端隱藏入口。
+- 本機 `node --check` 與 management acceptance contract `11/11` 通過；這仍不是停權／退社／外社執行秘書的完整 E-10 矩陣，且尚未在新 staging runtime 執行。
+
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
 的舊掃描結果；那份檔案屬於獨立 worktree，不是權威 repo 的版本。

@@ -14,6 +14,11 @@
 - `05a456e` 增加 `expect_birthday_settings` staging acceptance input；開啟後驗證 `/me?mode=member` 的生日公開設定與儲存按鈕，並確認通用隱私設定沒有回來。
 - `node --check` 與 staging acceptance contract `7/7` 通過，但尚未部署／執行 hosted；憑證修復後要把它和生日旗標一起驗收，不得只看本機回歸就標完成。
 
+## 2026-09-20 最新接力補充：一般社員 hosted 越權拒絕驗收已補上
+
+- `0ddb8a0` 在 management acceptance 加入一般社員直接開 `/clubs/{clubId}/members?mode=member` 的拒絕檢查，預期 `/access-denied` 與「無法存取」標題；本機契約 `11/11` 通過。
+- 這不是完整 E-10 結案證據；停權、退社、外社執行秘書與雙重社籍仍要真人／hosted 矩陣，且本項尚未部署到 staging。
+
 ## 2026-09-20 最新接力補充：社費報表 hosted 驗收範圍已補強
 
 - `c655d50` 已把受保護 management acceptance 的財務覆蓋補到可判定程度：空資料與部分收款資料的 CSV／Excel／PDF 下載會檢查內容型別、附件標頭、`no-store` 與檔案簽名；社員直接呼叫管理匯出 API 預期回 `403`。
