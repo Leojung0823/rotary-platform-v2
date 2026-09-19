@@ -8,7 +8,7 @@
 
 - LINE 推播遇到 429／方案額度上限時，產品決定採「停止並提示」：同一批沿用 retry key 安全重試一次，仍是 `rate_limited` 就停止後續批次，不盲目繼續送。
 - 手動推播會在管理頁立即顯示錯誤；排程、活動與訊息中心推播會把部分送達寫入既有 `line_push_logs`，並由新的 `get_line_oa_quota_notice` 在社務管理 → LINE OA 頁面提醒有 `oa.read` 的管理幹部。一般社員不會在訊息中心看到這個維運提醒。
-- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`，staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可正常讀取 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，目前沒有額度警示。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 rate-limited UI 專項證據。
+- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`，staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可正常讀取 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，目前沒有額度警示；本機隔離 rate-limited fixture 已證明管理幹部看到停止提示與部分送達數字，一般社員不可見。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 staging UI 專項證據。
 
 ## 2026-09-19 最新現場核對（本節優先）
 
@@ -16,7 +16,7 @@
 - Staging Management Acceptance `35440318825` 成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。這完成管理模式的 hosted 正向流程，但不等於社費、服務計劃的完整角色矩陣或 E-10 負向矩陣完成。
 - 已登入 staging 的唯讀抽查確認：LINE OA 管理頁最新推播為 `sent`、目前沒有額度提醒；社費管理頁可讀取 2026–27 年度與 CSV／Excel／PDF 匯出入口；社員「我的」頁有社費入口與代墊申請；服務計劃管理草稿不會出現在社員頁。未為測試硬打真實 429。
 - Chrome DevTools MCP 目前沒有 staging 登入 session，導向管理頁會回 `/login`；因此 E-06 登入後 LCP／FCP／TTFB／INP 仍是**未量測**。桌面 Chrome 只作畫面唯讀驗收，不把非 DevTools trace 的數字當效能證據。
-- 路線圖下一步是補 E-03、E-05 的專項外部證據、E-06 可比效能數據與 E-10 負向矩陣；E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。
+- 路線圖下一步是補 E-03、E-05 的專項外部證據、E-06 可比效能數據與 E-10 負向矩陣；E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。E-05 的程式與本機可見性邊界已驗證，不為畫面驗收消耗正式 LINE 額度。
 
 ## 2026-09-18 最新現場基線（本節優先）
 
@@ -587,7 +587,7 @@ PR-01c 不做：
 2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：本機已補撤銷管理者、停權、退社的 role-shell 負向測試；仍需 staging 真人確認雙重社籍、跨社執行秘書、資料隔離與管理權限不越權。
 3. **E-06：登入後管理頁效能量測** `[>]`：`f4cddb6` 已部署並移除平台扶輪社清單不必要的 RSC 預載；Chrome DevTools 觀察到該頁請求由 23 筆降為 16 筆。這不是社員首頁／社務管理頁的量測，且同一 runtime／快取條件下的 FCP／TTFB／LCP／INP 前後比較仍未完成，先補齊正確身份的可比數據，再拆管理頁文件等待與 render pipeline。
 4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
-5. **E-05：LINE 推播額度與超額政策** `[>]`：政策已定為停止並提示；本輪已補管理頁提醒與安全邊界，待 staging Go-Live 後由管理幹部驗收「429 顯示、一般社員不可見、下一次成功後清除」。
+5. **E-05：LINE 推播額度與超額政策** `[>]`：政策已定為停止並提示；本輪已補管理頁提醒與安全邊界，本機已驗收「管理幹部看到停止提示、一般社員不可見、後續成功可清除」，staging 正常推播已抽查，仍待不消耗正式額度的 rate-limited UI 專項證據。
 6. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging，待各社 OA 設定與真人驗收。
 7. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 8. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
