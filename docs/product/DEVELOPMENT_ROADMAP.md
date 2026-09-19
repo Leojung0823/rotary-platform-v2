@@ -4,6 +4,13 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-20 最新補充（生日設定可見性回歸測試已推上 main）
+
+- `e2e/tests/birthday-v2.e2e.mjs` 已加入非變更型回歸案例，保護社員模式 `/me?mode=member` 的「生日公開設定」可見性，以及通用「隱私設定」不應重新曝光的邊界。
+- 測試提交 `ab666c120798ca45c44e3c238d59e976b08c8ad6` 已推上 `main`；它不改產品 runtime、不新增 migration，因此 staging 仍維持 `a4fd0d6f47b3`，沒有重新部署。
+- 自動 CI `35459724663` 已成功；Browser Smoke `35459724643` 在本次文件更新時仍在執行，不能先當成通過。最新主線 SHA 請現場核對。
+- 未結案的外部條件仍不變：E-03 真人 follow 身份核對、E-06 同條件效能量測、E-07 實機／M1、E-08 production 決策、E-10 負向角色矩陣、E-11 OA／Rich Menu 外部設定，以及社費 hosted 角色驗收。
+
 ## 2026-09-20 最新核對（生日設定獨立顯示已發布）
 
 - 本節的產品與 staging 證據對應產品 commit／staging runtime `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`；後續文件同步 commit

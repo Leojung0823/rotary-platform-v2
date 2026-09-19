@@ -8,6 +8,13 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-20 最新補充（生日設定可見性回歸測試已推上 main）
+
+- 已新增 `e2e/tests/birthday-v2.e2e.mjs` 的非變更型回歸案例：社員模式的 `/me?mode=member` 必須看得到「生日公開設定」，且不能重新出現已關閉的通用「隱私設定」卡片；同時檢查頁面沒有橫向溢出。
+- 測試提交 `ab666c120798ca45c44e3c238d59e976b08c8ad6` 已推上 `main`。這只補測試，不改 staging runtime；目前 staging 仍是 `a4fd0d6f47b3`，不需因測試提交重新部署。
+- 自動 CI `35459724663` 已成功；對應 Browser Smoke `35459724643` 在本次核對時仍執行中，沒有手動重跑，也不把未完成的 run 當成通過證據。最新主線請以 `git rev-parse origin/main` 現場核對。
+- 工作樹仍只保留既有、未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪未讀寫、未加入提交。
+
 ## 2026-09-20 最新核對（生日設定獨立顯示修正已發布）
 
 - 本節的產品與 staging 證據對應產品 commit／staging runtime `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`；後續文件同步 commit

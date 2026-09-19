@@ -3,6 +3,13 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：生日設定可見性回歸測試已推上 main
+
+- `e2e/tests/birthday-v2.e2e.mjs` 已加入只讀回歸案例，確認社員模式的「生日公開設定」會顯示，通用「隱私設定」不會因生日旗標而重新顯示，並檢查沒有橫向溢出。
+- 測試提交 `ab666c120798ca45c44e3c238d59e976b08c8ad6` 已推上 `main`；只補測試，沒有修改 staging runtime，也沒有部署。
+- 自動 CI `35459724663` 已成功；Browser Smoke `35459724643` 在本次接力時仍 `in_progress`，不可當成通過證據，也沒有手動重跑。
+- 不要納入既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`。產品 runtime 仍以 staging health 的 `a4fd0d6f47b3` 為準，最新主線 SHA 以現場 `git rev-parse origin/main` 核對。
+
 ## 2026-09-20 最新接力補充：生日設定獨立顯示已發布
 
 - 本節的產品與 staging 證據對應產品 commit／staging runtime `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`；後續文件同步只更新紀錄、
