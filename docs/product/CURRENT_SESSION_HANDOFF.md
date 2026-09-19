@@ -5,7 +5,8 @@
 
 ## 2026-09-20 最新接力補充：生日設定獨立顯示已發布
 
-- 最新主線為 `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`，目前沒有 open PR；既有未追蹤的
+- 最新主線為 `95ee285c0874eeb141308df2102d2ab22866609b`（本次文件同步提交），目前沒有 open PR；生日修正的產品 commit／staging runtime
+  為 `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`。既有未追蹤的
   `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不要納入或覆蓋。
 - 真正缺口是生日公開設定被 `SHOW_PRIVACY_SETTINGS = false` 一起藏掉。已把生日設定移到獨立卡片；通用通知／名冊隱私仍維持關閉，沒有放寬權限或資料邊界。
 - 修改檔：`src/app/(authenticated)/me/page.tsx`、`src/lib/privacy-in-one-place.test.ts`。沒有 migration；本機生日邊界 9/9、完整 Vitest `196` 檔／`1459` tests、typecheck、lint（既有 warning）與 build 通過。
