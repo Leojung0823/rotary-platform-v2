@@ -43,6 +43,14 @@ describe("staging browser acceptance workflow safety", () => {
     expect(stagingTest).toContain('page.getByRole("heading", { level: 1, name: "生日祝福徵集" })');
   });
 
+  it("keeps birthday settings acceptance separately opt-in", () => {
+    expect(workflow).toContain("expect_birthday_settings:");
+    expect(workflow).toContain("STAGING_EXPECT_BIRTHDAY_SETTINGS: ${{ inputs.expect_birthday_settings }}");
+    expect(stagingTest).toContain('process.env.STAGING_EXPECT_BIRTHDAY_SETTINGS === "true"');
+    expect(stagingTest).toContain('page.goto("/me?mode=member")');
+    expect(stagingTest).toContain('page.getByRole("heading", { name: "生日公開設定", exact: true })');
+  });
+
   it("uses environment-scoped staging test credentials without release credentials", () => {
     expect(workflow).toContain("STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}");
     expect(workflow).toContain("STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}");

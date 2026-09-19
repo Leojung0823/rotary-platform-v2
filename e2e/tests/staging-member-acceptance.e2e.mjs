@@ -8,6 +8,7 @@ const expectedSha = process.env.E2E_EXPECTED_SHA;
 const baseURL = process.env.E2E_BASE_URL;
 const expectBirthdayV2 = process.env.STAGING_EXPECT_BIRTHDAY_V2 === "true";
 const expectBirthdayCollection = process.env.STAGING_EXPECT_BIRTHDAY_COLLECTION === "true";
+const expectBirthdaySettings = process.env.STAGING_EXPECT_BIRTHDAY_SETTINGS === "true";
 
 function requireStagingConfiguration() {
   if (!memberEmail || !memberPassword || !expectedClubName || !expectedSha || !baseURL) {
@@ -106,6 +107,14 @@ test.describe("受保護的 Hosted staging 社員驗收", () => {
     expect(displayNameLength).toBeGreaterThan(0);
     expect(contactLength).toBeGreaterThan(0);
     await expectNoHorizontalOverflow(page);
+
+    if (expectBirthdaySettings) {
+      await page.goto("/me?mode=member");
+      await expect(page.getByRole("heading", { name: "生日公開設定", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "儲存這個社的生日設定" }).first()).toBeVisible();
+      await expect(page.getByRole("heading", { name: "隱私設定", exact: true })).toHaveCount(0);
+      await expectNoHorizontalOverflow(page);
+    }
 
     if (expectBirthdayV2) {
       await page.goto("/birthdays");
