@@ -25,8 +25,10 @@ export async function currentExperienceMode(subjectUuid: string): Promise<Experi
   });
   if (!evaluation.enabled) return null;
 
+  const preferredClubId = headerStore.get("x-rotary-requested-club-id")
+    || readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
   const resolution = await resolveExperienceContext(
-    readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value),
+    preferredClubId,
   );
   if (!resolution.ok) return null;
 

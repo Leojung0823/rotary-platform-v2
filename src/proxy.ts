@@ -28,6 +28,7 @@ export const PROTECTED_SESSION_PATHS = [
 export const SESSION_REFRESH_ONLY_PATHS = ["/invite/accept", "/join", "/reset-password"] as const;
 
 const AUTH_SESSION_PATHS = [...PROTECTED_SESSION_PATHS, ...SESSION_REFRESH_ONLY_PATHS] as const;
+const clubIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 export function shouldRefreshAuthSession(pathname: string) {
   return AUTH_SESSION_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -39,10 +40,17 @@ function requiresSession(pathname: string) {
 
 export function buildForwardedRequestHeaders(request: NextRequest) {
   const headers = new Headers(request.headers);
+  const pathClubId = /^\/clubs?\/([^/]+)/u.exec(request.nextUrl.pathname)?.[1];
+  const queryClubId = request.nextUrl.searchParams.get("clubId");
+  const requestedClubId = pathClubId ?? queryClubId;
   // These are proxy-derived display inputs. Never preserve browser-supplied
   // values, and never use them as authorization inputs.
   headers.set("x-rotary-pathname", request.nextUrl.pathname);
   headers.set("x-rotary-requested-mode", request.nextUrl.searchParams.get("mode") ?? "");
+  headers.set(
+    "x-rotary-requested-club-id",
+    requestedClubId && clubIdPattern.test(requestedClubId) ? requestedClubId.toLowerCase() : "",
+  );
   return headers;
 }
 

@@ -281,8 +281,15 @@ export async function RoleAwareAppShellBoundary({
   // Neither rejects -- both resolve to a failure value -- so the flag-disabled
   // path can return without awaiting the context.
   const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  // A /clubs/:clubId deep link is allowed to choose the initial display
+  // context, but resolveExperienceContext still checks that the ID belongs to
+  // this identity before accepting it. It is a navigation preference, never
+  // an authorization input. Falling back to the cookie preserves the normal
+  // dashboard and cross-page behaviour.
+  const preferredClubId = headerStore.get("x-rotary-requested-club-id")
+    || readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
   const contextPromise = resolveExperienceContext(
-    readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value),
+    preferredClubId,
   );
 
   // The unread count joins this group rather than following the flag read:

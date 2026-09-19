@@ -130,6 +130,13 @@ test("server-resolved role shell is responsive and remains keyboard accessible",
     await managementPage.keyboard.press("Enter");
     await expect(managementPage.getByRole("region", { name: "其他可管理扶輪社" })).toBeVisible();
     await expect(managementPage.getByRole("region", { name: "我的扶輪社" })).toHaveCount(0);
+    // A valid management deep link must also move the shell's display context
+    // to the same club as the URL. The page itself already uses the route
+    // clubId for its data; this catches a stale active-club cookie leaving the
+    // sidebar and its links on the other managed club.
+    await managementPage.goto(new URL(`/clubs/${managedClubId}/events?mode=management`, baseURL).toString());
+    await expectShell(managementPage, "社務管理模式");
+    await expect(managementPage.getByLabel("切換目前所在的社或委員會")).toContainText("本機 Shell 管理社");
     await managementContext.close();
 
     const allModesContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });

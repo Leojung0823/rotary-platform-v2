@@ -158,6 +158,7 @@ describe("auth session proxy", () => {
         cookie: "sb-example-auth-token=stale-session-cookie; app-preference=kept",
         "x-rotary-pathname": "/platform/clubs",
         "x-rotary-requested-mode": "platform",
+        "x-rotary-requested-club-id": "00000000-0000-4000-8000-000000000099",
       },
     });
 
@@ -171,8 +172,30 @@ describe("auth session proxy", () => {
     expect(response.cookies.get("sb-example-auth-token")?.value).toBe("refreshed-session-cookie");
     expect(forwarded.get("x-rotary-pathname")).toBe("/dashboard");
     expect(forwarded.get("x-rotary-requested-mode")).toBe("management");
+    expect(forwarded.get("x-rotary-requested-club-id")).toBe("");
     expect(response.headers.get("x-middleware-request-x-rotary-pathname")).toBe("/dashboard");
     expect(response.headers.get("x-middleware-request-x-rotary-requested-mode")).toBe("management");
+    expect(response.headers.get("x-middleware-request-x-rotary-requested-club-id")).toBe("");
+  });
+
+  it("forwards only a valid route or query club ID as a display preference", () => {
+    const routeClubId = "40000000-0000-4000-8000-000000000001";
+    const routeRequest = new NextRequest(
+      `https://app.example.test/clubs/${routeClubId.toUpperCase()}/events?mode=management&clubId=00000000-0000-4000-8000-000000000099`,
+      { headers: { "x-rotary-requested-club-id": "attacker-controlled" } },
+    );
+    expect(buildForwardedRequestHeaders(routeRequest).get("x-rotary-requested-club-id")).toBe(routeClubId);
+
+    const queryClubId = "40000000-0000-4000-8000-000000000002";
+    const queryRequest = new NextRequest(
+      `https://app.example.test/dues?clubId=${queryClubId}`,
+    );
+    expect(buildForwardedRequestHeaders(queryRequest).get("x-rotary-requested-club-id")).toBe(queryClubId);
+
+    const invalidRequest = new NextRequest(
+      "https://app.example.test/clubs/not-a-club-id/events?clubId=also-invalid",
+    );
+    expect(buildForwardedRequestHeaders(invalidRequest).get("x-rotary-requested-club-id")).toBe("");
   });
 });
 
