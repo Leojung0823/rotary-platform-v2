@@ -4,21 +4,28 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-19 最新核對（E-05 已結案）
+
+- `main` 最新 exact SHA 為 `e7a38b50744243841b430ff9ebab4c9be9a12d37`；Staging Go-Live `35445662577` 已以同一個 SHA 完成，health 回報 `revision=e7a38b507442`、`issues=[]`，production 沒有修改。
+- LINE 額度專項 `35445780317` 已成功：只使用 staging 合成 `rate_limited` push log，不呼叫 LINE API；管理幹部看到停止提示與部分送達數字，一般社員不可見，cleanup 成功。
+- E-05 現在標記為 `[x]`。第一次 run `35445453225` 的依賴安裝缺口已在 `e7a38b5` 修正，並由 workflow 順序測試鎖定。
+- 下一個可執行順序是 E-03 真人身份核對、E-10 負向角色矩陣與 E-06 可比效能量測；E-07、E-08、E-11 仍需要實機、產品決策或外部 OA 設定，E-09 維持暫緩。
+
 ## 2026-09-19 E-05 決策與實作進度（本節優先）
 
 - LINE 推播遇到 429／方案額度上限時，產品決定採「停止並提示」：同一批沿用 retry key 安全重試一次，仍是 `rate_limited` 就停止後續批次，不盲目繼續送。
 - 手動推播會在管理頁立即顯示錯誤；排程、活動與訊息中心推播會把部分送達寫入既有 `line_push_logs`，並由新的 `get_line_oa_quota_notice` 在社務管理 → LINE OA 頁面提醒有 `oa.read` 的管理幹部。一般社員不會在訊息中心看到這個維運提醒。
-- 本輪新增受保護的 `Staging LINE Quota Notice Acceptance` workflow：只允許 `workflow_dispatch`、`main`、exact SHA、staging environment 與測試社團；以合成資料驗證管理員看到提示，不呼叫 LINE API，完成後只清除自身 marker 資料。若測試社團已有啟用中的 OA，會 fail closed，不會覆蓋既有設定。
-- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。現場核對 staging Go-Live `35440209578` 的 runtime 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`，`/api/health` 回報 `revision=8f109d0fba57`、`issues=[]`。已登入的社務管理頁顯示 25 位社員、15 位已配對、10 位未配對；最新推播為 `sent`，目前沒有額度警示。本段核對時的主線基準為 `b49ae9e8db6337b19058d3033c67bbdfb04b6184`，未重新部署 staging；最新主線請以 `git rev-parse origin/main` 現場核對。本機隔離 rate-limited fixture 已證明管理幹部看到停止提示與部分送達數字，一般社員不可見。本輪再把這條證據固定成 `line-oa-audience-1440` 的瀏覽器回歸測試，最新一次 `5 passed`。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 staging UI 專項證據。
+- 本輪新增受保護的 `Staging LINE Quota Notice Acceptance` workflow：只允許 `workflow_dispatch`、`main`、exact SHA、staging environment 與測試社團；以合成資料驗證管理員看到提示，不呼叫 LINE API，完成後只清除自身 marker 資料。若測試社團已有啟用中的 OA，會 fail closed，不會覆蓋既有設定。workflow 另固定先安裝根目錄依賴，避免 fixture 載入失敗。
+- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。Staging Go-Live `35445662577` 的 runtime 為 `e7a38b507442`，`/api/health` 回報 `status=ok`、`issues=[]`。額度專項 `35445780317` 已成功完成管理員／社員 UI 驗收與 cleanup；未用真實社員做額度壓力測試，也不為測試消耗正式額度。
 
 ## 2026-09-19 最新現場核對（本節優先）
 
-- 2026-09-19 現場核對 staging runtime exact SHA 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`；Staging Go-Live `35440209578` 成功，staging `/api/health` 回報 `revision=8f109d0fba57`、`status=ok`、`issues=[]`，production 沒有修改。本段核對時的主線基準為 `b49ae9e8db6337b19058d3033c67bbdfb04b6184`；後續只增加本機 fixture、瀏覽器回歸測試與進度文件，未重新部署 staging。自動 CI `35443369737` 與 Browser Smoke `35443369707` 均成功；最新主線請以 `git rev-parse origin/main` 現場核對。
+- 2026-09-19 最新 staging runtime exact SHA 為 `e7a38b50744243841b430ff9ebab4c9be9a12d37`；Staging Go-Live `35445662577` 成功，`/api/health` 回報 `revision=e7a38b507442`、`status=ok`、`issues=[]`，production 沒有修改。自動 CI／Browser Smoke 由 push 產生，本輪沒有手動觸發或重跑。
 - Staging Management Acceptance `35440318825` 成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。這完成管理模式的 hosted 正向流程，但不等於社費、服務計劃的完整角色矩陣或 E-10 負向矩陣完成。
 - 本機針對性瀏覽器驗收補充通過：`officer-mode-1440` 9 passed／1 intentional skip，涵蓋模式邊界、跨社管理路徑拒絕、社費與 CSV／Excel／PDF 匯出及無社籍執行秘書；`interact-hub-1440`／`375` 共 4 passed；`line-oa-rich-menu-1440` 1 passed；`line-oa-audience-1440` 5 passed，涵蓋額度停止提示只給管理幹部、一般社員被拒絕。這些只作本機回歸證據，不取代 staging 真人與各社 OA 驗收。
 - 已登入 staging 的唯讀抽查確認：LINE OA 管理頁最新推播為 `sent`、目前沒有額度提醒；社費管理頁可讀取 2026–27 年度與 CSV／Excel／PDF 匯出入口；社員「我的」頁有社費入口與代墊申請；服務計劃管理草稿不會出現在社員頁。未為測試硬打真實 429。
 - Chrome DevTools MCP 目前沒有 staging 登入 session，導向管理頁會回 `/login`；因此 E-06 登入後 LCP／FCP／TTFB／INP 仍是**未量測**。桌面 Chrome 只作畫面唯讀驗收，不把非 DevTools trace 的數字當效能證據。
-- 路線圖下一步是補 E-03、E-05 的專項外部證據、E-06 可比效能數據與 E-10 負向矩陣；E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。E-05 的程式、本機可見性邊界與不消耗正式額度的 staging 驗收流程已備妥；仍要在最新 staging runtime 手動跑一次 workflow，才可把它標成完成。
+- 路線圖下一步是補 E-03 真人身份核對、E-06 可比效能數據與 E-10 負向矩陣；E-05 已完成產品決策、程式、staging 發布、管理員／社員隔離驗收與 cleanup。E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。
 
 ## 2026-09-18 最新現場基線（本節優先）
 
@@ -589,7 +596,7 @@ PR-01c 不做：
 2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：本機已補撤銷管理者、停權、退社的 role-shell 負向測試；仍需 staging 真人確認雙重社籍、跨社執行秘書、資料隔離與管理權限不越權。
 3. **E-06：登入後管理頁效能量測** `[>]`：`f4cddb6` 已部署並移除平台扶輪社清單不必要的 RSC 預載；Chrome DevTools 觀察到該頁請求由 23 筆降為 16 筆。這不是社員首頁／社務管理頁的量測，且同一 runtime／快取條件下的 FCP／TTFB／LCP／INP 前後比較仍未完成，先補齊正確身份的可比數據，再拆管理頁文件等待與 render pipeline。
 4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
-5. **E-05：LINE 推播額度與超額政策** `[>]`：政策已定為停止並提示；本輪已補管理頁提醒、安全邊界與受保護的 staging 專項 workflow。本機已驗收「管理幹部看到停止提示、一般社員不可見、後續成功可清除」；待最新 runtime 發布後執行一次合成 rate-limited UI 驗收並確認清理。
+5. **E-05：LINE 推播額度與超額政策** `[x]`：政策已定為停止並提示；staging 專項 `35445780317` 已用 exact SHA 驗收管理幹部提示、一般社員隔離與 cleanup，未呼叫 LINE API。
 6. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging，待各社 OA 設定與真人驗收。
 7. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 8. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。

@@ -8,7 +8,17 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-19 最新核對（E-05 已結案）
+
+- `main` 與 `origin/main` 最新提交為 `e7a38b50744243841b430ff9ebab4c9be9a12d37`；staging Go-Live `35445662577` 以同一個 exact SHA 完成 migration、部署、health、HTTPS smoke 與 hosted acceptance。
+- staging `/api/health` 現場回報 `status=ok`、`environment=staging`、`revision=e7a38b507442`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- E-05 專項驗收 `35445780317` 成功：建立合成 `rate_limited` push log、不呼叫 LINE API；管理幹部看到「LINE 推播已暫停」與部分送達數字，一般社員無法進入管理頁且看不到提醒；fixture cleanup 成功。
+- E-05 第一次專項 run `35445453225` 失敗原因已修正：workflow 漏裝根目錄 `@supabase/supabase-js`，新增 `npm ci` 與 workflow 順序測試；不是產品程式或資料庫問題。
+- 目前沒有 open PR。自動 CI／Browser Smoke 由 push 產生，但本輪沒有手動觸發或重跑；未執行 production 操作。
+
 ## 2026-09-19 E-05 決策與實作進度（本節優先）
+
+> 本節保留首次完成程式時的中間快照；E-05 的最終 staging 驗收已在上方「最新核對」完成，狀態以 `[x]` 與 run `35445780317` 為準。
 
 - **產品決策已確認**：LINE 回報推播頻率／方案額度上限（429）時，採「停止並提示」，不採「繼續送並只記錄」。現有同一批次最多重試一次且沿用同一個 retry key；確認仍是 `rate_limited` 後，立即停止後續批次。
 - **本輪已補上管理提醒**：`get_line_oa_quota_notice` 只允許有 `oa.read` 的社務管理幹部讀取，讀取最新一筆會員訊息推播紀錄；若最新結果是 `rate_limited`，`/clubs/<clubId>/line-oa?mode=management` 顯示醒目錯誤通知與部分送達數字。手動送出仍會在返回頁面立即提示；下一次推播有其他結果後，舊提醒自動消失。
@@ -17,6 +27,8 @@
 - **目前狀態**：程式、migration、verification 與單元測試已完成；本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。現場核對 staging Go-Live `35440209578` 的 runtime 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`，`/api/health` 回報 `status=ok`、`issues=[]`；本段核對時的主線基準為 `b49ae9e8db6337b19058d3033c67bbdfb04b6184`，之後只增加本機回歸與文件，未重新部署 staging；最新主線請以 `git rev-parse origin/main` 現場核對。已登入的社務管理頁顯示 25 位社員、15 位已完成 LINE OA 配對、10 位尚未配對；平台已知 16 位 webhook follower，最新推播紀錄為 `sent`，因此目前沒有額度警示。另以本機隔離的 rate-limited fixture 完成頁面驗收：有 `oa.read` 的管理幹部看到「LINE 推播已暫停」與部分送達數字，一般社員被導向 `/access-denied` 且看不到提醒；本輪已將這條證據固定成 `line-oa-audience-1440` 瀏覽器回歸測試，最新一次 `5 passed`。本輪已把不消耗正式額度的 staging UI 專項驗收流程寫好，但尚未在最新部署 runtime 手動執行；未用真實社員做額度壓力測試，也未偽造正式 LINE 429。
 
 ## 2026-09-19 最新現場核對（本節優先）
+
+> 本節是 `8f109d0` runtime 的前一版快照；最新 runtime 與 E-05 結果請以上方「最新核對」為準。
 
 - 2026-09-19 現場核對 staging runtime exact SHA 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`；Staging Go-Live `35440209578` 成功，staging `/api/health` 回報 `revision=8f109d0fba57`、`status=ok`、`issues=[]`，production 沒有修改。本段核對時的主線基準為 `b49ae9e8db6337b19058d3033c67bbdfb04b6184`；後續只增加本機 fixture、瀏覽器回歸測試與進度文件，未重新部署 staging。自動 CI `35443369737` 與 Browser Smoke `35443369707` 均成功；最新主線請以 `git rev-parse origin/main` 現場核對。
 - Staging Management Acceptance `35440318825` 成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。這完成管理模式的 hosted 正向流程，但不等於社費、服務計劃的完整角色矩陣或 E-10 負向矩陣完成。
@@ -458,11 +470,11 @@ production 沒有修改。
   `LINE_OA_HAPPY_*` server secrets；不能把 PANCHIAO 的 key 改名或跨社 fallback。
 - **完成證據**：本次啟用的社通過 LINE `/v2/bot/info` Basic ID 核對、webhook Verify、follow 與指定對象推播驗收。
 
-### E-05 LINE 推播額度與超額政策 `[>]`
+### E-05 LINE 推播額度與超額政策 `[x]`
 
 - **產品決策已確認**：超額／429 時停止後續批次並提示社務管理幹部；不把剩餘批次繼續送出。既有一次同 retry key 的安全重試保留給可恢復的 provider 回應，重試後仍是 429 就停止。
 - **程式已完成**：429 分類、部分送達紀錄、停止批次、手動送出頁提示，以及管理頁最新額度提醒均已具備；提醒只給 `oa.read` 管理者，不進一般社員的訊息中心。
-- **完成證據**：本機單元測試已驗證 500 人分批、429、重試與部分送達；資料庫 verification 檔已新增，且 2026-09-19 本機 Docker 恢復後完整 `npm run verify:db`、fixture bootstrap、migration guard、verification manifest 均已通過。staging 正常狀態管理頁最新紀錄為 `sent`，因此沒有額度提醒；仍待在不消耗正式額度的條件下補一個 rate-limited UI 證據，並確認成功後清除。不得用真實社員做壓力測試。
+- **完成證據**：本機單元測試已驗證 500 人分批、429、重試與部分送達；資料庫 verification 檔已新增，完整 `npm run verify:db`、fixture bootstrap、migration guard、verification manifest 均已通過。Staging Go-Live `35445662577` 與額度專項 `35445780317` 使用同一個 exact SHA；合成 rate-limited UI 驗收確認管理幹部可見、一般社員不可見，且 cleanup 成功。沒有用真實社員做壓力測試，也沒有消耗正式額度。
 
 ### E-06 登入後管理頁效能量測 `[>]`
 
@@ -939,7 +951,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 5. **E-06：登入後管理頁效能量測** `[>]`：社員首頁 `36f32f8` 已用 `next/image` 修正 hosted 重複 preload，staging DOM 已確認圖片 1 張／preload 1 個；
    仍要在相同 runtime／快取條件下補齊社員首頁與管理頁的 LCP、FCP、TTFB、INP，再拆管理頁文件等待與 render pipeline。
 6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。
-7. **E-05：LINE 推播額度與超額政策** `[>]`：政策已定為「停止並提示」；本機已驗證管理幹部看得到提醒、一般社員看不到，且已補上只允許 staging 測試社團、驗收後清理的 hosted 專項 workflow。待最新 runtime 發布後，以 exact SHA 手動執行 `Staging LINE Quota Notice Acceptance`，確認提示與清理結果。
+7. **E-05：LINE 推播額度與超額政策** `[x]`：政策為「停止並提示」；staging 專項 `35445780317` 已用 exact SHA 驗收管理幹部提示、社員隔離與 cleanup，未呼叫 LINE API。
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
 10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併 PR #107 並隨 `34912921064` 部署 staging，待各社 OA 設定與真人驗收。
