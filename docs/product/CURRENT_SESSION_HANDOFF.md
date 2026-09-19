@@ -3,6 +3,13 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：Browser Smoke 逾時保護與社費唯讀驗收
+
+- `c48f7f0` 已為 `.github/workflows/browser-smoke.yml` 的 `supabase start`／`supabase db reset --local` 加上 10 分鐘逾時與失敗日誌；不改產品 runtime、資料庫或 staging／production。
+- 已登入 staging 的 LEO 帳號唯讀確認：管理模式的社費頁有年度、三種匯出、收款名單與代墊／核銷入口；社員模式只有自己的應收、收款與代墊申請。當前年度沒有測試財務資料，所以沒有執行會留下不可直接刪除紀錄的收款／核銷操作。
+- 社費仍不能結案：需要受控測試資料完成實際收款、部分收款、代墊核銷、報表輸出及一般社員／外社／無 `finance.read` 的負向矩陣。
+- 舊 Browser Smoke `35459724643` 仍 `in_progress`；不可當成通過，也沒有手動重跑。最新主線 SHA 以現場 `git rev-parse origin/main` 核對。
+
 ## 2026-09-20 最新接力補充：生日設定可見性回歸測試已推上 main
 
 - `e2e/tests/birthday-v2.e2e.mjs` 已加入只讀回歸案例，確認社員模式的「生日公開設定」會顯示，通用「隱私設定」不會因生日旗標而重新顯示，並檢查沒有橫向溢出。
