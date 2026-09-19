@@ -1,8 +1,16 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-19（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
+
+## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
+
+- 本輪 commit `08c7dbe` 新增 `officer-mode-1440` 的服務計劃 UI 驗收：社務管理者建立草稿後，一般社員看不到標題且只看到「本年度的服務計劃尚未發布」；管理者發布後，一般社員才看到標題與社員服務、職業服務、社區服務、國際服務四類內容。
+- 本機先完成完整 `verify:db`，再依序重建 superadmin、啟用 role-shell fixture、建立瀏覽器 fixture；定向 E2E `a service-plan manager keeps drafts private until publishing` 以 1 passed 通過。這是本機角色／發布隔離證據，不等於 staging 真人發布驗收。
+- 同時修正 `scripts/bootstrap-role-shell-browser-fixtures.mjs` 的 quota fixture 重跑問題：`line_push_logs` 對 service role 是 append-only，固定測試列已存在時直接沿用，不嘗試 UPDATE，也沒有放寬資料表權限。
+- 本輪 typecheck、lint（既有 1 個 `readdirSync` 未使用 warning）、Vitest `196` 檔／`1456` tests、build、verify:db、migration guard、verification manifest、diff check 均通過；沒有手動觸發 CI／Browser Smoke，也沒有部署 staging。
+- 目前 staging 仍是 Go-Live `35446974648` 的 runtime `d9468bdc2919`；本輪只補測試與 fixture，production 沒有修改。E-03、E-06、E-07、E-10、E-11 及產品決策項目仍依外部條件管理。
 
 ## 2026-09-19 最新核對（E-05 已結案；推播受眾隔離已修正）
 

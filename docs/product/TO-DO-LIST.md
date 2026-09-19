@@ -1,12 +1,19 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-19（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
 的舊掃描結果；那份檔案屬於獨立 worktree，不是權威 repo 的版本。
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
+
+## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
+
+- 本輪 commit `08c7dbe` 新增 `officer-mode-1440` 服務計劃 UI 驗收，證明同一份資料先存草稿時一般社員看不到，發布後才看得到標題與四大服務面向；定向 E2E 結果為 `1 passed`。
+- 本機完整 `verify:db` 已通過，並依正確順序重建 superadmin、role-shell fixture 與 local flags；typecheck、lint（既有 1 個 warning）、Vitest `196` 檔／`1456` tests、build、migration guard、verification manifest、diff check 均通過。
+- `scripts/bootstrap-role-shell-browser-fixtures.mjs` 另修正固定 quota fixture 的重跑邏輯：既有 `line_push_logs` 測試列直接沿用，不向 append-only 表要求 UPDATE 權限；沒有新增 migration、沒有放寬 RLS／權限。
+- 這只是本機回歸證據；staging 尚未重新部署，服務計劃仍待另一個一般社員帳號完成 hosted「發布後可見」驗收。原有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未納入本輪。
 
 ## 2026-09-19 最新核對（E-05 已結案；推播受眾隔離已修正）
 

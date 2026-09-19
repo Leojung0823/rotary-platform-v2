@@ -1,7 +1,14 @@
-# 交接筆記（持續更新；最新核對 2026-09-19；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-09-20；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
+
+- commit `08c7dbe` 新增服務計劃本機 UI 驗收：管理者建立草稿後，普通社員看不到標題；管理者發布後，普通社員看到標題與四大服務面向。定向 `officer-mode-1440` 結果 `1 passed`。
+- 本機完整 `verify:db`、superadmin／role-shell fixture bootstrap、typecheck、lint（既有 1 個 warning）、Vitest `196` 檔／`1456` tests、build、migration guard、verification manifest 均通過。沒有手動觸發 CI／Browser Smoke。
+- fixture 另修正固定 quota log 重跑時不應 UPDATE append-only `line_push_logs` 的問題；沒有新增 migration、沒有改 RLS 或權限。
+- 本輪沒有部署 staging；staging 仍是 `d9468bdc2919`／Go-Live `35446974648`。服務計劃 hosted 一般社員發布後可見、E-03 真人 follow、E-06 登入後效能、E-07 實機、E-10 負向矩陣與 E-11 外部 OA 仍未結案。
 
 ## 2026-09-19 最新核對（E-05 已結案；推播受眾隔離已修正）
 
