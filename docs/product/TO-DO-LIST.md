@@ -8,6 +8,22 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-20 最新核對（生日設定獨立顯示修正已發布）
+
+- 權威主線目前是 `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`，目前沒有 open PR；工作樹仍只保留既有、未追蹤的
+  `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪沒有讀寫或納入它。
+- 本輪真正修正的缺口是：生日公開設定原本被 `SHOW_PRIVACY_SETTINGS = false` 一起隱藏，導致生日旗標已開啟但社員在「我的」頁看不到設定。
+  現在生日設定是獨立卡片；通用「通知／名冊隱私」仍維持關閉，沒有放寬其他設定。
+- 程式檔為 `src/app/(authenticated)/me/page.tsx`，回歸測試為 `src/lib/privacy-in-one-place.test.ts`；沒有新增 migration、沒有修改登入／權限／社團隔離。
+  本機生日邊界測試 9/9、完整 Vitest `196` 檔／`1459` tests、typecheck、lint（既有 `readdirSync` warning）與 build 均通過。
+- 自動 CI `35459107612` 已成功；Browser Smoke `35459107627` 仍在執行，沒有手動重跑，也不把未完成的 run 當成通過證據。
+- Staging Release `35459226960` 與 Staging Go-Live `35459318377` 使用同一個 exact SHA；Go-Live、HTTPS smoke、hosted acceptance 全部成功。
+  staging `/api/health` 現場回報 `revision=a4fd0d6f47b3`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- 已登入 staging 的 LEO 社員模式唯讀驗收確認 `/me?mode=member` 顯示「生日公開設定」，並分別列出 PANCHIAO-ELITE／HAPPY 的設定與開關。
+  目前只證明顯示與社籍分開投影；另一社員、關閉後生日牆面消失、儲存後恢復等完整真人驗收仍未完成。
+- 目前不能誠實結案的外部項目仍是 E-03、E-06、E-07、E-08、E-10、E-11、社費 hosted 角色／收款核銷驗收；E-09 依產品決定暫緩。
+  E-05、服務計劃 hosted 草稿／發布邊界與本輪生日設定「看得到」已完成，不要重做已完成項目。
+
 ## 2026-09-20 最新掃描補充（待辦與 staging 現場）
 
 - `origin/main` 現場核對為 `3e9d8056c4ff25f41e1ce93a4b4b26027f1c2c82`；目前沒有 open PR。工作樹只保留既有、未追蹤的
@@ -286,9 +302,8 @@ production 沒有修改。
   改成「每個活動版本一次」。推播失敗不會讓編輯失敗——走到推播時資料已經存好了。
 - **LINE Rich Menu** `[>]`（PR #107）。每社獨立設定與旗標已部署到 staging，仍待各社 OA 設定與真人驗收。
 - **社費、收款、核銷與財務報表** `[>]`（PR #108）。核心程式與資料庫已部署到 staging，仍待 hosted／角色邊界驗收。
-- **生日設定 UX** `[>]`（PR #110）。生日頁沿用全域社別、每社預設公開且保留既有缺列私密語意，並補上徵集重複時的可理解錯誤提示；已部署到 staging，仍待 hosted／真人驗收。
-  2026-09-16 以 staging 的 LEO 會員帳號抽查，`/birthdays` 已顯示 1 位公開社員與「目前 39 歲」；`/me` 也顯示
-  PANCHIAO-ELITE／HAPPY 各自有生日設定入口。這是正向顯示證據，尚未涵蓋另一帳號、關閉後牆面消失與完整儲存回歸。
+- **生日設定 UX** `[>]`（PR #110）。生日頁沿用全域社別、每社預設公開且保留既有缺列私密語意，並補上徵集重複時的可理解錯誤提示；程式已部署到 staging。
+  `a4fd0d6` 另修正生日設定被通用隱私開關誤藏的問題，已由登入 staging 的 LEO 帳號確認 `/me` 顯示 PANCHIAO-ELITE／HAPPY 各自設定入口；仍待另一帳號、關閉後牆面消失與完整儲存回歸。
 
 ### 修正
 

@@ -4,6 +4,17 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-20 最新核對（生日設定獨立顯示已發布）
+
+- 最新 `origin/main` 為 `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`，沒有 open PR；工作樹既有的未追蹤外部企劃書未納入本輪。
+- 這次修正 `src/app/(authenticated)/me/page.tsx`：生日公開設定不再被關閉中的通用隱私卡片連帶隱藏；通用通知／名冊隱私仍保持關閉。
+  `src/lib/privacy-in-one-place.test.ts` 已補上顯示邊界回歸，沒有新增 migration 或改權限。
+- 本機完整 Vitest `196` 檔／`1459` tests、typecheck、lint（既有 warning）、build 通過；自動 CI `35459107612` 成功。
+  Browser Smoke `35459107627` 仍在執行，沒有手動重跑或把它當成完成證據。
+- Staging Release `35459226960`、Staging Go-Live `35459318377` 均以同一 exact SHA 成功；health `revision=a4fd0d6f47b3`、`status=ok`、`issues=[]`。
+  已登入 staging 的社員模式實際看到「生日公開設定」，且 PANCHIAO-ELITE／HAPPY 分開列出；完整儲存／關閉後牆面／另一帳號矩陣仍待真人驗收。
+- 因此生日設定從「程式已部署但畫面被誤藏」前進為「程式與顯示已驗證、完整真人驗收待做」，不提前標成 `[x]`。
+
 ## 2026-09-20 待辦掃描補充
 
 - `origin/main` 為 `3e9d8056c4ff25f41e1ce93a4b4b26027f1c2c82`，目前沒有 open PR；staging health 的 deployed revision 為
@@ -637,6 +648,6 @@ PR-01c 不做：
 5. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging；仍待各社 OA 外部設定、旗標決策與真人手機驗收，不得把本機 mock 測試當成 LINE 發布證據。
 6. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起；在取得明確產品決策前不修改 production。
 7. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
-8. **非外部驗收項目**：社費／收款／核銷、財務報表、服務計劃與生日設定 UX 已有程式與 staging 基礎，但仍要依 `TO-DO-LIST.md` 的角色、空資料、發布／撤回與跨社矩陣逐項驗收；社務 AI 助理沒有已批准的可執行規格，不擅自開工。
+8. **非外部驗收項目**：社費／收款／核銷、財務報表與生日設定 UX 已有程式與 staging 基礎，但仍要依 `TO-DO-LIST.md` 的角色、空資料、儲存／關閉與跨社矩陣逐項驗收；服務計劃 hosted 草稿／發布邊界已結案。社務 AI 助理沒有已批准的可執行規格，不擅自開工。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。#124、#126、#127、#130、#132、#135、#139 與 #145 已隨 Go-Live `34912921064` 發布；#136–#141 與 #143／#144／#146／#147 是文件／發布工具變更。後續若只有文件同步，不需要重新部署 staging。

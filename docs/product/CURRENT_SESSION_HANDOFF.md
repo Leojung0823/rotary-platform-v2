@@ -3,6 +3,18 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：生日設定獨立顯示已發布
+
+- 最新主線為 `a4fd0d6f47b38d78922d5bdc3316b4949d191ab6`，目前沒有 open PR；既有未追蹤的
+  `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不要納入或覆蓋。
+- 真正缺口是生日公開設定被 `SHOW_PRIVACY_SETTINGS = false` 一起藏掉。已把生日設定移到獨立卡片；通用通知／名冊隱私仍維持關閉，沒有放寬權限或資料邊界。
+- 修改檔：`src/app/(authenticated)/me/page.tsx`、`src/lib/privacy-in-one-place.test.ts`。沒有 migration；本機生日邊界 9/9、完整 Vitest `196` 檔／`1459` tests、typecheck、lint（既有 warning）與 build 通過。
+- CI `35459107612` 成功；Browser Smoke `35459107627` 仍 `in_progress`，不要手動重跑或把它當成通過。
+- Staging Release `35459226960`、Staging Go-Live `35459318377` 使用同一 exact SHA 成功；health 為 `revision=a4fd0d6f47b3`、`status=ok`、`issues=[]`、`warnings=[]`，production 沒有修改。
+- 已登入 staging 的 LEO 社員模式唯讀確認 `/me?mode=member` 顯示「生日公開設定」，並分開列出 PANCHIAO-ELITE／HAPPY；尚未驗證另一社員、儲存關閉後生日牆面消失與恢復流程。
+
+下一位接力不要重做已完成的 E-05、服務計劃 hosted 邊界或本輪生日顯示修正。可繼續：E-03 follow 真人身份核對、E-06 同條件效能量測、E-10 停權／退社／外社負向矩陣；E-07 需要真實手機／M1，E-08 需要 production 決策，E-11 需要各社 OA／Rich Menu 外部設定，E-09 維持暫緩。
+
 ## 2026-09-20 最新接力補充：待辦掃描
 
 - 權威主線：`origin/main=3e9d8056c4ff25f41e1ce93a4b4b26027f1c2c82`；目前沒有 open PR。
