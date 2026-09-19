@@ -11,7 +11,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 
-import { createEventAction } from "./event-actions";
+import { cancelEventAction, createEventAction } from "./event-actions";
 import { initialEventCreateActionState } from "@/lib/events/validation";
 
 const clubId = "a1000000-0000-4000-8000-000000000001";
@@ -43,6 +43,16 @@ function formData(overrides: Record<string, string | boolean> = {}) {
 
 async function submit(overrides: Record<string, string | boolean> = {}) {
   return createEventAction(initialEventCreateActionState, formData(overrides));
+}
+
+function cancelFormData(overrides: Record<string, string> = {}) {
+  const form = new FormData();
+  form.set("clubId", clubId);
+  form.set("eventId", "a2000000-0000-4000-8000-000000000001");
+  form.set("mode", "management");
+  form.set("reason", "staging 活動驗收完成");
+  for (const [key, value] of Object.entries(overrides)) form.set(key, value);
+  return form;
 }
 
 describe("createEventAction", () => {
@@ -147,5 +157,34 @@ describe("createEventAction", () => {
     }));
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/events");
     expect(mocks.redirect).toHaveBeenCalledWith(`/events?clubId=${clubId}&success=event_created`);
+  });
+});
+
+describe("cancelEventAction", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.createClient.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.rpc.mockResolvedValue({ error: null });
+  });
+
+  it("maps a bounded database wait to a safe retry message", async () => {
+    mocks.rpc.mockResolvedValue({ error: { message: "event_cancel_statement_timeout" } });
+
+    await expect(cancelEventAction(cancelFormData())).rejects.toThrow(
+      `redirect:/clubs/${clubId}/events?error=retryable&mode=management`,
+    );
+  });
+
+  it("keeps the existing successful cancellation redirect", async () => {
+    await expect(cancelEventAction(cancelFormData())).rejects.toThrow(
+      `redirect:/clubs/${clubId}/events?success=event_cancelled&mode=management`,
+    );
+    expect(mocks.rpc).toHaveBeenCalledWith("cancel_club_event", {
+      p_club_id: clubId,
+      p_event_id: "a2000000-0000-4000-8000-000000000001",
+      p_reason: "staging 活動驗收完成",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/events");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/clubs/${clubId}/events`);
   });
 });

@@ -67,6 +67,8 @@ function mapEventError(message: string | undefined) {
   if (message?.includes("event_capacity_full")) return "capacity_full";
   if (message?.includes("event_registration_closed")) return "registration_closed";
   if (message?.includes("event_manage_required")) return "forbidden";
+  if (message?.includes("event_cancel_lock_timeout")
+    || message?.includes("event_cancel_statement_timeout")) return "retryable";
   if (message?.includes("active_event_membership_required")) return "forbidden";
   if (message?.includes("event_cannot_be_published")) return "cannot_publish";
   if (message?.includes("invalid_event")) return "invalid_input";

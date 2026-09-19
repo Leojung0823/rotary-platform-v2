@@ -82,6 +82,7 @@ const errorMessages: Record<string, string> = {
   registration_closed: "活動已開始或報名已截止。",
   cannot_publish: "活動目前不能發布，請確認開始與截止時間。",
   forbidden: "目前帳號沒有執行此動作的權限。",
+  retryable: "取消活動等待資料庫鎖定超過安全時間，資料沒有當作成功；請重新整理後再試一次。",
   unexpected: "目前無法完成操作，請稍後再試。",
 };
 
