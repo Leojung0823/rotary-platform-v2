@@ -9,6 +9,12 @@ const expectedClubName = process.env.STAGING_EXPECTED_CLUB_NAME;
 const expectedSha = process.env.E2E_EXPECTED_SHA;
 const baseURL = process.env.E2E_BASE_URL;
 const backToMemberName = /^(回社員模式|返回)$/u;
+const negativeRoleMatrixRequested = process.env.STAGING_EXPECT_NEGATIVE_ROLES === "true";
+const negativeRoleAccounts = [
+  { label: "停權社員", email: process.env.STAGING_TEST_SUSPENDED_EMAIL, password: process.env.STAGING_TEST_SUSPENDED_PASSWORD },
+  { label: "退社社員", email: process.env.STAGING_TEST_ENDED_EMAIL, password: process.env.STAGING_TEST_ENDED_PASSWORD },
+  { label: "外社執行秘書", email: process.env.STAGING_TEST_OUTSIDER_SECRETARY_EMAIL, password: process.env.STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD },
+];
 
 function requireStagingConfiguration() {
   if (!operatorEmail || !operatorPassword || !memberEmail || !memberPassword
@@ -48,6 +54,17 @@ async function login(page, email, password) {
   await expect(page).toHaveURL(/\/dashboard$/u);
 }
 
+async function loginExpectingAccessDenied(page, email, password) {
+  await page.goto(new URL("/login", baseURL).toString());
+  await expect(page.getByRole("heading", { level: 1, name: "歡迎回來" })).toBeVisible();
+  await page.getByLabel("電子郵件").fill(email);
+  await page.getByLabel("密碼").fill(password);
+  await page.getByRole("button", { name: "登入平台" }).click();
+  await expect(page).toHaveURL(/\/access-denied(?:\?|$)/u);
+  await expect(page.getByRole("heading", { name: "無法存取", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(0);
+}
+
 async function openManagementOverview(page) {
   await page.goto("/dashboard?mode=management");
   await expect(page.getByText(expectedClubName, { exact: true }).first()).toBeVisible();
@@ -55,6 +72,15 @@ async function openManagementOverview(page) {
   // misleading "back to member mode" link.
   await expect(page.getByRole("link", { name: backToMemberName })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
+}
+
+async function expectedManagementMembersUrl(page) {
+  await openManagementOverview(page);
+  const memberLink = page.locator('a[href*="/clubs/"][href*="/members?mode=management"]').first();
+  await expect(memberLink).toHaveCount(1);
+  const href = await memberLink.getAttribute("href");
+  if (!href) throw new Error("Expected staging management member URL is missing.");
+  return new URL(href, baseURL).toString();
 }
 
 function startYearFromLabel(label) {
@@ -544,5 +570,47 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await adjustment.getByLabel("原因").fill("staging 驗收資料回收");
     await adjustment.getByRole("button", { name: "儲存調整" }).click();
     await expect(page.getByText("應收金額已調整。", { exact: true })).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("E-10 負向角色矩陣不越權", async ({ browser }) => {
+    test.skip(!negativeRoleMatrixRequested, "Negative role matrix is opt-in and requires reserved staging identities.");
+    test.setTimeout(150_000);
+
+    for (const account of negativeRoleAccounts.slice(0, 2)) {
+      if (!account.email || !account.password) {
+        throw new Error(`${account.label} staging test identity is required when negative role matrix is enabled.`);
+      }
+      const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const rolePage = await context.newPage();
+      try {
+        await loginExpectingAccessDenied(rolePage, account.email, account.password);
+      } finally {
+        await context.close();
+      }
+    }
+
+    const operatorContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const operatorPage = await operatorContext.newPage();
+    let targetManagementUrl;
+    try {
+      targetManagementUrl = await expectedManagementMembersUrl(operatorPage);
+    } finally {
+      await operatorContext.close();
+    }
+
+    const outsider = negativeRoleAccounts[2];
+    if (!outsider.email || !outsider.password) {
+      throw new Error("Cross-club secretary staging test identity is required when negative role matrix is enabled.");
+    }
+    const outsiderContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const outsiderPage = await outsiderContext.newPage();
+    try {
+      await login(outsiderPage, outsider.email, outsider.password);
+      await outsiderPage.goto(targetManagementUrl);
+      await expect(outsiderPage).toHaveURL(/\/access-denied(?:\?|$)/u);
+      await expect(outsiderPage.getByRole("heading", { name: "無法存取", exact: true })).toBeVisible();
+    } finally {
+      await outsiderContext.close();
+    }
   });
 });

@@ -18,6 +18,7 @@ function validInput() {
     STAGING_TEST_OPERATOR_PASSWORD: "Rotary-Staging-Operator-2026!",
     STAGING_TEST_MEMBER_EMAIL: "staging-member@example.test",
     STAGING_TEST_MEMBER_PASSWORD: "Rotary-Staging-Member-2026!",
+    STAGING_EXPECT_NEGATIVE_ROLES: "false",
     STAGING_EXPECTED_CLUB_NAME: "Rotary Platform Staging Test Club",
   };
 }
@@ -29,6 +30,8 @@ describe("staging management acceptance input", () => {
     expect(result.commitSha).toBe(sha);
     expect(result.siteOrigin).toBe("https://staging.example.com");
     expect(result.credentialsConfigured).toBe(true);
+    expect(result.negativeRoleMatrixRequested).toBe(false);
+    expect(result.negativeRoleCredentialsConfigured).toBe(false);
     expect(result.errors).toEqual([]);
   });
 
@@ -74,6 +77,39 @@ describe("staging management acceptance input", () => {
     expect(result.errors).toContain("STAGING_TEST_IDENTITIES_MUST_DIFFER");
   });
 
+  it("requires three distinct reserved test identities when the negative matrix is enabled", () => {
+    const result = inspectStagingManagementAcceptanceInput({
+      ...validInput(),
+      STAGING_EXPECT_NEGATIVE_ROLES: "true",
+      STAGING_TEST_SUSPENDED_EMAIL: "staging-suspended@example.test",
+      STAGING_TEST_SUSPENDED_PASSWORD: "Rotary-Staging-Suspended-2026!",
+      STAGING_TEST_ENDED_EMAIL: "staging-ended@example.test",
+      STAGING_TEST_ENDED_PASSWORD: "Rotary-Staging-Ended-2026!",
+      STAGING_TEST_OUTSIDER_SECRETARY_EMAIL: "staging-outsider-secretary@example.test",
+      STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD: "Rotary-Staging-Outsider-2026!",
+    });
+    expect(result.ok).toBe(true);
+    expect(result.negativeRoleMatrixRequested).toBe(true);
+    expect(result.negativeRoleCredentialsConfigured).toBe(true);
+  });
+
+  it("rejects a partial or duplicated negative role identity set", () => {
+    const result = inspectStagingManagementAcceptanceInput({
+      ...validInput(),
+      STAGING_EXPECT_NEGATIVE_ROLES: "true",
+      STAGING_TEST_SUSPENDED_EMAIL: "staging-suspended@example.test",
+      STAGING_TEST_SUSPENDED_PASSWORD: "short",
+      STAGING_TEST_ENDED_EMAIL: "staging-suspended@example.test",
+    });
+    expect(result.errors).toEqual(expect.arrayContaining([
+      "STAGING_TEST_SUSPENDED_PASSWORD_INVALID",
+      "STAGING_TEST_ENDED_PASSWORD_INVALID",
+      "STAGING_TEST_OUTSIDER_SECRETARY_EMAIL_INVALID",
+      "STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD_INVALID",
+      "STAGING_NEGATIVE_ROLE_IDENTITIES_MUST_DIFFER",
+    ]));
+  });
+
   it("requires a public credential-free HTTPS origin", () => {
     for (const STAGING_BASE_URL of [
       "http://staging.example.com",
@@ -111,6 +147,11 @@ describe("staging management acceptance workflow safety", () => {
     expect(workflow).toContain("STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}");
     expect(workflow).toContain("STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}");
     expect(workflow).toContain("STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}");
+    expect(workflow).toContain("expect_negative_roles:");
+    expect(workflow).toContain("STAGING_EXPECT_NEGATIVE_ROLES: ${{ inputs.expect_negative_roles }}");
+    expect(workflow).toContain("STAGING_TEST_SUSPENDED_EMAIL: ${{ secrets.STAGING_TEST_SUSPENDED_EMAIL }}");
+    expect(workflow).toContain("STAGING_TEST_ENDED_EMAIL: ${{ secrets.STAGING_TEST_ENDED_EMAIL }}");
+    expect(workflow).toContain("STAGING_TEST_OUTSIDER_SECRETARY_EMAIL: ${{ secrets.STAGING_TEST_OUTSIDER_SECRETARY_EMAIL }}");
     expect(workflow).toContain("STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}");
     expect(workflow).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(workflow).not.toContain("SUPABASE_ACCESS_TOKEN");
@@ -151,5 +192,12 @@ describe("staging management acceptance workflow safety", () => {
     expect(stagingTest).toContain('staging 驗收資料回收');
     expect(workflow).toContain('Disposable finance year partial receipt');
     expect(workflow).not.toContain('SUPABASE_SERVICE_ROLE_KEY');
+  });
+
+  it("keeps the E-10 negative role matrix explicitly opt-in", () => {
+    expect(stagingTest).toContain('test.skip(!negativeRoleMatrixRequested');
+    expect(stagingTest).toContain('loginExpectingAccessDenied');
+    expect(stagingTest).toContain('targetManagementUrl');
+    expect(stagingTest).toContain('outsiderPage.getByRole("heading", { name: "無法存取", exact: true })');
   });
 });

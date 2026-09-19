@@ -11,6 +11,11 @@ on:
         description: "Enter TEST-STAGING-MANAGEMENT"
         required: true
         type: string
+      expect_negative_roles:
+        description: "Also verify suspended, ended and cross-club secretary denial (requires reserved staging test identities)"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -31,6 +36,7 @@ jobs:
     env:
       STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}
       STAGING_MANAGEMENT_ACCEPTANCE_CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_EXPECT_NEGATIVE_ROLES: ${{ inputs.expect_negative_roles }}
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
       STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
       E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
@@ -58,6 +64,12 @@ jobs:
           STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
           STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
           STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+          STAGING_TEST_SUSPENDED_EMAIL: ${{ secrets.STAGING_TEST_SUSPENDED_EMAIL }}
+          STAGING_TEST_SUSPENDED_PASSWORD: ${{ secrets.STAGING_TEST_SUSPENDED_PASSWORD }}
+          STAGING_TEST_ENDED_EMAIL: ${{ secrets.STAGING_TEST_ENDED_EMAIL }}
+          STAGING_TEST_ENDED_PASSWORD: ${{ secrets.STAGING_TEST_ENDED_PASSWORD }}
+          STAGING_TEST_OUTSIDER_SECRETARY_EMAIL: ${{ secrets.STAGING_TEST_OUTSIDER_SECRETARY_EMAIL }}
+          STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD: ${{ secrets.STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD }}
         run: node scripts/verify-staging-management-acceptance-inputs.mjs
 
       - name: Install isolated browser test dependencies
@@ -88,6 +100,12 @@ jobs:
           STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
           STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
           STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+          STAGING_TEST_SUSPENDED_EMAIL: ${{ secrets.STAGING_TEST_SUSPENDED_EMAIL }}
+          STAGING_TEST_SUSPENDED_PASSWORD: ${{ secrets.STAGING_TEST_SUSPENDED_PASSWORD }}
+          STAGING_TEST_ENDED_EMAIL: ${{ secrets.STAGING_TEST_ENDED_EMAIL }}
+          STAGING_TEST_ENDED_PASSWORD: ${{ secrets.STAGING_TEST_ENDED_PASSWORD }}
+          STAGING_TEST_OUTSIDER_SECRETARY_EMAIL: ${{ secrets.STAGING_TEST_OUTSIDER_SECRETARY_EMAIL }}
+          STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD: ${{ secrets.STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD }}
         run: npm --prefix e2e run test:staging-management
 
       - name: Record successful staging management acceptance

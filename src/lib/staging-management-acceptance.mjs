@@ -15,6 +15,35 @@ function isClearlyTestEmail(email) {
     && RESERVED_TEST_DOMAIN_PATTERN.test(domain ?? "");
 }
 
+function validateOptionalRoleCredentials(errors, input, prefix, required) {
+  const email = text(input[`${prefix}_EMAIL`]).toLowerCase();
+  const password = String(input[`${prefix}_PASSWORD`] ?? "");
+  const configured = Boolean(email || password);
+
+  if (!configured && !required) return { email, password, configured: false, valid: true };
+  if (!EMAIL_PATTERN.test(email)
+    || email.length > 320
+    || !isClearlyTestEmail(email)) {
+    errors.push(`${prefix}_EMAIL_INVALID`);
+  }
+  if (password.length < 12
+    || password.length > 256
+    || /[\r\n]/u.test(password)) {
+    errors.push(`${prefix}_PASSWORD_INVALID`);
+  }
+  return {
+    email,
+    password,
+    configured: true,
+    valid: EMAIL_PATTERN.test(email)
+      && email.length <= 320
+      && isClearlyTestEmail(email)
+      && password.length >= 12
+      && password.length <= 256
+      && !/[\r\n]/u.test(password),
+  };
+}
+
 function validateHttpsOrigin(errors, rawValue) {
   if (!rawValue) {
     errors.push("STAGING_BASE_URL_REQUIRED");
@@ -60,6 +89,7 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
   const memberEmail = text(input.STAGING_TEST_MEMBER_EMAIL).toLowerCase();
   const memberPassword = String(input.STAGING_TEST_MEMBER_PASSWORD ?? "");
   const expectedClubName = text(input.STAGING_EXPECTED_CLUB_NAME);
+  const expectNegativeRoles = text(input.STAGING_EXPECT_NEGATIVE_ROLES).toLowerCase() === "true";
 
   if (eventName !== "workflow_dispatch") errors.push("STAGING_MANAGEMENT_ACCEPTANCE_MANUAL_ONLY");
   if (refName !== "main") errors.push("STAGING_MANAGEMENT_ACCEPTANCE_MAIN_ONLY");
@@ -99,6 +129,19 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
     errors.push("STAGING_EXPECTED_CLUB_NAME_INVALID");
   }
 
+  const negativeRolePrefixes = [
+    "STAGING_TEST_SUSPENDED",
+    "STAGING_TEST_ENDED",
+    "STAGING_TEST_OUTSIDER_SECRETARY",
+  ];
+  const negativeRoleCredentials = negativeRolePrefixes.map((prefix) => (
+    validateOptionalRoleCredentials(errors, input, prefix, expectNegativeRoles)
+  ));
+  const negativeRoleEmails = negativeRoleCredentials.map(({ email }) => email).filter(Boolean);
+  if (new Set(negativeRoleEmails).size !== negativeRoleEmails.length) {
+    errors.push("STAGING_NEGATIVE_ROLE_IDENTITIES_MUST_DIFFER");
+  }
+
   return {
     ok: errors.length === 0,
     eventName: eventName || "unknown",
@@ -112,6 +155,8 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
       && isClearlyTestEmail(memberEmail)
       && memberPassword.length >= 12
       && operatorEmail !== memberEmail,
+    negativeRoleCredentialsConfigured: negativeRoleCredentials.every(({ configured, valid }) => configured && valid),
+    negativeRoleMatrixRequested: expectNegativeRoles,
     expectedClubConfigured: Boolean(expectedClubName),
     errors,
   };

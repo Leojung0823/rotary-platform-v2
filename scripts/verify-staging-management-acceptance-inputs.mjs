@@ -9,6 +9,8 @@ console.log(`Git ref: ${result.refName}`);
 console.log(`Commit SHA: ${result.commitSha ?? "invalid"}`);
 console.log(`Site origin: ${result.siteOrigin ?? "not configured"}`);
 console.log(`Protected operator credentials configured: ${result.credentialsConfigured ? "yes" : "no"}`);
+console.log(`Negative role matrix requested: ${result.negativeRoleMatrixRequested ? "yes" : "no"}`);
+console.log(`Negative role test credentials configured: ${result.negativeRoleCredentialsConfigured ? "yes" : "no"}`);
 console.log(`Expected club configured: ${result.expectedClubConfigured ? "yes" : "no"}`);
 
 if (!result.ok) {
