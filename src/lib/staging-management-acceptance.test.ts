@@ -133,6 +133,8 @@ describe("staging management acceptance workflow safety", () => {
 
   it("covers service-plan draft isolation, publish visibility, and retraction", () => {
     expect(stagingTest).toContain('STAGING_TEST_MEMBER_EMAIL');
+    expect(stagingTest).toContain('`/clubs/${servicePlanClubId}/members?mode=member`');
+    expect(stagingTest).toContain('memberPage.getByRole("heading", { name: "無法存取", exact: true })');
     expect(stagingTest).toContain('本年度的服務計劃尚未發布。');
     expect(stagingTest).toContain('發布給社員');
     expect(stagingTest).toContain('社員服務');

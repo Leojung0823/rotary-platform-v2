@@ -217,6 +217,13 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     const memberPage = await memberContext.newPage();
     try {
       await login(memberPage, memberEmail, memberPassword);
+      await memberPage.goto(new URL(
+        `/clubs/${servicePlanClubId}/members?mode=member`,
+        baseURL,
+      ).toString());
+      await expect(memberPage).toHaveURL(/\/access-denied(?:\?|$)/u);
+      await expect(memberPage.getByRole("heading", { name: "無法存取", exact: true })).toBeVisible();
+
       await memberPage.goto(new URL(`/club-affairs?mode=member&year=${servicePlanYear}`, baseURL).toString());
       await expect(memberPage.getByText("本年度的服務計劃尚未發布。", { exact: true })).toBeVisible();
       await expect(memberPage.getByText(servicePlanTitle, { exact: true })).toHaveCount(0);
