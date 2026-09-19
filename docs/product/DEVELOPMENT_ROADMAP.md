@@ -4,6 +4,16 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-20 最新補充（活動取消安全邊界已推送；staging 尚未發布）
+
+- 主線為 `163a3e512b7623baddb8150feb74616cc50bb47c`；新的 `20260920000200_event_cancellation_timeout_boundary.sql` 已加入活動取消的
+  lock／statement timeout 與可重試錯誤提示，保留既有 RPC 權限、資料隔離與交易回滾邊界。
+- 本機完整資料庫／程式驗證、CI `35463925758`、Browser Smoke `35463925775` 均成功。Staging Release plan `35464563367` 也成功。
+- Go-Live `35464656975` 未通過 Supabase project link：GitHub staging 的 `SUPABASE_ACCESS_TOKEN` 授權失敗；因此這個修正尚未進入 staging，
+  staging 仍是 `07002d81be23`。待 secret 更新後，才能進行新的 Go-Live 與乾淨 hosted acceptance。
+- 外部主線仍是 E-03 真人 follow 身份核對、E-06 同條件效能量測、E-10 負向角色矩陣；E-07、E-08、E-11 仍受實機／產品／LINE 外部條件限制，
+  E-09 維持暫緩。
+
 ## 2026-09-20 最新補充（活動取消 hosted flake 與 QR 撤銷查詢）
 
 - 最新主線是文件同步後的 `c4e0305c17202f76b54f3b95984b3e40c701d70c`；staging runtime 仍是

@@ -3,6 +3,17 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：活動取消 timeout boundary 與 staging 憑證阻塞
+
+- 目前 `main` 與 `origin/main` 都是 `163a3e512b7623baddb8150feb74616cc50bb47c`；既有未追蹤的
+  `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不可加入提交。
+- 新增 `20260920000200_event_cancellation_timeout_boundary.sql`，只對既有 `cancel_club_event` 加 local `lock_timeout=8s`、
+  `statement_timeout=20s`，並將超時轉成 UI 可重試錯誤；本機資料庫驗證與 1463 個單元測試均成功。
+- 自動 CI `35463925758`、Browser Smoke `35463925775`、Staging Release plan `35464563367` 均成功。Go-Live `35464656975` 在
+  `supabase link` 因 GitHub staging `SUPABASE_ACCESS_TOKEN` 無法授權 `vmmzdautcsgknhyqrsto` 失敗；沒有套用 migration、沒有部署程式。
+- staging health 仍為 `revision=07002d81be23`、`status=ok`、`issues=[]`。下一步：在可見終端機更新 `SUPABASE_ACCESS_TOKEN`，再以同一個
+  exact SHA／plan run 重新執行 staging Go-Live；成功後才重跑活動管理 hosted acceptance。production 未修改。
+
 ## 2026-09-20 最新接力補充：活動取消 hosted 核對與乾淨 staging 版本
 
 - 權威主線目前是文件同步後的 `c4e0305c17202f76b54f3b95984b3e40c701d70c`；乾淨 staging runtime 仍是

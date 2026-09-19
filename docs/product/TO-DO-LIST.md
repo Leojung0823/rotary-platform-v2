@@ -8,6 +8,19 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-20 最新補充（活動取消安全邊界已推送；staging 等待憑證修復）
+
+- 權威主線目前為 `origin/main=163a3e512b7623baddb8150feb74616cc50bb47c`；工作樹只保留既有未追蹤的
+  `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，沒有納入本輪提交。
+- 新增 `20260920000200_event_cancellation_timeout_boundary.sql`，把活動取消 RPC 的 lock／statement wait 設上限；超時會回傳可重試錯誤，
+  不改登入、權限、活動狀態規則或 production。相關 action mapping、頁面提示與回歸測試已推上 `main`。
+- 本機 `verify:db`、`check:migrations`、`check:db-verifications`、typecheck、lint、Vitest `197` 檔／`1463` tests、build、diff check 均通過；
+  lint 只有既有 `readdirSync` 未使用 warning。自動 CI `35463925758` 與 Browser Smoke `35463925775` 均成功，沒有手動觸發。
+- Staging Release plan `35464563367` 成功；Go-Live `35464656975` 在 `supabase link` 因 GitHub staging secret
+  `SUPABASE_ACCESS_TOKEN` 對 project `vmmzdautcsgknhyqrsto` 授權失敗而停止，migration 尚未套用、程式尚未部署。
+- staging `/api/health` 現場仍是 `revision=07002d81be23`、`status=ok`、`issues=[]`；production 沒有修改。下一步是更新該 secret 後，
+  以同一個 exact SHA 與已成功 plan 重新執行 Go-Live，再驗證活動取消 hosted acceptance。
+
 ## 2026-09-20 最新補充（活動取消 hosted 核對與乾淨 staging 版本）
 
 - 權威主線為 `origin/main=c4e0305c17202f76b54f3b95984b3e40c701d70c`；staging 產品 runtime 仍是
