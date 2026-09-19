@@ -5,9 +5,10 @@
 
 ## 2026-09-20 最新接力補充：社費 hosted 驗收工具已補齊
 
-- 最新主線為 `0d529b0ddcecf5d3bab993b205e24158cc57465b`；既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不可加入提交。
+- 最新主線為 `a0340310157a48c825019b104ea67689cbc08220`（驗收工具 commit 為 `0d529b0ddcecf5d3bab993b205e24158cc57465b`）；既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不可加入提交。
 - 受保護 management acceptance 現在會在獨立測試扶輪年度驗證年度應收、部分收款、社員代墊、核銷與社員自己的財務投影，最後反向收款／核銷、退回代墊並調整合成應收；沒有 service-role 直接寫資料。
 - 本機 typecheck、lint、Vitest `197` 檔／`1464` tests、build 與 16/16 acceptance contract tests 通過；沒有手動跑 CI／Browser Smoke。這個 workflow 尚未在 staging 執行，因此不要把社費標成完成。
+- push 後自動 CI `35465974482` 與 Browser Smoke `35465974546` 均成功。
 - 目前仍卡在 GitHub staging `SUPABASE_ACCESS_TOKEN` 對 `vmmzdautcsgknhyqrsto` 授權失敗；health 仍是 `revision=07002d81be23`。憑證更新後，用此 exact SHA 重新 Go-Live，再手動輸入 `TEST-STAGING-MANAGEMENT` 執行受保護驗收。
 
 ## 2026-09-20 最新接力補充：活動取消 timeout boundary 與 staging 憑證阻塞

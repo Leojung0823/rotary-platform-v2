@@ -6,8 +6,9 @@
 
 ## 2026-09-20 最新補充（社費 hosted 驗收流程已補上，尚未執行）
 
-- 主線目前為 `0d529b0ddcecf5d3bab993b205e24158cc57465b`。新增的是 staging acceptance 覆蓋，不是產品 schema 或 hosted 資料：獨立測試年度、部分收款、代墊、核銷、社員投影與可逆回收都由受保護 browser flow 驗證。
+- 最新主線目前為 `a0340310157a48c825019b104ea67689cbc08220`（驗收工具 commit 為 `0d529b0ddcecf5d3bab993b205e24158cc57465b`）。新增的是 staging acceptance 覆蓋，不是產品 schema 或 hosted 資料：獨立測試年度、部分收款、代墊、核銷、社員投影與可逆回收都由受保護 browser flow 驗證。
 - 本機 typecheck、lint、197 檔／1464 tests、build 與驗收契約測試通過；沒有手動觸發 CI／Browser Smoke。社費仍不能標 `[x]`，因為 hosted run 尚未在最新 runtime 執行。
+- push 後自動 CI `35465974482` 與 Browser Smoke `35465974546` 均成功。
 - 現場 staging 仍為 `07002d81be23`，Go-Live 的 Supabase link 仍被舊 `SUPABASE_ACCESS_TOKEN` 阻擋。憑證修復後的順序是：以 exact SHA 部署，再跑受保護 management acceptance；成功後才把社費 hosted 收款／核銷項目結案。
 
 ## 2026-09-20 最新補充（活動取消安全邊界已推送；staging 尚未發布）
