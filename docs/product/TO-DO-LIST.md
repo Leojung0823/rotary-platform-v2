@@ -8,6 +8,22 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-20 最新核對（跨社管理深連結已修正並發布）
+
+- 程式提交 `425a166e2469db49ff8e6b995e04b066f011c926` 已推上 `main`；Staging Release
+  `35458106373` 與 Staging Go-Live `35458190522` 使用同一個 exact SHA，migration dry-run／apply、部署、exact revision、HTTPS smoke
+  與 hosted acceptance 全部成功。production 沒有修改。
+- staging `/api/health` 現場回報 `status=ok`、`revision=425a166e2469`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
+- 實際重現並修正一個跨社 UX 缺口：直接開 `/clubs/<clubId>/...` 時，頁面內容會依網址社團載入，但側欄可能仍沿用另一社的 active-club cookie。
+  代理層現在只轉送格式正確的 route／query club ID 作為顯示偏好；shell 與 `currentExperienceMode` 都經同一個本人可用社團 projection 驗證，
+  不把網址或 cookie 當權限來源。瀏覽器自行注入的 `x-rotary-*` header 會被覆蓋。
+- 新增 `src/proxy.test.ts` 的 route／query／非法 ID 測試，以及 `e2e/tests/role-shells.e2e.mjs` 的雙管理社團深連結回歸測試。
+  本機 Vitest 為 `196` 檔／`1459` tests；typecheck、lint（既有 warning）、build、verify:db、migration guard、verification manifest、
+  diff check 均通過。沒有手動觸發 CI 或 Browser Smoke。
+- 已登入 staging 的唯讀驗收：直接開 HAPPY 與 PANCHIAO 管理深連結時，側欄目前社別、頁面標題、活動資料與導覽連結均一致。
+  E-10 仍不能結案，因停權／退社／外社執行秘書的負向矩陣尚未有真人 staging 證據。
+- E-06 登入後 LCP／FCP／TTFB／INP 仍是**未量測**；這次只驗證社別一致性，沒有把瀏覽器畫面驗收當成效能數字。
+
 ## 2026-09-20 最新核對（服務計劃 hosted 雙帳號驗收完成）
 
 - 產品與驗收 exact SHA `f72aa2db440ae8278cbe791411b17e9f1d0197b4` 已由 Staging Go-Live `35456273015` 部署；staging health 回報 `status=ok`、`revision=f72aa2db440a`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`，production 沒有修改。
@@ -550,6 +566,9 @@ production 沒有修改。
   `/clubs/{clubId}/members?mode=member` 會被導向 `/access-denied`。這補強社員模式的後端拒絕證據，仍未取代多社／停權／退社帳號驗收。
 - **2026-09-16 本機負向補強**：新增退社社員 fixture，`role-shells-1440` 測試確認撤銷管理者、停權社員與退社社員都被導向
   `/access-denied` 且沒有主要導覽。這只證明本機 fixture 下的行為，staging 仍需真實多社／停權／退社帳號。
+- **2026-09-20 深連結同步修正已發布**：`425a166e` 讓 `/clubs/<clubId>/...` 的 route 社別成為經本人社團 projection
+  驗證後的顯示偏好，避免內容是 A 社、側欄卻是 B 社。staging 直接開 HAPPY 與 PANCHIAO 的管理活動網址均已唯讀核對一致；
+  這是正向深連結證據，不取代下面的負向角色矩陣。
 - **外部動作**：準備一個同時具兩社有效社籍、其中一社另有執行秘書權限的 staging 測試帳號，實際切換社別與模式；再測外社執行秘書、停權／退社帳號。
 - **完成證據**：每個社只看到自己的資料；社員模式與管理模式能正確切換；沒有管理權的有效社員不能進管理頁；停權／退社不能取得原有權限。
 

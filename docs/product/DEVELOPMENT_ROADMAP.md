@@ -4,6 +4,18 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-20 最新核對（跨社管理深連結已修正並發布）
+
+- `425a166e2469db49ff8e6b995e04b066f011c926` 已進入 `main`；Staging Release `35458106373` 與 Go-Live
+  `35458190522` 使用同一個 exact SHA 成功完成，staging `/api/health` 為 `revision=425a166e2469`、`status=ok`、
+  `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- 修正跨社管理深連結的 active-club 不同步：代理層只提供格式正確的 route／query club ID 作為 UX 偏好，shell 與模式解析仍以
+  `resolve_my_experience_context` 的本人社團 projection 驗證；網址、cookie 與自訂 header 都不是權限來源。
+- 本機 196 檔／1459 tests、typecheck、lint（既有 warning）、build、verify:db、migration guard、verification manifest、diff check 通過；
+  沒有手動觸發 CI／Browser Smoke。staging 唯讀驗收已確認 HAPPY／PANCHIAO 的管理深連結內容與側欄社別一致。
+- 這項修正屬 E-10 正向 UX／資料隔離補強，不把 E-10 標為完成；停權、退社、外社執行秘書的 staging 負向矩陣仍待真人帳號。
+- E-06 仍維持未量測：登入後 LCP、FCP、TTFB、INP 需要同 runtime／快取條件的 Chrome DevTools trace；本次沒有新增效能數字。
+
 ## 2026-09-20 最新核對（服務計劃 hosted 雙帳號驗收完成）
 
 - 產品與驗收使用的 exact SHA `f72aa2db440ae8278cbe791411b17e9f1d0197b4` 已由 Staging Go-Live `35456273015` 部署；staging `/api/health` 回報 `revision=f72aa2db440a`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。

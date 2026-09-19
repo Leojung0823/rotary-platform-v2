@@ -3,6 +3,22 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新交接（跨社管理深連結已修正並發布）
+
+- 最新主線與 staging runtime 都是 `425a166e2469db49ff8e6b995e04b066f011c926`；Staging Release
+  `35458106373`、Staging Go-Live `35458190522` 成功，health 回報 `status=ok`、`revision=425a166e2469`、
+  `configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- 修正 `src/proxy.ts`、`src/components/role-aware-app-shell.tsx`、`src/lib/experience-mode.server.ts`：
+  `/clubs/<clubId>/...`、`/club/<clubId>/...` 與支援 `clubId` query 的路由會提供一個經格式驗證的 route club ID；
+  context resolver 再檢查它是否屬於目前身份。網址／cookie 只影響顯示偏好，不改授權；瀏覽器傳入的 `x-rotary-*` header 會被代理覆蓋。
+- 回歸測試在 `src/proxy.test.ts` 與 `e2e/tests/role-shells.e2e.mjs`。本機 Vitest `196` 檔／`1459` tests、typecheck、lint（既有 warning）、
+  build、verify:db、migration guard、verification manifest、diff check 通過；沒有手動跑 CI／Browser Smoke。
+- 已用登入 staging Chrome 唯讀驗收：直接開 HAPPY 與 PANCHIAO 管理活動網址時，側欄目前社別、頁面內容與導覽連結一致；驗收後已還原到
+  PANCHIAO 管理頁，沒有建立／編輯／取消任何資料。
+- 下一步不要重做已完成的額度提示或服務計劃 hosted 驗收。可繼續處理：E-03 follow 自動配對真人身份核對、E-06 同條件效能量測、
+  E-10 停權／退社／外社負向矩陣；E-07 需要真實手機／M1、E-08 需要 production 決策、E-11 需要各社 OA／Rich Menu 外部設定，
+  E-09 依產品決定維持暫緩。Chrome DevTools MCP 目前沒有已登入 staging session，E-06 數字仍寫「未量測」。
+
 ## 2026-09-20 最新核對（服務計劃 hosted 雙帳號驗收完成）
 
 - 產品與驗收 exact SHA `f72aa2db440ae8278cbe791411b17e9f1d0197b4` 已由 Staging Go-Live `35456273015` 部署；staging `/api/health` 回報 `revision=f72aa2db440a`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
