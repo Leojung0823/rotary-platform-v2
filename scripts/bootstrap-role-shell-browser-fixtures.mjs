@@ -395,7 +395,7 @@ async function addMemberTagFixture({ clubId, email }) {
   await officer.auth.signOut();
 }
 
-async function configureLineOaFixture({ clubId, email }) {
+async function configureLineOaFixture({ clubId, email, botUserId = "U-e2e-rotary-bot" }) {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!publishableKey) fail("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
 
@@ -424,11 +424,45 @@ async function configureLineOaFixture({ clubId, email }) {
   const verification = await admin.rpc("record_line_oa_account_identity_verification", {
     p_line_oa_account_id: account.data.id,
     p_basic_id: "@e2e-rotary",
-    p_bot_user_id: "U-e2e-rotary-bot",
+    p_bot_user_id: botUserId,
   });
   if (verification.error || verification.data !== true) {
     fail("LINE OA fixture identity verification did not succeed");
   }
+}
+
+async function addLineQuotaNoticeFixture({ clubId, requestedByAccount }) {
+  const account = await admin.from("line_oa_accounts")
+    .select("id")
+    .eq("club_id", clubId)
+    .eq("account_status", "active")
+    .single();
+  if (account.error || !account.data) fail("LINE quota notice fixture account lookup did not succeed");
+
+  const id = "a1000000-0000-4000-8000-000000000107";
+  const values = {
+    line_oa_account_id: account.data.id,
+    club_id: clubId,
+    requested_by_app_account_id: requestedByAccount.id,
+    push_kind: "multicast",
+    recipient_count: 700,
+    payload_summary: {
+      batch_count: 2,
+      sent_batch_count: 1,
+      delivered_recipient_count: 500,
+    },
+    delivery_status: "failed",
+    provider_request_id: null,
+    failure_code: "rate_limited",
+    completed_at: new Date().toISOString(),
+  };
+  const existing = await admin.from("line_push_logs").select("id").eq("id", id).maybeSingle();
+  if (existing.error) fail("could not inspect local LINE quota notice fixture");
+
+  const result = existing.data
+    ? await admin.from("line_push_logs").update(values).eq("id", id)
+    : await admin.from("line_push_logs").insert({ id, ...values });
+  if (result.error) fail("could not write local LINE quota notice fixture");
 }
 
 async function addBlessingIouLedgerFixture({ clubId, email }) {
@@ -731,6 +765,15 @@ await addMemberTagFixture({
 await configureLineOaFixture({
   clubId: memberClub.id,
   email: "e2e-shell-member-manager@example.test",
+});
+await configureLineOaFixture({
+  clubId: managedClub.id,
+  email: "e2e-shell-management@example.test",
+  botUserId: "U-e2e-rotary-bot-managed",
+});
+await addLineQuotaNoticeFixture({
+  clubId: managedClub.id,
+  requestedByAccount: fixtures.management,
 });
 await addLineIdentityFixture({
   account: fixtures.lineOaUnpaired,

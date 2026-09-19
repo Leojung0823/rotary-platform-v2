@@ -3,24 +3,36 @@ import { expect, test } from "@playwright/test";
 const password = process.env.E2E_ROLE_PASSWORD;
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const officerEmail = "e2e-shell-member-manager@example.test";
+const managementEmail = "e2e-shell-management@example.test";
+const managedClubId = "a1000000-0000-4000-8000-000000000003";
 
 function requireCredentials() {
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for LINE OA audience browser tests.");
 }
 
-async function openLineOa(page) {
+async function loginAs(page, email) {
   requireCredentials();
   await page.goto(new URL("/login", baseURL).toString());
-  await page.getByLabel("電子郵件").fill(officerEmail);
+  await page.getByLabel("電子郵件").fill(email);
   await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/dashboard$/u);
+}
+
+async function openLineOa(page) {
+  await loginAs(page, officerEmail);
 
   await page.goto(new URL("/dashboard?mode=member", baseURL).toString());
   await page.getByLabel("帳號選單").click();
   await page.getByRole("link", { name: "進入社務管理" }).click();
   await expect(page).toHaveURL(/\/members/u);
   await page.getByRole("link", { name: "LINE OA" }).click();
+  await expect(page.getByRole("heading", { name: "LINE Official Account" })).toBeVisible();
+}
+
+async function openManagedLineOa(page) {
+  await loginAs(page, managementEmail);
+  await page.goto(new URL(`/clubs/${managedClubId}/line-oa?mode=management`, baseURL).toString());
   await expect(page.getByRole("heading", { name: "LINE Official Account" })).toBeVisible();
 }
 
@@ -75,4 +87,24 @@ test("an audience nobody has paired is refused rather than sent to nobody", asyn
   await send.getByRole("button", { name: "送出訊息" }).click();
 
   await expect(page.getByText("指定的對象中沒有人加入官方帳號，訊息沒有送出。")).toBeVisible();
+});
+
+test("a manager sees a quota stop notice while a member cannot read it", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "line-oa-audience-1440", "This is a desktop management notice assertion.");
+  await openManagedLineOa(page);
+
+  await expect(page.getByText("LINE 推播已暫停：", { exact: true })).toBeVisible();
+  await expect(page.getByText("已達 LINE 的推播頻率或方案額度上限，系統已停止後續批次。", { exact: false })).toBeVisible();
+  await expect(page.getByText(/最近一次推播嘗試 700 位，已送達 500 位（1\/2 批）/u)).toBeVisible();
+
+  const memberContext = await page.context().browser().newContext({ baseURL });
+  const memberPage = await memberContext.newPage();
+  try {
+    await loginAs(memberPage, "e2e-shell-ordinary@example.test");
+    await memberPage.goto(new URL(`/clubs/${managedClubId}/line-oa?mode=management`, baseURL).toString());
+    await expect(memberPage).toHaveURL(/\/access-denied(?:\?|$)/u);
+    await expect(memberPage.getByText("LINE 推播已暫停：", { exact: true })).toHaveCount(0);
+  } finally {
+    await memberContext.close();
+  }
 });

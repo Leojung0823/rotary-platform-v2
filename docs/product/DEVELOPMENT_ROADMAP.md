@@ -8,13 +8,13 @@
 
 - LINE 推播遇到 429／方案額度上限時，產品決定採「停止並提示」：同一批沿用 retry key 安全重試一次，仍是 `rate_limited` 就停止後續批次，不盲目繼續送。
 - 手動推播會在管理頁立即顯示錯誤；排程、活動與訊息中心推播會把部分送達寫入既有 `line_push_logs`，並由新的 `get_line_oa_quota_notice` 在社務管理 → LINE OA 頁面提醒有 `oa.read` 的管理幹部。一般社員不會在訊息中心看到這個維運提醒。
-- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`，staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可正常讀取 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，目前沒有額度警示；本機隔離 rate-limited fixture 已證明管理幹部看到停止提示與部分送達數字，一般社員不可見。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 staging UI 專項證據。
+- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`，staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可正常讀取 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，目前沒有額度警示；本機隔離 rate-limited fixture 已證明管理幹部看到停止提示與部分送達數字，一般社員不可見。本輪再把這條證據固定成 `line-oa-audience-1440` 的瀏覽器回歸測試，最新一次 `5 passed`。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 staging UI 專項證據。
 
 ## 2026-09-19 最新現場核對（本節優先）
 
 - 文件更新前現場核對的產品／staging exact SHA 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`；Staging Go-Live `35440209578` 成功，staging `/api/health` 回報 `revision=8f109d0fba57`、`status=ok`、`issues=[]`，production 沒有修改。本文件提交後 `main` 會再前進，最新主線請現場以 `git rev-parse origin/main` 核對。
 - Staging Management Acceptance `35440318825` 成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。這完成管理模式的 hosted 正向流程，但不等於社費、服務計劃的完整角色矩陣或 E-10 負向矩陣完成。
-- 本機針對性瀏覽器驗收補充通過：`officer-mode-1440` 9 passed／1 intentional skip，涵蓋模式邊界、跨社管理路徑拒絕、社費與 CSV／Excel／PDF 匯出及無社籍執行秘書；`interact-hub-1440`／`375` 共 4 passed；`line-oa-rich-menu-1440` 1 passed。這些只作本機回歸證據，不取代 staging 真人與各社 OA 驗收。
+- 本機針對性瀏覽器驗收補充通過：`officer-mode-1440` 9 passed／1 intentional skip，涵蓋模式邊界、跨社管理路徑拒絕、社費與 CSV／Excel／PDF 匯出及無社籍執行秘書；`interact-hub-1440`／`375` 共 4 passed；`line-oa-rich-menu-1440` 1 passed；`line-oa-audience-1440` 5 passed，涵蓋額度停止提示只給管理幹部、一般社員被拒絕。這些只作本機回歸證據，不取代 staging 真人與各社 OA 驗收。
 - 已登入 staging 的唯讀抽查確認：LINE OA 管理頁最新推播為 `sent`、目前沒有額度提醒；社費管理頁可讀取 2026–27 年度與 CSV／Excel／PDF 匯出入口；社員「我的」頁有社費入口與代墊申請；服務計劃管理草稿不會出現在社員頁。未為測試硬打真實 429。
 - Chrome DevTools MCP 目前沒有 staging 登入 session，導向管理頁會回 `/login`；因此 E-06 登入後 LCP／FCP／TTFB／INP 仍是**未量測**。桌面 Chrome 只作畫面唯讀驗收，不把非 DevTools trace 的數字當效能證據。
 - 路線圖下一步是補 E-03、E-05 的專項外部證據、E-06 可比效能數據與 E-10 負向矩陣；E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。E-05 的程式與本機可見性邊界已驗證，不為畫面驗收消耗正式 LINE 額度。
