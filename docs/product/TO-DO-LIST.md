@@ -8,6 +8,11 @@
 - 這只證明主線程式與瀏覽器回歸通過，不等於 staging 已更新。staging `/api/health` 仍是 `revision=07002d81be23`；最新社費匯出、活動取消 timeout boundary 尚未部署到 staging。
 - 工作樹仍只保留既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，未讀寫、未提交。
 
+## 2026-09-20 最新補充（生日設定 hosted 驗收工具已補上）
+
+- `05a456e` 為 staging member acceptance 增加獨立的 `expect_birthday_settings` 開關；開啟後會檢查 `/me?mode=member` 顯示「生日公開設定」、儲存按鈕、沒有誤顯示通用「隱私設定」，並檢查手機寬度沒有水平溢位。
+- 本機 `node --check` 與 staging acceptance contract `7/7` 通過；這只是驗收工具完成，尚未在最新 staging runtime 執行。部署後要同時開啟生日 V2 旗標，再以 `expect_birthday_settings=true` 跑受保護 staging acceptance。
+
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
 的舊掃描結果；那份檔案屬於獨立 worktree，不是權威 repo 的版本。

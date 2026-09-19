@@ -9,6 +9,11 @@
 - 這不代表 staging 已更新：staging health 仍為 `revision=07002d81be23`。下一個發布前置仍是更新 GitHub staging 的 `SUPABASE_ACCESS_TOKEN`，再以 exact SHA 重新 Go-Live。
 - 既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 仍不可加入提交。
 
+## 2026-09-20 最新接力補充：生日設定 hosted 驗收工具已補上
+
+- `05a456e` 增加 `expect_birthday_settings` staging acceptance input；開啟後驗證 `/me?mode=member` 的生日公開設定與儲存按鈕，並確認通用隱私設定沒有回來。
+- `node --check` 與 staging acceptance contract `7/7` 通過，但尚未部署／執行 hosted；憑證修復後要把它和生日旗標一起驗收，不得只看本機回歸就標完成。
+
 ## 2026-09-20 最新接力補充：社費報表 hosted 驗收範圍已補強
 
 - `c655d50` 已把受保護 management acceptance 的財務覆蓋補到可判定程度：空資料與部分收款資料的 CSV／Excel／PDF 下載會檢查內容型別、附件標頭、`no-store` 與檔案簽名；社員直接呼叫管理匯出 API 預期回 `403`。

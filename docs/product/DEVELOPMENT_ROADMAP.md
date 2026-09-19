@@ -7,6 +7,11 @@
 - `origin/main` 與本機 `main` 都是 `4d2da7a12a6c290a77a6f7a5f3460076166353a8`；自動 CI `35466606215`、Browser Smoke `35466606217` 均成功，沒有手動觸發。
 - 這是主線回歸證據，不是 staging 發布證據。staging 仍為 `revision=07002d81be23`，待 `SUPABASE_ACCESS_TOKEN` 修復後，才可部署最新社費匯出與活動取消 timeout boundary。
 
+## 2026-09-20 最新補充（生日設定 hosted 驗收工具已補上）
+
+- `05a456e` 將生日公開設定加入受保護 staging member acceptance 的獨立開關；它會驗證社員在 `/me` 看得到生日設定、儲存入口，且通用隱私卡片仍隱藏。
+- 目前只有本機語法／契約證據，沒有 hosted 結果；部署最新主線後，需在生日旗標已開啟的前提下，以 `expect_birthday_settings=true` 執行，成功後才能結案這一項。
+
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
 ## 2026-09-20 最新補充（社費報表 hosted 驗收範圍已補強）
