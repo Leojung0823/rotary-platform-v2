@@ -98,20 +98,26 @@ jobs:
       - name: Start local Supabase
         shell: bash
         run: |
-          supabase start > /tmp/supabase-start.log 2>&1 || {
-            echo "Local Supabase failed to start."
+          if timeout -k 30 600 supabase start > /tmp/supabase-start.log 2>&1; then
+            :
+          else
+            status=$?
+            echo "Local Supabase failed or timed out while starting (status ${status})."
             tail -n 80 /tmp/supabase-start.log
             exit 1
-          }
+          fi
 
       - name: Reset local database from migrations
         shell: bash
         run: |
-          supabase db reset --local > /tmp/supabase-reset.log 2>&1 || {
-            echo "Local database reset failed."
+          if timeout -k 30 600 supabase db reset --local > /tmp/supabase-reset.log 2>&1; then
+            :
+          else
+            status=$?
+            echo "Local database reset failed or timed out (status ${status})."
             tail -n 120 /tmp/supabase-reset.log
             exit 1
-          }
+          fi
 
       - name: Create isolated local application environment
         shell: bash
