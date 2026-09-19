@@ -8,7 +8,7 @@
 
 - LINE 推播遇到 429／方案額度上限時，產品決定採「停止並提示」：同一批沿用 retry key 安全重試一次，仍是 `rate_limited` 就停止後續批次，不盲目繼續送。
 - 手動推播會在管理頁立即顯示錯誤；排程、活動與訊息中心推播會把部分送達寫入既有 `line_push_logs`，並由新的 `get_line_oa_quota_notice` 在社務管理 → LINE OA 頁面提醒有 `oa.read` 的管理幹部。一般社員不會在訊息中心看到這個維運提醒。
-- 本輪已完成程式、migration、verification 檔與單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`，staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可正常讀取 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，目前沒有額度警示。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 rate-limited UI 專項證據。
+- 本輪已完成程式、migration、verification 檔與單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`，staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可正常讀取 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，目前沒有額度警示。未用真實社員做額度壓力測試，也不為測試消耗正式額度；仍待取得不影響正式額度的 rate-limited UI 專項證據。
 
 ## 2026-09-19 最新現場核對（本節優先）
 
@@ -27,7 +27,7 @@
 - 本輪補上本機瀏覽器 fixture：以「LINE Login 已綁定、但沒有 OA follower」社員驗證首頁待辦會顯示「加入本社 LINE OA」並連到 `/me/line-oa`。這是回歸測試覆蓋，不等於 staging 真人配對驗收。
 - 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；本次以已登入的社務管理帳號做唯讀 hosted 驗收，管理頁可開啟 2026–27 年度、空資料摘要與 CSV／Excel／PDF 匯出入口，社員模式也可從「我的」查看社費並看到代墊申請入口。仍缺有實際應收資料的收款／核銷結果，以及一般社員、外社與無 `finance.read` 帳號的負向矩陣。
 - 年度服務計劃也完成唯讀 hosted 抽查：管理模式可看到四大分類的 staging 草稿，社員模式只看到「本年度的服務計劃尚未發布」，草稿沒有外洩；仍缺另一個一般社員帳號的正式角色矩陣與發布後內容驗收。
-- 本輪本機驗證：typecheck、lint、Vitest `193` 檔／`1445` tests、build、migration guard、verification manifest 通過；`verify:db` 因本機 Docker／Supabase reset 無回應中止，沒有把它當成綠燈。沒有手動觸發 CI／Browser Smoke。
+- 本輪本機驗證：typecheck、lint、Vitest `193` 檔／`1445` tests、build、完整 `verify:db`、migration guard、verification manifest 通過；沒有手動觸發 CI／Browser Smoke。
 - 下一步仍分兩類：E-03、E-10、E-06 可在條件具備時繼續驗收；E-05 已完成產品決策、程式與 staging 發布，仍缺不消耗正式額度的 rate-limited UI 專項證據；E-07、E-08、E-11 需要真人、實機或外部 LINE OA 設定；E-09 維持暫緩。沒有外部證據的項目不改標成完成。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）

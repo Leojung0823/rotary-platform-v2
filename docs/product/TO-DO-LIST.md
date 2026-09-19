@@ -13,7 +13,7 @@
 - **產品決策已確認**：LINE 回報推播頻率／方案額度上限（429）時，採「停止並提示」，不採「繼續送並只記錄」。現有同一批次最多重試一次且沿用同一個 retry key；確認仍是 `rate_limited` 後，立即停止後續批次。
 - **本輪已補上管理提醒**：`get_line_oa_quota_notice` 只允許有 `oa.read` 的社務管理幹部讀取，讀取最新一筆會員訊息推播紀錄；若最新結果是 `rate_limited`，`/clubs/<clubId>/line-oa?mode=management` 顯示醒目錯誤通知與部分送達數字。手動送出仍會在返回頁面立即提示；下一次推播有其他結果後，舊提醒自動消失。
 - **資料隔離**：提醒不寫入全社訊息中心，不會送給一般社員；只透過該社的管理頁投影顯示。通知投影不含 access token、channel secret 或 provider request id。
-- **目前狀態**：程式、migration、verification 與單元測試已完成，並已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 staging Release `35439552999` 與 Go-Live `35439671370`。staging `/api/health` 已回報 `revision=fffa7ca46fe2`、`issues=[]`；已登入的社務管理頁可正常顯示 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，因此目前沒有額度警示。尚未用真實社員做額度壓力測試，也未偽造 429；仍待在不消耗正式額度的條件下補一個管理幹部可見、一般社員不可見的 rate-limited UI 證據。
+- **目前狀態**：程式、migration、verification 與單元測試已完成，並已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 staging Release `35439552999` 與 Go-Live `35439671370`。本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。staging `/api/health` 已回報 `revision=fffa7ca46fe2`、`issues=[]`；已登入的社務管理頁可正常顯示 LINE OA 設定、配對人數與推播紀錄，最新紀錄為 `sent`，因此目前沒有額度警示。尚未用真實社員做額度壓力測試，也未偽造 429；仍待在不消耗正式額度的條件下補一個管理幹部可見、一般社員不可見的 rate-limited UI 證據。
 
 ## 2026-09-19 最新現場核對（本節優先）
 
@@ -21,7 +21,7 @@
 - Staging Management Acceptance `35440318825` 成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。這完成管理模式的 hosted 正向流程，但不等於社費、服務計劃的完整角色矩陣或 E-10 負向矩陣完成。
 - 已登入 staging 的唯讀抽查確認：LINE OA 管理頁最新推播為 `sent`、目前沒有額度提醒；社費管理頁可讀取 2026–27 年度與 CSV／Excel／PDF 匯出入口；社員「我的」頁有社費入口與代墊申請；服務計劃管理草稿不會出現在社員頁。未為測試硬打真實 429。
 - Chrome DevTools MCP 目前沒有 staging 登入 session，導向管理頁會回 `/login`；因此 E-06 登入後 LCP／FCP／TTFB／INP 仍是**未量測**。桌面 Chrome 只作畫面唯讀驗收，不把非 DevTools trace 的數字當效能證據。
-- 目前仍不能誠實結案的項目：E-03 follow 配對真人核對、E-05 rate-limited UI 專項證據、E-06 可比效能數據、E-07 實機／M1、E-08 production 決策、E-10 多社／停權／退社／外社負向矩陣、E-11 各社 OA／Rich Menu 外部設定；E-09 recovery email 依產品決定暫緩。`verify:db` 仍待本機 Docker reset 恢復後補跑。
+- 目前仍不能誠實結案的項目：E-03 follow 配對真人核對、E-05 rate-limited UI 專項證據、E-06 可比效能數據、E-07 實機／M1、E-08 production 決策、E-10 多社／停權／退社／外社負向矩陣、E-11 各社 OA／Rich Menu 外部設定；E-09 recovery email 依產品決定暫緩。E-05 的本機 `verify:db` 與 manifest／migration 檢查已完成，但仍缺不消耗正式額度的 staging UI 專項證據。
 
 ## 2026-09-18 現場基線（本節優先）
 
@@ -460,7 +460,7 @@ production 沒有修改。
 
 - **產品決策已確認**：超額／429 時停止後續批次並提示社務管理幹部；不把剩餘批次繼續送出。既有一次同 retry key 的安全重試保留給可恢復的 provider 回應，重試後仍是 429 就停止。
 - **程式已完成**：429 分類、部分送達紀錄、停止批次、手動送出頁提示，以及管理頁最新額度提醒均已具備；提醒只給 `oa.read` 管理者，不進一般社員的訊息中心。
-- **完成證據**：本機單元測試已驗證 500 人分批、429、重試與部分送達；資料庫 verification 檔已新增，但本輪 `verify:db` 因本機 Docker reset 卡住尚未執行。staging Go-Live 後再驗收管理頁提示與成功後清除。不得用真實社員做壓力測試。
+- **完成證據**：本機單元測試已驗證 500 人分批、429、重試與部分送達；資料庫 verification 檔已新增，且 2026-09-19 本機 Docker 恢復後完整 `npm run verify:db`、fixture bootstrap、migration guard、verification manifest 均已通過。staging 正常狀態管理頁最新紀錄為 `sent`，因此沒有額度提醒；仍待在不消耗正式額度的條件下補一個 rate-limited UI 證據，並確認成功後清除。不得用真實社員做壓力測試。
 
 ### E-06 登入後管理頁效能量測 `[>]`
 

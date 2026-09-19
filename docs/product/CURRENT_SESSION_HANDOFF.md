@@ -8,7 +8,7 @@
 - 產品已確認 LINE 推播遇到 429／方案額度上限時採「停止並提示」，不採「繼續送並只記錄」。同一批仍可用同一 retry key 安全重試一次；確認仍為 `rate_limited` 後，停止剩餘批次。
 - 已新增 `20260919000100_line_oa_quota_notice.sql` 與 `get_line_oa_quota_notice(uuid)`。它只讓 `oa.read` 的社務管理者讀取最新會員訊息推播額度失敗，排除 Rich Menu；成功或其他結果後提醒自動消失，沒有把維運訊息放進一般社員訊息中心。
 - `/clubs/[clubId]/line-oa?mode=management` 現在會顯示「LINE 推播已暫停」與部分送達數字；手動送出原本已有即時錯誤提示。`src/lib/line/quota-notice.ts` 負責 bounded projection parsing。
-- 本輪已完成程式／verification 檔／單元測試；本機 `verify:db` 因 Docker reset 卡住尚未執行。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`；staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可讀取 LINE OA 設定與推播紀錄，最新紀錄為 `sent`，所以目前未顯示額度提醒；不要為了驗收硬打真實額度。下一步是取得不消耗正式額度的 rate-limited UI 專項證據，確認管理幹部可見、一般社員不可見。
+- 本輪已完成程式／verification 檔／單元測試；2026-09-19 本機 Docker 恢復後，`npm run verify:db`、superadmin／role-shell fixture bootstrap、`check:migrations`、`check:db-verifications` 均已通過。已用 exact SHA `fffa7ca46fe21394982d43e0186c705d9e1b8e6c` 完成 Staging Release `35439552999` 與 Go-Live `35439671370`；staging `/api/health` 回報 `revision=fffa7ca46fe2`、`issues=[]`。已登入的社務管理頁可讀取 LINE OA 設定與推播紀錄，最新紀錄為 `sent`，所以目前未顯示額度提醒；不要為了驗收硬打真實額度。下一步是取得不消耗正式額度的 rate-limited UI 專項證據，確認管理幹部可見、一般社員不可見。
 
 ## 2026-09-19 最新現場核對（本節優先）
 
@@ -27,7 +27,7 @@
 - 本輪補上本機瀏覽器 fixture：新增「LINE Login 已綁定、但沒有 OA follower」社員，`member-home` E2E 會確認首頁待辦顯示「加入本社 LINE OA」並指向 `/me/line-oa`。這只增加本機回歸覆蓋，不改資料庫結構，也不取代 staging 真人驗收。
 - 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；本次以已登入的社務管理帳號做唯讀 hosted 驗收，管理頁可開啟 2026–27 年度、空資料摘要與 CSV／Excel／PDF 匯出入口，社員模式也可從「我的」查看社費並看到代墊申請入口。仍待有實際應收資料的收款／核銷結果，以及一般社員、外社與無 `finance.read` 帳號的負向矩陣。
 - 年度服務計劃已完成唯讀 hosted 抽查：管理模式可看到四大分類的 staging 草稿，社員模式只看到「本年度的服務計劃尚未發布」，草稿沒有外洩；仍待另一個一般社員帳號的正式角色矩陣與發布後內容驗收。
-- 本輪已通過 typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、migration guard 與 verification manifest；`verify:db` 因本機 Docker／Supabase reset 無回應而中止，需恢復本機 runtime 後補跑。沒有手動觸發 CI 或 Browser Smoke。
+- 本輪已通過 typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、完整 `verify:db`、migration guard 與 verification manifest；沒有手動觸發 CI 或 Browser Smoke。
 - 2026-09-19 再次嘗試外部驗收：Chrome DevTools MCP staging 頁面仍沒有登入 session，進入管理頁即回 `/login`；桌面 Chrome 的已登入頁面只做畫面唯讀驗收，沒有把它的數字冒充 DevTools trace；iPhone 鏡像停在解鎖畫面，尚未有真實手機測試結果。E-06 的登入後 LCP／FCP／TTFB／INP 仍是未量測。
 - 仍需外部條件的項目：E-03 follow 自動配對真人核對、E-05 staging 額度提醒驗收、E-06 同條件登入後效能量測、E-07 實機／M1、E-08 production 決策、E-10 多社／角色負向矩陣、E-11 各社 Rich Menu／OA 設定；E-09 recovery email 依產品決定暫緩。
 
