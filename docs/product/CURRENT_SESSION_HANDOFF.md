@@ -17,9 +17,10 @@
 - Staging Release `35308584458` 成功；第一次 Go-Live `35308757890` 因 Render 免費方案切換超時失敗，取消卡住的 Render deploy 後，重跑 Go-Live `35309848544` 使用同一個 exact SHA 並全部成功；staging `/api/health` 為 `status=ok`、`revision=211b363526ca`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - 首頁「待辦提醒」現在會在 `line_oa_onboarding_v1` 開啟、OA 已驗證且 caller-only onboarding RPC 回報未完成時，追加 LINE OA 任務；未綁定、未加入、已加入待配對與資料衝突會分別顯示，已配對者消失。資料庫待辦投影仍維持五種，沒有新增 migration 或改權限；任務入口是 `/me/line-oa`。這個修正已部署到 staging，但仍需用乾淨真人帳號驗收「未加入時出現、完成配對後消失」。
 - 本輪補上本機瀏覽器 fixture：新增「LINE Login 已綁定、但沒有 OA follower」社員，`member-home` E2E 會確認首頁待辦顯示「加入本社 LINE OA」並指向 `/me/line-oa`。這只增加本機回歸覆蓋，不改資料庫結構，也不取代 staging 真人驗收。
-- 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；平台管理員直接進社費管理頁被後端拒絕，符合財務權限邊界。社費仍待具 `finance.read` 的社務帳號 hosted 驗收。
+- 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；本次以已登入的社務管理帳號做唯讀 hosted 驗收，管理頁可開啟 2026–27 年度、空資料摘要與 CSV／Excel／PDF 匯出入口，社員模式也可從「我的」查看社費並看到代墊申請入口。仍待有實際應收資料的收款／核銷結果，以及一般社員、外社與無 `finance.read` 帳號的負向矩陣。
+- 年度服務計劃已完成唯讀 hosted 抽查：管理模式可看到四大分類的 staging 草稿，社員模式只看到「本年度的服務計劃尚未發布」，草稿沒有外洩；仍待另一個一般社員帳號的正式角色矩陣與發布後內容驗收。
 - 本輪已通過 typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、migration guard 與 verification manifest；`verify:db` 因本機 Docker／Supabase reset 無回應而中止，需恢復本機 runtime 後補跑。沒有手動觸發 CI 或 Browser Smoke。
-- 2026-09-18 再次嘗試外部驗收：Chrome DevTools MCP staging 頁面沒有登入 session，進入管理頁即回 `/login`；桌面 Chrome 的既有登入頁是平台管理員，不採用其效能數字作社員／社務證據；iPhone 鏡像停在解鎖畫面，尚未有真實手機測試結果。
+- 2026-09-19 再次嘗試外部驗收：Chrome DevTools MCP staging 頁面仍沒有登入 session，進入管理頁即回 `/login`；桌面 Chrome 的已登入頁面只做畫面唯讀驗收，沒有把它的數字冒充 DevTools trace；iPhone 鏡像停在解鎖畫面，尚未有真實手機測試結果。E-06 的登入後 LCP／FCP／TTFB／INP 仍是未量測。
 - 仍需外部條件的項目：E-03 follow 自動配對真人核對、E-05 staging 額度提醒驗收、E-06 同條件登入後效能量測、E-07 實機／M1、E-08 production 決策、E-10 多社／角色負向矩陣、E-11 各社 Rich Menu／OA 設定；E-09 recovery email 依產品決定暫緩。
 
 ## 2026-09-17 最新狀態（簽到可用性說明修正已發布；本節優先）

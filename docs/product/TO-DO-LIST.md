@@ -26,9 +26,10 @@
 - 首頁資料庫待辦投影仍只有 `event_response`、`dues_outstanding`、`birthday_wish`、`unread_messages`、`profile_incomplete` 五種；主線 `211b363` 已在應用層以同一個 caller-only `get_my_line_oa_onboarding_status` RPC 追加 LINE OA 任務。未綁定、未加入、已加入待配對、資料衝突會顯示不同文字；已配對、OA 未驗證或查詢失敗不顯示。任務連到 `/me/line-oa`，且和首頁原本的資料查詢用 `Promise.all` 同時執行。這個版本已部署到 staging；仍需用乾淨真人帳號驗收「未加入時出現、完成配對後消失」。
 - 本輪補強了本機瀏覽器驗收 fixture：新增「LINE Login 已綁定、但尚未加入 OA」社員，`member-home` E2E 會確認首頁待辦出現「加入本社 LINE OA」並連到 `/me/line-oa`。這是本機回歸證據，不取代 staging 真人驗收；本輪沒有修改資料庫結構。
 - 本輪本機驗證：typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、`check:migrations`、`check:db-verifications` 通過；`verify:db` 因本機 Docker／Supabase reset 長時間無回應而中止，未宣稱通過。沒有手動觸發 CI 或 Browser Smoke。
-- 本輪再次嘗試 E-06／E-07：Chrome DevTools MCP 的 staging 頁面沒有登入 session，開管理頁會回到 `/login`；桌面 Chrome 的既有頁面是平台管理員，不採用其數字冒充社員／社務效能；iPhone 鏡像停在「解鎖你的 iPhone」，沒有產生實機驗收證據。E-06 與 E-07 維持未結案。
+- 2026-09-19 再次嘗試 E-06／E-07：Chrome DevTools MCP 的 staging 頁面仍沒有登入 session，開管理頁會回到 `/login`；桌面 Chrome 的已登入頁面只能做畫面唯讀驗收，沒有把它的數字冒充 DevTools trace；iPhone 鏡像停在「解鎖你的 iPhone」，沒有產生實機驗收證據。E-06 的登入後 LCP／FCP／TTFB／INP 仍是未量測，E-07 維持未結案。
 - 尚未結案且需要外部條件／產品決定的項目仍是 E-03、E-06、E-07、E-08、E-10、E-11；E-05 的產品決策已完成，現在只等本輪 staging 發布與管理頁驗收；E-09 依產品決定暫緩。這些不能只靠本機程式修改誠實結案。
-- 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；平台管理員直接進 PANCHIAO 社費頁被後端拒絕，符合「必須有該社財務權限」的邊界。仍需用具 `finance.read` 的社務帳號驗收社費資料與報表，不把旗標開啟當成完整結案。
+- 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；本次以已登入的社務管理帳號做唯讀 hosted 驗收，管理頁可開啟 2026–27 年度、空資料摘要與 CSV／Excel／PDF 匯出入口，社員模式也可從「我的」查看社費並看到代墊申請入口。仍需有實際應收資料的收款／核銷結果，以及一般社員、外社與無 `finance.read` 帳號的負向矩陣；旗標開啟不等於完整結案。
+- 年度服務計劃已完成唯讀 hosted 抽查：管理模式可看到四大分類的 staging 草稿，社員模式只看到「本年度的服務計劃尚未發布」，草稿沒有外洩；仍需另一個一般社員帳號的正式角色矩陣與發布後內容驗收。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
 

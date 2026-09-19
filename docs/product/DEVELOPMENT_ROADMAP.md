@@ -17,9 +17,10 @@
 - 目前沒有 open PR。最近主線的 #199、#200、#201、#202 已完成合併與 staging 發布；文件同步後不需要重新部署。
 - LINE OA 待辦已完成並部署：資料庫的五種既有待辦不變，首頁以 caller-only onboarding projection 追加一項，顯示未綁定、未加入、待配對或衝突狀態，完成配對後消失；入口為 `/me/line-oa`。下一步仍是用未配對真人帳號驗收「出現 → 完成配對 → 消失」，不能只用 Go-Live 的一般 hosted acceptance 取代這條功能專項證據。
 - 本輪補上本機瀏覽器 fixture：以「LINE Login 已綁定、但沒有 OA follower」社員驗證首頁待辦會顯示「加入本社 LINE OA」並連到 `/me/line-oa`。這是回歸測試覆蓋，不等於 staging 真人配對驗收。
-- 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；目前只確認平台管理員沒有該社財務頁權限，仍要用 `finance.read` 社務帳號驗收社費與報表。
+- 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；本次以已登入的社務管理帳號做唯讀 hosted 驗收，管理頁可開啟 2026–27 年度、空資料摘要與 CSV／Excel／PDF 匯出入口，社員模式也可從「我的」查看社費並看到代墊申請入口。仍缺有實際應收資料的收款／核銷結果，以及一般社員、外社與無 `finance.read` 帳號的負向矩陣。
+- 年度服務計劃也完成唯讀 hosted 抽查：管理模式可看到四大分類的 staging 草稿，社員模式只看到「本年度的服務計劃尚未發布」，草稿沒有外洩；仍缺另一個一般社員帳號的正式角色矩陣與發布後內容驗收。
 - 本輪本機驗證：typecheck、lint、Vitest `193` 檔／`1445` tests、build、migration guard、verification manifest 通過；`verify:db` 因本機 Docker／Supabase reset 無回應中止，沒有把它當成綠燈。沒有手動觸發 CI／Browser Smoke。
-- 下一步仍分兩類：E-03、E-10、E-06 可在條件具備時繼續驗收；E-05 已完成產品決策與程式，待 staging 管理頁驗收；E-07、E-08、E-11 需要真人、實機或外部 LINE OA 設定；E-09 維持暫緩。沒有外部證據的項目不改標成完成。
+- 下一步仍分兩類：E-03、E-10、E-06 可在條件具備時繼續驗收；E-05 已完成產品決策、程式與 staging 發布，仍缺不消耗正式額度的 rate-limited UI 專項證據；E-07、E-08、E-11 需要真人、實機或外部 LINE OA 設定；E-09 維持暫緩。沒有外部證據的項目不改標成完成。
 
 ## 2026-09-17 最新基線（簽到可用性說明修正已發布；本節優先）
 
