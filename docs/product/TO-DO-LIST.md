@@ -829,7 +829,7 @@ staging 目前為 `LINE_OA_MODE=line`，`/api/health` 的 `warnings=[]`；真實
   卡關原因是 LINE Official Account Manager「回應設定」裡的 Webhook 開關預設關閉，
   而 Developers Console 的 Verify 在它關著時仍會成功。
 - `[x]` 生日邀請的實際 LINE 送達與重跑不重送已於 2026-09-12 完成，見 E-02；follow identity pairing 的真人驗收已於 2026-09-13 暫緩，見 E-03。
-- `[>]` 每月推播額度與超額行為，見 E-05：政策與程式已完成，採停止並提示，仍待不消耗正式額度的 staging UI 專項證據；E-04 的本次 rollout 社別決定已完成。
+- `[x]` 每月推播額度與超額行為，見 E-05：政策與程式已完成，採停止並提示；受保護 staging UI 專項 `35445780317` 已用合成資料驗收管理幹部可見、一般社員不可見並完成 cleanup；E-04 的本次 rollout 社別決定已完成。
 - `[!]` production 憑證、scheduler、旗標、備份與回復流程，見 E-08；`deployment-env.mjs` 已要求
   production 使用 `LINE_OA_MODE=line`。
 

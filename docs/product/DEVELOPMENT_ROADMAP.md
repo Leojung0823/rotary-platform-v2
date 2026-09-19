@@ -588,7 +588,7 @@ PR-01c 不做：
 [已完成 E-01] Flex staging 發布／旗標／真人收訊
 [已完成 E-02] 生日邀請實際送達／冪等重跑
 [外部待辦 E-03] LINE Login identity follow 自動配對真人驗收
-[已決定 E-04] 本次 rollout 只啟用 PANCHIAO-ELITE，HAPPY 不使用；[已完成程式、待 staging 驗收 E-05] 推播額度採停止並提示
+[已決定 E-04] 本次 rollout 只啟用 PANCHIAO-ELITE，HAPPY 不使用；[已完成 E-05] 推播額度採停止並提示
 [外部待辦 E-06／E-07／E-10] 效能量測／實機與 M1／雙重社籍驗收
 [產品決策 E-08／E-09] production 準備／Recovery email（若重啟）
 [後續開發／外部待辦 E-11] LINE Rich Menu／完整 OA 整合
