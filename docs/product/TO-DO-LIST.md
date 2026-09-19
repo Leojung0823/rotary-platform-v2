@@ -35,7 +35,7 @@
 - 本輪補強了本機瀏覽器驗收 fixture：新增「LINE Login 已綁定、但尚未加入 OA」社員，`member-home` E2E 會確認首頁待辦出現「加入本社 LINE OA」並連到 `/me/line-oa`。這是本機回歸證據，不取代 staging 真人驗收；本輪沒有修改資料庫結構。
 - 本輪本機驗證：typecheck、lint、完整 Vitest `193` 檔／`1445` tests、build、`check:migrations`、`check:db-verifications` 通過；`verify:db` 因本機 Docker／Supabase reset 長時間無回應而中止，未宣稱通過。沒有手動觸發 CI 或 Browser Smoke。
 - 2026-09-19 再次嘗試 E-06／E-07：Chrome DevTools MCP 的 staging 頁面仍沒有登入 session，開管理頁會回到 `/login`；桌面 Chrome 的已登入頁面只能做畫面唯讀驗收，沒有把它的數字冒充 DevTools trace；iPhone 鏡像停在「解鎖你的 iPhone」，沒有產生實機驗收證據。E-06 的登入後 LCP／FCP／TTFB／INP 仍是未量測，E-07 維持未結案。
-- 尚未結案且需要外部條件／產品決定的項目仍是 E-03、E-06、E-07、E-08、E-10、E-11；E-05 的產品決策已完成，現在只等本輪 staging 發布與管理頁驗收；E-09 依產品決定暫緩。這些不能只靠本機程式修改誠實結案。
+- 尚未結案且需要外部條件／產品決定的項目仍是 E-03、E-06、E-07、E-08、E-10、E-11；E-05 的產品決策、程式、正常 staging 發布與本機可見性驗收已完成，現在只等不消耗正式額度的 staging rate-limited UI 專項證據；E-09 依產品決定暫緩。這些不能只靠本機程式修改誠實結案。
 - 2026-09-18 已由平台管理員透過受保護 CLI 開啟 staging `dues_finance_v1`；本次以已登入的社務管理帳號做唯讀 hosted 驗收，管理頁可開啟 2026–27 年度、空資料摘要與 CSV／Excel／PDF 匯出入口，社員模式也可從「我的」查看社費並看到代墊申請入口。仍需有實際應收資料的收款／核銷結果，以及一般社員、外社與無 `finance.read` 帳號的負向矩陣；旗標開啟不等於完整結案。
 - 年度服務計劃已完成唯讀 hosted 抽查：管理模式可看到四大分類的 staging 草稿，社員模式只看到「本年度的服務計劃尚未發布」，草稿沒有外洩；仍需另一個一般社員帳號的正式角色矩陣與發布後內容驗收。
 
@@ -808,7 +808,7 @@ staging 目前為 `LINE_OA_MODE=line`，`/api/health` 的 `warnings=[]`；真實
   卡關原因是 LINE Official Account Manager「回應設定」裡的 Webhook 開關預設關閉，
   而 Developers Console 的 Verify 在它關著時仍會成功。
 - `[x]` 生日邀請的實際 LINE 送達與重跑不重送已於 2026-09-12 完成，見 E-02；follow identity pairing 的真人驗收已於 2026-09-13 暫緩，見 E-03。
-- `[!]` 每月推播額度與超額行為，見 E-05；E-04 的本次 rollout 社別決定已完成。
+- `[>]` 每月推播額度與超額行為，見 E-05：政策與程式已完成，採停止並提示，仍待不消耗正式額度的 staging UI 專項證據；E-04 的本次 rollout 社別決定已完成。
 - `[!]` production 憑證、scheduler、旗標、備份與回復流程，見 E-08；`deployment-env.mjs` 已要求
   production 使用 `LINE_OA_MODE=line`。
 
