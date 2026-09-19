@@ -44,6 +44,7 @@ jobs:
     needs: change-scope
     if: needs.change-scope.outputs.run_full == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - name: Set up Supabase CLI
@@ -52,17 +53,27 @@ jobs:
           version: 2.84.2
           github-token: ${{ github.token }}
       - name: Start local Supabase database
+        shell: bash
         run: |
-          supabase db start > /tmp/supabase-start.log 2>&1 || {
+          if timeout -k 30 600 supabase db start > /tmp/supabase-start.log 2>&1; then
+            :
+          else
+            status=$?
+            echo "Local Supabase database failed or timed out while starting (status ${status})."
             cat /tmp/supabase-start.log
             exit 1
-          }
+          fi
       - name: Reset database from migrations
+        shell: bash
         run: |
-          supabase db reset --local > /tmp/supabase-reset.log 2>&1 || {
+          if timeout -k 30 600 supabase db reset --local > /tmp/supabase-reset.log 2>&1; then
+            :
+          else
+            status=$?
+            echo "Local database reset failed or timed out (status ${status})."
             cat /tmp/supabase-reset.log
             exit 1
-          }
+          fi
       - name: Lint database schema
         run: supabase db lint --local
       - name: Verify database security invariants
