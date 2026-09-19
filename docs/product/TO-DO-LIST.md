@@ -2,6 +2,12 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新核對（main 自動檢查已完成）
+
+- `origin/main` 與本機 `main` 現在都是 `4d2da7a12a6c290a77a6f7a5f3460076166353a8`；自動 CI `35466606215` 與 Browser Smoke `35466606217` 均已成功，沒有手動觸發。
+- 這只證明主線程式與瀏覽器回歸通過，不等於 staging 已更新。staging `/api/health` 仍是 `revision=07002d81be23`；最新社費匯出、活動取消 timeout boundary 尚未部署到 staging。
+- 工作樹仍只保留既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，未讀寫、未提交。
+
 權威來源：GitHub `Leojung0823/rotary-platform-v2` 的 `main`。本文件取代
 `/Users/leoj/Documents/Codex/2026-08-23/rotary-platform-to-do-list/TO-DO-LIST.md`
 的舊掃描結果；那份檔案屬於獨立 worktree，不是權威 repo 的版本。

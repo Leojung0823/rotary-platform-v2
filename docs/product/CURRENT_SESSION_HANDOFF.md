@@ -3,6 +3,12 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：main 自動檢查已完成
+
+- `main`／`origin/main` exact SHA 為 `4d2da7a12a6c290a77a6f7a5f3460076166353a8`；CI `35466606215` 與 Browser Smoke `35466606217` 均成功，這輪沒有手動觸發。
+- 這不代表 staging 已更新：staging health 仍為 `revision=07002d81be23`。下一個發布前置仍是更新 GitHub staging 的 `SUPABASE_ACCESS_TOKEN`，再以 exact SHA 重新 Go-Live。
+- 既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 仍不可加入提交。
+
 ## 2026-09-20 最新接力補充：社費報表 hosted 驗收範圍已補強
 
 - `c655d50` 已把受保護 management acceptance 的財務覆蓋補到可判定程度：空資料與部分收款資料的 CSV／Excel／PDF 下載會檢查內容型別、附件標頭、`no-store` 與檔案簽名；社員直接呼叫管理匯出 API 預期回 `403`。

@@ -2,6 +2,11 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新核對（main 自動檢查已完成）
+
+- `origin/main` 與本機 `main` 都是 `4d2da7a12a6c290a77a6f7a5f3460076166353a8`；自動 CI `35466606215`、Browser Smoke `35466606217` 均成功，沒有手動觸發。
+- 這是主線回歸證據，不是 staging 發布證據。staging 仍為 `revision=07002d81be23`，待 `SUPABASE_ACCESS_TOKEN` 修復後，才可部署最新社費匯出與活動取消 timeout boundary。
+
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
 ## 2026-09-20 最新補充（社費報表 hosted 驗收範圍已補強）
