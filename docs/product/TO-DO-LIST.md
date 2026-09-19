@@ -8,6 +8,21 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-20 最新補充（活動取消 hosted 核對與乾淨 staging 版本）
+
+- 權威主線為 `origin/main=07002d81be23140b581ce5b92d0b55046b249b15`；目前沒有 open PR。工作樹仍只保留既有、未追蹤的
+  `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪沒有讀寫或納入提交。
+- 新增 forward-only migration `20260920000100_event_cancellation_qr_index.sql`，替活動取消時依 `event_id` 撤銷仍有效的動態 QR
+  credential 建立 partial index；沒有改登入、權限、RLS、活動狀態規則或 production。
+- 本機 `npm run verify:db`、`npm run check:migrations`、`npm run check:db-verifications`、`git diff --check` 均成功；資料庫驗證仍只有既有 lint warnings。
+- Staging Release `35462618738`、Staging Go-Live `35462672034` 已用同一 exact SHA 成功；staging health 現在是
+  `revision=07002d81be23`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`；production 沒有修改。
+- 活動取消曾在 `35461215133`、`35462041541` 逾時。受保護診斷驗收 `35462472207` 在相同產品 runtime（只多測試 log）三項全部成功，記錄到取消 POST 有收到 `303`；因此不是固定的按鈕／路由錯誤，也不能把 partial index 宣稱為已證實的唯一根因。
+- 乾淨版本的 hosted acceptance `35462819114` 仍有兩個不穩定結果：管理頁一次出現 4px 橫向溢出，活動取消再次在 30 秒內未跳轉。這是目前仍需追的 hosted acceptance flakiness，不把活動管理標成完全結案；測試 log 不含 credential 或 request body。
+- 自動 CI `35462613423` 已成功；Browser Smoke `35462613524` 當時仍在執行，本輪沒有手動重跑，也不把未完成的 run 當成通過證據。
+
+本輪沒有把下列外部／真人項目誤標完成：E-03 LINE follow 正確身份配對、E-06 登入後 LCP／FCP／TTFB／INP、E-07 實機／M1、E-08 production 決策、E-10 停權／退社／外社負向矩陣、E-11 各社 OA／Rich Menu 外部設定，以及社費實際收款／核銷 hosted 驗收；E-09 recovery email 依產品決定暫緩。
+
 ## 2026-09-20 最新補充（Browser Smoke 逾時保護與社費唯讀驗收）
 
 - `c48f7f0` 已在 `.github/workflows/browser-smoke.yml` 為 `supabase start` 與 `supabase db reset --local` 加上 10 分鐘單步逾時，失敗時保留最近日誌；這只改善驗收工作流，不改產品 runtime、資料庫或 staging／production。

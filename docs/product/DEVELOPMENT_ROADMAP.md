@@ -4,6 +4,16 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-20 最新補充（活動取消 hosted flake 與 QR 撤銷查詢）
+
+- 最新主線與 staging runtime 是 `07002d81be23140b581ce5b92d0b55046b249b15`；Staging Release `35462618738`、Go-Live `35462672034` 成功，health 為
+  `status=ok`、`revision=07002d81be23`、`issues=[]`、`warnings=[]`；production 未修改，沒有 open PR。
+- 為活動取消觸發器補上 `20260920000100_event_cancellation_qr_index.sql`，只改善依活動撤銷有效動態 QR credential 的查詢路徑，不碰權限模型與資料規則。
+- 本機 `verify:db`、migration guard、verification manifest、diff check 通過。自動 CI `35462613423` 成功；Browser Smoke `35462613524` 尚未在本次核對時完成，不採用為通過證據。
+- 活動建立／發布／取消的 hosted 驗收出現間歇性問題：診斷版 `35462472207` 三項成功並看到取消 POST `303`，乾淨版 `35462819114` 又遇到取消 redirect 30 秒逾時，另有一次 4px 橫向溢出。這條應列為「需要可觀測性與穩定性修正」，不應靠放寬 timeout 宣稱完成。
+
+因此地圖的下一個工程子任務是：補取消 action 的 server-side timing／錯誤可見性與可安全重試邊界，完成一次乾淨 staging acceptance 後，才把活動管理 hosted acceptance 從 `[>]` 移到 `[x]`。外部主線仍依 E-03（LINE 真人配對）、E-06（登入後效能）、E-10（負向角色矩陣）排序；E-07、E-08、E-11 受實機／產品／LINE 外部條件限制，E-09 暫緩。
+
 ## 2026-09-20 最新補充（Browser Smoke 逾時保護與社費唯讀驗收）
 
 - `c48f7f0` 為 Browser Smoke 的本機 Supabase 啟動與 reset 加上單步逾時與失敗日誌，避免驗收工作流長時間卡住；不改產品 runtime、資料庫或 hosted 環境。
