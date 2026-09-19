@@ -14,6 +14,7 @@
 
 - 文件更新前現場核對的產品／staging exact SHA 為 `8f109d0fba579397a7f5e8d7d5a591771f09ab2a`；Staging Go-Live `35440209578` 成功，staging `/api/health` 回報 `revision=8f109d0fba57`、`status=ok`、`issues=[]`，production 沒有修改。本文件提交後 `main` 會再前進，最新主線請現場以 `git rev-parse origin/main` 核對。
 - Staging Management Acceptance `35440318825` 成功：無社籍執行秘書完成生日重跑、文件建立／上傳／編輯，以及活動建立／封面／發布／取消。這完成管理模式的 hosted 正向流程，但不等於社費、服務計劃的完整角色矩陣或 E-10 負向矩陣完成。
+- 本機針對性瀏覽器驗收補充通過：`officer-mode-1440` 9 passed／1 intentional skip，涵蓋社員／社務模式、跨社管理路徑拒絕、社費與 CSV／Excel／PDF 匯出及無社籍執行秘書；`interact-hub-1440`／`375` 共 4 passed；`line-oa-rich-menu-1440` 1 passed。這些只作本機回歸證據，不取代 staging 真人與各社 OA 驗收。
 - 已登入 staging 的唯讀抽查確認：LINE OA 管理頁最新推播為 `sent`、目前沒有額度提醒；社費管理頁可讀取 2026–27 年度與 CSV／Excel／PDF 匯出入口；社員「我的」頁有社費入口與代墊申請；服務計劃管理草稿不會出現在社員頁。未為測試硬打真實 429。
 - Chrome DevTools MCP 目前沒有 staging 登入 session，導向管理頁會回 `/login`；因此 E-06 登入後 LCP／FCP／TTFB／INP 仍是**未量測**。桌面 Chrome 只作畫面唯讀驗收，不把非 DevTools trace 的數字當效能證據。
 - 下一位代理先處理 E-03、E-05 的專項外部證據、E-06 可比效能數據與 E-10 負向矩陣；E-07、E-08、E-11 需要實機、產品決策或外部 LINE OA 設定，E-09 維持暫緩。E-05 不要為取得畫面而消耗正式 LINE 額度。
