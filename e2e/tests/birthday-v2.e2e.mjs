@@ -48,6 +48,15 @@ async function expectNoHorizontalOverflow(page) {
 }
 
 test.describe("生日祝福 V2 核心瀏覽器回歸", () => {
+  test("生日公開設定獨立顯示在會員中心", async ({ page }) => {
+    await login(page);
+    await page.goto(new URL("/me?mode=member", baseURL).toString());
+    await expect(page.getByRole("heading", { name: "生日公開設定", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "儲存這個社的生日設定" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "隱私設定", exact: true })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("同一作者同一天可送多則，生日年齡顯示且作者保持匿名", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "birthday-v2-1440", "This flow mutates shared local birthday fixtures.");
     test.setTimeout(45_000);
