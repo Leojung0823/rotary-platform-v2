@@ -183,6 +183,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
       await memberContext.close();
     }
 
+    await openManagementOverview(page);
     await page.getByTestId("management-card-birthday-collection").click();
     await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]{36}\/birthday-collection\?mode=management$/u);
     await expect(page.getByTestId("birthday-collection-management")).toBeVisible();
