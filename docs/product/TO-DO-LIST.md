@@ -7,7 +7,7 @@
 - `git fetch origin --prune` 後，`main` 與 `origin/main` 都是 exact SHA
   `e7e512d99606568520fefe48e17b55916f5e044b`；目前沒有 open PR。
 - 文件同步提交的自動 CI `35468519910` 與 Browser Smoke `35468519907` 均成功。
-  `0ddb8a0` 的 CI `35468492760` 已成功；其 Browser Smoke `35468492778` 在本次核對時仍執行中，不能先當成通過。
+  `0ddb8a0` 的 CI `35468492760` 與 Browser Smoke `35468492778` 也均成功。
 - staging `/api/health` 現場仍回報 `revision=07002d81be23`、`status=ok`、`issues=[]`；最新主線尚未部署。
   Staging Go-Live 的阻塞仍是 GitHub environment secret `SUPABASE_ACCESS_TOKEN` 無法授權 staging project
   `vmmzdautcsgknhyqrsto`，不是產品程式錯誤。production 沒有修改。

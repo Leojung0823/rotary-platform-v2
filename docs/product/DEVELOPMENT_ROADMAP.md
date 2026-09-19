@@ -7,7 +7,7 @@
 - `git fetch origin --prune` 後，`main`／`origin/main` exact SHA 都是
   `e7e512d99606568520fefe48e17b55916f5e044b`；目前沒有 open PR。
 - 文件同步的自動 CI `35468519910`、Browser Smoke `35468519907` 均成功；程式提交 `0ddb8a0` 的 CI
-  `35468492760` 已成功，但 Browser Smoke `35468492778` 在本次核對時仍執行中，不能當成完成證據。
+  `35468492760` 與 Browser Smoke `35468492778` 也均成功。
 - staging health 仍是 `revision=07002d81be23`、`status=ok`、`issues=[]`。最新主線未部署，因 GitHub staging
   `SUPABASE_ACCESS_TOKEN` 尚未取得 `vmmzdautcsgknhyqrsto` 的授權；production 沒有修改。
 - 因此下一個可執行順序仍是：先修復 staging 授權後，部署最新 exact SHA，再跑社費／生日設定／一般社員拒絕的受保護 hosted acceptance；

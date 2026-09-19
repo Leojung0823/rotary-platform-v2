@@ -7,8 +7,8 @@
 
 - `git fetch origin --prune` 後，`main`／`origin/main` 都是
   `e7e512d99606568520fefe48e17b55916f5e044b`；目前沒有 open PR。
-- 自動 CI `35468519910`、Browser Smoke `35468519907`（文件同步）均成功；`0ddb8a0` 的 CI `35468492760` 已成功，
-  但 Browser Smoke `35468492778` 在本次核對時仍 `in_progress`，不可當成通過。
+- 自動 CI `35468519910`、Browser Smoke `35468519907`（文件同步）均成功；`0ddb8a0` 的 CI `35468492760` 與
+  Browser Smoke `35468492778` 也均成功。
 - staging `/api/health` 仍是 `revision=07002d81be23`、`status=ok`、`issues=[]`。Go-Live 卡在
   GitHub environment 的 `SUPABASE_ACCESS_TOKEN` 對 staging project `vmmzdautcsgknhyqrsto` 授權失敗；production 未修改。
 - 既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 必須保留，不能加入提交。
