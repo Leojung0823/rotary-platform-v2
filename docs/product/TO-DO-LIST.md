@@ -8,6 +8,12 @@
 
 狀態：`[x]` 已完成　`[>]` 程式完成、等待外部驗收　`[!]` 需要產品決定　`[ ]` 尚未開發
 
+## 2026-09-20 最新補充（社費報表 hosted 驗收範圍已補強）
+
+- 程式／驗收工具提交為 `c655d50`：受保護的 staging management acceptance 現在會實際檢查空資料與已有部分收款資料的 CSV、Excel、PDF 三種匯出，包含 `attachment`、`no-store`、檔案格式與 CSV 內容；社員直接呼叫管理匯出 API 必須回 `403`。
+- 這補上報表／匯出的可執行驗收覆蓋，不代表 hosted 已通過。尚未在 staging 執行，因 GitHub staging 的 `SUPABASE_ACCESS_TOKEN` 仍無法連結 `vmmzdautcsgknhyqrsto`；目前 health revision 仍為 `07002d81be23`，社費／報表維持 `[>]`。
+- 本機完整檢查已通過：typecheck、lint（既有 1 個 warning）、Vitest `197` 檔／`1464` tests、build、`verify:db`、migration guard、verification manifest、`git diff --check`；沒有手動觸發 CI／Browser Smoke。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未讀寫、未提交。
+
 ## 2026-09-20 最新補充（社費 hosted 驗收流程已補上，尚未執行）
 
 - 最新主線已推到 `a0340310157a48c825019b104ea67689cbc08220`（社費驗收工具 commit 為 `0d529b0ddcecf5d3bab993b205e24158cc57465b`）；工作樹仍只保留既有未追蹤的

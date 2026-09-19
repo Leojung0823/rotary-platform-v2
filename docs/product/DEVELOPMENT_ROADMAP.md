@@ -4,6 +4,12 @@
 
 本文件是 Rotary Platform V2 接下來的產品開發順序與依賴關係。它補充 Epic #55「社員體驗與簽到 V2」，並把已完成的基礎工作、下一階段主線，以及新發現的產品與 UX 缺口放在同一張地圖上。
 
+## 2026-09-20 最新補充（社費報表 hosted 驗收範圍已補強）
+
+- `c655d50` 把社費報表的受保護 hosted acceptance 補完整：空資料與部分收款資料都會下載並檢查 CSV、Excel、PDF 的內容型別、附件標頭、`no-store` 與檔案簽名；社員直接請求管理匯出 API 必須回 `403`。
+- 這是驗收能力的完成，不是 staging 結果的完成。最新主線尚未重新部署，因 GitHub staging `SUPABASE_ACCESS_TOKEN` 仍授權失敗；憑證修復後要以 exact SHA 重新 Go-Live，再執行 management acceptance。
+- 本機 typecheck、lint（既有 warning）、197 檔／1464 tests、build、`verify:db`、migration guard、verification manifest 與 diff check 均通過；沒有手動跑 CI／Browser Smoke。
+
 ## 2026-09-20 最新補充（社費 hosted 驗收流程已補上，尚未執行）
 
 - 最新主線目前為 `a0340310157a48c825019b104ea67689cbc08220`（驗收工具 commit 為 `0d529b0ddcecf5d3bab993b205e24158cc57465b`）。新增的是 staging acceptance 覆蓋，不是產品 schema 或 hosted 資料：獨立測試年度、部分收款、代墊、核銷、社員投影與可逆回收都由受保護 browser flow 驗證。

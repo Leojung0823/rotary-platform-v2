@@ -3,6 +3,12 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：社費報表 hosted 驗收範圍已補強
+
+- `c655d50` 已把受保護 management acceptance 的財務覆蓋補到可判定程度：空資料與部分收款資料的 CSV／Excel／PDF 下載會檢查內容型別、附件標頭、`no-store` 與檔案簽名；社員直接呼叫管理匯出 API 預期回 `403`。
+- 這只完成驗收工具與本機證據，還沒有 hosted 通過證據。GitHub staging `SUPABASE_ACCESS_TOKEN` 對 Supabase project `vmmzdautcsgknhyqrsto` 仍授權失敗，staging runtime 仍是 `07002d81be23`；憑證更新後再用最新 exact SHA Go-Live，然後執行受保護 management acceptance。
+- 本機完整檢查：typecheck、lint（既有 `readdirSync` warning）、Vitest `197` 檔／`1464` tests、build、`verify:db`、migration guard、verification manifest、`git diff --check` 均通過；沒有手動觸發 CI／Browser Smoke。未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 仍未納入。
+
 ## 2026-09-20 最新接力補充：社費 hosted 驗收工具已補齊
 
 - 最新主線為 `a0340310157a48c825019b104ea67689cbc08220`（驗收工具 commit 為 `0d529b0ddcecf5d3bab993b205e24158cc57465b`）；既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 不可加入提交。
