@@ -3,14 +3,17 @@ import { isPublicHostname } from "../../src/lib/public-hostname.mjs";
 
 const operatorEmail = process.env.STAGING_TEST_OPERATOR_EMAIL;
 const operatorPassword = process.env.STAGING_TEST_OPERATOR_PASSWORD;
+const memberEmail = process.env.STAGING_TEST_MEMBER_EMAIL;
+const memberPassword = process.env.STAGING_TEST_MEMBER_PASSWORD;
 const expectedClubName = process.env.STAGING_EXPECTED_CLUB_NAME;
 const expectedSha = process.env.E2E_EXPECTED_SHA;
 const baseURL = process.env.E2E_BASE_URL;
 const backToMemberName = /^(回社員模式|返回)$/u;
 
 function requireStagingConfiguration() {
-  if (!operatorEmail || !operatorPassword || !expectedClubName || !expectedSha || !baseURL) {
-    throw new Error("Protected staging management acceptance configuration is incomplete.");
+  if (!operatorEmail || !operatorPassword || !memberEmail || !memberPassword
+    || !expectedClubName || !expectedSha || !baseURL) {
+    throw new Error("Protected staging management acceptance test identities are incomplete.");
   }
 
   const parsed = new URL(baseURL);
@@ -36,11 +39,11 @@ async function expectNoHorizontalOverflow(page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
-async function login(page) {
-  await page.goto("/login");
+async function login(page, email, password) {
+  await page.goto(new URL("/login", baseURL).toString());
   await expect(page.getByRole("heading", { level: 1, name: "歡迎回來" })).toBeVisible();
-  await page.getByLabel("電子郵件").fill(operatorEmail);
-  await page.getByLabel("密碼").fill(operatorPassword);
+  await page.getByLabel("電子郵件").fill(email);
+  await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/dashboard$/u);
 }
@@ -100,7 +103,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     requireStagingConfiguration();
   });
 
-  test("從管理總覽完成生日重跑與文件建立、上傳、編輯", async ({ page, request }) => {
+  test("從管理總覽完成生日重跑、服務計劃與文件驗收", async ({ page, request, browser }) => {
     test.setTimeout(150_000);
 
     const healthResponse = await request.get("/api/health", {
@@ -115,8 +118,70 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     expect(health.checks?.database).toBe(true);
     expect(health.issues).toEqual([]);
 
-    await login(page);
+    await login(page, operatorEmail, operatorPassword);
     await openManagementOverview(page);
+
+    const servicePlanYear = await chooseUnusedYear(page);
+    const servicePlanTitle = `staging 服務計劃驗收 ${Date.now()}`;
+    const servicePlanCard = page.getByTestId("management-card-service-plan");
+    await servicePlanCard.click();
+    await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]{36}\/service-plan\?mode=management$/u);
+    const servicePlanUrl = new URL(page.url());
+    const servicePlanClubId = servicePlanUrl.pathname.split("/")[2];
+    expect(servicePlanClubId).toMatch(/^[0-9a-f-]{36}$/u);
+    await page.goto(new URL(
+      `/clubs/${servicePlanClubId}/service-plan?mode=management&year=${servicePlanYear}`,
+      baseURL,
+    ).toString());
+    await expect(page.getByRole("heading", { name: "年度服務計劃", level: 1 })).toBeVisible();
+
+    const serviceCategories = ["社員服務", "職業服務", "社區服務", "國際服務"];
+    await page.getByLabel("計劃標題").fill(servicePlanTitle);
+    await page.getByLabel("年度總覽").fill("staging 驗收：草稿只有管理者可見，發布後才給社員閱讀。");
+    await page.locator('textarea[name="memberInvitation"]').fill("staging 驗收：社員可在發布後查看四大服務面向。");
+    for (let index = 0; index < serviceCategories.length; index += 1) {
+      await page.getByLabel("年度目標").nth(index).fill(`${serviceCategories[index]}年度目標`);
+      await page.getByLabel("執行活動").nth(index).fill(`${serviceCategories[index]}執行活動`);
+      await page.getByLabel("最新成果").nth(index).fill(`${serviceCategories[index]}最新成果`);
+      await page.locator('textarea[name$="_memberParticipation"]').nth(index).fill(`${serviceCategories[index]}社員參與`);
+    }
+
+    await page.getByRole("button", { name: "儲存草稿" }).click();
+    await expect(page).toHaveURL(/success=saved/u, { timeout: 30_000 });
+
+    const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const memberPage = await memberContext.newPage();
+    try {
+      await login(memberPage, memberEmail, memberPassword);
+      await memberPage.goto(new URL(`/club-affairs?mode=member&year=${servicePlanYear}`, baseURL).toString());
+      await expect(memberPage.getByText("本年度的服務計劃尚未發布。", { exact: true })).toBeVisible();
+      await expect(memberPage.getByText(servicePlanTitle, { exact: true })).toHaveCount(0);
+
+      await page.goto(new URL(
+        `/clubs/${servicePlanClubId}/service-plan?mode=management&year=${servicePlanYear}`,
+        baseURL,
+      ).toString());
+      await page.getByRole("button", { name: "發布給社員" }).click();
+      await expect(page).toHaveURL(/success=saved/u, { timeout: 30_000 });
+
+      await memberPage.goto(new URL(`/club-affairs?mode=member&year=${servicePlanYear}`, baseURL).toString());
+      await expect(memberPage.getByText(servicePlanTitle, { exact: true })).toBeVisible();
+      for (const category of serviceCategories) {
+        await expect(memberPage.getByRole("heading", { name: category, exact: true })).toBeVisible();
+      }
+
+      await page.goto(new URL(
+        `/clubs/${servicePlanClubId}/service-plan?mode=management&year=${servicePlanYear}`,
+        baseURL,
+      ).toString());
+      await page.getByRole("button", { name: "儲存草稿" }).click();
+      await expect(page).toHaveURL(/success=saved/u, { timeout: 30_000 });
+      await memberPage.goto(new URL(`/club-affairs?mode=member&year=${servicePlanYear}`, baseURL).toString());
+      await expect(memberPage.getByText("本年度的服務計劃尚未發布。", { exact: true })).toBeVisible();
+      await expect(memberPage.getByText(servicePlanTitle, { exact: true })).toHaveCount(0);
+    } finally {
+      await memberContext.close();
+    }
 
     await page.getByTestId("management-card-birthday-collection").click();
     await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]{36}\/birthday-collection\?mode=management$/u);

@@ -5,6 +5,10 @@
 
 ## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
 
+- 本輪補強受保護的 `staging-management-acceptance`：新增獨立的 `STAGING_TEST_MEMBER_EMAIL/PASSWORD`，以兩個測試身份驗證服務計劃「草稿社員不可見 → 發布後四類內容可見 → 再存草稿後消失」。輸入驗證會要求兩個保留測試帳號不同，且不會印出 credential。
+- 這是驗收工具與 workflow 變更，不改產品 runtime、資料庫、RLS、權限或外部 OA；尚未執行 hosted run，必須在該 exact SHA 已部署 staging 後才可手動驗收。
+- 本機 typecheck、lint（既有 1 個 warning）、Vitest `196` 檔／`1458` tests、build、verify:db、migration guard、verification manifest、diff check 均通過。上一個主線自動 Browser Smoke `35454239162` 已成功。
+
 - commit `08c7dbe` 新增服務計劃本機 UI 驗收：管理者建立草稿後，普通社員看不到標題；管理者發布後，普通社員看到標題與四大服務面向。定向 `officer-mode-1440` 結果 `1 passed`。
 - 本機完整 `verify:db`、superadmin／role-shell fixture bootstrap、typecheck、lint（既有 1 個 warning）、Vitest `196` 檔／`1456` tests、build、migration guard、verification manifest 均通過。沒有手動觸發 CI／Browser Smoke。
 - fixture 另修正固定 quota log 重跑時不應 UPDATE append-only `line_push_logs` 的問題；沒有新增 migration、沒有改 RLS 或權限。

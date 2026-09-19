@@ -10,6 +10,10 @@
 
 ## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
 
+- 本輪補強受保護的 `staging-management-acceptance`：加入獨立的 staging 一般社員測試帳號，實際驗證服務計劃「草稿不可見、發布後四類內容可見、撤回成草稿後再次消失」。兩個測試身份必須不同且只能使用保留測試帳號；沒有把 secret 寫入 repo。
+- 這個 hosted acceptance 尚未執行；需先把本輪 exact SHA 部署到 staging，再用 `TEST-STAGING-MANAGEMENT` 手動 workflow 驗證。它不改產品 runtime、資料庫、RLS、權限或外部 OA。
+- 本機完整測試結果：Vitest `196` 檔／`1458` tests、typecheck、lint（既有 1 個 warning）、build、verify:db、migration guard、verification manifest、diff check 均通過；Browser Smoke `35454239162` 已成功。
+
 - 本輪 commit `08c7dbe` 新增 `officer-mode-1440` 服務計劃 UI 驗收，證明同一份資料先存草稿時一般社員看不到，發布後才看得到標題與四大服務面向；定向 E2E 結果為 `1 passed`。
 - 本機完整 `verify:db` 已通過，並依正確順序重建 superadmin、role-shell fixture 與 local flags；typecheck、lint（既有 1 個 warning）、Vitest `196` 檔／`1456` tests、build、migration guard、verification manifest、diff check 均通過。
 - `scripts/bootstrap-role-shell-browser-fixtures.mjs` 另修正固定 quota fixture 的重跑邏輯：既有 `line_push_logs` 測試列直接沿用，不向 append-only 表要求 UPDATE 權限；沒有新增 migration、沒有放寬 RLS／權限。

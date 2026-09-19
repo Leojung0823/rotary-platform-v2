@@ -16,6 +16,8 @@ function validInput() {
     STAGING_BASE_URL: "https://staging.example.com",
     STAGING_TEST_OPERATOR_EMAIL: "staging-operator@example.test",
     STAGING_TEST_OPERATOR_PASSWORD: "Rotary-Staging-Operator-2026!",
+    STAGING_TEST_MEMBER_EMAIL: "staging-member@example.test",
+    STAGING_TEST_MEMBER_PASSWORD: "Rotary-Staging-Member-2026!",
     STAGING_EXPECTED_CLUB_NAME: "Rotary Platform Staging Test Club",
   };
 }
@@ -30,16 +32,20 @@ describe("staging management acceptance input", () => {
     expect(result.errors).toEqual([]);
   });
 
-  it("rejects non-test operator identities and invalid credentials", () => {
+  it("rejects non-test identities and invalid credentials", () => {
     const result = inspectStagingManagementAcceptanceInput({
       ...validInput(),
       STAGING_TEST_OPERATOR_EMAIL: "real-person@gmail.com",
       STAGING_TEST_OPERATOR_PASSWORD: "short",
+      STAGING_TEST_MEMBER_EMAIL: "real-member@gmail.com",
+      STAGING_TEST_MEMBER_PASSWORD: "short",
       STAGING_EXPECTED_CLUB_NAME: "Real Rotary Club",
     });
     expect(result.errors).toEqual(expect.arrayContaining([
       "STAGING_TEST_OPERATOR_EMAIL_INVALID",
       "STAGING_TEST_OPERATOR_PASSWORD_INVALID",
+      "STAGING_TEST_MEMBER_EMAIL_INVALID",
+      "STAGING_TEST_MEMBER_PASSWORD_INVALID",
       "STAGING_EXPECTED_CLUB_NAME_INVALID",
     ]));
   });
@@ -58,6 +64,14 @@ describe("staging management acceptance input", () => {
       "STAGING_EXPECTED_SHA_MISMATCH",
       "STAGING_MANAGEMENT_ACCEPTANCE_CONFIRMATION_MISMATCH",
     ]));
+  });
+
+  it("does not accept one account for both operator and member roles", () => {
+    const result = inspectStagingManagementAcceptanceInput({
+      ...validInput(),
+      STAGING_TEST_MEMBER_EMAIL: validInput().STAGING_TEST_OPERATOR_EMAIL,
+    });
+    expect(result.errors).toContain("STAGING_TEST_IDENTITIES_MUST_DIFFER");
   });
 
   it("requires a public credential-free HTTPS origin", () => {
@@ -92,9 +106,11 @@ describe("staging management acceptance workflow safety", () => {
     expect(workflow).toContain("TEST-STAGING-MANAGEMENT");
   });
 
-  it("passes only staging operator credentials to the browser step", () => {
+  it("passes only staging test identities to the browser step", () => {
     expect(workflow).toContain("STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}");
     expect(workflow).toContain("STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}");
+    expect(workflow).toContain("STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}");
+    expect(workflow).toContain("STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}");
     expect(workflow).toContain("STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}");
     expect(workflow).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(workflow).not.toContain("SUPABASE_ACCESS_TOKEN");
@@ -113,5 +129,13 @@ describe("staging management acceptance workflow safety", () => {
     expect(stagingTest).toContain('name: "handover-acceptance.txt"');
     expect(stagingTest).not.toContain("confirmArchiveHandoverAction");
     expect(stagingTest).toContain('expect(health.issues).toEqual([])');
+  });
+
+  it("covers service-plan draft isolation, publish visibility, and retraction", () => {
+    expect(stagingTest).toContain('STAGING_TEST_MEMBER_EMAIL');
+    expect(stagingTest).toContain('本年度的服務計劃尚未發布。');
+    expect(stagingTest).toContain('發布給社員');
+    expect(stagingTest).toContain('社員服務');
+    expect(stagingTest).toContain('儲存草稿');
   });
 });

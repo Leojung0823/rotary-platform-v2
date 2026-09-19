@@ -52,10 +52,12 @@ jobs:
           cache: npm
           cache-dependency-path: e2e/package-lock.json
 
-      - name: Validate manual acceptance inputs and protected operator identity
+      - name: Validate manual acceptance inputs and protected test identities
         env:
           STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
           STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+          STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+          STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
         run: node scripts/verify-staging-management-acceptance-inputs.mjs
 
       - name: Install isolated browser test dependencies
@@ -84,6 +86,8 @@ jobs:
         env:
           STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
           STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+          STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+          STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
         run: npm --prefix e2e run test:staging-management
 
       - name: Record successful staging management acceptance
@@ -95,6 +99,7 @@ jobs:
             echo "- Commit: \`$GITHUB_SHA\`"
             echo "- Health environment and 12-character deployed revision matched."
             echo "- A staging-only non-member operator reached management mode."
+            echo "- A separate staging member could not see the service-plan draft, saw it after publish, and lost it after retraction."
             echo "- Birthday rerun and disposable archive create/upload/edit passed."
             echo "- Disposable event create/cover upload/publish/cancel passed."
             echo "- No screenshots, video, trace or HTML report were retained."

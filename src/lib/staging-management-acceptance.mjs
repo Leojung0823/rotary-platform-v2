@@ -57,6 +57,8 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
   const siteUrl = validateHttpsOrigin(errors, text(input.STAGING_BASE_URL));
   const operatorEmail = text(input.STAGING_TEST_OPERATOR_EMAIL).toLowerCase();
   const operatorPassword = String(input.STAGING_TEST_OPERATOR_PASSWORD ?? "");
+  const memberEmail = text(input.STAGING_TEST_MEMBER_EMAIL).toLowerCase();
+  const memberPassword = String(input.STAGING_TEST_MEMBER_PASSWORD ?? "");
   const expectedClubName = text(input.STAGING_EXPECTED_CLUB_NAME);
 
   if (eventName !== "workflow_dispatch") errors.push("STAGING_MANAGEMENT_ACCEPTANCE_MANUAL_ONLY");
@@ -78,6 +80,19 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
     || /[\r\n]/u.test(operatorPassword)) {
     errors.push("STAGING_TEST_OPERATOR_PASSWORD_INVALID");
   }
+  if (!EMAIL_PATTERN.test(memberEmail)
+    || memberEmail.length > 320
+    || !isClearlyTestEmail(memberEmail)) {
+    errors.push("STAGING_TEST_MEMBER_EMAIL_INVALID");
+  }
+  if (memberPassword.length < 12
+    || memberPassword.length > 256
+    || /[\r\n]/u.test(memberPassword)) {
+    errors.push("STAGING_TEST_MEMBER_PASSWORD_INVALID");
+  }
+  if (operatorEmail && memberEmail && operatorEmail === memberEmail) {
+    errors.push("STAGING_TEST_IDENTITIES_MUST_DIFFER");
+  }
   if (!expectedClubName
     || expectedClubName.length > 160
     || !TEST_MARKER_PATTERN.test(expectedClubName)) {
@@ -92,7 +107,11 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
     siteOrigin: siteUrl?.origin ?? null,
     credentialsConfigured: EMAIL_PATTERN.test(operatorEmail)
       && isClearlyTestEmail(operatorEmail)
-      && operatorPassword.length >= 12,
+      && operatorPassword.length >= 12
+      && EMAIL_PATTERN.test(memberEmail)
+      && isClearlyTestEmail(memberEmail)
+      && memberPassword.length >= 12
+      && operatorEmail !== memberEmail,
     expectedClubConfigured: Boolean(expectedClubName),
     errors,
   };

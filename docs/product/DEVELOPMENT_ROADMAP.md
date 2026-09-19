@@ -6,6 +6,9 @@
 
 ## 2026-09-20 最新核對（服務計劃本機發布邊界已補驗）
 
+- 另補上受保護的 hosted acceptance 雙身份流程：服務計劃草稿由管理者建立後，一般社員不得看到；發布後要看到四類服務內容；重新存成草稿後又不得看到。驗收 workflow 會拒絕相同帳號、非保留測試信箱與不符合條件的秘密值；目前尚未在 staging 執行。
+- 本輪只改 workflow、E2E 驗收與其輸入安全測試，沒有改產品 runtime、資料庫、RLS 或外部 OA。Vitest `196` 檔／`1458` tests、typecheck、lint（既有 warning）、build、verify:db、migration guard、verification manifest 均通過；Browser Smoke `35454239162` 已成功。
+
 - 本輪 commit `08c7dbe` 新增 `officer-mode-1440` 的服務計劃 UI 驗收：社務管理者建立草稿後，一般社員看不到標題且只看到「本年度的服務計劃尚未發布」；管理者發布後，一般社員才看到標題與社員服務、職業服務、社區服務、國際服務四類內容。
 - 本機先完成完整 `verify:db`，再依序重建 superadmin、啟用 role-shell fixture、建立瀏覽器 fixture；定向 E2E `a service-plan manager keeps drafts private until publishing` 以 1 passed 通過。這是本機角色／發布隔離證據，不等於 staging 真人發布驗收。
 - 同時修正 `scripts/bootstrap-role-shell-browser-fixtures.mjs` 的 quota fixture 重跑問題：`line_push_logs` 對 service role 是 append-only，固定測試列已存在時直接沿用，不嘗試 UPDATE，也沒有放寬資料表權限。
