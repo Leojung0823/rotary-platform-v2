@@ -74,6 +74,24 @@ Go-Live project identity 驗證會拒絕缺少 inventory、格式錯誤或任何
 
 不要把上述 secret 改成 repository variable，也不要把任何 secret 值放入 `.env.example`。
 
+### 2.1 輪替 `SUPABASE_ACCESS_TOKEN`
+
+若 `Staging Go-Live` 在 `supabase link` 回報 access token 無法授權 staging project，先在已登入 Supabase CLI
+的管理者電腦重新同步 GitHub `staging` environment secret。macOS 若使用 Supabase CLI 的 Keychain 登入，可用：
+
+```bash
+printf '%s' "$(security find-generic-password -a supabase -s 'Supabase CLI' -w)" | \
+  gh secret set SUPABASE_ACCESS_TOKEN \
+    --repo Leojung0823/rotary-platform-v2 \
+    --env staging
+```
+
+這個指令不會把 token 印到畫面；若 macOS 要求 Keychain 授權，必須在可見終端機允許。若本機沒有有效的 Supabase CLI
+登入，應先在 Supabase Dashboard／CLI 建立新的管理 access token，再以同樣的 stdin 方式設定，**不要把 token 貼到聊天、
+PR、workflow input 或 shell history**。只用 `gh secret list --env staging` 檢查 secret 的名稱／更新時間，不讀取或輸出值。
+
+Secret 更新後，必須針對當時最新的 `main` SHA 重新執行 `Staging Release` plan；不要沿用 secret 更新前或較舊 SHA 的 plan run。
+
 ## 3.1 建立 GitHub `birthday-scheduler` environment
 
 生日每日排程不能使用需要人工核准的 `staging` environment，否則 GitHub schedule 會在建立 job
