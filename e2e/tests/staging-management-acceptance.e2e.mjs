@@ -335,4 +335,41 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await expect(eventCard.getByRole("button", { name: "取消活動" })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   });
+
+  test("社費管理頁與社員頁維持角色邊界", async ({ page, browser }) => {
+    test.setTimeout(90_000);
+
+    await login(page, operatorEmail, operatorPassword);
+    await openManagementOverview(page);
+
+    const duesCard = page.getByTestId("management-card-dues-finance");
+    await expect(duesCard).toBeVisible();
+    await duesCard.click();
+    await expect(page).toHaveURL(/\/clubs\/[0-9a-f-]{36}\/dues\?mode=management$/u);
+    const duesUrl = new URL(page.url());
+    const clubId = duesUrl.pathname.split("/")[2];
+    expect(clubId).toMatch(/^[0-9a-f-]{36}$/u);
+    await expect(page.getByRole("heading", { name: "社費與核銷" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "收款名單" })).toBeVisible();
+    for (const label of ["下載 CSV", "下載 Excel", "下載 PDF"]) {
+      await expect(page.getByRole("link", { name: label })).toBeVisible();
+    }
+
+    const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const memberPage = await memberContext.newPage();
+    try {
+      await login(memberPage, memberEmail, memberPassword);
+      await memberPage.goto(new URL(`/dues?clubId=${clubId}&mode=member`, baseURL).toString());
+      await expect(memberPage.getByRole("heading", { name: "我的社費" })).toBeVisible();
+      await expect(memberPage.getByRole("heading", { name: "應收與收款" })).toBeVisible();
+      await expect(memberPage.getByRole("heading", { name: "社費與核銷" })).toHaveCount(0);
+      await expect(memberPage.getByRole("heading", { name: "收款名單" })).toHaveCount(0);
+      await expect(memberPage.getByRole("button", { name: "送出代墊申請" })).toBeVisible();
+
+      await memberPage.goto(new URL(`/clubs/${clubId}/dues?mode=management`, baseURL).toString());
+      await expect(memberPage).toHaveURL(/\/access-denied(?:\?|$)/u);
+    } finally {
+      await memberContext.close();
+    }
+  });
 });
