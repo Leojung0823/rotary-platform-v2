@@ -3,10 +3,10 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-20 最新接力補充：`e7e512d` 與 staging 發布阻塞
+## 2026-09-20 最新接力補充：`351e88a` 與 staging 發布阻塞
 
 - `git fetch origin --prune` 後，`main`／`origin/main` 都是
-  `e7e512d99606568520fefe48e17b55916f5e044b`；目前沒有 open PR。
+  `351e88a62227a2a3c6ad2d82796a7c43ce367edb`；目前沒有 open PR。
 - 自動 CI `35468519910`、Browser Smoke `35468519907`（文件同步）均成功；`0ddb8a0` 的 CI `35468492760` 與
   Browser Smoke `35468492778` 也均成功。
 - staging `/api/health` 仍是 `revision=07002d81be23`、`status=ok`、`issues=[]`。Go-Live 卡在
