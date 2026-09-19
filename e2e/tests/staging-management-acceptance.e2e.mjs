@@ -251,7 +251,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
   test("從管理總覽完成活動建立、封面上傳、發布與取消", async ({ page }) => {
     test.setTimeout(180_000);
 
-    await login(page);
+    await login(page, operatorEmail, operatorPassword);
     await openManagementOverview(page);
 
     // Activities are a first-level management destination, not a low-frequency
