@@ -2,6 +2,14 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新現場結論（`84a1670`；E-10 已完成）
+
+- `main`／`origin/main` exact SHA 為 `84a16708388d50f91754212d8d76e34bb2c193a3`；沒有新增 migration，也沒有修改 production。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留且未納入。
+- 今日修正社員管理四個深連結入口：社員列表、社員明細、封存、新增都在伺服器端先檢查目標社的 `member.manage`，無權限直接 `/access-denied`，不再渲染空白但看似成功的管理頁。
+- 本機：typecheck、lint（既有 warning）、Vitest `199` 檔／`1477` tests、`verify:db`、migration guard、77 份 verification manifest、`git diff --check` 通過。
+- Staging Release `35500632523`、Go-Live `35500736758` 成功；E-10 負向矩陣 `35500891585` 成功。停權／退社帳號無法登入，外社執行秘書無法開啟目標社社員管理頁。E-10 由 `[>]` 改為 `[x]`。
+- 目前真正未完成：E-03 follow 真人身份核對、E-06 登入後 LCP／FCP／TTFB／INP（未量測）、E-07 真實手機／M1、E-08 production 發布決策、E-11 各社 OA／Rich Menu 外部設定與手機驗證，以及社費實際收款／核銷的額外角色矩陣；E-09 暫緩。
+
 ## 2026-09-20 最新工程進度（`1a977d1`；E-10 provisioning 入口已完成）
 
 - `main`／`origin/main` exact SHA 為 `1a977d1`；本輪新增 staging-only 的負向角色身份 provisioning：`.github/workflows/provision-staging-negative-role-identities.yml`、`scripts/provision-staging-negative-role-identities.mjs` 與 `src/lib/staging-negative-role-provisioning.mjs`。
@@ -9,7 +17,7 @@
 - GitHub `staging` environment 的三組測試 email／password secrets 已建立，值沒有印出；workflow 仍須人工輸入三個確認字串後才會執行。E-10 目前是「provisioning 入口完成、等待 hosted 執行」，不是結案。
 - 本機驗證：Vitest `198` 檔／`1475` tests、typecheck、lint（只有既有 `src/lib/in-place-repairs.test.ts` warning）、build、`verify:db`、migration guard、verification manifest（77 SQL）與 `git diff --check` 均通過；資料庫 lint 仍只有既有 warning。
 - staging 產品 runtime 仍是 `e57d4ff02ac3`，本輪只推送驗收工具，沒有產品部署；既有 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未追蹤檔保留且未納入。
-- 尚未完成：E-03 LINE follow 真人身份核對、E-06 登入後 LCP／FCP／TTFB／INP（目前未量測）、E-07 真實手機／M1、E-08 production 發布決策、E-10 hosted 負向角色矩陣、E-11 各社 OA／Rich Menu 外部設定與手機驗證；E-09 recovery email 依產品決定暫緩。
+- 尚未完成：E-03 LINE follow 真人身份核對、E-06 登入後 LCP／FCP／TTFB／INP（目前未量測）、E-07 真實手機／M1、E-08 production 發布決策、E-11 各社 OA／Rich Menu 外部設定與手機驗證，以及社費實際收款／核銷的額外角色矩陣；E-10 已完成，E-09 recovery email 依產品決定暫緩。
 
 ## 2026-09-20 今日收尾核對（`e57d4ff`）
 
@@ -728,7 +736,11 @@ production 沒有修改。
 - **重啟條件**：production 上線前，或密碼登入比例上升／社員回報重設失敗。
 - **重啟後驗收**：設定 custom SMTP，完成「收到新信 → 點信 → 確認 → 更新密碼 → 重新登入」真人流程；不可用 Mailpit 代替。
 
-### E-10 雙重社籍／跨社執行秘書真人驗收 `[>]`
+### E-10 雙重社籍／跨社執行秘書真人驗收 `[x]`
+
+- **2026-09-20 已結案**：`Staging Management Acceptance 35500891585` 以 exact SHA `84a1670` 成功。停權社員、退社社員登入均被導向 `/access-denied`；外社執行秘書直接開啟目標社的社員管理頁也被導向 `/access-denied`。
+- 同一修正同時保護社員列表、社員明細、封存社員與新增社員四個管理入口；沒有改資料庫結構、RLS 或既有 mutation 權限。
+- 這次結果只結案 E-10 所列的 staging 負向角色與跨社管理頁邊界；E-03 真人 follow 配對、E-06 效能、E-07 實機／M1、E-11 各社 OA／Rich Menu 仍各自依原待辦處理。
 
 - **目前證據**：程式與資料庫規則已在 `main`／staging；同一個人可有多社有效社籍，也可同時擔任執行秘書，且社籍本身不會自動變成管理權限。
 - **2026-09-16 正向 staging 驗收**：同一個已登入帳號在社員模式切換 `PANCHIAO-ELITE` 與 `HAPPY`，
@@ -1154,7 +1166,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 1. **E-01：Flex staging 發布與真人收訊** `[x]`：Plan、Go-Live、staging 旗標啟用、三種卡片模板真人收訊與 `line_push_logs` 的 `sent`／provider request id 均已完成，2026-09-12 結案。
 2. **E-02：生日邀請 LINE 實際送達** `[x]`：2026-09-12 完成。`PANCHIAO-ELITE` 的邀請實際送達 `Michael` 的 LINE，重跑 `jobCount=0` 不重送；負向情境（取消追蹤、關閉通知）未另做對照測試。
 3. **E-03：follow 自動配對真人驗收** `[>]`：2026-09-14 暫緩解除——公開加入連結帶來真實流量，audit log 已有 `line_oa.auto_paired`。仍缺的是「配對到的是正確的人」這一半，需要人核對姓名；負向情境（多社／外社／停權）也未驗。
-4. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：確認社別資料隔離、模式切換與管理權限不越權。
+4. **E-10：雙重社籍與跨社執行秘書驗收** `[x]`：`35500891585` 已完成 staging 負向矩陣；停權／退社帳號登入被拒，外社執行秘書不能開啟目標社社員管理頁。
 5. **E-06：登入後管理頁效能量測** `[>]`：社員首頁 `36f32f8` 已用 `next/image` 修正 hosted 重複 preload，staging DOM 已確認圖片 1 張／preload 1 個；
    仍要在相同 runtime／快取條件下補齊社員首頁與管理頁的 LCP、FCP、TTFB、INP，再拆管理頁文件等待與 render pipeline。
 6. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題。

@@ -3,13 +3,30 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-20 最新接力結論（`1a977d1`；E-10 provisioning 入口已完成）
+## 2026-09-20 最新接力結論（`84a1670`；E-10 負向矩陣已完成）
+
+- 權威 `main`／`origin/main` exact SHA 為 `84a16708388d50f91754212d8d76e34bb2c193a3`；Staging Go-Live `35500736758` 已成功部署此 SHA，staging hosted member acceptance 與 HTTPS smoke 均通過。
+- 今日修正 `src/lib/club-permissions.server.ts` 與四個社員管理路由：社員列表、社員明細、封存、新增在渲染前要求目標社 `member.manage`，跨社或無管理權直接 `/access-denied`。新增管理路由邊界測試；沒有 migration、沒有改 RLS／資料庫權限、沒有碰 production。
+- 本機 typecheck、lint（只有既有 warning）、Vitest `199`／`1477`、`verify:db`、migration guard、77 份 verification manifest、`git diff --check` 通過。
+- E-10 `Staging Management Acceptance 35500891585` 已成功：停權社員、退社社員登入被拒；外社執行秘書開啟目標社社員管理頁被拒。E-10 可以標結案。
+- 工作樹仍有使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，不可加入提交。
+
+### 目前還沒完成
+
+- E-03：LINE follow 自動配對的真人姓名／正確 person 核對，以及多社／外社／停權負向真人證據。
+- E-06：登入後同一 runtime／同一快取條件的 LCP、FCP、TTFB、INP；目前未量測。
+- E-07：真實手機／M1 與五位使用者測試。
+- E-08：production 發布決策；本輪沒有修改 production。
+- E-11：各社 LINE OA／Rich Menu 外部設定與手機驗收。
+- 社費：已有 staging 管理流程，但實際收款／核銷的額外角色矩陣仍需另行驗收；E-09 recovery email 維持暫緩。
+
+## 2026-09-20 歷史接力紀錄（`1a977d1`；後續已完成 E-10）
 
 - `main`／`origin/main` exact SHA 為 `1a977d1`。新增 `.github/workflows/provision-staging-negative-role-identities.yml` 與對應 provisioning 模組，只能對 staging 建立三個保留的負向角色測試身份；不新增 migration、不改權限、不部署產品、不碰 production。
 - GitHub staging environment 已設定三組測試身份 secrets，密碼值沒有輸出。workflow 需要人工輸入 `PROVISION-STAGING-NEGATIVE-ROLES`、`BACKUP-READY`、`STAGING-PROJECT-VERIFIED` 才會執行；執行後才可跑 management acceptance 的 `expect_negative_roles=true`。
-- 本機：Vitest `198`／`1475`、typecheck、lint（既有 warning）、build、`verify:db`、migration guard、77 份 verification manifest、diff check 通過。E-10 目前仍是「等待 hosted 執行」，不是已結案。
+- 本機：Vitest `198`／`1475`、typecheck、lint（既有 warning）、build、`verify:db`、migration guard、77 份 verification manifest、diff check 通過。當時 E-10 尚在等待 hosted 執行；後續結果以文件最上方 `84a1670` 最新接力結論為準。
 - staging 產品 runtime 本輪沒有改動，仍是 `e57d4ff02ac3`。既有未追蹤 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留，不能加入提交。
-- 尚未結案仍包括：E-03 LINE follow 真人身份核對、E-06 登入後效能數字（未量測）、E-07 實機／M1、E-08 production 決策、E-10 hosted 負向角色矩陣、E-11 各社 OA／Rich Menu 外部設定與手機驗證；E-09 暫緩。
+- 當時尚未結案的清單包含 E-10；E-10 後續已完成。現在未結案清單以文件最上方為準。
 
 ## 2026-09-20 今日接力結論（`e57d4ff`）
 

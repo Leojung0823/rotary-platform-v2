@@ -2,12 +2,21 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新現場結論（`84a1670`；E-10 已完成）
+
+- `main`／`origin/main` exact SHA 為 `84a16708388d50f91754212d8d76e34bb2c193a3`；沒有新增 migration，沒有修改 production。工作樹既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留不動，未納入提交。
+- 今日修正跨社管理頁的路由邊界：社員列表、社員明細、封存社員、新增社員四個入口，在渲染前都要求目標社的 `member.manage`；沒有該社權限會導向 `/access-denied`。資料 RPC 與 mutation 的既有權限檢查仍保留。
+- 本機已通過 typecheck、lint（只有既有 `src/lib/in-place-repairs.test.ts` 的 warning）、Vitest `199` 檔／`1477` tests、`verify:db`、migration guard、77 份 verification manifest 與 `git diff --check`。
+- Staging Release `35500632523` 與 Staging Go-Live `35500736758` 使用同一 exact SHA 成功；hosted member acceptance 與 HTTPS smoke 通過，staging 已部署 `84a1670`。
+- E-10 負向角色矩陣 `Staging Management Acceptance 35500891585` 成功：停權社員、退社社員登入被拒；外社執行秘書直接開啟目標社社員管理頁也被導向 `/access-denied`。E-10 現在可標 `[x]`。
+- 仍未完成：E-03 LINE follow 真人身份核對、E-06 登入後效能實測（目前未量測）、E-07 真實手機／M1、E-08 production 發布決策、E-11 各社 OA／Rich Menu 外部設定與手機驗證，以及社費實際收款／核銷的額外角色矩陣；E-09 依產品決定暫緩。
+
 ## 2026-09-20 最新工程進度（`1a977d1`；E-10 provisioning 入口已完成）
 
 - 已把 E-10 的三組 hosted 負向角色身份建立流程補齊，並推上 `main`：停權社員、退社社員、外社執行秘書各自使用保留的 staging 測試信箱；身份、社籍與管理權都會由 server-side service-role provisioning 檢查，遇到衝突就停止，不會覆蓋真人資料。
 - 新增的是手動 staging workflow 與可重跑的驗證模組，沒有新增 migration、沒有改權限／RLS、沒有部署產品 runtime，也沒有修改 production。GitHub staging secrets 已建立但值不進 repo、不在輸出顯示。
 - 本機已通過完整 Vitest `198` 檔／`1475` tests、typecheck、lint（既有 warning）、build、`verify:db`、migration guard、77 份 verification manifest 與 diff check。
-- E-10 仍不能標 `[x]`：下一步要在 workflow 人工輸入確認字串，先 provision，再用 `Staging Management Acceptance` 的 `expect_negative_roles=true` 取得 hosted 結果。此 workflow 尚未執行。
+- （歷史紀錄）當時 E-10 尚不能標 `[x]`；後續已完成 provisioning、部署與 hosted 負向矩陣，請以本文件最上方的 `84a1670` 最新現場結論為準。
 - E-06 仍是「未量測」：Chrome DevTools MCP 沒有登入後 session，不能用登入頁數字代替；E-03、E-07、E-08、E-11 仍各自需要真人／實機／產品決策／外部 LINE 設定。E-09 依產品決定暫緩。
 
 ## 2026-09-20 今日進度收斂（`e57d4ff`）
@@ -767,7 +776,7 @@ PR-01c 不做：
 目前仍未結案的項目，完整清單與證據以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準；E-01、E-02、E-04、E-05、E-12 已完成，E-09 依產品決定暫緩。下一步不是重新開發 E-05，而是依照外部條件依序補驗收：
 
 1. **E-03：follow 自動配對真人驗收** `[>]`：用乾淨真人帳號確認 LINE Login 身份自動對到正確 person，再測多社／外社／停權／退社；目前程式與日期窗口防護已完成，缺的是人核對的證據。
-2. **E-10：雙重社籍與跨社執行秘書驗收** `[>]`：本機已有撤銷管理者、停權、退社的 role-shell 負向測試；仍需 staging 真人確認雙重社籍、跨社執行秘書、資料隔離與管理權限不越權。
+2. **E-10：雙重社籍與跨社執行秘書驗收** `[x]`：`35500891585` 已完成停權／退社／外社執行秘書的 staging 負向矩陣；跨社社員管理 URL 會被 `/access-denied` 擋下。
 3. **E-06：登入後管理頁效能量測** `[>]`：社員首頁單一 hero preload 修正已部署並完成 DOM 核對；仍缺同一帳號、同一社別、同一 runtime／快取條件下的 FCP／TTFB／LCP 前後比較，以及 INP。Chrome DevTools 沒有已登入 staging session 前，數字一律記為「未量測」，不得用 `/login` 或不同 runtime 的數字代替。
 4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題；自動化 Chromium 不取代真人實機與訪談。
 5. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging；仍待各社 OA 外部設定、旗標決策與真人手機驗收，不得把本機 mock 測試當成 LINE 發布證據。
