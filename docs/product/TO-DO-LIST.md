@@ -11,13 +11,15 @@
 - staging health：`revision=7253ea009e57`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
 - 受保護效能測試 `35521567024` 已完成 5 次樣本：社員首頁中位數 LCP／FCP／TTFB／INP `1132／432／411／16 ms`；社務管理首頁 `748／364／329.1／16 ms`。數字方向較舊基準低，但受 runtime、冷／暖快取與樣本數差異影響，不能宣稱 E-06 已完成；Chrome DevTools 登入後 trace 仍未取得。
 - 同一產品 runtime `7253ea009e57` 以 run `35523970567` 再取 5 次：社員中位數 `776／360／343.3／16 ms`、社務管理 `564／300／269.8／16 ms`。這補強目前觀測但仍不是修改前後因果比較；E-06 維持未結案。
+- 受保護效能 workflow `35526568485` 已在同一 staging runtime `7253ea009e57` 以 `warm` 快取完成 5 次樣本：社員首頁中位數 LCP／FCP／TTFB／INP `836／336／309.2／16 ms`；社務管理首頁 `372／312／291／16 ms`。Chrome DevTools Protocol trace 摘要：社員 `1288` 事件、管理 `1111` 事件，兩者長任務皆 `0`，原始 trace 未保存。
+- `35525815995` 的第一次重跑曾因 hosted Chromium 的 INP observer 回報晚於固定 100ms 等待而失敗；已在 `d1808a7` 修正為等待觀測結果，並在 `6bea80f` 讓匿名數字直接出現在 Actions log。這是驗收工具修正，不是產品效能數字的因果證明。
 - 本機 typecheck、lint、Vitest `200` 檔／`1484` tests、build、`verify:db`、migration guard、verification manifest 與 diff check 均通過；lint 僅有既有 warning。工作樹仍保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，未讀寫、未提交。
-- 已補強受保護效能 workflow：每次 hosted run 必須明確選 `cold` 或 `warm` 快取條件，並以 Chrome DevTools Protocol 只留下匿名 trace 摘要；本輪尚未執行新的 hosted run，因此不能把工具完成當成 E-06 完成。
+- 目前已取得登入後 Playwright timing 與匿名 CDP trace，但舊資料沒有同樣明確的 `warm`／`cold` 條件；因此 E-06 仍不能標成「前後改善已證明」。
 
 ### 目前真正未完成
 
 - E-03：LINE follow 自動配對的真人姓名／正確 `person_id` 核對，以及多社、外社、停權等真人負向證據。
-- E-06：同一 runtime／同一快取條件的前後效能比較與登入後 Chrome DevTools trace；目前只能說已安全部署兩個關鍵路徑調整，不能說已證明變快。
+- E-06：同一 runtime／同一快取條件的「修改前後」效能比較仍未完成；目前已有登入後 warm baseline 與匿名 CDP trace 摘要，但舊基線沒有同樣快取條件，不能說已證明變快。
 - E-07：真實 iOS／Android、M1 與五位使用者測試。
 - E-08：production 發布決策與正式發布；目前沒有修改 production。
 - E-11：各社 LINE OA／Rich Menu 外部設定與手機驗收。

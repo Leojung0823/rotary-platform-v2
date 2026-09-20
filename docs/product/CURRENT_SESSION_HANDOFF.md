@@ -11,14 +11,16 @@
 - CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功；staging `/api/health` 是 `revision=7253ea009e57`、`status=ok`、`issues=[]`。
 - 效能 workflow `35521567024` 的 5 次中位數：社員 `1132／432／411／16 ms`、社務管理 `748／364／329.1／16 ms`（LCP／FCP／TTFB／INP）。這是 Playwright browser timing，方向較舊基準低，但不是同一 runtime／樣本條件，不能宣稱因果改善；登入後 Chrome DevTools trace 仍未取得，E-06 不結案。
 - 同一產品 runtime `7253ea009e57` 重跑 `35523970567` 的 5 次中位數為：社員 `776／360／343.3／16 ms`、社務管理 `564／300／269.8／16 ms`。這仍是 Playwright 重複觀測，不是修改前後因果證據；E-06 維持未結案。
-- 本輪已補強 staging 效能驗收入口：每次 run 必須選 `cold` 或 `warm` 快取條件，並以 Chrome DevTools Protocol 取得只含事件數／長任務摘要的短暫 trace；原始 trace 不保存。工具尚未在 hosted staging 實測，E-06 仍未結案。
+- 本輪已補強 staging 效能驗收入口：每次 run 必須選 `cold` 或 `warm` 快取條件，並以 Chrome DevTools Protocol 取得只含事件數／長任務摘要的短暫 trace；原始 trace 不保存。Hosted warm run `35526568485` 已成功，E-06 仍未結案的原因是舊基線沒有同樣快取條件。
+- `35526568485` 條件為 staging 產品 runtime `7253ea009e57`、受保護社員／執行秘書身份、desktop Chromium、每頁 5 次、`warm` cache。中位數：社員 LCP／FCP／TTFB／INP `836／336／309.2／16 ms`；管理 `372／312／291／16 ms`。CDP trace 摘要：社員 `1288` 事件、管理 `1111` 事件，長任務皆 `0`，原始 trace 未保存。
+- 工具提交 `d1808a7` 修正 hosted Chromium 的 INP 延遲觀測；`6bea80f` 讓匿名量測數字同步出現在 Actions log。第一次重跑 `35525815995` 的 INP 失敗保留作為工具診斷證據，不代表產品頁面失敗。
 - 本機完整檢查通過：typecheck、lint、Vitest `200` 檔／`1484` tests、build、`verify:db`、migration guard、verification manifest、`git diff --check`；lint 只有既有 warning。
 - 文件提交 `a2211b1` 的自動 CI `35522696971` 與 Browser Smoke `35522696974` 均成功；文件同步不需要重新部署 staging。
 
 ### 下一位接力先做
 
 1. E-03：用乾淨真人帳號驗證 LINE follow 對到正確 `person_id`，再完成多社／外社／停權負向驗收；需要使用者在 LINE Developers Console 與真人 LINE 操作，不能用程式假造。
-2. E-06：取得登入後 Chrome DevTools session，做同一 runtime／同一快取條件的前後比較；沒有可靠新數字就維持未結案，不要再猜測性改查詢。
+2. E-06：補一組與修改前相同工具／相同 `warm` 或 `cold` 條件的前測，或以同等嚴格方式取得可比的舊 runtime 數據；目前已有登入後 warm baseline 與 CDP 摘要，但沒有因果前後比較，不要再猜測性改查詢。
 3. E-07：排真實 iOS／Android、M1 與五位使用者測試。
 4. E-08：等待 production 發布決策；未授權前不碰 production。
 5. E-11：逐社完成 LINE OA／Rich Menu 外部設定與手機驗收。

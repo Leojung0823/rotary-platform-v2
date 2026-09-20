@@ -10,13 +10,14 @@
 - 文件同步提交會改變 `main` 的指標；產品 exact SHA `7253ea009e570948953b796dcd29ea6b79591230` 已部署 staging。最新主線 exact SHA 請以 `git rev-parse origin/main` 現場核對。CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 成功，health `issues=[]`。
 - 5 次受保護效能樣本 `35521567024` 的中位數為：社員 `1132／432／411／16 ms`、管理 `748／364／329.1／16 ms`（LCP／FCP／TTFB／INP）。方向較舊基準低，但因不是同一 runtime／同一樣本條件，E-06 仍不能標完成；Chrome DevTools 登入後 trace 仍未取得。
 - 同一產品 runtime `7253ea009e57` 的重跑 `35523970567` 再取 5 次，中位數為社員 `776／360／343.3／16 ms`、管理 `564／300／269.8／16 ms`。這是重複觀測，不是修改前後因果證據；E-06 仍不能標完成。
-- 已補強受保護效能 workflow：要求明確 `cold`／`warm` 快取條件，並以 Chrome DevTools Protocol 只保留匿名 trace 摘要；尚未執行新的 hosted run，E-06 仍未結案。
+- 受保護效能 workflow `35526568485` 已在同一產品 runtime 以 `warm` 快取完成每頁 5 次：社員中位數 LCP／FCP／TTFB／INP `836／336／309.2／16 ms`；管理 `372／312／291／16 ms`。CDP trace 摘要事件數為社員 `1288`、管理 `1111`，長任務皆 `0`，原始 trace 未保存。
+- `d1808a7` 修正 hosted Chromium 的 INP 延遲觀測，`6bea80f` 讓匿名數字直接出現在 Actions log；這是驗收工具修正。舊資料沒有同樣明確的 `warm`／`cold` 條件，因此 E-06 仍不能標成已證明改善。
 - 本機完整檢查通過，Vitest 為 `200` 檔／`1484` tests；lint 只有既有 warning。
 
 ### 目前地圖上的未結案項目
 
 1. E-03：LINE follow 真人 `person_id` 配對核對，並完成多社／外社／停權負向真人驗收。
-2. E-06：補登入後 Chrome DevTools trace，並以同一 runtime／同一快取條件完成效能前後比較。
+2. E-06：補與修改前相同工具、同一 runtime／同一 `warm` 或 `cold` 快取條件的效能前測；目前已有登入後 warm baseline 與匿名 CDP trace 摘要，但仍沒有可比的前後因果證據。
 3. E-07：真實 iOS／Android、M1 與五位使用者測試。
 4. E-08：取得 production 發布決策；未授權前不碰 production。
 5. E-11：逐社完成 LINE OA／Rich Menu 外部設定與手機驗收。

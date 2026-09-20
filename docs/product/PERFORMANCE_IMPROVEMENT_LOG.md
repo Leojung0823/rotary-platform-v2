@@ -5,13 +5,23 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
-## 2026-09-21 E-06 驗收工具加固（尚待 hosted 實測）
+## 2026-09-21 E-06 warm staging 基線與驗收工具加固（run `35526568485`）
 
 - 受保護的 staging 效能 workflow 現在要求明確選擇一種瀏覽器快取條件：`cold` 會關閉 HTTP cache，`warm` 會先以同一頁面導覽預熱，再取樣；同一次 run 不混用兩種條件。
 - 每個社員／社務管理頁的測量前會啟動 Chrome DevTools Protocol 的短暫 trace，僅保留事件數與長任務數／最長時間；原始 trace、URL 內容、帳密、畫面、影片與 HTML 都不寫檔或上傳。
 - LCP／FCP／TTFB／INP 仍由既有 PerformanceObserver／Navigation Timing 取得；trace 摘要用來確認 render pipeline 是否有長任務，不把它冒充完整可下載的 Chrome DevTools UI trace。
 - 本機驗證已通過：typecheck、lint、Vitest `200` 檔／`1484` tests、build、`verify:db`、migration guard、verification manifest（77 份）與 `git diff --check`；lint 仍只有既有 warning。
-- 這只是讓下一次量測可重現、可留下安全證據；尚未在新的 `cold`／`warm` 條件執行 hosted run，也尚未形成效能修改前後的同條件比較，所以 E-06 仍未結案。
+- Hosted warm run `35526568485` 已成功：staging 產品 runtime `7253ea009e57`、受保護社員／執行秘書身份、desktop Chromium、每頁 5 次，沒有 CPU／網路限速。結果仍是 Playwright browser timing 加匿名 CDP trace 摘要。
+
+| 頁面 | 第 1 次 | 第 2 次 | 第 3 次 | 第 4 次 | 第 5 次 | 中位數 |
+|---|---|---|---|---|---|---|
+| 社員首頁 `member-dashboard` | 1008／308／286.4／16 | 836／488／458.6／16 | 724／336／309.2／16 | 860／356／334.7／16 | 720／324／299.8／16 | **836／336／309.2／16 ms** |
+| 社務管理首頁 `management-dashboard` | 1388／1072／967／16 | 372／372／353.9／16 | 288／288／264.4／16 | 620／304／278.2／16 | 312／312／291／16 | **372／312／291／16 ms** |
+
+> 欄位順序：LCP／FCP／TTFB／INP。CDP trace 摘要為社員 `1288` 事件、管理 `1111` 事件；兩者長任務（`>=50ms`）皆 `0`，原始 trace 未保存。
+
+- 第一次修正後重跑 `35525815995` 因 hosted Chromium 的 INP observer 晚於固定 100ms 回報而失敗；`d1808a7` 改為等待觀測結果，`6bea80f` 再把匿名數字印進 Actions log。這是驗收工具可靠性修正，不是產品頁面失敗。
+- 結論：目前已取得登入後 warm baseline 與匿名 CDP trace，但舊有比較資料沒有同樣明確的 `warm`／`cold` 條件，尚未形成效能修改前後的可比因果證據；E-06 仍未結案。下一步先補同一工具、同一快取條件的修改前樣本，不要只因新數字較低就宣稱變快。
 
 ## 2026-09-21 同一 staging runtime 重跑（run `35523970567`）
 
