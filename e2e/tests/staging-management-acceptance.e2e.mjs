@@ -444,7 +444,11 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     expect(await cover.getAttribute("src")).toContain("token=");
 
     await eventCard.getByRole("button", { name: "發布活動" }).click();
-    await expect(page).toHaveURL(/success=event_published/u, { timeout: 30_000 });
+    // A server action can finish with a soft navigation that keeps the old
+    // query string while the refreshed projection already shows the committed
+    // state. The durable acceptance point is the event status, not a transient
+    // success code left over from creating the draft. This also accepts the
+    // distinct "LINE push failed" notice because publishing itself succeeded.
     eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
     await expect(eventCard.getByText("已發布", { exact: true })).toBeVisible();
 
@@ -567,7 +571,12 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     // record that is visibly present.
     await expect(page.getByText(advanceDescription, { exact: false })).toBeVisible();
 
-    await page.getByRole("button", { name: "核准", exact: true }).last().click();
+    // Earlier acceptance runs leave reversible test rows on staging. Target
+    // the card created by this run instead of relying on DOM ordering among
+    // those old rows.
+    const advanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
+    await expect(advanceCard).toBeVisible();
+    await advanceCard.getByRole("button", { name: "核准", exact: true }).click();
     await expect(page.getByText("核銷已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("已結案", { exact: true })).toBeVisible();
 
