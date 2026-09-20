@@ -142,4 +142,5 @@ jobs:
             lines.push(`| ${route.label} | ${route.trace.eventCount} | ${route.trace.longTaskCount} | ${route.trace.longestLongTaskMs} | ${route.trace.rawTraceRetained} |`);
           }
           await appendFile(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
+          console.log(lines.join("\n"));
           NODE
