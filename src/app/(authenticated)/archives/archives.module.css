@@ -59,6 +59,17 @@
   align-items: flex-start;
 }
 
+.documentHeading > *,
+.versionRow > *,
+.checklistForm > * {
+  min-width: 0;
+}
+
+.documentHeading h3,
+.versionRow > span {
+  overflow-wrap: anywhere;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;
@@ -129,7 +140,7 @@
 .checklistForm {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1.3fr .8fr 1.3fr auto;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, .8fr) minmax(0, 1.3fr) auto;
   gap: 12px;
   align-items: end;
 }

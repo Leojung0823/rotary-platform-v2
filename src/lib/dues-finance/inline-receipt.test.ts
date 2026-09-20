@@ -55,6 +55,11 @@ describe("收款是一列一個人，不是一次分配給所有人", () => {
     expect(container("rosterTools"), "there is no way to search the roster").toContain("setRosterQuery(");
   });
 
+  it("keeps partially paid members in the outstanding view and labels them", () => {
+    expect(panel).toMatch(/filter === "unpaid"[\s\S]{0,180}status === "unpaid"[\s\S]{0,80}status === "partial"/u);
+    expect(panel).toContain("部分收款");
+  });
+
   it("keeps batch collection as a mode of the same list", () => {
     // It is the right tool for reconciling one lump deposit; it is the wrong
     // default. Deleting it would take a real capability away.

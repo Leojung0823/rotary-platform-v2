@@ -23,8 +23,6 @@ const paymentMethodLabels: Record<DuesFinancePaymentMethod, string> = {
   check: "支票",
   other: "其他",
 };
-const receivableStatusLabels = { unpaid: "未收", partial: "部分收款", paid: "已收清" } as const;
-
 /**
  * 只有留下識別字的收款方式才問。
  *
@@ -41,8 +39,12 @@ const bankRemitKeyKind: DuesFinanceRemitKeyKind = "bank_last5";
 
 type RosterFilter = "unpaid" | "partial" | "paid" | "all";
 
-function matchesRosterFilter(status: keyof typeof receivableStatusLabels, filter: RosterFilter) {
-  return filter === "all" || status === filter;
+function matchesRosterFilter(status: "unpaid" | "partial" | "paid", filter: RosterFilter) {
+  // 「未繳」是仍有欠款，不是「從未收過款」。部分收款若被篩掉，
+  // 財務剛登錄一筆錢後就看不到同一位社員，也看不到部分收款狀態。
+  return filter === "all"
+    || (filter === "unpaid" && (status === "unpaid" || status === "partial"))
+    || status === filter;
 }
 const advanceStatusLabels = { submitted: "待審核", returned: "已退回", closed: "已結案" } as const;
 
@@ -488,15 +490,18 @@ export function DuesFinanceManagement({
               </span>
               {receivable.outstandingAmount === 0
                 ? <Badge tone="success">已收清</Badge>
-                : permissions.canManage
-                  ? <Button
-                      type="button"
-                      className="button-secondary"
-                      disabled={pending !== null}
-                      aria-expanded={openReceipt === receivable.receivableId}
-                      onClick={() => openRowReceipt(receivable.receivableId, receivable.outstandingAmount)}
-                    >收款</Button>
-                  : <Badge tone={receivable.status === "partial" ? "warning" : "neutral"}>{receivableStatusLabels[receivable.status]}</Badge>}
+                : <>
+                    {receivable.status === "partial" && <Badge tone="warning">部分收款</Badge>}
+                    {permissions.canManage
+                      ? <Button
+                          type="button"
+                          className="button-secondary"
+                          disabled={pending !== null}
+                          aria-expanded={openReceipt === receivable.receivableId}
+                          onClick={() => openRowReceipt(receivable.receivableId, receivable.outstandingAmount)}
+                        >收款</Button>
+                      : <Badge tone="neutral">未收</Badge>}
+                  </>}
             </div>
 
             {/* 金額預填未收額、日期預設今天、收款方式沿用上次 —— 全額繳清是最常見的
