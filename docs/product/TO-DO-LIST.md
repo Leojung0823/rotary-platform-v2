@@ -35,7 +35,7 @@
 
 - GitHub Issue #55 仍是開啟中的總 Epic，不代表其中每一個舊勾選項都尚未完成。
 - Issue #55 內的 P1「活動建立失敗保留輸入」目前已由 PR #67 完成；`src/app/event-actions.ts`、`src/components/events/event-create-form.tsx` 與 `e2e/tests/event-create-form.e2e.mjs` 已有伺服器錯誤保留欄位、欄位級錯誤、焦點移動與 200% 文字縮放回歸證據。
-- 因此目前不要為了關閉 Issue #55 而重做這個 P1；Issue #55 剩餘內容仍須依本節的 E-03、E-06、E-07、E-08、E-11 與外部決策逐項結案。
+- 因此目前不要為了關閉 Issue #55 而重做這個 P1；Issue #55 剩餘內容仍須依本節的 E-03、E-07、E-08、E-11 與外部決策逐項結案。E-06 的同條件效能比較已在本文件最上方結案。
 
 ## 2026-09-20 今日最新進度（產品 exact SHA `ba67f85`；staging 已發布）
 
