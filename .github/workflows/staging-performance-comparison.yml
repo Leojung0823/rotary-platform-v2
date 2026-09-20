@@ -1,0 +1,188 @@
+name: Staging Performance Comparison
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline_sha:
+        description: "Exact 40-character commit before the performance changes"
+        required: true
+        type: string
+      restore_sha:
+        description: "Exact 40-character product commit to restore after the baseline"
+        required: true
+        type: string
+      confirmation:
+        description: "Enter TEST-STAGING-PERFORMANCE-COMPARISON"
+        required: true
+        type: string
+      rollback_confirmation:
+        description: "Confirm this is a code-only staging rollback path"
+        required: true
+        type: string
+      sample_count:
+        description: "Number of same-condition samples per page"
+        required: true
+        default: "5"
+        type: choice
+        options:
+          - "3"
+          - "5"
+      cache_mode:
+        description: "Use cold or warm browser cache; do not mix the two runs"
+        required: true
+        default: "warm"
+        type: choice
+        options:
+          - warm
+          - cold
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-performance-comparison
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    name: Compare protected staging revisions
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+    env:
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
+      STAGING_BASELINE_SHA: ${{ inputs.baseline_sha }}
+      STAGING_RESTORE_SHA: ${{ inputs.restore_sha }}
+      STAGING_PERFORMANCE_SAMPLE_COUNT: ${{ inputs.sample_count }}
+      STAGING_PERFORMANCE_CACHE_MODE: ${{ inputs.cache_mode }}
+      STAGING_PERFORMANCE_COMPARISON_CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_ROLLBACK_CONFIRMATION: ${{ inputs.rollback_confirmation }}
+
+    steps:
+      - name: Check out current main test revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Validate comparison inputs
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+          STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+          STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
+          STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+        run: node scripts/verify-staging-performance-comparison-inputs.mjs
+
+      - name: Verify revisions are immutable ancestors of current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$STAGING_BASELINE_SHA^{commit}"
+          git cat-file -e "$STAGING_RESTORE_SHA^{commit}"
+          git merge-base --is-ancestor "$STAGING_BASELINE_SHA" "$STAGING_RESTORE_SHA"
+          git merge-base --is-ancestor "$STAGING_RESTORE_SHA" "$GITHUB_SHA"
+          if [ "$STAGING_BASELINE_SHA" = "$STAGING_RESTORE_SHA" ]; then
+            echo "Baseline and restore revisions must differ."
+            exit 1
+          fi
+          echo "Both revisions are in current main history; baseline precedes restore."
+
+      - name: Install isolated browser test dependencies
+        run: npm ci --prefix e2e
+
+      - name: Install Chromium and operating-system dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if timeout -k 30 240 npm --prefix e2e run install:chromium; then
+              exit 0
+            fi
+            echo "Chromium install attempt ${attempt} failed or stalled; retrying."
+            sudo pkill -9 -x apt-get 2>/dev/null || true
+            sudo pkill -9 -x dpkg 2>/dev/null || true
+            sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock 2>/dev/null || true
+            sudo dpkg --configure -a 2>/dev/null || true
+            sleep 20
+          done
+          echo "Chromium install did not succeed after 3 attempts."
+          exit 1
+
+      - name: Confirm staging starts on the approved restore revision
+        env:
+          STAGING_EXPECTED_SHA: ${{ inputs.restore_sha }}
+          STAGING_REVISION_MAX_WAIT_MS: "120000"
+        run: node scripts/wait-for-staging-revision.mjs
+
+      - name: Mark baseline transition for mandatory restore
+        id: baseline_transition
+        run: echo "attempted=true" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy baseline revision to staging
+        env:
+          STAGING_DEPLOY_HOOK: ${{ secrets.STAGING_DEPLOY_HOOK }}
+          STAGING_EXPECTED_SHA: ${{ inputs.baseline_sha }}
+        run: node scripts/trigger-staging-deploy.mjs
+
+      - name: Wait for baseline revision
+        env:
+          STAGING_EXPECTED_SHA: ${{ inputs.baseline_sha }}
+        run: node scripts/wait-for-staging-revision.mjs
+
+      - name: Measure baseline revision
+        env:
+          E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+          E2E_EXPECTED_SHA: ${{ inputs.baseline_sha }}
+          E2E_REMOTE: "1"
+          E2E_SENSITIVE: "1"
+          STAGING_EXPECTED_SHA: ${{ inputs.baseline_sha }}
+          STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+          STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+          STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
+          STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+          STAGING_PERFORMANCE_OUTPUT: ${{ runner.temp }}/staging-performance-before.json
+        run: npm --prefix e2e run test:staging-performance -- --project=desktop-chromium
+
+      - name: Restore approved revision after baseline (always)
+        if: always() && steps.baseline_transition.outcome == 'success'
+        env:
+          STAGING_DEPLOY_HOOK: ${{ secrets.STAGING_DEPLOY_HOOK }}
+          STAGING_EXPECTED_SHA: ${{ inputs.restore_sha }}
+        run: |
+          node scripts/trigger-staging-deploy.mjs
+          node scripts/wait-for-staging-revision.mjs
+
+      - name: Measure restored revision
+        if: success()
+        env:
+          E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+          E2E_EXPECTED_SHA: ${{ inputs.restore_sha }}
+          E2E_REMOTE: "1"
+          E2E_SENSITIVE: "1"
+          STAGING_EXPECTED_SHA: ${{ inputs.restore_sha }}
+          STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+          STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+          STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
+          STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+          STAGING_PERFORMANCE_OUTPUT: ${{ runner.temp }}/staging-performance-after.json
+        run: npm --prefix e2e run test:staging-performance -- --project=desktop-chromium
+
+      - name: Compare same-condition performance results
+        if: success()
+        env:
+          STAGING_PERFORMANCE_BEFORE_OUTPUT: ${{ runner.temp }}/staging-performance-before.json
+          STAGING_PERFORMANCE_AFTER_OUTPUT: ${{ runner.temp }}/staging-performance-after.json
+        run: node scripts/compare-staging-performance-results.mjs
