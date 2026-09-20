@@ -2,6 +2,14 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新補充（活動取消錯誤可安全重試）
+
+- 主線已推到 `9a40e59fc8dc8df4652629ff4b251b8e9837d19b`。活動取消 server action 現在把 client／RPC 例外轉成既有的可重試提示；沒有重寫取消 RPC，也沒有改權限、登入、資料隔離或 production。
+- 本機 typecheck、lint（既有 warning）、Vitest `197` 檔／`1469` tests、build、`verify:db`、migration guard、verification manifest、diff check 均成功；沒有新增 migration。
+- 自動 CI `35479916597` 已成功；Browser Smoke `35479916579` 仍在執行，尚未取得結論，不把它列為完成證據。
+- E-05 的產品規則已確定並完成：LINE 額度超過時停止後續批次，並只在社務管理 LINE OA 頁通知管理員；保留部分送達數字，一般社員不能讀取提醒。E-05 不再列為待辦。
+- staging 尚未部署此 commit，仍先處理 `SUPABASE_ACCESS_TOKEN` 授權阻塞，再做新的 Go-Live 與 hosted acceptance。
+
 ## 2026-09-20 最新終態核對（`4292e6f`；自動回歸已完成）
 
 - `main`／`origin/main` exact SHA 為 `4292e6f3a42ca510b4cc7fd91d1ce296ee23296f`；沒有 open PR。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未讀寫、未提交。

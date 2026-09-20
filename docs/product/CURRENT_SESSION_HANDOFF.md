@@ -3,6 +3,14 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力補充：活動取消例外已導向安全重試
+
+- `main`／`origin/main` exact SHA 為 `9a40e59fc8dc8df4652629ff4b251b8e9837d19b`。`cancelEventAction` 會捕捉建立 Supabase client 或呼叫取消 RPC 時的例外，導向既有 `error=retryable`，避免無法判定是否提交時顯示通用錯誤或讓使用者誤以為仍在等待。
+- 本機 typecheck、lint（既有 warning）、Vitest `197`／`1469`、build、`verify:db`、migration guard、verification manifest、diff check 均通過；沒有新增 migration，也沒有更改權限或 production。
+- 自動 CI `35479916597` 已成功；Browser Smoke `35479916579` 在本次接力更新時仍為 `in_progress`，不可先當成通過。沒有手動重跑。
+- E-05 額度規則維持「超額即停止並通知社務管理員」；既有 `/clubs/{clubId}/line-oa?mode=management` 提醒會顯示停止後續批次與部分送達數字，一般社員沒有讀取權限。
+- staging 仍未部署此 exact SHA，因 `SUPABASE_ACCESS_TOKEN` 尚未取得 staging project 授權；既有未追蹤外部發布企劃書不可納入提交。
+
 ## 2026-09-20 最新終態補充：Browser Smoke 已完成
 
 - `main`／`origin/main` exact SHA 為 `4292e6f3a42ca510b4cc7fd91d1ce296ee23296f`；沒有 open PR。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未讀寫、未提交。
