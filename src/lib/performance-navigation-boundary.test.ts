@@ -101,4 +101,13 @@ describe("performance-first navigation boundaries", () => {
     expect(dashboard).toContain("<ContextUnavailableScreen />");
     expect(dashboard).not.toContain("contextUnavailable=");
   });
+
+  it("does not hold the authenticated shell behind the unread badge RPC", () => {
+    const shell = source("src/components/role-aware-app-shell.tsx");
+
+    expect(shell).toContain("unreadMessageCountPromise = readUnreadMessageCount()");
+    expect(shell).toContain("<Suspense fallback={<ShellNavigation");
+    expect(shell).toContain("async function ShellNavigationWithUnreadCount");
+    expect(shell).not.toContain("unreadMessageCount,\n  ] = await Promise.all");
+  });
 });

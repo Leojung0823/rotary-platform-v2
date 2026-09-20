@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { LegacyAppShell } from "@/components/app-shell";
 import { ContextUnavailableScreen } from "@/components/context-unavailable";
 import {
@@ -213,6 +213,46 @@ function MobileShellContext({ context, mode }: { context: ExperienceContext; mod
   </p>;
 }
 
+type ShellNavigationProps = Readonly<{
+  context: ExperienceContext;
+  mode: ExperienceMode;
+  pathname: string;
+  attendanceEnabled: boolean;
+  messageCenterEnabled: boolean;
+  managementPermissions: readonly string[];
+}>;
+
+function ShellNavigation({
+  context,
+  mode,
+  pathname,
+  attendanceEnabled,
+  messageCenterEnabled,
+  unreadMessageCount,
+  managementPermissions,
+}: ShellNavigationProps & { unreadMessageCount: number }) {
+  const navigation = roleShellNavigation(context, mode, {
+    attendanceEnabled,
+    messageCenterEnabled,
+    unreadMessageCount,
+    managementPermissions,
+  });
+  return <RoleAwareShellNavigation items={navigation} initialPathname={pathname} />;
+}
+
+/**
+ * The unread count is only a navigation badge, not an authorization input or
+ * page content. Keep it out of the shell's first paint: the rest of the shell
+ * can stream with no badge and this small region fills in when its RPC ends.
+ */
+async function ShellNavigationWithUnreadCount({
+  unreadMessageCountPromise,
+  ...props
+}: ShellNavigationProps & { unreadMessageCountPromise: Promise<number> }) {
+  const unreadMessageCount = await unreadMessageCountPromise;
+  return <ShellNavigation {...props} unreadMessageCount={unreadMessageCount} />;
+}
+
 export function RoleAwareAppShell({
   identity,
   context,
@@ -221,6 +261,7 @@ export function RoleAwareAppShell({
   attendanceEnabled = false,
   messageCenterEnabled = false,
   unreadMessageCount = 0,
+  unreadMessageCountPromise,
   managementPermissions = [],
   children,
 }: {
@@ -231,15 +272,10 @@ export function RoleAwareAppShell({
   attendanceEnabled?: boolean;
   messageCenterEnabled?: boolean;
   unreadMessageCount?: number;
+  unreadMessageCountPromise?: Promise<number>;
   managementPermissions?: readonly string[];
   children: ReactNode;
 }) {
-  const navigation = roleShellNavigation(context, mode, {
-    attendanceEnabled,
-    messageCenterEnabled,
-    unreadMessageCount,
-    managementPermissions,
-  });
   return <div className={`${styles.shell} ${styles[`shell${mode[0].toUpperCase()}${mode.slice(1)}`]}`}>
     <aside className={styles.rail}>
       <header className={styles.header}>
@@ -260,7 +296,35 @@ export function RoleAwareAppShell({
         {(context.hasPlatformAccess || clubsForExperienceMode(context, mode).length > 1)
           && <ClubSwitcher context={context} mode={mode} />}
       </header>
-      <RoleAwareShellNavigation items={navigation} initialPathname={pathname} />
+      <Suspense fallback={<ShellNavigation
+        context={context}
+        mode={mode}
+        pathname={pathname}
+        attendanceEnabled={attendanceEnabled}
+        messageCenterEnabled={messageCenterEnabled}
+        unreadMessageCount={unreadMessageCount}
+        managementPermissions={managementPermissions}
+      />}>
+        {unreadMessageCountPromise
+          ? <ShellNavigationWithUnreadCount
+            context={context}
+            mode={mode}
+            pathname={pathname}
+            attendanceEnabled={attendanceEnabled}
+            messageCenterEnabled={messageCenterEnabled}
+            unreadMessageCountPromise={unreadMessageCountPromise}
+            managementPermissions={managementPermissions}
+          />
+          : <ShellNavigation
+            context={context}
+            mode={mode}
+            pathname={pathname}
+            attendanceEnabled={attendanceEnabled}
+            messageCenterEnabled={messageCenterEnabled}
+            unreadMessageCount={unreadMessageCount}
+            managementPermissions={managementPermissions}
+          />}
+      </Suspense>
       <AccountMenu identity={identity} context={context} mode={mode} />
     </aside>
     <main id="main" tabIndex={-1} className={styles.content}>{children}</main>
@@ -292,21 +356,20 @@ export async function RoleAwareAppShellBoundary({
     preferredClubId,
   );
 
-  // The unread count joins this group rather than following the flag read:
-  // issued together it costs no additional sequential round trip, and the
-  // result is simply discarded when the message centre is switched off.
+  // Start the unread count now, but do not await it with the routing inputs.
+  // It is only a badge; waiting for it would hold the whole shell (and the
+  // page inside it) behind an unrelated RPC.
+  const unreadMessageCountPromise = readUnreadMessageCount();
   const [
     evaluation,
     attendanceEvaluation,
     messageCenterEvaluation,
     messageBoardEvaluation,
-    unreadMessageCount,
   ] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "role_shells_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "attendance_ui_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "announcements_v09", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "message_board_v1", subjectUuid: identity.id }),
-    readUnreadMessageCount(),
   ]);
   if (!evaluation.enabled) {
     void contextPromise;
@@ -352,7 +415,7 @@ export async function RoleAwareAppShellBoundary({
     pathname={headerStore.get("x-rotary-pathname") ?? "/dashboard"}
     attendanceEnabled={attendanceEvaluation.enabled}
     messageCenterEnabled={messageCenterEvaluation.enabled}
-    unreadMessageCount={unreadMessageCount}
+    unreadMessageCountPromise={unreadMessageCountPromise}
     managementPermissions={managementPermissionResult.permissions}
   >
     {children}
