@@ -182,7 +182,7 @@ test.describe("受保護的 Hosted staging 登入後效能基線", () => {
         label: "management-dashboard",
         route: "/dashboard?mode=management",
         heading: async () => {
-          await expect(operatorPage.getByText("社務管理模式", { exact: true })).toBeVisible();
+          await expect(operatorPage.getByText("社務管理模式", { exact: true }).first()).toBeVisible();
           await expect(operatorPage.getByText(expectedClubName, { exact: true }).first()).toBeVisible();
         },
       });
