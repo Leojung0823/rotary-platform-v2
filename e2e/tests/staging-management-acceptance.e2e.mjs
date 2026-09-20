@@ -460,10 +460,17 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     // longer sits open at the foot of every live event.
     const cancelFold = eventCard.locator("details.event-danger");
     await cancelFold.locator("summary").click();
+    await expect(cancelFold).toHaveAttribute("open", "");
     const cancelForm = cancelFold.locator("form.inline-form");
     await expect(cancelForm).toBeVisible();
     await cancelForm.getByLabel("取消原因").fill("staging 活動驗收完成，保留為可回收測試資料。");
-    await cancelForm.getByRole("button", { name: "取消活動" }).click();
+    // Submit the visible, opened form through the browser's native submit path.
+    // This keeps the acceptance on the real server action while avoiding a
+    // click racing the details disclosure's layout update on hosted Chromium.
+    await cancelForm.evaluate((form) => {
+      if (!(form instanceof HTMLFormElement)) throw new Error("event_cancel_form_missing");
+      form.requestSubmit();
+    });
     await expect(page).toHaveURL(/success=event_cancelled/u, { timeout: 30_000 });
     // Cancelled events are intentionally filed inside a collapsed archive so
     // the live management list stays scannable. Open that archive before
@@ -569,6 +576,9 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await page.getByLabel("本次收款").fill("2000");
     await page.getByRole("button", { name: "確認收款", exact: true }).click();
     await expect(page.getByText("收款已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
+    // The success notice is client state; the receipt status is a server
+    // projection. Re-read the disposable year before asserting partial payment.
+    await page.goto(disposableFinanceUrl);
     await expect(page.getByText("部分收款", { exact: true })).toBeVisible();
     await expectFinanceDownloads(page, receiptMemberName);
 
