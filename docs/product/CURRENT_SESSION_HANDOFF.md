@@ -11,7 +11,11 @@
   只用既有 staging 測試身份並經 `staging` environment approval，不碰 production、不用 service role／Supabase management token、不輸出秘密。
 - 每個頁面預設取 3 個同 runtime 樣本：社員 `/dashboard?mode=member` 與社務管理 `/dashboard?mode=management`，記錄 LCP／FCP／TTFB，
   再用帳號選單的無副作用點擊取 INP。結果僅進 job summary，沒有 artifact。
-- 目前只完成工程入口與本機契約驗證，**尚未手動觸發 hosted workflow**；所以 E-06 仍是「未量測／未結案」，不能把本機或未登入 `/login` 的數字代替。
+- Hosted workflow `35517332436` 已成功：staging runtime `54c08ef6ab4d`，社員首頁 3 次的 LCP／FCP／TTFB／INP 為
+  `1408／1004／565.6／16`、`1440／976／946.2／16`、`1168／368／339.2／16 ms`；社務管理首頁為
+  `896／580／538.2／32`、`476／476／451.5／16`、`1232／416／399.8／16 ms`。這是 Playwright browser timing 基線，
+  不是 Chrome DevTools trace，也不是前後改善比較。
+- E-06 目前狀態是「已有登入後目前基線、仍未結案」；下一步要對實際效能修改做同 runtime／快取前後比較，不能只以這次 6 個樣本宣稱改善。
 - 完整本機檢查：typecheck、lint、Vitest `200` 檔／`1481` tests、build、verify:db、migration guard、verification manifest、diff check；lint 仍只有既有 warning。
 
 ## 2026-09-20 最新接力結論（`54c08ef`；staging 已完成驗收）

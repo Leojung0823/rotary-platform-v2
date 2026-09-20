@@ -11,12 +11,13 @@
 - 本機 typecheck、lint、Vitest `199` 檔／`1477` tests、`verify:db`、migration guard、verification manifest 與 diff check 均通過；lint 僅有既有 warning。
 - 產品基線的 CI `35502874878`、Browser Smoke `35502874853`、Staging Release plan `35503046674`、Staging Go-Live `35503451357` 均成功；文件同步後 CI `35503747799` 與 Browser Smoke `35503747740` 也成功。staging health 為 `revision=54c08ef6ab4d`、`status=ok`、`issues=[]`。
 - Hosted 生日驗收 `35503580840` 成功；社費／報表 hosted acceptance `35501504704` 與 E-10 負向角色矩陣 `35500891585` 已有成功證據。這些驗收使用受控 staging 測試資料，不等於 production 金流或 production 發布。
-- 本輪完成 E-06 的工程準備：新增 staging-only、手動觸發、需 environment approval 的登入後效能 workflow；它使用既有測試身份並只輸出匿名化效能數字，尚未觸發，因此不改寫目前的「未量測」結論，也沒有部署產品。
+- 本輪完成 E-06 的第一階段基線：受保護 workflow `35517332436` 成功在 staging runtime `54c08ef6ab4d` 量到社員／社務管理首頁各 3 次；中位數分別為
+  社員 LCP／FCP／TTFB／INP `1408／976／565.6／16 ms`、管理 `896／476／451.5／16 ms`。這不是前後改善證據，也沒有部署產品。
 
 ### 接下來的開發地圖
 
 1. E-03：安排 LINE follow 真人身份配對，以及多社／外社／停權負向驗收。
-2. E-06：先以目前 staging exact SHA 手動觸發受保護 workflow，取得社員／社務管理首頁的 LCP、FCP、TTFB、INP；再用同一 runtime／快取條件補前後比較。workflow 尚未執行，目前不報數字。
+2. E-06：目前基線已由 `35517332436` 取得；下一步是針對明確效能修改，在同一 runtime／快取條件重跑前後比較，並視需要補登入後 Chrome DevTools trace。不能把這次 6 個樣本直接標成改善完成。
 3. E-07：安排真實 iOS／Android、M1 與五位使用者測試。
 4. E-11：逐社完成 LINE OA／Rich Menu 外部設定與手機驗收。
 5. E-08：另行決定是否進入 production 發布；在決策前不碰 production。

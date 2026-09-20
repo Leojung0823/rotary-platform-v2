@@ -11,12 +11,14 @@
 - 本機 `npm run typecheck`、`npm run lint`、`npm test`（199 檔／1477 tests）、`npm run verify:db`、`npm run check:migrations`、`npm run check:db-verifications` 與 `git diff --check` 均通過。lint 只有既有 `src/lib/in-place-repairs.test.ts` 的 `readdirSync` warning。
 - 產品基線的 CI `35502874878`、Browser Smoke `35502874853`、Staging Release plan `35503046674`、Staging Go-Live `35503451357` 均成功；文件同步後 CI `35503747799` 與 Browser Smoke `35503747740` 也成功。`/api/health` 回報 `revision=54c08ef6ab4d`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`。
 - Hosted 生日設定／生日徵集驗收 `35503580840` 成功。社費收款／代墊／核銷／回收與 CSV／Excel／PDF 報表的 hosted 驗收 `35501504704` 已成功；E-10 停權／退社／外社執行秘書負向矩陣 `35500891585` 也已成功，這兩項本輪沒有重做產品程式。
-- 今日新增 E-06 的 staging-only 效能驗收入口：`.github/workflows/staging-performance-acceptance.yml` 會在人工核准後，用既有 staging 測試帳號量測社員／社務管理首頁的 LCP、FCP、TTFB、INP。workflow 尚未觸發，所以沒有新增登入後效能數字，也沒有部署產品或修改 production。
+- 今日完成 E-06 的 staging-only 效能基線：workflow `35517332436` 經 staging environment 核准後，以既有測試帳號量測社員／社務管理首頁各 3 次；
+  社員中位數 LCP／FCP／TTFB／INP 為 `1408／976／565.6／16 ms`，管理中位數為 `896／476／451.5／16 ms`。沒有部署產品或修改 production；
+  這只是目前基線，不是前後改善證據。
 
 ### 目前真正未完成
 
 - E-03：LINE follow 自動配對的真人姓名／正確 `person_id` 核對，以及多社、外社、停權等真人負向證據。
-- E-06：登入後同一 runtime／同一快取條件的 LCP、FCP、TTFB、INP。已補上受保護的 staging workflow，但尚未觸發；目前仍是「未量測」，沒有假造數字。
+- E-06：已取得一組 staging 登入後目前基線（`35517332436`），但仍缺實際效能修改前後、同一 runtime／同一快取條件的比較；Chrome DevTools 登入後 trace 也尚未補齊，不能只靠這 6 個樣本結案。
 - E-07：真實 iOS／Android、M1 與五位使用者測試。
 - E-08：production 發布決策與正式發布；本輪沒有修改 production。
 - E-11：各社 LINE OA／Rich Menu 的外部設定與手機驗收。

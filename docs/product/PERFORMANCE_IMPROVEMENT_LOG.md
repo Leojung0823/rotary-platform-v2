@@ -5,7 +5,7 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
-## 2026-09-20 E-06 受保護的 Hosted 量測入口（尚未執行）
+## 2026-09-20 E-06 受保護的 Hosted 目前基線（run `35517332436`）
 
 - 新增 `.github/workflows/staging-performance-acceptance.yml`，只能由 `main` 手動觸發，必須輸入
   `TEST-STAGING-PERFORMANCE` 與目前 staging 的 exact SHA；staged SHA 必須是目前 main 測試版本的祖先。
@@ -13,8 +13,17 @@
   不使用 `SUPABASE_ACCESS_TOKEN`，不輸出帳密，也不保留 screenshot、video、trace 或 HTML report。
 - 每個登入後首頁（社員模式、社務管理模式）預設各量測 3 次，在同一 hosted runtime 記錄 LCP、FCP、文件 TTFB；用無副作用的帳號選單點擊取得 INP。
   結果只寫入 Actions job summary，runner 暫存檔在工作結束後消失。
-- 本輪尚未手動觸發 workflow，因此社員／社務管理頁目前仍是「未量測」。這個入口只能產生目前基線，不能單獨證明前後改善；E-06 仍需要
-  同一 runtime／快取條件的前後比較與可重現的 INP 證據才能結案。
+- hosted workflow `35517332436` 已成功，staging `/api/health` 的 revision 是 `54c08ef6ab4d`；測試程式來自 main 的 `5b4d15c`，
+  兩者有祖先關係。Playwright desktop Chromium 在同一個 workflow、同一個登入後 runtime，各頁重複導覽 3 次；沒有 CPU／網路限速設定，
+  這不是 Chrome DevTools trace。
+
+| 頁面 | 第 1 次 LCP／FCP／TTFB／INP | 第 2 次 LCP／FCP／TTFB／INP | 第 3 次 LCP／FCP／TTFB／INP | 中位數 LCP／FCP／TTFB／INP |
+|---|---:|---:|---:|---:|
+| 社員首頁 `/dashboard?mode=member` | 1408／1004／565.6／16 ms | 1440／976／946.2／16 ms | 1168／368／339.2／16 ms | 1408／976／565.6／16 ms |
+| 社務管理首頁 `/dashboard?mode=management` | 896／580／538.2／32 ms | 476／476／451.5／16 ms | 1232／416／399.8／16 ms | 896／476／451.5／16 ms |
+
+- 這是目前基線，不是前後改善比較；3 次導覽的冷／暖快取狀態可能不同，不能把兩頁中位數直接當成修正帶來的改善。
+- E-06 仍需要在同一 runtime／快取規則下，針對實際效能修改做前後比較；若要與 DevTools 紀錄對齊，還要補登入後 trace。
 - 本機只驗證了 input contract、JavaScript 語法與非 hosted E2E 的安全跳過；沒有把本機或 `/login` 數字寫成登入後數字。
 
 ## 2026-09-20 Chrome DevTools MCP 可用性確認（不是登入後基線）
