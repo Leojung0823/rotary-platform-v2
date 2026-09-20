@@ -586,8 +586,13 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     const advanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
     await expect(advanceCard).toBeVisible();
     await advanceCard.getByRole("button", { name: "核准", exact: true }).click();
-    await expect(page.getByText("核銷已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText("已結案", { exact: true })).toBeVisible();
+    // The success notice "核銷已登錄。" is client state and can be replaced by
+    // the following router refresh. The durable acceptance point is the
+    // persisted advance state, so reload and assert the record is actually
+    // closed.
+    await page.reload();
+    const closedAdvanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
+    await expect(closedAdvanceCard.getByText("已結案", { exact: true })).toBeVisible({ timeout: 30_000 });
 
     const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const memberPage = await memberContext.newPage();
