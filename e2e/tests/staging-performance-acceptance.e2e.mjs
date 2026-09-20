@@ -192,7 +192,10 @@ async function collectMetrics(page) {
   const accountMenu = page.getByLabel("帳號選單");
   await expect(accountMenu).toHaveCount(1);
   await accountMenu.click();
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => {
+    const interactionDurations = window.__rotaryStagingPerformance?.interactionDurations ?? [];
+    return interactionDurations.length > 0;
+  }, undefined, { timeout: 5_000 });
 
   const inpMs = await page.evaluate(() => {
     const interactionDurations = window.__rotaryStagingPerformance?.interactionDurations ?? [];
