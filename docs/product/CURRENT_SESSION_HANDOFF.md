@@ -3,9 +3,9 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-20 最新接力補充：最新主線回歸已完成
+## 2026-09-20 最新接力補充：文件同步後的最新主線
 
-- `main`／`origin/main` exact SHA 為 `093e8c038c1477cb54f948df593459800b0a8bf7`。`cancelEventAction` 會捕捉建立 Supabase client 或呼叫取消 RPC 時的例外，導向既有 `error=retryable`，避免無法判定是否提交時顯示通用錯誤或讓使用者誤以為仍在等待。
+- `main`／`origin/main` exact SHA 為 `2b39108`（文件同步提交）；產品修正 commit 為 `9a40e59`。`cancelEventAction` 會捕捉建立 Supabase client 或呼叫取消 RPC 時的例外，導向既有 `error=retryable`，避免無法判定是否提交時顯示通用錯誤或讓使用者誤以為仍在等待。
 - 本機 typecheck、lint（既有 warning）、Vitest `197`／`1469`、build、`verify:db`、migration guard、verification manifest、diff check 均通過；沒有新增 migration，也沒有更改權限或 production。
 - 文件同步後自動 CI `35480288285` 與 Browser Smoke `35480288290` 均成功；沒有手動觸發或重跑。
 - E-05 額度規則維持「超額即停止並通知社務管理員」；既有 `/clubs/{clubId}/line-oa?mode=management` 提醒會顯示停止後續批次與部分送達數字，一般社員沒有讀取權限。

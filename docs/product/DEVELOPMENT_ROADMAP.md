@@ -2,9 +2,9 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-09-20 最新補充（最新主線回歸已完成）
+## 2026-09-20 最新補充（文件同步後的最新主線）
 
-- 主線已推到 `093e8c038c1477cb54f948df593459800b0a8bf7`。活動取消 server action 現在把 client／RPC 例外轉成既有的可重試提示；沒有重寫取消 RPC，也沒有改權限、登入、資料隔離或 production。
+- 主線已推到 `2b39108`（文件同步提交）；產品修正 commit 為 `9a40e59`。活動取消 server action 現在把 client／RPC 例外轉成既有的可重試提示；沒有重寫取消 RPC，也沒有改權限、登入、資料隔離或 production。
 - 本機 typecheck、lint（既有 warning）、Vitest `197` 檔／`1469` tests、build、`verify:db`、migration guard、verification manifest、diff check 均成功；沒有新增 migration。
 - 文件同步後自動 CI `35480288285` 與 Browser Smoke `35480288290` 均成功；沒有手動觸發或重跑。
 - E-05 的產品規則已確定並完成：LINE 額度超過時停止後續批次，並只在社務管理 LINE OA 頁通知管理員；保留部分送達數字，一般社員不能讀取提醒。E-05 不再列為待辦。
