@@ -5,9 +5,9 @@
 
 ## 2026-09-20 最新接力結論（`54c08ef`；staging 已完成驗收）
 
-- 權威 `main`／`origin/main` exact SHA 為 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961`；沒有 open PR。使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 必須保留，不可加入提交。
+- 本輪產品／staging 驗收基線 exact SHA 為 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961`；文件同步後 `main` 會再包含 docs-only commit，最新主線請以 `git rev-parse origin/main` 現場核對；目前沒有 open PR。使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 必須保留，不可加入提交。
 - 今日完成的是生日 hosted acceptance 的 URL 斷言修正：社員模式的 `/birthday-collection` 可帶 `mode=member`。這是測試修正，不是放寬產品權限；沒有 migration、沒有改 RLS／登入／資料隔離、沒有修改 production。
-- 本機完整檢查通過：typecheck、lint、Vitest `199` 檔／`1477` tests、verify:db、migration guard、verification manifest、diff check。CI `35502874878`、Browser Smoke `35502874853`、Staging Release `35503046674`、Staging Go-Live `35503451357` 均成功。
+- 本機完整檢查通過：typecheck、lint、Vitest `199` 檔／`1477` tests、verify:db、migration guard、verification manifest、diff check。產品基線的 CI `35502874878`、Browser Smoke `35502874853`、Staging Release `35503046674`、Staging Go-Live `35503451357` 均成功；文件同步後 CI `35503747799` 與 Browser Smoke `35503747740` 也成功。
 - staging health：`revision=54c08ef6ab4d`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`。Hosted birthday acceptance `35503580840` 成功。
 - 既有 hosted 證據：社費／收款／代墊／核銷／回收／報表 `35501504704` 成功；E-10 停權／退社／外社執行秘書負向矩陣 `35500891585` 成功。
 

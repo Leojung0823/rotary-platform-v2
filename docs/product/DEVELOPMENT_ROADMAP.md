@@ -6,10 +6,10 @@
 
 > 本節是目前進度的優先判定；後面的段落是歷史接力紀錄，不代表目前仍卡在舊的 staging 憑證阻塞。
 
-- `main`／`origin/main` exact SHA 為 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961`；沒有 open PR。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留且未納入。
+- 本輪產品／staging 驗收基線 exact SHA 為 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961`；文件同步後 `main` 會再包含 docs-only commit，最新主線請以 `git rev-parse origin/main` 現場核對；目前沒有 open PR。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留且未納入。
 - 今日只修正生日 hosted 驗收對社員模式 URL 的斷言，接受可選的 `mode=member`；沒有新增 migration、沒有更改權限／RLS／登入、沒有修改 production。
 - 本機 typecheck、lint、Vitest `199` 檔／`1477` tests、`verify:db`、migration guard、verification manifest 與 diff check 均通過；lint 僅有既有 warning。
-- CI `35502874878`、Browser Smoke `35502874853`、Staging Release plan `35503046674`、Staging Go-Live `35503451357` 均成功。staging health 為 `revision=54c08ef6ab4d`、`status=ok`、`issues=[]`。
+- 產品基線的 CI `35502874878`、Browser Smoke `35502874853`、Staging Release plan `35503046674`、Staging Go-Live `35503451357` 均成功；文件同步後 CI `35503747799` 與 Browser Smoke `35503747740` 也成功。staging health 為 `revision=54c08ef6ab4d`、`status=ok`、`issues=[]`。
 - Hosted 生日驗收 `35503580840` 成功；社費／報表 hosted acceptance `35501504704` 與 E-10 負向角色矩陣 `35500891585` 已有成功證據。這些驗收使用受控 staging 測試資料，不等於 production 金流或 production 發布。
 
 ### 接下來的開發地圖

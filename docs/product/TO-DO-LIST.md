@@ -6,10 +6,10 @@
 
 > 本節優先於下方較早的接力紀錄；下方歷史段落保留原樣，避免把當時的阻塞誤讀成現在的狀態。
 
-- 權威 `main`／`origin/main` exact SHA 為 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961`；目前沒有 open PR。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留，未讀寫、未提交。
+- 本輪產品／staging 驗收基線 exact SHA 為 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961`；文件同步後 `main` 會再包含 docs-only commit，最新主線請以 `git rev-parse origin/main` 現場核對。目前沒有 open PR。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留，未讀寫、未提交。
 - 今日完成一個 hosted 生日驗收修正：接受 `/birthday-collection?clubId=<uuid>` 與社員模式附帶的 `&mode=member`，避免 URL 形狀變化造成誤判；沒有新增 migration、沒有改登入／權限／資料隔離，也沒有修改 production。
 - 本機 `npm run typecheck`、`npm run lint`、`npm test`（199 檔／1477 tests）、`npm run verify:db`、`npm run check:migrations`、`npm run check:db-verifications` 與 `git diff --check` 均通過。lint 只有既有 `src/lib/in-place-repairs.test.ts` 的 `readdirSync` warning。
-- CI `35502874878`、Browser Smoke `35502874853`、Staging Release plan `35503046674`、Staging Go-Live `35503451357` 均成功；`/api/health` 回報 `revision=54c08ef6ab4d`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`。
+- 產品基線的 CI `35502874878`、Browser Smoke `35502874853`、Staging Release plan `35503046674`、Staging Go-Live `35503451357` 均成功；文件同步後 CI `35503747799` 與 Browser Smoke `35503747740` 也成功。`/api/health` 回報 `revision=54c08ef6ab4d`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`。
 - Hosted 生日設定／生日徵集驗收 `35503580840` 成功。社費收款／代墊／核銷／回收與 CSV／Excel／PDF 報表的 hosted 驗收 `35501504704` 已成功；E-10 停權／退社／外社執行秘書負向矩陣 `35500891585` 也已成功，這兩項本輪沒有重做產品程式。
 
 ### 目前真正未完成
