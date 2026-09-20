@@ -2,6 +2,25 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 今日最新進度（產品 exact SHA `ba67f85`；staging 已發布）
+
+> 本節是目前最前面的現況；下方歷史接力紀錄保留，不以舊 SHA 覆蓋今天的證據。
+
+- 今日正在做 E-06 登入後首頁效能改善。已把社員首頁等待私有活動封面 signed URL 的步驟移到巢狀 Suspense；活動文字、待辦、訊息與操作按鈕先送出，封面稍後補上。沒有新增資料庫結構、沒有改登入／權限／RLS／社團隔離，也沒有新增公開快取。
+- 程式 commit `ba67f85dcfc9a219ad9e736fd791f686703181d3` 已推到 `main`。CI `35518602660`、Browser Smoke `35518602659`、Staging Release plan `35519277963`、Staging Go-Live `35519371764` 均成功；staging `/api/health` 現在是 `revision=ba67f85dcfc9`、`status=ok`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- 今日完成受保護 staging 前後量測 `35519567233`：社員首頁 3 次中位數 LCP／FCP／TTFB／INP 為 `1624／1040／671.3／16 ms`，社務管理首頁為 `1604／664／634.4／16 ms`。相較既有基準沒有證明變快，樣本的冷／暖快取波動很大，因此不把 E-06 標成完成。
+- 本機針對性測試、typecheck、lint、Vitest、build、`verify:db`、migration guard、verification manifest 與 diff check 已通過；本機跨社 member-home 測試另受 fixture／host 的 access-denied 狀態影響，不能當成這次效能修改的成功證據。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留，沒有讀寫或提交。
+
+### 目前真正未完成
+
+- E-03：LINE follow 自動配對的真人姓名／正確 `person_id` 核對，以及多社、外社、停權等真人負向證據。
+- E-06：同一 runtime 的效能改善尚未被數據證明；還要補更多同條件樣本與登入後 Chrome DevTools trace，再判斷下一個真正瓶頸。
+- E-07：真實 iOS／Android、M1 與五位使用者測試。
+- E-08：production 發布決策與正式發布；本輪沒有修改 production。
+- E-11：各社 LINE OA／Rich Menu 外部設定與手機驗收。
+- E-09 recovery email／custom SMTP：依產品決定暫緩。
+- 既有測試用的 staging 合成財務資料不代表正式金流已上線；正式環境收款資料仍未建立，也沒有在 production 操作。
+
 ## 2026-09-20 最新收尾（`54c08ef`；staging 已通過）
 
 > 本節優先於下方較早的接力紀錄；下方歷史段落保留原樣，避免把當時的阻塞誤讀成現在的狀態。

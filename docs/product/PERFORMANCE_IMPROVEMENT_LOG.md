@@ -5,7 +5,7 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
-## 2026-09-20 私有活動封面不再阻塞社員首頁內容（待 staging 前後量測）
+## 2026-09-20 私有活動封面不再阻塞社員首頁內容（staging 前後量測完成）
 
 - 找到的具體等待點：`get_my_member_home_projection` 回來後，社員首頁原本還要等待
   `signCoverImageUrls` 的 Supabase Storage 往返，才會送出整個活動／待辦／訊息資料區。
@@ -15,7 +15,23 @@
 - 本機針對性測試、完整 Vitest、typecheck、lint、build、`verify:db`、migration guard、verification manifest
   與 `git diff --check` 已通過；本機 member-home 瀏覽器測試需要 `E2E_ROLE_PASSWORD`，補上本機 fixture 後有 2 個行為測試通過，
   另 1 個跨社切換測試受本機測試 host／fixture 的 access-denied 狀態影響，不能當成這次效能修改的通過證據。
-- **尚未量測**：這個修改尚未部署到 staging，沒有前後 LCP／FCP／TTFB／INP 數字；E-06 仍未結案。
+- 已部署到 staging exact SHA `ba67f85dcfc9a219ad9e736fd791f686703181d3`，並以受保護測試帳號完成同一 runtime 的 3 次社員／社務管理首頁量測（workflow `35519567233`）。
+- 這次量測沒有證明整體變快：社員中位數為 LCP／FCP／TTFB／INP `1624／1040／671.3／16 ms`，社務管理為 `1604／664／634.4／16 ms`；前一組基準分別是 `1408／976／565.6／16 ms` 與 `896／476／451.5／16 ms`。兩組樣本的冷／暖快取與 Render runtime 波動很大，不能把中位數變高直接歸因於這個修改，也不能宣稱已改善。
+- 結論：這個改動仍保留，因為它縮短了社員首頁等待私有封面 signed URL 的關鍵路徑，且沒有公開快取或改權限；但 E-06 不結案。下一步應在同一 runtime 做更多樣本／Chrome DevTools 登入後 trace，拆出伺服器等待、資料庫與前端 render 的真正影響。
+
+## 2026-09-20 E-06 修改後 Hosted staging 對照（run `35519567233`）
+
+- staging Go-Live `35519371764` 使用產品 exact SHA `ba67f85dcfc9a219ad9e736fd791f686703181d3` 成功；`/api/health` 回報 revision `ba67f85dcfc9`、`issues=[]`、`warnings=[]`。沒有修改 production。
+- CI `35518602660` 與 Browser Smoke `35518602659` 均成功；本輪未標 `[skip ci]`。
+- 條件：同一 staging runtime、既有受保護社員／執行秘書測試帳號、desktop Chromium、每頁 3 次；沒有 CPU／網路限速。數字只保留在 Actions job summary，沒有保存帳密、頁面內容、截圖、影片、trace 或 HTML report。
+
+| 頁面 | 第 1 次 LCP／FCP／TTFB／INP | 第 2 次 LCP／FCP／TTFB／INP | 第 3 次 LCP／FCP／TTFB／INP | 中位數 LCP／FCP／TTFB／INP |
+|---|---:|---:|---:|---:|
+| 社員首頁 `member-dashboard` | 1744／1040／671.3／16 ms | 1624／1092／1075.4／16 ms | 980／396／369.7／16 ms | 1624／1040／671.3／16 ms |
+| 社務管理首頁 `management-dashboard` | 1604／928／902.1／16 ms | 428／428／408.8／16 ms | 1848／664／634.4／16 ms | 1604／664／634.4／16 ms |
+
+- 與 workflow `35517332436` 的既有基準相比，這組數字不是可直接歸因的前後實驗；目前只能說「修改已安全部署且驗收通過，但效能改善尚未被數據證明」。
+- Chrome DevTools 登入後 trace 仍未取得；本輪數字來自受保護 Playwright 效能 workflow，不冒充 DevTools trace。
 
 ## 2026-09-20 E-06 受保護的 Hosted 目前基線（run `35517332436`）
 
