@@ -3,13 +3,15 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-21 最新交接（產品／staging `7253ea0`）
+## 2026-09-21 最新交接（文件主線 `a2211b1`；產品／staging `7253ea0`）
 
-- 權威 `main`／`origin/main` exact SHA：`7253ea009e570948953b796dcd29ea6b79591230`；工作樹只保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，不可讀寫或提交。
+- 權威 `main`／`origin/main` exact SHA：`a2211b177bc0e999ccc1be44f9036a486b0e8a4f`；`7f1a822` 與 `a2211b1` 都是文件同步提交，staging 產品仍執行 `7253ea009e57`。工作樹只保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，不可讀寫或提交。
+- 本輪同步了 LINE follow 配對、LINE OA onboarding 與 Rich Menu 三份企劃書的目前 runtime／外部驗收狀態；沒有新增產品程式、migration、權限變更或 staging 部署。
 - 今日完成第二個 E-06 關鍵路徑調整：導覽未讀訊息數只影響徽章，現在在 `Suspense` 中延後補上；登入後首頁不再為導覽徽章等待 RPC。沒有新增 migration、公開快取、權限／RLS／登入或社團隔離變更。
 - CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功；staging `/api/health` 是 `revision=7253ea009e57`、`status=ok`、`issues=[]`。
 - 效能 workflow `35521567024` 的 5 次中位數：社員 `1132／432／411／16 ms`、社務管理 `748／364／329.1／16 ms`（LCP／FCP／TTFB／INP）。這是 Playwright browser timing，方向較舊基準低，但不是同一 runtime／樣本條件，不能宣稱因果改善；登入後 Chrome DevTools trace 仍未取得，E-06 不結案。
 - 本機完整檢查通過：typecheck、lint、Vitest `200` 檔／`1483` tests、build、`verify:db`、migration guard、verification manifest、`git diff --check`；lint 只有既有 warning。
+- 文件提交 `a2211b1` 的自動 CI `35522696971` 與 Browser Smoke `35522696974` 均成功；文件同步不需要重新部署 staging。
 
 ### 下一位接力先做
 
