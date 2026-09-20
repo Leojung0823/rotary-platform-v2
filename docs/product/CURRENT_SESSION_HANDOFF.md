@@ -3,6 +3,17 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 本輪工程進度：E-06 效能驗收入口已補上
+
+- 新增 `.github/workflows/staging-performance-acceptance.yml`、`scripts/verify-staging-performance-acceptance-inputs.mjs`、
+  `src/lib/staging-performance-acceptance.mjs` 與對應測試，以及 `e2e/tests/staging-performance-acceptance.e2e.mjs`。
+- 入口限制：只能從 `main` 手動觸發；輸入必須是 staging 目前 exact SHA、`TEST-STAGING-PERFORMANCE`；staged SHA 必須在目前 main 歷史內；
+  只用既有 staging 測試身份並經 `staging` environment approval，不碰 production、不用 service role／Supabase management token、不輸出秘密。
+- 每個頁面預設取 3 個同 runtime 樣本：社員 `/dashboard?mode=member` 與社務管理 `/dashboard?mode=management`，記錄 LCP／FCP／TTFB，
+  再用帳號選單的無副作用點擊取 INP。結果僅進 job summary，沒有 artifact。
+- 目前只完成工程入口與本機契約驗證，**尚未手動觸發 hosted workflow**；所以 E-06 仍是「未量測／未結案」，不能把本機或未登入 `/login` 的數字代替。
+- 完整本機檢查：typecheck、lint、Vitest `200` 檔／`1481` tests、build、verify:db、migration guard、verification manifest、diff check；lint 仍只有既有 warning。
+
 ## 2026-09-20 最新接力結論（`54c08ef`；staging 已完成驗收）
 
 - 本輪產品／staging 驗收基線 exact SHA 為 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961`；文件同步後 `main` 會再包含 docs-only commit，最新主線請以 `git rev-parse origin/main` 現場核對；目前沒有 open PR。使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 必須保留，不可加入提交。

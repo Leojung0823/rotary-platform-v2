@@ -1,9 +1,21 @@
 # Rotary Platform V2 效能改善紀錄
 
-更新日期：2026-09-18（Asia/Taipei）
+更新日期：2026-09-20（Asia/Taipei）
 
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
+
+## 2026-09-20 E-06 受保護的 Hosted 量測入口（尚未執行）
+
+- 新增 `.github/workflows/staging-performance-acceptance.yml`，只能由 `main` 手動觸發，必須輸入
+  `TEST-STAGING-PERFORMANCE` 與目前 staging 的 exact SHA；staged SHA 必須是目前 main 測試版本的祖先。
+- workflow 只使用既有 GitHub `staging` environment 的社員／執行秘書測試帳號，通過 environment approval 後才跑；不碰 production，
+  不使用 `SUPABASE_ACCESS_TOKEN`，不輸出帳密，也不保留 screenshot、video、trace 或 HTML report。
+- 每個登入後首頁（社員模式、社務管理模式）預設各量測 3 次，在同一 hosted runtime 記錄 LCP、FCP、文件 TTFB；用無副作用的帳號選單點擊取得 INP。
+  結果只寫入 Actions job summary，runner 暫存檔在工作結束後消失。
+- 本輪尚未手動觸發 workflow，因此社員／社務管理頁目前仍是「未量測」。這個入口只能產生目前基線，不能單獨證明前後改善；E-06 仍需要
+  同一 runtime／快取條件的前後比較與可重現的 INP 證據才能結案。
+- 本機只驗證了 input contract、JavaScript 語法與非 hosted E2E 的安全跳過；沒有把本機或 `/login` 數字寫成登入後數字。
 
 ## 2026-09-20 Chrome DevTools MCP 可用性確認（不是登入後基線）
 

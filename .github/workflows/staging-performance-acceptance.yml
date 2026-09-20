@@ -1,0 +1,126 @@
+name: Staging Performance Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Enter the exact 40-character commit SHA currently deployed to staging"
+        required: true
+        type: string
+      confirmation:
+        description: "Enter TEST-STAGING-PERFORMANCE"
+        required: true
+        type: string
+      sample_count:
+        description: "Number of same-condition samples per page"
+        required: true
+        default: "3"
+        type: choice
+        options:
+          - "3"
+          - "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-performance-acceptance
+  cancel-in-progress: false
+
+jobs:
+  acceptance:
+    name: Hosted staging performance baseline
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+    env:
+      STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      STAGING_PERFORMANCE_CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_PERFORMANCE_SAMPLE_COUNT: ${{ inputs.sample_count }}
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
+      STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
+      STAGING_TEST_MEMBER_PASSWORD: ${{ secrets.STAGING_TEST_MEMBER_PASSWORD }}
+      STAGING_TEST_OPERATOR_EMAIL: ${{ secrets.STAGING_TEST_OPERATOR_EMAIL }}
+      STAGING_TEST_OPERATOR_PASSWORD: ${{ secrets.STAGING_TEST_OPERATOR_PASSWORD }}
+      E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      E2E_EXPECTED_SHA: ${{ inputs.expected_sha }}
+      E2E_REMOTE: "1"
+      E2E_SENSITIVE: "1"
+      STAGING_PERFORMANCE_OUTPUT: ${{ runner.temp }}/staging-performance-results.json
+
+    steps:
+      - name: Check out current main test revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Validate manual acceptance inputs
+        run: node scripts/verify-staging-performance-acceptance-inputs.mjs
+
+      - name: Verify staged revision is in current main history
+        shell: bash
+        run: |
+          git cat-file -e "$STAGING_EXPECTED_SHA^{commit}"
+          git merge-base --is-ancestor "$STAGING_EXPECTED_SHA" "$GITHUB_SHA"
+          echo "Staging revision is an ancestor of the current main test revision."
+
+      - name: Install isolated browser test dependencies
+        run: npm ci --prefix e2e
+
+      - name: Install Chromium and operating-system dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if timeout -k 30 240 npm --prefix e2e run install:chromium; then
+              exit 0
+            fi
+            echo "Chromium install attempt ${attempt} failed or stalled; retrying."
+            sudo pkill -9 -x apt-get 2>/dev/null || true
+            sudo pkill -9 -x dpkg 2>/dev/null || true
+            sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock 2>/dev/null || true
+            sudo dpkg --configure -a 2>/dev/null || true
+            sleep 20
+          done
+          echo "Chromium install did not succeed after 3 attempts."
+          exit 1
+
+      - name: Run protected hosted staging performance baseline
+        run: npm --prefix e2e run test:staging-performance -- --project=desktop-chromium
+
+      - name: Record performance baseline in the job summary
+        if: success()
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFile, readFile } from "node:fs/promises";
+
+          const results = JSON.parse(await readFile(process.env.STAGING_PERFORMANCE_OUTPUT, "utf8"));
+          const lines = [
+            "### Hosted staging performance baseline passed",
+            `- Staging revision: \`${results.expectedSha}\``,
+            `- Samples per page: ${results.sampleCount}`,
+            "- Metrics were collected after protected member/operator login in the same staging runtime.",
+            "- No email address, password, page content, screenshots, video, trace or HTML report was retained.",
+            "",
+            "| Page | Sample | LCP (ms) | FCP (ms) | TTFB (ms) | INP (ms) |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
+          ];
+          for (const route of results.routes) {
+            for (const sample of route.samples) {
+              lines.push(`| ${route.label} | ${sample.sample} | ${sample.lcpMs} | ${sample.fcpMs} | ${sample.ttfbMs} | ${sample.inpMs} |`);
+            }
+          }
+          await appendFile(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
+          NODE
