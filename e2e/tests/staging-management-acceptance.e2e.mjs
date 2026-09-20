@@ -659,20 +659,57 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     const receiptReversal = page.locator("details").filter({ hasText: "沖銷這筆收款" }).first();
     await receiptReversal.locator("summary").click();
     await receiptReversal.getByLabel("沖銷原因").fill("staging 驗收資料回收");
+    const receiptReversalResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === "POST"
+      && new URL(response.url()).pathname === "/api/v1/dues-finance"
+    ), { timeout: 30_000 });
     await receiptReversal.getByRole("button", { name: "保留紀錄並沖銷" }).click();
-    await expect(page.getByText("收款已沖銷，原紀錄仍保留。", { exact: true })).toBeVisible({ timeout: 30_000 });
+    // The API response is the durable mutation boundary. The UI's
+    // "收款已沖銷，原紀錄仍保留。" success notice is client state and can be
+    // replaced by the following router refresh, so assert the persisted status.
+    const receiptReversalResponse = await receiptReversalResponsePromise;
+    expect(receiptReversalResponse.status()).toBe(200);
+    await page.goto(disposableFinanceUrl);
+    const reversedReceipt = page.locator('section[aria-labelledby="dues-receipt-history-heading"] section.card')
+      .filter({ hasText: receiptMemberName })
+      .filter({ hasText: "已沖銷" })
+      .first();
+    await expect(reversedReceipt).toBeVisible({ timeout: 30_000 });
 
-    const reconciliationReversal = page.locator("details").filter({ hasText: "反向" }).last();
+    const currentAdvanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
+    const reconciliationReversal = currentAdvanceCard.locator("details").filter({ hasText: "反向" }).last();
     await reconciliationReversal.locator("summary").click();
     await reconciliationReversal.getByPlaceholder("反向原因").fill("staging 驗收資料回收");
+    const reconciliationReversalResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === "POST"
+      && new URL(response.url()).pathname === "/api/v1/dues-finance"
+    ), { timeout: 30_000 });
     await reconciliationReversal.getByRole("button", { name: "確認", exact: true }).click();
-    await expect(page.getByText("核銷已反向調整，原紀錄仍保留。", { exact: true })).toBeVisible({ timeout: 30_000 });
+    // The API response is the durable mutation boundary. The UI's
+    // "核銷已反向調整，原紀錄仍保留。" success notice is client state and can
+    // be replaced by the following router refresh.
+    const reconciliationReversalResponse = await reconciliationReversalResponsePromise;
+    expect(reconciliationReversalResponse.status()).toBe(200);
+    await page.goto(disposableFinanceUrl);
+    const reversedAdvanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
+    await expect(reversedAdvanceCard.getByText("已反向", { exact: true })).toBeVisible({ timeout: 30_000 });
 
-    const returnedAdvance = page.locator("details").filter({ hasText: "退回申請" }).first();
+    const returnedAdvance = reversedAdvanceCard.locator("details").filter({ hasText: "退回申請" }).first();
     await returnedAdvance.locator("summary").click();
     await returnedAdvance.getByLabel("退回原因").fill("staging 驗收資料回收");
+    const returnAdvanceResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === "POST"
+      && new URL(response.url()).pathname === "/api/v1/dues-finance"
+    ), { timeout: 30_000 });
     await returnedAdvance.getByRole("button", { name: "退回", exact: true }).click();
-    await expect(page.getByText("代墊已退回，社員可修改後重新送出。", { exact: true })).toBeVisible({ timeout: 30_000 });
+    // The API response is the durable mutation boundary. The UI's
+    // "代墊已退回，社員可修改後重新送出。" success notice is client state and
+    // can be replaced by the following router refresh.
+    const returnAdvanceResponse = await returnAdvanceResponsePromise;
+    expect(returnAdvanceResponse.status()).toBe(200);
+    await page.goto(disposableFinanceUrl);
+    const returnedAdvanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
+    await expect(returnedAdvanceCard.getByText("已退回", { exact: true })).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole("button", { name: /^全部\s+\d+$/u }).click();
     const receiptMemberRow = page.locator("li").filter({ hasText: receiptMemberName }).filter({ hasText: "調整應收金額" }).first();
@@ -680,8 +717,18 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await adjustment.locator("summary").click();
     await adjustment.getByLabel("調整金額").fill("-4999");
     await adjustment.getByLabel("原因").fill("staging 驗收資料回收");
+    const adjustmentResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === "POST"
+      && new URL(response.url()).pathname === "/api/v1/dues-finance"
+    ), { timeout: 30_000 });
     await adjustment.getByRole("button", { name: "儲存調整" }).click();
-    await expect(page.getByText("應收金額已調整。", { exact: true })).toBeVisible({ timeout: 30_000 });
+    // The API response is the durable mutation boundary. The UI's
+    // "應收金額已調整。" success notice is client state and can be replaced by
+    // the following router refresh.
+    const adjustmentResponse = await adjustmentResponsePromise;
+    expect(adjustmentResponse.status()).toBe(200);
+    await page.goto(disposableFinanceUrl);
+    await expect(page.getByText(receiptMemberName, { exact: true })).toBeVisible({ timeout: 30_000 });
   });
 
   test("E-10 負向角色矩陣不越權", async ({ browser }) => {
