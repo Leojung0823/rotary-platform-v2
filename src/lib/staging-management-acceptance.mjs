@@ -90,6 +90,7 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
   const memberPassword = String(input.STAGING_TEST_MEMBER_PASSWORD ?? "");
   const expectedClubName = text(input.STAGING_EXPECTED_CLUB_NAME);
   const expectNegativeRoles = text(input.STAGING_EXPECT_NEGATIVE_ROLES).toLowerCase() === "true";
+  const negativeOnly = text(input.STAGING_NEGATIVE_ONLY).toLowerCase() === "true";
 
   if (eventName !== "workflow_dispatch") errors.push("STAGING_MANAGEMENT_ACCEPTANCE_MANUAL_ONLY");
   if (refName !== "main") errors.push("STAGING_MANAGEMENT_ACCEPTANCE_MAIN_ONLY");
@@ -98,6 +99,9 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
   else if (expectedSha !== githubSha) errors.push("STAGING_EXPECTED_SHA_MISMATCH");
   if (confirmation !== "TEST-STAGING-MANAGEMENT") {
     errors.push("STAGING_MANAGEMENT_ACCEPTANCE_CONFIRMATION_MISMATCH");
+  }
+  if (negativeOnly && !expectNegativeRoles) {
+    errors.push("STAGING_NEGATIVE_ONLY_REQUIRES_NEGATIVE_ROLES");
   }
 
   if (!EMAIL_PATTERN.test(operatorEmail)
@@ -157,6 +161,7 @@ export function inspectStagingManagementAcceptanceInput(input = process.env) {
       && operatorEmail !== memberEmail,
     negativeRoleCredentialsConfigured: negativeRoleCredentials.every(({ configured, valid }) => configured && valid),
     negativeRoleMatrixRequested: expectNegativeRoles,
+    negativeOnly,
     expectedClubConfigured: Boolean(expectedClubName),
     errors,
   };

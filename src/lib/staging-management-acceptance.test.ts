@@ -19,6 +19,7 @@ function validInput() {
     STAGING_TEST_MEMBER_EMAIL: "staging-member@example.test",
     STAGING_TEST_MEMBER_PASSWORD: "Rotary-Staging-Member-2026!",
     STAGING_EXPECT_NEGATIVE_ROLES: "false",
+    STAGING_NEGATIVE_ONLY: "false",
     STAGING_EXPECTED_CLUB_NAME: "Rotary Platform Staging Test Club",
   };
 }
@@ -31,6 +32,7 @@ describe("staging management acceptance input", () => {
     expect(result.siteOrigin).toBe("https://staging.example.com");
     expect(result.credentialsConfigured).toBe(true);
     expect(result.negativeRoleMatrixRequested).toBe(false);
+    expect(result.negativeOnly).toBe(false);
     expect(result.negativeRoleCredentialsConfigured).toBe(false);
     expect(result.errors).toEqual([]);
   });
@@ -81,6 +83,7 @@ describe("staging management acceptance input", () => {
     const result = inspectStagingManagementAcceptanceInput({
       ...validInput(),
       STAGING_EXPECT_NEGATIVE_ROLES: "true",
+      STAGING_NEGATIVE_ONLY: "true",
       STAGING_TEST_SUSPENDED_EMAIL: "staging-suspended@example.test",
       STAGING_TEST_SUSPENDED_PASSWORD: "Rotary-Staging-Suspended-2026!",
       STAGING_TEST_ENDED_EMAIL: "staging-ended@example.test",
@@ -90,6 +93,7 @@ describe("staging management acceptance input", () => {
     });
     expect(result.ok).toBe(true);
     expect(result.negativeRoleMatrixRequested).toBe(true);
+    expect(result.negativeOnly).toBe(true);
     expect(result.negativeRoleCredentialsConfigured).toBe(true);
   });
 
@@ -200,5 +204,16 @@ describe("staging management acceptance workflow safety", () => {
     expect(stagingTest).toContain('const accessDeniedHeading = /^(無法存取|帳號目前未啟用|目前沒有有效社籍)$/u;');
     expect(stagingTest).toContain('targetManagementUrl');
     expect(stagingTest).toContain('outsiderPage.getByRole("heading", { level: 1 })');
+  });
+
+  it("allows E-10 to run alone without treating unrelated mutable acceptance data as a failure", () => {
+    expect(workflow).toContain("negative_only:");
+    expect(workflow).toContain('STAGING_NEGATIVE_ONLY: ${{ inputs.negative_only }}');
+    expect(workflow).toContain('npm --prefix e2e run test:staging-management -- --grep "E-10 負向角色矩陣不越權"');
+    const result = inspectStagingManagementAcceptanceInput({
+      ...validInput(),
+      STAGING_NEGATIVE_ONLY: "true",
+    });
+    expect(result.errors).toContain("STAGING_NEGATIVE_ONLY_REQUIRES_NEGATIVE_ROLES");
   });
 });

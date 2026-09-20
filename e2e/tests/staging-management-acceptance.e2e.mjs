@@ -754,6 +754,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     const operatorPage = await operatorContext.newPage();
     let targetManagementUrl;
     try {
+      await login(operatorPage, operatorEmail, operatorPassword);
       targetManagementUrl = await expectedManagementMembersUrl(operatorPage);
     } finally {
       await operatorContext.close();
