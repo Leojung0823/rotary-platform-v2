@@ -537,6 +537,10 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
       `可回收社費驗收 ${Date.now()}`,
     );
     expect(yearId).toMatch(/^[0-9a-f-]{36}$/u);
+    const disposableFinanceUrl = new URL(
+      `/clubs/${clubId}/dues?mode=management&yearId=${encodeURIComponent(yearId)}`,
+      baseURL,
+    ).toString();
 
     const setup = page.locator("details").filter({ hasText: "年度設定 · 應收預設與個別應收" }).first();
     if (!(await setup.evaluate((element) => element instanceof HTMLDetailsElement && element.open))) {
@@ -554,7 +558,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     // local success notice can appear before the refreshed server projection.
     // Reload before selecting a receivable so the test never depends on that
     // race.
-    await page.reload();
+    await page.goto(disposableFinanceUrl);
     const firstReceiptButton = page.getByRole("button", { name: "收款", exact: true }).first();
     await expect(firstReceiptButton).toBeVisible({ timeout: 30_000 });
     const receiptRow = firstReceiptButton.locator("xpath=ancestor::li[1]");
@@ -590,7 +594,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     // the following router refresh. The durable acceptance point is the
     // persisted advance state, so reload and assert the record is actually
     // closed.
-    await page.reload();
+    await page.goto(disposableFinanceUrl);
     const closedAdvanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
     await expect(closedAdvanceCard.getByText("已結案", { exact: true })).toBeVisible({ timeout: 30_000 });
 
