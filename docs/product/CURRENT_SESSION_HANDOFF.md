@@ -3,29 +3,33 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+### E-06 同條件前後比較已完成（run `35528969873`）
+
+- 修改前 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961` 與修改後 `7253ea009e570948953b796dcd29ea6b79591230`，在同一 staging、同一受保護 desktop Chromium、同一 `warm` 瀏覽器快取條件下，各頁各取 5 次。
+- 社員首頁 LCP／FCP／TTFB／INP：`844／408／388.2／16 ms` → `816／308／283.1／16 ms`（`-3.3%／-24.5%／-27.1%／0.0%`）。社務管理首頁：`836／388／371.3／16 ms` → `772／392／368.8／16 ms`（`-7.7%／+1.0%／-0.7%／0.0%`）。
+- 這是觀測性中位數，不是所有環境的保證；同條件前後證據已完成。原始 trace 不保存，只保留匿名 CDP 摘要。
+
 ## 2026-09-21 最新交接（產品／staging `7253ea0`；主線 SHA 以現場核對為準）
 
 - 本節的產品／staging 核對基準是 `7253ea009e57`；文件同步提交會改變 `main` 的指標，因此最新主線 exact SHA 一律以 `git rev-parse origin/main` 現場核對。工作樹只保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，不可讀寫或提交。
 - 本輪同步了 LINE follow 配對、LINE OA onboarding 與 Rich Menu 三份企劃書的目前 runtime／外部驗收狀態；沒有新增產品程式、migration、權限變更或 staging 部署。
 - 今日完成第二個 E-06 關鍵路徑調整：導覽未讀訊息數只影響徽章，現在在 `Suspense` 中延後補上；登入後首頁不再為導覽徽章等待 RPC。沒有新增 migration、公開快取、權限／RLS／登入或社團隔離變更。
 - CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功；staging `/api/health` 是 `revision=7253ea009e57`、`status=ok`、`issues=[]`。
-- 效能 workflow `35521567024` 的 5 次中位數：社員 `1132／432／411／16 ms`、社務管理 `748／364／329.1／16 ms`（LCP／FCP／TTFB／INP）。這是 Playwright browser timing，方向較舊基準低，但不是同一 runtime／樣本條件，不能宣稱因果改善；登入後 Chrome DevTools trace 仍未取得，E-06 不結案。
-- 同一產品 runtime `7253ea009e57` 重跑 `35523970567` 的 5 次中位數為：社員 `776／360／343.3／16 ms`、社務管理 `564／300／269.8／16 ms`。這仍是 Playwright 重複觀測，不是修改前後因果證據；E-06 維持未結案。
-- 本輪已補強 staging 效能驗收入口：每次 run 必須選 `cold` 或 `warm` 快取條件，並以 Chrome DevTools Protocol 取得只含事件數／長任務摘要的短暫 trace；原始 trace 不保存。Hosted warm run `35526568485` 已成功，E-06 仍未結案的原因是舊基線沒有同樣快取條件。
-- `35526568485` 條件為 staging 產品 runtime `7253ea009e57`、受保護社員／執行秘書身份、desktop Chromium、每頁 5 次、`warm` cache。中位數：社員 LCP／FCP／TTFB／INP `836／336／309.2／16 ms`；管理 `372／312／291／16 ms`。CDP trace 摘要：社員 `1288` 事件、管理 `1111` 事件，長任務皆 `0`，原始 trace 未保存。
+- 效能 workflow `35521567024` 與 `35523970567` 是同一產品 runtime 的較早觀測，不能單獨證明改善；同條件前後比較已由上方 `35528969873` 補足。
+- 本輪已補強 staging 效能驗收入口：每次 run 必須選 `cold` 或 `warm` 快取條件，並以 Chrome DevTools Protocol 取得只含事件數／長任務摘要的短暫 trace；原始 trace 不保存。Hosted warm run `35526568485` 已成功，之後由 `35528969873` 補上同條件前後比較。
+- `35526568485` 條件為 staging 產品 runtime `7253ea009e57`、受保護社員／執行秘書身份、desktop Chromium、每頁 5 次、`warm` cache。中位數：社員 LCP／FCP／TTFB／INP `836／336／309.2／16 ms`；管理 `372／312／291／16 ms`。CDP trace 摘要：社員 `1288` 事件、管理 `1111` 事件，長任務皆 `0`，原始 trace 未保存；這是比較前的工具基線。
 - 同一產品 runtime 的 `cold` cache run `35527405302` 也成功：社員中位數 `672／272／249.5／16 ms`；管理 `668／308／249.1／16 ms`。CDP trace 摘要：社員 6 個長任務、最長 `101.5 ms`；管理 5 個、最長 `174.2 ms`。這是 cache 條件觀測，不是修改前後因果比較。
-- 工具提交 `d1808a7` 修正 hosted Chromium 的 INP 延遲觀測；`6bea80f` 讓匿名量測數字同步出現在 Actions log。第一次重跑 `35525815995` 的 INP 失敗保留作為工具診斷證據，不代表產品頁面失敗。
+- 工具提交 `d1808a7` 修正 hosted Chromium 的 INP 延遲觀測；`6bea80f` 讓匿名量測數字同步出現在 Actions log。第一次重跑 `35525815995` 的 INP 失敗保留作為工具診斷證據，不代表產品頁面失敗；這些修正已支持 `35528969873` 的比較。
 - 本機完整檢查通過：typecheck、lint、Vitest `200` 檔／`1484` tests、build、`verify:db`、migration guard、verification manifest、`git diff --check`；lint 只有既有 warning。
 - 文件提交 `a2211b1` 的自動 CI `35522696971` 與 Browser Smoke `35522696974` 均成功；文件同步不需要重新部署 staging。
 
 ### 下一位接力先做
 
 1. E-03：用乾淨真人帳號驗證 LINE follow 對到正確 `person_id`，再完成多社／外社／停權負向驗收；需要使用者在 LINE Developers Console 與真人 LINE 操作，不能用程式假造。
-2. E-06：補一組與修改前相同工具／相同 `warm` 或 `cold` 條件的前測，或以同等嚴格方式取得可比的舊 runtime 數據；目前已有登入後 warm baseline 與 CDP 摘要，但沒有因果前後比較，不要再猜測性改查詢。
-3. E-07：排真實 iOS／Android、M1 與五位使用者測試。
-4. E-08：等待 production 發布決策；未授權前不碰 production。
-5. E-11：逐社完成 LINE OA／Rich Menu 外部設定與手機驗收。
-6. E-09 recovery email／custom SMTP 依產品決定暫緩。
+2. E-07：排真實 iOS／Android、M1 與五位使用者測試。
+3. E-08：等待 production 發布決策；未授權前不碰 production。
+4. E-11：逐社完成 LINE OA／Rich Menu 外部設定與手機驗收。
+5. E-09 recovery email／custom SMTP 依產品決定暫緩。
 
 不要重做已通過的 E-05 額度停止並提示、E-10 負向矩陣、生日 hosted acceptance 或社費 hosted 合成流程；staging 財務資料不代表正式金流。
 

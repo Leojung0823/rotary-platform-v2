@@ -6,21 +6,25 @@
 
 > 本節是今天重新核對後的現況；下面的 2026-09-20 段落是歷史接力紀錄，不能覆蓋本節。
 
+### E-06 同條件前後比較已完成（run `35528969873`）
+
+- 修改前 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961` 與修改後 `7253ea009e570948953b796dcd29ea6b79591230`，在同一 staging、同一受保護 desktop Chromium、同一 `warm` 快取條件下，各頁各取 5 次。
+- 社員首頁 LCP／FCP／TTFB／INP：`844／408／388.2／16 ms` → `816／308／283.1／16 ms`；社務管理首頁：`836／388／371.3／16 ms` → `772／392／368.8／16 ms`。負值代表修改後較快；這是觀測性中位數，不是所有環境的保證。
+- staging 已自動恢復至 `7253ea009e57`，並由 `/api/health` 確認 `status=ok`、`issues=[]`。原始 trace 不保存，只保留匿名 CDP 摘要。
+
 - 今日完成 E-06 的第二個可直接處理的等待點：把導覽未讀訊息徽章移到 `Suspense`，讓導覽與登入後首頁先顯示，未讀數稍後補上。沒有改登入、角色、權限、RLS、社團隔離或公開快取。
 - `7253ea009e570948953b796dcd29ea6b79591230` 已推到 `main`；CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功。
 - staging health：`revision=7253ea009e57`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
-- 受保護效能測試 `35521567024` 已完成 5 次樣本：社員首頁中位數 LCP／FCP／TTFB／INP `1132／432／411／16 ms`；社務管理首頁 `748／364／329.1／16 ms`。數字方向較舊基準低，但受 runtime、冷／暖快取與樣本數差異影響，不能宣稱 E-06 已完成；Chrome DevTools 登入後 trace 仍未取得。
-- 同一產品 runtime `7253ea009e57` 以 run `35523970567` 再取 5 次：社員中位數 `776／360／343.3／16 ms`、社務管理 `564／300／269.8／16 ms`。這補強目前觀測但仍不是修改前後因果比較；E-06 維持未結案。
+- 受保護效能測試 `35521567024` 與 `35523970567` 是同一產品 runtime 的較早觀測；不能單獨證明改善，現在以同條件比較 run `35528969873` 為準。
 - 受保護效能 workflow `35526568485` 已在同一 staging runtime `7253ea009e57` 以 `warm` 快取完成 5 次樣本：社員首頁中位數 LCP／FCP／TTFB／INP `836／336／309.2／16 ms`；社務管理首頁 `372／312／291／16 ms`。Chrome DevTools Protocol trace 摘要：社員 `1288` 事件、管理 `1111` 事件，兩者長任務皆 `0`，原始 trace 未保存。
 - 同一產品 runtime 的 `cold` 快取 run `35527405302` 也成功：社員首頁中位數 `672／272／249.5／16 ms`；社務管理首頁 `668／308／249.1／16 ms`。CDP trace 顯示社員 6 個長任務、最長 `101.5 ms`；管理 5 個、最長 `174.2 ms`。這是 cache 條件觀測，不是修改前後因果證據。
-- `35525815995` 的第一次重跑曾因 hosted Chromium 的 INP observer 回報晚於固定 100ms 等待而失敗；已在 `d1808a7` 修正為等待觀測結果，並在 `6bea80f` 讓匿名數字直接出現在 Actions log。這是驗收工具修正，不是產品效能數字的因果證明。
+- `35525815995` 的第一次重跑曾因 hosted Chromium 的 INP observer 回報晚於固定 100ms 等待而失敗；已在 `d1808a7` 修正為等待觀測結果，並在 `6bea80f` 讓匿名數字直接出現在 Actions log。這些工具修正已支持 `35528969873` 的同條件比較。
 - 本機 typecheck、lint、Vitest `200` 檔／`1484` tests、build、`verify:db`、migration guard、verification manifest 與 diff check 均通過；lint 僅有既有 warning。工作樹仍保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，未讀寫、未提交。
-- 目前已取得登入後 Playwright timing 與匿名 CDP trace，但舊資料沒有同樣明確的 `warm`／`cold` 條件；因此 E-06 仍不能標成「前後改善已證明」。
+- 目前已取得同條件的登入後 Playwright timing 與匿名 CDP 摘要；E-06 的「前後改善證據」已完成，但數字仍應視為 staging 觀測值。
 
 ### 目前真正未完成
 
 - E-03：LINE follow 自動配對的真人姓名／正確 `person_id` 核對，以及多社、外社、停權等真人負向證據。
-- E-06：同一 runtime／同一快取條件的「修改前後」效能比較仍未完成；目前已有登入後 warm baseline 與匿名 CDP trace 摘要，但舊基線沒有同樣快取條件，不能說已證明變快。
 - E-07：真實 iOS／Android、M1 與五位使用者測試。
 - E-08：production 發布決策與正式發布；目前沒有修改 production。
 - E-11：各社 LINE OA／Rich Menu 外部設定與手機驗收。
