@@ -449,6 +449,10 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     // state. The durable acceptance point is the event status, not a transient
     // success code left over from creating the draft. This also accepts the
     // distinct "LINE push failed" notice because publishing itself succeeded.
+    // Server actions can return the success navigation before the refreshed
+    // server component reaches the browser. Reload once so this assertion
+    // reads the committed projection rather than the pre-publish card.
+    await page.reload();
     eventCard = page.locator("article.card").filter({ hasText: eventTitle }).first();
     await expect(eventCard.getByText("已發布", { exact: true })).toBeVisible();
 
@@ -546,6 +550,11 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await page.getByRole("button", { name: "產生年度應收" }).click();
     await expect(page.getByText("已為尚未建立應收的社員產生年度應收。", { exact: true })).toBeVisible({ timeout: 30_000 });
 
+    // This mutation is handled by the client API and router.refresh(); the
+    // local success notice can appear before the refreshed server projection.
+    // Reload before selecting a receivable so the test never depends on that
+    // race.
+    await page.reload();
     const firstReceiptButton = page.getByRole("button", { name: "收款", exact: true }).first();
     await expect(firstReceiptButton).toBeVisible({ timeout: 30_000 });
     const receiptRow = firstReceiptButton.locator("xpath=ancestor::li[1]");
