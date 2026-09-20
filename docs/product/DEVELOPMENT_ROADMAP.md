@@ -2,6 +2,18 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 現場重新核對（`a479350`）
+
+- `main`／`origin/main` exact SHA 都是 `a47935093a57851a6d81386063f6c9194b7bb550`；沒有 open PR。
+  自動 CI `35480516449` 與 Browser Smoke `35480516438` 均成功，這輪沒有手動觸發或重跑。
+- staging health 為 `status=ok`、`issues=[]`，但 runtime 仍是 `07002d81be23`。最新主線尚未部署，因 GitHub
+  `staging` environment 的 `SUPABASE_ACCESS_TOKEN` 尚未取得 staging project 授權；production 沒有修改。
+- E-05 額度超過停止並提示已完成。E-03、E-06、E-07、E-08、E-10、E-11 與社費 hosted 收款／核銷驗收仍不可結案；
+  E-09 依產品決定暫緩。
+- E-06 本輪 Chrome DevTools MCP 只有未登入登入頁，登入後 LCP／FCP／TTFB／INP 維持「未量測」。現有桌面管理驗收與
+  375px officer-mode 測試已有水平溢位斷言；沒有足夠證據支持以全域 CSS 隱藏溢位，因此不新增掩蓋式修正。
+- 下一個工程閘門是更新 staging-only 授權後，以此 exact SHA 執行 Staging Release／Go-Live，再跑社費與 E-10 hosted acceptance。
+
 ## 2026-09-20 最新補充（文件同步後的最新主線）
 
 - 主線已推到 `2b39108`（文件同步提交）；產品修正 commit 為 `9a40e59`。活動取消 server action 現在把 client／RPC 例外轉成既有的可重試提示；沒有重寫取消 RPC，也沒有改權限、登入、資料隔離或 production。

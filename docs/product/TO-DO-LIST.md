@@ -2,6 +2,18 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 現場重新核對（`a479350`）
+
+- `main`／`origin/main` exact SHA 都是 `a47935093a57851a6d81386063f6c9194b7bb550`；沒有 open PR。
+  自動 CI `35480516449`、Browser Smoke `35480516438` 均成功，沒有手動觸發或重跑。
+- staging `/api/health` 為 `status=ok`、`issues=[]`，但 runtime 仍是 `07002d81be23`；GitHub staging 的
+  `SUPABASE_ACCESS_TOKEN` 授權失敗，所以最新主線、社費 hosted acceptance 與 E-10 負向矩陣尚未執行。
+- E-05「LINE 額度超過時停止並提示」維持 `[x]`，不重做。E-03、E-06、E-07、E-08、E-10、E-11 與社費 hosted
+  收款／核銷驗收仍未結案；E-09 依產品決定暫緩。
+- E-06 本輪只有 Chrome DevTools MCP 未登入登入頁，登入後效能數字仍是「未量測」；現有 management acceptance 與
+  375px officer-mode 已有水平溢位斷言，沒有足夠證據支持用全域 CSS 隱藏溢位。
+- 工作樹的既有未追蹤 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 仍保留，未讀寫、未提交。
+
 ## 2026-09-20 最新核對（`2b39108`；文件同步後的主線）
 
 - `main`／`origin/main` 已推到 `2b39108`（文件同步提交）；產品修正 commit 為 `9a40e59`。`cancelEventAction` 現在會把 Supabase client／RPC 例外導向既有 `retryable` 提示，不讓網路錯誤掉進通用錯誤頁；RPC 維持原子交易，沒有改登入、權限、資料隔離或 production。

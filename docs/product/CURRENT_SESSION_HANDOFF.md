@@ -3,6 +3,19 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 現場重新核對（`a479350`）
+
+- `main`／`origin/main` exact SHA 都是 `a47935093a57851a6d81386063f6c9194b7bb550`；目前沒有 open PR。
+  最新自動 CI `35480516449` 與 Browser Smoke `35480516438` 均成功，沒有手動觸發或重跑。
+- staging `/api/health` 仍回報 `status=ok`、`issues=[]`，但 runtime 是 `07002d81be23`，尚未切到最新主線。
+  Staging Go-Live 仍被 GitHub `staging` environment 的 `SUPABASE_ACCESS_TOKEN` 授權失敗阻擋；production 沒有修改。
+- 工作樹只保留既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪未讀、未寫、未提交。
+- Chrome DevTools MCP page 11 的現況是公開登入頁，沒有 staging 登入 session；因此 E-06 登入後 LCP／FCP／TTFB／INP
+  本輪仍標記為「未量測」，沒有把登入頁數字當成登入後效能證據。現有 management acceptance 與 375px officer-mode
+  測試已包含水平溢位防線，但目前沒有足夠證據支持新增全域 `overflow-x:hidden`，未做掩蓋式修正。
+- E-05「超額即停止並提示」已完成；仍待外部證據／決策的項目是 E-03、E-06、E-07、E-08、E-10、E-11，以及社費 hosted
+  收款／核銷驗收；E-09 依產品決定暫緩。下一個可直接執行的技術步驟仍是修復 staging token 後部署最新 exact SHA。
+
 ## 2026-09-20 最新接力補充：文件同步後的最新主線
 
 - `main`／`origin/main` exact SHA 為 `2b39108`（文件同步提交）；產品修正 commit 為 `9a40e59`。`cancelEventAction` 會捕捉建立 Supabase client 或呼叫取消 RPC 時的例外，導向既有 `error=retryable`，避免無法判定是否提交時顯示通用錯誤或讓使用者誤以為仍在等待。
