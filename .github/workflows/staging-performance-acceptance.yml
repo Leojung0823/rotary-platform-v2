@@ -19,6 +19,14 @@ on:
         options:
           - "3"
           - "5"
+      cache_mode:
+        description: "Use cold (cache disabled) or warm (primed) browser cache; do not mix runs"
+        required: true
+        default: "warm"
+        type: choice
+        options:
+          - warm
+          - cold
 
 permissions:
   contents: read
@@ -40,6 +48,7 @@ jobs:
       STAGING_EXPECTED_SHA: ${{ inputs.expected_sha }}
       STAGING_PERFORMANCE_CONFIRMATION: ${{ inputs.confirmation }}
       STAGING_PERFORMANCE_SAMPLE_COUNT: ${{ inputs.sample_count }}
+      STAGING_PERFORMANCE_CACHE_MODE: ${{ inputs.cache_mode }}
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
       STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
       STAGING_TEST_MEMBER_EMAIL: ${{ secrets.STAGING_TEST_MEMBER_EMAIL }}
@@ -114,8 +123,11 @@ jobs:
             "### Hosted staging performance baseline passed",
             `- Staging revision: \`${results.expectedSha}\``,
             `- Samples per page: ${results.sampleCount}`,
+            `- Browser cache condition: ${results.cacheMode}`,
+            `- Measurement source: ${results.measurementSource}`,
             "- Metrics were collected after protected member/operator login in the same staging runtime.",
-            "- No email address, password, page content, screenshots, video, trace or HTML report was retained.",
+            "- DevTools trace summaries keep only event counts and long-task durations; raw trace data was discarded.",
+            "- No email address, password, page content, screenshots, video or HTML report was retained.",
             "",
             "| Page | Sample | LCP (ms) | FCP (ms) | TTFB (ms) | INP (ms) |",
             "| --- | ---: | ---: | ---: | ---: | ---: |",
@@ -124,6 +136,10 @@ jobs:
             for (const sample of route.samples) {
               lines.push(`| ${route.label} | ${sample.sample} | ${sample.lcpMs} | ${sample.fcpMs} | ${sample.ttfbMs} | ${sample.inpMs} |`);
             }
+          }
+          lines.push("", "| Page | Trace events | Long tasks (>=50 ms) | Longest long task (ms) | Raw trace retained |", "| --- | ---: | ---: | ---: | ---: |");
+          for (const route of results.routes) {
+            lines.push(`| ${route.label} | ${route.trace.eventCount} | ${route.trace.longTaskCount} | ${route.trace.longestLongTaskMs} | ${route.trace.rawTraceRetained} |`);
           }
           await appendFile(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
           NODE

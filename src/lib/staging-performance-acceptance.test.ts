@@ -16,6 +16,7 @@ function validInput() {
     STAGING_EXPECTED_SHA: "b".repeat(40),
     STAGING_PERFORMANCE_CONFIRMATION: PERFORMANCE_CONFIRMATION,
     STAGING_PERFORMANCE_SAMPLE_COUNT: "3",
+    STAGING_PERFORMANCE_CACHE_MODE: "warm",
     STAGING_BASE_URL: "https://staging.example.com",
     STAGING_TEST_MEMBER_EMAIL: "member@example.test",
     STAGING_TEST_MEMBER_PASSWORD: "Rotary-Staging-Member-2026!",
@@ -32,6 +33,7 @@ describe("staging performance acceptance input", () => {
     expect(result.workflowSha).toBe(sha);
     expect(result.expectedSha).toBe("b".repeat(40));
     expect(result.sampleCount).toBe(3);
+    expect(result.cacheMode).toBe("warm");
     expect(result.credentialsConfigured).toBe(true);
     expect(result.errors).toEqual([]);
   });
@@ -75,6 +77,16 @@ describe("staging performance acceptance input", () => {
       STAGING_TEST_MEMBER_PASSWORD: "Rotary-Test-2026!\nleak",
     });
     expect(result.errors).toContain("STAGING_TEST_MEMBER_PASSWORD_INVALID");
+  });
+
+  it("requires an explicit cold or warm cache condition", () => {
+    const result = inspectStagingPerformanceAcceptanceInput({
+      ...validInput(),
+      STAGING_PERFORMANCE_CACHE_MODE: "mixed",
+    });
+    expect(result.ok).toBe(false);
+    expect(result.cacheMode).toBeNull();
+    expect(result.errors).toContain("STAGING_PERFORMANCE_CACHE_MODE_INVALID");
   });
 
   it("requires a public credential-free HTTPS origin", () => {

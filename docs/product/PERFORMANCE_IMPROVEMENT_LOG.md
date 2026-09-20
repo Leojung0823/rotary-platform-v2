@@ -5,6 +5,14 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
+## 2026-09-21 E-06 驗收工具加固（尚待 hosted 實測）
+
+- 受保護的 staging 效能 workflow 現在要求明確選擇一種瀏覽器快取條件：`cold` 會關閉 HTTP cache，`warm` 會先以同一頁面導覽預熱，再取樣；同一次 run 不混用兩種條件。
+- 每個社員／社務管理頁的測量前會啟動 Chrome DevTools Protocol 的短暫 trace，僅保留事件數與長任務數／最長時間；原始 trace、URL 內容、帳密、畫面、影片與 HTML 都不寫檔或上傳。
+- LCP／FCP／TTFB／INP 仍由既有 PerformanceObserver／Navigation Timing 取得；trace 摘要用來確認 render pipeline 是否有長任務，不把它冒充完整可下載的 Chrome DevTools UI trace。
+- 本機驗證已通過：typecheck、lint、Vitest `200` 檔／`1484` tests、build、`verify:db`、migration guard、verification manifest（77 份）與 `git diff --check`；lint 仍只有既有 warning。
+- 這只是讓下一次量測可重現、可留下安全證據；尚未在新的 `cold`／`warm` 條件執行 hosted run，也尚未形成效能修改前後的同條件比較，所以 E-06 仍未結案。
+
 ## 2026-09-21 同一 staging runtime 重跑（run `35523970567`）
 
 - 以 staging 目前產品 exact SHA `7253ea009e570948953b796dcd29ea6b79591230` 重跑受保護效能基線；workflow checkout 是目前 `main` 的文件提交 `4f48f16`，沒有重新部署產品。

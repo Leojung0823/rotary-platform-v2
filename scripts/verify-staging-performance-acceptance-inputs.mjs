@@ -12,6 +12,7 @@ console.log(`Site origin: ${result.siteOrigin ?? "not configured"}`);
 console.log(`Test credentials configured: ${result.credentialsConfigured ? "yes" : "no"}`);
 console.log(`Expected club configured: ${result.expectedClubConfigured ? "yes" : "no"}`);
 console.log(`Sample count: ${result.sampleCount ?? "invalid"}`);
+console.log(`Browser cache condition: ${result.cacheMode ?? "invalid"}`);
 
 if (!result.ok) {
   for (const error of result.errors) console.error(`ERROR ${error}`);

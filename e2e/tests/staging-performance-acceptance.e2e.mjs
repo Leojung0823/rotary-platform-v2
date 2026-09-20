@@ -10,11 +10,12 @@ const expectedClubName = process.env.STAGING_EXPECTED_CLUB_NAME;
 const expectedSha = process.env.E2E_EXPECTED_SHA;
 const baseURL = process.env.E2E_BASE_URL;
 const sampleCount = Number(process.env.STAGING_PERFORMANCE_SAMPLE_COUNT ?? "3");
+const cacheMode = process.env.STAGING_PERFORMANCE_CACHE_MODE;
 const outputPath = process.env.STAGING_PERFORMANCE_OUTPUT;
 
 function requireStagingConfiguration() {
   if (!memberEmail || !memberPassword || !operatorEmail || !operatorPassword
-    || !expectedClubName || !expectedSha || !baseURL || !outputPath) {
+    || !expectedClubName || !expectedSha || !baseURL || !outputPath || !cacheMode) {
     throw new Error("Protected staging performance acceptance configuration is incomplete.");
   }
 
@@ -33,6 +34,9 @@ function requireStagingConfiguration() {
   }
   if (!Number.isInteger(sampleCount) || sampleCount < 1 || sampleCount > 5) {
     throw new Error("STAGING_PERFORMANCE_SAMPLE_COUNT must be an integer from 1 through 5.");
+  }
+  if (cacheMode !== "cold" && cacheMode !== "warm") {
+    throw new Error("STAGING_PERFORMANCE_CACHE_MODE must be cold or warm.");
   }
 }
 
@@ -97,6 +101,71 @@ async function expectHealth(request) {
   expect(health.issues).toEqual([]);
 }
 
+async function setCacheMode(page) {
+  const client = await page.context().newCDPSession(page);
+  await client.send("Network.enable");
+  await client.send("Network.setCacheDisabled", { cacheDisabled: cacheMode === "cold" });
+  return client;
+}
+
+async function collectDevToolsTraceSummary(page, { route, heading }) {
+  const client = await page.context().newCDPSession(page);
+  let traceEventCount = 0;
+  let longTaskCount = 0;
+  let longestLongTaskUs = 0;
+  let tracingCompleteResolve;
+  const tracingComplete = new Promise((resolve) => {
+    tracingCompleteResolve = resolve;
+  });
+  const onDataCollected = ({ value }) => {
+    if (!Array.isArray(value)) return;
+    for (const event of value) {
+      traceEventCount += 1;
+      if (event?.ph === "X" && Number.isFinite(event?.dur) && event.dur >= 50_000) {
+        longTaskCount += 1;
+        longestLongTaskUs = Math.max(longestLongTaskUs, event.dur);
+      }
+    }
+  };
+  const onTracingComplete = () => tracingCompleteResolve();
+  client.on("Tracing.dataCollected", onDataCollected);
+  client.on("Tracing.tracingComplete", onTracingComplete);
+  let tracingStarted = false;
+
+  try {
+    await client.send("Tracing.start", {
+      categories: "devtools.timeline",
+      transferMode: "ReportEvents",
+    });
+    tracingStarted = true;
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    await heading();
+    await page.waitForTimeout(100);
+  } finally {
+    if (tracingStarted) {
+      await client.send("Tracing.end");
+      await Promise.race([
+        tracingComplete,
+        new Promise((_, reject) => setTimeout(
+          () => reject(new Error("Chrome DevTools trace did not complete.")),
+          10_000,
+        )),
+      ]);
+    }
+    client.off("Tracing.dataCollected", onDataCollected);
+    client.off("Tracing.tracingComplete", onTracingComplete);
+    await client.detach();
+  }
+
+  return {
+    collected: traceEventCount > 0,
+    eventCount: traceEventCount,
+    longTaskCount,
+    longestLongTaskMs: Math.round((longestLongTaskUs / 1_000) * 10) / 10,
+    rawTraceRetained: false,
+  };
+}
+
 async function collectMetrics(page) {
   await page.waitForFunction(() => {
     const fcp = performance.getEntriesByName("first-contentful-paint")[0];
@@ -135,19 +204,33 @@ async function collectMetrics(page) {
 }
 
 async function measureRoute(page, { label, route, heading }) {
+  const cacheClient = await setCacheMode(page);
   const samples = [];
-  for (let index = 0; index < sampleCount; index += 1) {
-    await page.goto(route, { waitUntil: "domcontentloaded" });
-    await heading();
-    samples.push({ sample: index + 1, ...(await collectMetrics(page)) });
+  try {
+    const trace = await collectDevToolsTraceSummary(page, { route, heading });
+    expect(trace.collected).toBe(true);
+    if (cacheMode === "warm") {
+      // The trace navigation primes this same page/route before warm samples.
+      await page.waitForTimeout(100);
+    }
+    for (let index = 0; index < sampleCount; index += 1) {
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      await heading();
+      samples.push({ sample: index + 1, ...(await collectMetrics(page)) });
+    }
+    return { label, cacheMode, trace, samples };
+  } finally {
+    await cacheClient.send("Network.setCacheDisabled", { cacheDisabled: false });
+    await cacheClient.detach();
   }
-  return { label, samples };
 }
 
 async function writeResults(results) {
   await writeFile(outputPath, `${JSON.stringify({
     expectedSha,
     sampleCount,
+    cacheMode,
+    measurementSource: "PerformanceObserver plus Chrome DevTools Protocol trace summary",
     routes: results,
   }, null, 2)}\n`, "utf8");
 }
