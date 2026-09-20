@@ -467,11 +467,22 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     // Submit the visible, opened form through the browser's native submit path.
     // This keeps the acceptance on the real server action while avoiding a
     // click racing the details disclosure's layout update on hosted Chromium.
+    const eventManagementPath = new URL(page.url()).pathname;
+    const cancelResponsePromise = page.waitForResponse((response) => {
+      const request = response.request();
+      return request.method() === "POST"
+        && new URL(response.url()).pathname === eventManagementPath;
+    }, { timeout: 30_000 });
     await cancelForm.evaluate((form) => {
       if (!(form instanceof HTMLFormElement)) throw new Error("event_cancel_form_missing");
       form.requestSubmit();
     });
-    await expect(page).toHaveURL(/success=event_cancelled/u, { timeout: 30_000 });
+    const cancelResponse = await cancelResponsePromise;
+    expect(cancelResponse.status()).toBe(303);
+    // Server-action redirects can be consumed by the existing soft navigation,
+    // leaving the old success query string in the address bar. The durable
+    // acceptance point is the cancelled projection after a fresh read.
+    await page.reload();
     // Cancelled events are intentionally filed inside a collapsed archive so
     // the live management list stays scannable. Open that archive before
     // asserting the cancelled event's final state.
@@ -530,6 +541,22 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
 
   test("社費管理頁完成部分收款、代墊與核銷", async ({ page, browser }) => {
     test.setTimeout(180_000);
+
+    page.on("request", (request) => {
+      if (request.method() === "POST" && new URL(request.url()).pathname === "/api/v1/dues-finance") {
+        console.log("[staging-management] POST /api/v1/dues-finance");
+      }
+    });
+    page.on("response", (response) => {
+      if (response.request().method() === "POST" && new URL(response.url()).pathname === "/api/v1/dues-finance") {
+        console.log(`[staging-management] POST response ${response.status()} /api/v1/dues-finance`);
+      }
+    });
+    page.on("requestfailed", (request) => {
+      if (request.method() === "POST" && new URL(request.url()).pathname === "/api/v1/dues-finance") {
+        console.log(`[staging-management] POST failed ${request.failure()?.errorText ?? "unknown"} /api/v1/dues-finance`);
+      }
+    });
 
     await login(page, operatorEmail, operatorPassword);
     await openManagementOverview(page);
@@ -599,11 +626,17 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     // those old rows.
     const advanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
     await expect(advanceCard).toBeVisible();
+    const approvalResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === "POST"
+      && new URL(response.url()).pathname === "/api/v1/dues-finance"
+    ), { timeout: 30_000 });
     await advanceCard.getByRole("button", { name: "核准", exact: true }).click();
     // The success notice "核銷已登錄。" is client state and can be replaced by
     // the following router refresh. Wait for it first so the browser does not
     // interrupt the in-flight mutation, then reload and assert the persisted
     // advance state is actually closed.
+    const approvalResponse = await approvalResponsePromise;
+    expect(approvalResponse.status()).toBe(200);
     await expect(page.getByText("核銷已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
     await page.goto(disposableFinanceUrl);
     const closedAdvanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
