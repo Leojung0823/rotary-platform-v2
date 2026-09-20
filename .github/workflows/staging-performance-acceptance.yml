@@ -50,7 +50,6 @@ jobs:
       E2E_EXPECTED_SHA: ${{ inputs.expected_sha }}
       E2E_REMOTE: "1"
       E2E_SENSITIVE: "1"
-      STAGING_PERFORMANCE_OUTPUT: ${{ runner.temp }}/staging-performance-results.json
 
     steps:
       - name: Check out current main test revision
@@ -97,10 +96,14 @@ jobs:
           exit 1
 
       - name: Run protected hosted staging performance baseline
+        env:
+          STAGING_PERFORMANCE_OUTPUT: ${{ runner.temp }}/staging-performance-results.json
         run: npm --prefix e2e run test:staging-performance -- --project=desktop-chromium
 
       - name: Record performance baseline in the job summary
         if: success()
+        env:
+          STAGING_PERFORMANCE_OUTPUT: ${{ runner.temp }}/staging-performance-results.json
         shell: bash
         run: |
           node --input-type=module <<'NODE'
