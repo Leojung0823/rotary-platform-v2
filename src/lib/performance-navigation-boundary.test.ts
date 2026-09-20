@@ -48,6 +48,16 @@ describe("performance-first navigation boundaries", () => {
     expect(home.indexOf("<MemberPortalHeader")).toBeLessThan(home.indexOf("<Suspense"));
   });
 
+  it("does not hold member-home facts behind private cover signing", () => {
+    const home = source("src/components/member-portal/member-portal-home.tsx");
+    const portal = source("src/components/member-portal/member-portal.tsx");
+
+    expect(home).toContain("const featuredEventCoverUrl = coverPath");
+    expect(home).not.toContain("const covers = await signCoverImageUrls");
+    expect(portal).toContain("<Suspense fallback={<HeroCard event={featuredEvent} />}>");
+    expect(portal).toContain("async function FeaturedEventWithCover");
+  });
+
   it("does not eagerly prefetch authenticated homepage destinations", () => {
     const shell = source("src/components/role-aware-app-shell.tsx");
     const portal = source("src/components/member-portal/member-portal.tsx");

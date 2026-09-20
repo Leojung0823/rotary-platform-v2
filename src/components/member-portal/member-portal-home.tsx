@@ -65,7 +65,18 @@ async function PortalBody({
   }
 
   const { projection } = resolution;
-  const covers = await signCoverImageUrls([projection.primaryEvent?.coverImagePath]);
+  const coverPath = projection.primaryEvent?.coverImagePath ?? null;
+  // The projection is the critical data for the first usable paint. Signing a
+  // private cover is independent after it has been identified, so start it
+  // now but let the body stream without waiting for the Storage round trip.
+  // The promise and its signed URL remain request-scoped; nothing becomes a
+  // public or cross-member cache.
+  const featuredEventCoverUrl = coverPath
+    ? signCoverImageUrls([coverPath]).then((covers) => covers.get(coverPath))
+    : undefined;
+  const featuredEvent = projection.primaryEvent === null
+    ? null
+    : featuredEventFrom(projection.primaryEvent, undefined);
   const lineOaTask = lineOaResolution?.ok ? lineOaTaskFrom(lineOaResolution.status) : null;
   // Put the one task that unlocks club notifications first. The home list is
   // intentionally capped at five rows, so an unfinished OA setup cannot be
@@ -75,9 +86,8 @@ async function PortalBody({
     : tasksFrom(projection.pendingTasks);
 
   return <MemberPortalBody
-    featuredEvent={projection.primaryEvent === null
-      ? null
-      : featuredEventFrom(projection.primaryEvent, covers.get(projection.primaryEvent.coverImagePath ?? ""))}
+    featuredEvent={featuredEvent}
+    featuredEventCoverUrl={featuredEventCoverUrl}
     upcomingEvents={upcomingEventsFrom(projection.upcomingEvents)}
     tasks={tasks}
     announcements={features.messageCentre ? announcementsFrom(projection, activeClub.clubId) : []}

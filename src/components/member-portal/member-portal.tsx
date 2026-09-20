@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
 import { NotificationBell } from "./notification-bell";
 import { PortalIcon, type PortalIconName } from "./portal-icons";
 import {
@@ -132,6 +133,23 @@ function HeroCard({ event }: { event: PortalFeaturedEvent }) {
   </section>;
 }
 
+/**
+ * A cover is private storage, so its signed URL must still be resolved on the
+ * server. It does not need to hold back the event facts and action, though:
+ * the parent renders a no-cover version as the Suspense fallback and streams
+ * this version in when signing finishes.
+ */
+async function FeaturedEventWithCover({
+  event,
+  coverUrl,
+}: {
+  event: PortalFeaturedEvent;
+  coverUrl: Promise<string | undefined>;
+}) {
+  const resolvedCoverUrl = await coverUrl;
+  return <HeroCard event={{ ...event, coverUrl: resolvedCoverUrl ?? null }} />;
+}
+
 function DashboardCard({
   icon, title, tone, empty, href, children,
 }: {
@@ -163,6 +181,8 @@ export type MemberPortalContentProps = {
   member: PortalMember;
   today: { date: string; weekday: string };
   featuredEvent: PortalFeaturedEvent | null;
+  /** Request-scoped private cover signing; absent when the event has no cover. */
+  featuredEventCoverUrl?: Promise<string | undefined>;
   upcomingEvents: readonly PortalUpcomingEvent[];
   tasks: readonly PortalTask[];
   announcements: readonly PortalAnnouncement[];
@@ -192,7 +212,14 @@ export function MemberPortalHeader({
 
 /** What the page can only draw once the projection has arrived. */
 export function MemberPortalBody({
-  featuredEvent, upcomingEvents, tasks, announcements, messagesHref, entries, children,
+  featuredEvent,
+  featuredEventCoverUrl,
+  upcomingEvents,
+  tasks,
+  announcements,
+  messagesHref,
+  entries,
+  children,
 }: Omit<MemberPortalContentProps, "member" | "today">) {
   return <>
       {/* Nothing to do today is the common case, and it says so in one line
@@ -203,7 +230,11 @@ export function MemberPortalBody({
           <p>目前沒有需要處理的活動</p>
           <Link className={styles.heroEmptyLink} href="/events" prefetch={false}>查看活動 <PortalIcon name="chevronRight" size={16} /></Link>
         </section>
-        : <HeroCard event={featuredEvent} />}
+        : featuredEventCoverUrl
+          ? <Suspense fallback={<HeroCard event={featuredEvent} />}>
+            <FeaturedEventWithCover event={featuredEvent} coverUrl={featuredEventCoverUrl} />
+          </Suspense>
+          : <HeroCard event={featuredEvent} />}
 
       <div className={styles.dashboard}>
         <DashboardCard icon="calendar" title="近期活動" tone="blue" href="/events" empty={upcomingEvents.length === 0 ? "近期沒有活動" : null}>

@@ -5,6 +5,18 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
+## 2026-09-20 私有活動封面不再阻塞社員首頁內容（待 staging 前後量測）
+
+- 找到的具體等待點：`get_my_member_home_projection` 回來後，社員首頁原本還要等待
+  `signCoverImageUrls` 的 Supabase Storage 往返，才會送出整個活動／待辦／訊息資料區。
+- 已改成：先把活動文字、操作按鈕、待辦與社團訊息送到外殼；封面仍由伺服器產生短期 signed URL，
+  只在內層 Suspense 完成後補上。沒有把封面、signed URL、登入狀態、角色、權限或個人資料放進公開快取。
+- 這是請求內的並行／串流調整，不新增資料庫結構、不改 RPC／RLS、不改登入與社團隔離。
+- 本機針對性測試、完整 Vitest、typecheck、lint、build、`verify:db`、migration guard、verification manifest
+  與 `git diff --check` 已通過；本機 member-home 瀏覽器測試需要 `E2E_ROLE_PASSWORD`，補上本機 fixture 後有 2 個行為測試通過，
+  另 1 個跨社切換測試受本機測試 host／fixture 的 access-denied 狀態影響，不能當成這次效能修改的通過證據。
+- **尚未量測**：這個修改尚未部署到 staging，沒有前後 LCP／FCP／TTFB／INP 數字；E-06 仍未結案。
+
 ## 2026-09-20 E-06 受保護的 Hosted 目前基線（run `35517332436`）
 
 - 新增 `.github/workflows/staging-performance-acceptance.yml`，只能由 `main` 手動觸發，必須輸入
