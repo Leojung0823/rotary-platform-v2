@@ -197,7 +197,8 @@ describe("staging management acceptance workflow safety", () => {
   it("keeps the E-10 negative role matrix explicitly opt-in", () => {
     expect(stagingTest).toContain('test.skip(!negativeRoleMatrixRequested');
     expect(stagingTest).toContain('loginExpectingAccessDenied');
+    expect(stagingTest).toContain('const accessDeniedHeading = /^(無法存取|帳號目前未啟用|目前沒有有效社籍)$/u;');
     expect(stagingTest).toContain('targetManagementUrl');
-    expect(stagingTest).toContain('outsiderPage.getByRole("heading", { name: "無法存取", exact: true })');
+    expect(stagingTest).toContain('outsiderPage.getByRole("heading", { level: 1 })');
   });
 });

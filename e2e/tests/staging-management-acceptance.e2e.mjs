@@ -9,6 +9,7 @@ const expectedClubName = process.env.STAGING_EXPECTED_CLUB_NAME;
 const expectedSha = process.env.E2E_EXPECTED_SHA;
 const baseURL = process.env.E2E_BASE_URL;
 const backToMemberName = /^(回社員模式|返回)$/u;
+const accessDeniedHeading = /^(無法存取|帳號目前未啟用|目前沒有有效社籍)$/u;
 const negativeRoleMatrixRequested = process.env.STAGING_EXPECT_NEGATIVE_ROLES === "true";
 const negativeRoleAccounts = [
   { label: "停權社員", email: process.env.STAGING_TEST_SUSPENDED_EMAIL, password: process.env.STAGING_TEST_SUSPENDED_PASSWORD },
@@ -82,7 +83,7 @@ async function loginExpectingAccessDenied(page, email, password) {
   await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/access-denied(?:\?|$)/u);
-  await expect(page.getByRole("heading", { name: "無法存取", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(accessDeniedHeading);
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(0);
 }
 
@@ -768,7 +769,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
       await login(outsiderPage, outsider.email, outsider.password);
       await outsiderPage.goto(targetManagementUrl);
       await expect(outsiderPage).toHaveURL(/\/access-denied(?:\?|$)/u);
-      await expect(outsiderPage.getByRole("heading", { name: "無法存取", exact: true })).toBeVisible();
+      await expect(outsiderPage.getByRole("heading", { level: 1 })).toHaveText(accessDeniedHeading);
     } finally {
       await outsiderContext.close();
     }
