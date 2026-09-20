@@ -725,6 +725,9 @@ production 沒有修改。
 - **2026-09-16 修改後補測**：真實 LEO 社員頁在同一個 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、
   未限速下，DevTools 顯示 LCP `1.30 s`、CLS `0.01`，LCP 元素為 `img.member-portal-module__wpzd3a__backdropImage`；FCP、TTFB、INP 未量測。
   DevTools「停用網路快取」未勾選，且測量 runtime `bd8a8e9d0205` 不同於修改前基線 `1ef38bb50407`，所以不能宣稱因果改善。
+- **2026-09-20 Hosted 目前基線**：受保護 workflow `35517332436` 在 staging runtime `54c08ef6ab4d`，以同一個 1440×900
+  Chromium 流程各重複 3 次。社員中位數 LCP／FCP／TTFB／INP 為 `1408／976／565.6／16 ms`；社務管理為
+  `896／476／451.5／16 ms`。這補上登入後 INP 與目前基線，但仍不是效能修改前後比較，也不是 DevTools trace。
 - **尚未結案原因**：單一 preload 修正已部署且 hosted DOM 已驗證；還缺同一 runtime／快取條件下的 FCP、TTFB、LCP 前後比較，並需再測管理頁，
   所以不能把 DOM 修正直接當成整體效能完成。
 - **完成證據**：同一帳號、同一社、同一網路條件，取得修改前後 TTFB、LCP、FCP；紀錄測試時間與快取狀態，沒有數字就標「未量測」。完整條件與限制見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
