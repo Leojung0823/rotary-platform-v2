@@ -3,6 +3,28 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 今日最新交接（文件 `d6fede3`；產品／staging `ba67f85`）
+
+> 這一節是目前狀態；下方較早段落是歷史紀錄，不要用舊 SHA 或舊 staging revision 覆蓋本節。
+
+- `main`／`origin/main` exact SHA：`d6fede34615b7f18a72a083fbea9145b71237c58`；沒有 open PR。工作樹只保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，不可讀寫、加入或提交。
+- 產品修改 `ba67f85dcfc9a219ad9e736fd791f686703181d3` 已部署 staging：社員首頁的私有活動封面 signed URL 改為巢狀 Suspense，先送出文字、待辦、訊息與操作按鈕，再補封面。沒有新增 migration、公開快取、權限／RLS／登入或社團隔離變更。
+- Go-Live `35519371764`、Release plan `35519277963`、CI `35518602660`、Browser Smoke `35518602659` 成功；staging health `revision=ba67f85dcfc9`、`status=ok`、`issues=[]`、`warnings=[]`。
+- 同 runtime 效能對照 `35519567233` 成功執行，但沒有證明變快：社員中位數 LCP／FCP／TTFB／INP `1624／1040／671.3／16 ms`；社務管理 `1604／664／634.4／16 ms`。不要把這組 Playwright 結果冒充 Chrome DevTools trace，也不要把它標成 E-06 完成。
+- 文件同步提交 `d6fede3` 的 CI `35519954430`、Browser Smoke `35519954429` 成功；文件同步不需重新部署 staging。
+- 本機完整檢查已通過：typecheck、lint、Vitest、build、`verify:db`、migration guard、verification manifest、`git diff --check`；lint 只有既有 warning。
+
+### 下一位接力的真實待辦
+
+1. E-03：用乾淨真人帳號做 LINE follow 正確 `person_id` 配對，並補多社／外社／停權負向驗收；需要 LINE Developers Console webhook／Use webhook 與真人 LINE 帳號，不能用程式假造。
+2. E-06：先取得登入後 Chrome DevTools session，再在同一 runtime／同一快取條件補前後樣本；若沒有可靠新數字，維持未結案，不要再猜測性改查詢。
+3. E-07：真實 iOS／Android、M1、五位使用者驗收。
+4. E-08：等待明確 production 發布決策；未授權前不要碰 production。
+5. E-11：由各社完成各自 LINE OA／Rich Menu 外部設定與手機驗收。
+6. E-09 recovery email／custom SMTP 依產品決定暫緩。
+
+不要重做已通過的 E-05 額度超過停止並提示、生日 hosted acceptance、社費合成流程或 E-10 負向矩陣。Staging 合成財務資料也不代表正式金流已上線。
+
 ## 2026-09-20 本輪工程進度：E-06 效能驗收入口已補上
 
 - 新增 `.github/workflows/staging-performance-acceptance.yml`、`scripts/verify-staging-performance-acceptance-inputs.mjs`、

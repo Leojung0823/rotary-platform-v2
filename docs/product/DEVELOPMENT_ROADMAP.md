@@ -2,6 +2,28 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 今日最新現況（文件主線 `d6fede3`；產品／staging `ba67f85`）
+
+> 本節優先於下方較早的歷史接力紀錄。`d6fede3` 是文件同步提交；staging 目前執行的產品版本是前一個產品提交 `ba67f85`。
+
+- `main`／`origin/main` exact SHA 都是 `d6fede34615b7f18a72a083fbea9145b71237c58`；目前沒有 open PR。工作樹只保留使用者既有、未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪未讀寫、未提交。
+- 今日產品修改是把社員首頁私有活動封面 signed URL 移到巢狀 Suspense：活動文字、待辦、訊息與操作按鈕先顯示，封面稍後補上。沒有新增 migration、沒有改登入／權限／RLS／社團隔離，也沒有新增公開快取。
+- 產品提交 `ba67f85dcfc9a219ad9e736fd791f686703181d3` 已部署 staging；Go-Live `35519371764`、Release plan `35519277963`、CI `35518602660`、Browser Smoke `35518602659` 均成功。`/api/health` 現在回報 `revision=ba67f85dcfc9`、`status=ok`、`issues=[]`、`warnings=[]`。
+- 今日效能對照 `35519567233` 已完成，但沒有證明整體變快：社員首頁中位數 LCP／FCP／TTFB／INP 為 `1624／1040／671.3／16 ms`，社務管理首頁為 `1604／664／634.4／16 ms`。這組數字受冷／暖快取與 Render 波動影響，不能直接歸因於修改；E-06 不結案。
+- 文件同步提交 `d6fede3` 的 CI `35519954430` 與 Browser Smoke `35519954429` 均成功；文件不需重新部署 staging。
+- 本機 typecheck、lint、Vitest、build、`verify:db`、migration guard、verification manifest 與 `git diff --check` 均通過；lint 僅有既有 warning。
+
+### 目前真正未完成
+
+1. E-03：LINE follow 自動配對的真人姓名／正確 `person_id` 核對，以及多社、外社、停權等真人負向證據。
+2. E-06：同一 runtime／同一快取條件的效能前後比較，以及登入後 Chrome DevTools trace；目前只有受保護 Playwright 數字，不能宣稱改善完成。
+3. E-07：真實 iOS／Android、M1 與五位使用者測試。
+4. E-08：production 發布決策與正式發布；目前沒有修改 production。
+5. E-11：各社 LINE OA／Rich Menu 外部設定與手機驗收。
+6. E-09 recovery email／custom SMTP：依產品決定暫緩。
+
+Staging 的合成社費資料不代表正式金流已上線；正式環境收款資料仍未建立，也沒有在 production 操作。
+
 ## 2026-09-20 最新收尾（`54c08ef`；staging 已通過）
 
 > 本節是目前進度的優先判定；後面的段落是歷史接力紀錄，不代表目前仍卡在舊的 staging 憑證阻塞。
