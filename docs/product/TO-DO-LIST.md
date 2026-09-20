@@ -2,6 +2,15 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 今日收尾核對（`e57d4ff`）
+
+- `main`／`origin/main` exact SHA 為 `e57d4ff02ac3070020cfe6e885adf4c8fb252cf9`；目前沒有 open PR。工作樹只保留既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪沒有讀寫或提交它。
+- 今日完成並推送一個驗收腳本修正：社費調整後的社員姓名定位改為只查「收款名單」區塊，避免姓名同時出現在下拉選項與名單時造成 Playwright strict-mode 誤判。沒有新增 migration、沒有改登入／權限／資料隔離，也沒有修改 production。
+- 本機通過：`node --check`、typecheck、lint（既有 `src/lib/in-place-repairs.test.ts` 的 `readdirSync` warning）、Vitest `197` 檔／`1470` tests、`verify:db`、migration guard、verification manifest、`git diff --check`。CI `35497120870` 與 Browser Smoke `35497120884` 均成功。
+- staging 已用 `Staging Release 35497300887`、`Staging Go-Live 35497380165` 發布；`/api/health` 回報 `revision=e57d4ff02ac3`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`。受保護的社務管理驗收 `35497507239` 成功：執行秘書的生日／服務計劃／文件、活動建立／封面／發布／取消、社員模式邊界、社費部分收款／代墊／核銷／回收與匯出流程均通過。
+- LINE 推播額度超過的規則已確定並完成：停止後續批次，並在社務管理 LINE OA 頁通知管理員；一般社員不會看到。這不是今日重做項目。
+- 尚未完成：E-03 LINE follow 真人身份核對、E-06 登入後 LCP／FCP／TTFB／INP 實測、E-07 真實手機／M1、E-08 production 發布決策、E-10 停權／退社／外社執行秘書的負向角色矩陣、E-11 各社 OA／Rich Menu 外部設定與手機驗證；E-09 recovery email 依產品決定暫緩。管理驗收本輪以 `expect_negative_roles=false` 執行，所以不能把 E-10 整項標成完成。
+
 ## 2026-09-20 現場重新核對（`a479350`）
 
 - `main`／`origin/main` exact SHA 都是 `a47935093a57851a6d81386063f6c9194b7bb550`；沒有 open PR。

@@ -2,6 +2,14 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 今日進度收斂（`e57d4ff`）
+
+- 今日把社費 hosted acceptance 的最後一個測試誤判修好：調整應收後，驗收只在「收款名單」區塊尋找社員，避免同名 `<option>` 讓 Playwright strict mode 失敗。這是驗收工具修正，不是放寬產品權限或改資料庫。
+- `e57d4ff` 的 CI `35497120870`、Browser Smoke `35497120884` 成功；Staging Release `35497300887` 與 Staging Go-Live `35497380165` 成功。staging health 現在是 `revision=e57d4ff02ac3`、`status=ok`、`issues=[]`。
+- 受保護管理驗收 `35497507239` 成功，已證實 staging 的執行秘書可以完成生日／服務計劃／文件、活動建立與取消、社員模式邊界、社費部分收款／代墊／核銷／可逆回收及三種報表匯出；一般社員直接要求管理匯出仍被拒絕。這是合成 staging 資料驗收，不等於正式財務上線或真實金流作業。
+- 路線圖狀態：E-05 已完成；社費與管理模式的主要 staging 流程已完成。E-10 只完成一般角色流程，停權／退社／外社執行秘書負向矩陣仍待保留測試身份；E-03、E-06、E-07、E-08、E-11 仍待外部條件，E-09 依決策暫緩。
+- 今天沒有新增 migration、沒有更改 RLS／權限、沒有修改 production。工作樹既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 仍保留且未納入。
+
 ## 2026-09-20 現場重新核對（`a479350`）
 
 - `main`／`origin/main` exact SHA 都是 `a47935093a57851a6d81386063f6c9194b7bb550`；沒有 open PR。

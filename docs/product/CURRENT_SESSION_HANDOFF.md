@@ -3,6 +3,15 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 今日接力結論（`e57d4ff`）
+
+- 權威 `main`／`origin/main` exact SHA 為 `e57d4ff02ac3070020cfe6e885adf4c8fb252cf9`；沒有 open PR。既有未追蹤 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未讀寫、未提交。
+- 今日修正 `e2e/tests/staging-management-acceptance.e2e.mjs` 的一個驗收定位問題：社費調整後改用 `section[aria-labelledby="dues-receivables-heading"]` 限定社員姓名查找。根因是頁面同時有社員下拉選項與收款名單，不是產品資料錯誤。
+- 本機 typecheck、lint（既有 `readdirSync` warning）、Vitest `197`／`1470`、`verify:db`、migration guard、verification manifest、`git diff --check` 均通過；CI `35497120870`、Browser Smoke `35497120884` 均成功。
+- staging 發布證據：Release `35497300887`、Go-Live `35497380165`；health `revision=e57d4ff02ac3`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`。管理驗收 `35497507239` 成功，驗收包含服務計劃／生日／文件、活動、社員模式邊界與社費完整可逆流程。
+- 不要把這次結果誤寫成所有待辦都完成：E-03 真人 LINE follow 身份核對、E-06 登入後效能數字、E-07 真實手機／M1、E-08 production 決策、E-10 負向角色矩陣、E-11 各社 OA／Rich Menu 外部設定仍未結案；E-09 維持暫緩。E-10 本輪以 `expect_negative_roles=false` 驗收，停權／退社／外社執行秘書仍需保留測試身份後再跑。
+- 本輪沒有新增 migration、沒有改權限或 production；staging 的社費資料是可回收的合成驗收資料，不可當成真實收款紀錄。
+
 ## 2026-09-20 現場重新核對（`a479350`）
 
 - `main`／`origin/main` exact SHA 都是 `a47935093a57851a6d81386063f6c9194b7bb550`；目前沒有 open PR。
