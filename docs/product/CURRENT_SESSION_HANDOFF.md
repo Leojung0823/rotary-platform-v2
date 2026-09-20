@@ -1,7 +1,26 @@
-# 交接筆記（持續更新；最新核對 2026-09-20；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-09-21；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-09-21 最新交接（產品／staging `7253ea0`）
+
+- 權威 `main`／`origin/main` exact SHA：`7253ea009e570948953b796dcd29ea6b79591230`；工作樹只保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，不可讀寫或提交。
+- 今日完成第二個 E-06 關鍵路徑調整：導覽未讀訊息數只影響徽章，現在在 `Suspense` 中延後補上；登入後首頁不再為導覽徽章等待 RPC。沒有新增 migration、公開快取、權限／RLS／登入或社團隔離變更。
+- CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功；staging `/api/health` 是 `revision=7253ea009e57`、`status=ok`、`issues=[]`。
+- 效能 workflow `35521567024` 的 5 次中位數：社員 `1132／432／411／16 ms`、社務管理 `748／364／329.1／16 ms`（LCP／FCP／TTFB／INP）。這是 Playwright browser timing，方向較舊基準低，但不是同一 runtime／樣本條件，不能宣稱因果改善；登入後 Chrome DevTools trace 仍未取得，E-06 不結案。
+- 本機完整檢查通過：typecheck、lint、Vitest `200` 檔／`1483` tests、build、`verify:db`、migration guard、verification manifest、`git diff --check`；lint 只有既有 warning。
+
+### 下一位接力先做
+
+1. E-03：用乾淨真人帳號驗證 LINE follow 對到正確 `person_id`，再完成多社／外社／停權負向驗收；需要使用者在 LINE Developers Console 與真人 LINE 操作，不能用程式假造。
+2. E-06：取得登入後 Chrome DevTools session，做同一 runtime／同一快取條件的前後比較；沒有可靠新數字就維持未結案，不要再猜測性改查詢。
+3. E-07：排真實 iOS／Android、M1 與五位使用者測試。
+4. E-08：等待 production 發布決策；未授權前不碰 production。
+5. E-11：逐社完成 LINE OA／Rich Menu 外部設定與手機驗收。
+6. E-09 recovery email／custom SMTP 依產品決定暫緩。
+
+不要重做已通過的 E-05 額度停止並提示、E-10 負向矩陣、生日 hosted acceptance 或社費 hosted 合成流程；staging 財務資料不代表正式金流。
 
 ## 2026-09-20 今日最新交接（文件 `d6fede3`；產品／staging `ba67f85`）
 

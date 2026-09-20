@@ -1,6 +1,26 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-21（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-09-21 今日最新進度（產品 exact SHA `7253ea0`；staging 已發布）
+
+> 本節是今天重新核對後的現況；下面的 2026-09-20 段落是歷史接力紀錄，不能覆蓋本節。
+
+- 今日完成 E-06 的第二個可直接處理的等待點：把導覽未讀訊息徽章移到 `Suspense`，讓導覽與登入後首頁先顯示，未讀數稍後補上。沒有改登入、角色、權限、RLS、社團隔離或公開快取。
+- `7253ea009e570948953b796dcd29ea6b79591230` 已推到 `main`；CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功。
+- staging health：`revision=7253ea009e57`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
+- 受保護效能測試 `35521567024` 已完成 5 次樣本：社員首頁中位數 LCP／FCP／TTFB／INP `1132／432／411／16 ms`；社務管理首頁 `748／364／329.1／16 ms`。數字方向較舊基準低，但受 runtime、冷／暖快取與樣本數差異影響，不能宣稱 E-06 已完成；Chrome DevTools 登入後 trace 仍未取得。
+- 本機 typecheck、lint、Vitest `200` 檔／`1483` tests、build、`verify:db`、migration guard、verification manifest 與 diff check 均通過；lint 僅有既有 warning。工作樹仍保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，未讀寫、未提交。
+
+### 目前真正未完成
+
+- E-03：LINE follow 自動配對的真人姓名／正確 `person_id` 核對，以及多社、外社、停權等真人負向證據。
+- E-06：同一 runtime／同一快取條件的前後效能比較與登入後 Chrome DevTools trace；目前只能說已安全部署兩個關鍵路徑調整，不能說已證明變快。
+- E-07：真實 iOS／Android、M1 與五位使用者測試。
+- E-08：production 發布決策與正式發布；目前沒有修改 production。
+- E-11：各社 LINE OA／Rich Menu 外部設定與手機驗收。
+- E-09 recovery email／custom SMTP：依產品決定暫緩。
+- staging 的社費、生日等資料是受控合成驗收資料，不代表正式金流已上線；正式環境沒有操作。
 
 ## 2026-09-20 今日最新進度（產品 exact SHA `ba67f85`；staging 已發布）
 

@@ -1,6 +1,26 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-21（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-09-21 今日最新現況（產品／staging `7253ea0`）
+
+> 這是目前的進度判定；下方 2026-09-20 段落保留作為歷史接力，不使用舊 SHA 覆蓋今天的證據。
+
+- 今日完成登入後外殼的第二個效能調整：導覽未讀訊息徽章改在 `Suspense` 內補上，首頁不再等待這個非關鍵 RPC。沒有新增 migration、沒有改登入／權限／RLS／社團隔離、沒有新增公開快取。
+- 產品 exact SHA `7253ea009e570948953b796dcd29ea6b79591230` 已部署 staging；CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 成功，health `issues=[]`。
+- 5 次受保護效能樣本 `35521567024` 的中位數為：社員 `1132／432／411／16 ms`、管理 `748／364／329.1／16 ms`（LCP／FCP／TTFB／INP）。方向較舊基準低，但因不是同一 runtime／同一樣本條件，E-06 仍不能標完成；Chrome DevTools 登入後 trace 仍未取得。
+- 本機完整檢查通過，Vitest 為 `200` 檔／`1483` tests；lint 只有既有 warning。
+
+### 目前地圖上的未結案項目
+
+1. E-03：LINE follow 真人 `person_id` 配對核對，並完成多社／外社／停權負向真人驗收。
+2. E-06：補登入後 Chrome DevTools trace，並以同一 runtime／同一快取條件完成效能前後比較。
+3. E-07：真實 iOS／Android、M1 與五位使用者測試。
+4. E-08：取得 production 發布決策；未授權前不碰 production。
+5. E-11：逐社完成 LINE OA／Rich Menu 外部設定與手機驗收。
+6. E-09 recovery email／custom SMTP：依產品決定暫緩。
+
+E-05 額度超過停止並提示、E-10 負向角色矩陣、生日 hosted acceptance、社費 hosted 合成流程已經有成功證據；不要重做或把 staging 合成資料當成 production 金流。
 
 ## 2026-09-20 今日最新現況（文件主線 `d6fede3`；產品／staging `ba67f85`）
 
