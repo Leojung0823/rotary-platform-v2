@@ -3,9 +3,9 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-21 最新交接（文件主線 `a2211b1`；產品／staging `7253ea0`）
+## 2026-09-21 最新交接（產品／staging `7253ea0`；主線 SHA 以現場核對為準）
 
-- 權威 `main`／`origin/main` exact SHA：`a2211b177bc0e999ccc1be44f9036a486b0e8a4f`；`7f1a822` 與 `a2211b1` 都是文件同步提交，staging 產品仍執行 `7253ea009e57`。工作樹只保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，不可讀寫或提交。
+- 本節的產品／staging 核對基準是 `7253ea009e57`；文件同步提交會改變 `main` 的指標，因此最新主線 exact SHA 一律以 `git rev-parse origin/main` 現場核對。工作樹只保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，不可讀寫或提交。
 - 本輪同步了 LINE follow 配對、LINE OA onboarding 與 Rich Menu 三份企劃書的目前 runtime／外部驗收狀態；沒有新增產品程式、migration、權限變更或 staging 部署。
 - 今日完成第二個 E-06 關鍵路徑調整：導覽未讀訊息數只影響徽章，現在在 `Suspense` 中延後補上；登入後首頁不再為導覽徽章等待 RPC。沒有新增 migration、公開快取、權限／RLS／登入或社團隔離變更。
 - CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功；staging `/api/health` 是 `revision=7253ea009e57`、`status=ok`、`issues=[]`。
