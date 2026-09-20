@@ -6,7 +6,7 @@
 
 ## 2026-09-21 最新狀態（優先於下方歷史部署紀錄）
 
-- GitHub `main` 最新 exact SHA 為 `a01a4d78ee6bc927b774d8dbb0143984483b3455`；這是文件同步提交，產品程式仍以
+- GitHub `main` 最新 exact SHA 請以 `git rev-parse origin/main` 現場核對；文件同步會改變主線指標。產品程式仍以
   `7253ea009e570948953b796dcd29ea6b79591230` 為基準，staging runtime 為 `7253ea009e57`。
 - staging runtime：`7253ea009e57`；`/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。production 沒有修改。
 - PR-3 仍未結案：需要真實 LINE follow、正確 `person_id` 核對，以及多社／外社／停權／退社負向案例；本輪沒有假造這些證據。
