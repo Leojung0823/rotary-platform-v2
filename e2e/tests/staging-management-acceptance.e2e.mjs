@@ -631,13 +631,12 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
       && new URL(response.url()).pathname === "/api/v1/dues-finance"
     ), { timeout: 30_000 });
     await advanceCard.getByRole("button", { name: "核准", exact: true }).click();
-    // The success notice "核銷已登錄。" is client state and can be replaced by
-    // the following router refresh. Wait for it first so the browser does not
-    // interrupt the in-flight mutation, then reload and assert the persisted
-    // advance state is actually closed.
+    // The API response is the durable mutation boundary. The UI's
+    // "核銷已登錄。" success notice is client state and can be replaced by the
+    // following router refresh, so do not make this acceptance depend on a
+    // transient toast.
     const approvalResponse = await approvalResponsePromise;
     expect(approvalResponse.status()).toBe(200);
-    await expect(page.getByText("核銷已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
     await page.goto(disposableFinanceUrl);
     const closedAdvanceCard = page.locator("section.card").filter({ hasText: advanceDescription }).first();
     await expect(closedAdvanceCard.getByText("已結案", { exact: true })).toBeVisible({ timeout: 30_000 });
