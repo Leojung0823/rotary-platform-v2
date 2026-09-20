@@ -87,7 +87,10 @@ describe("記住這件事不准把收款拖下水", () => {
   // means recognising them by hand next month -- it is not a reason to report a
   // banked payment as failed.
   it("records the receipt first and remembers afterwards", () => {
-    expect(panel).toMatch(/await postMutation\(body\);[\s\S]{0,200}if \(followUp\)/u);
+    const receipt = panel.indexOf("const data = await postMutation(body);");
+    const followUp = panel.indexOf("if (followUp)", receipt);
+    expect(receipt, "the receipt mutation is missing").toBeGreaterThan(-1);
+    expect(followUp, "the follow-up must be located after the receipt mutation").toBeGreaterThan(receipt);
   });
 
   it("keeps a failed follow-up from failing the receipt", () => {

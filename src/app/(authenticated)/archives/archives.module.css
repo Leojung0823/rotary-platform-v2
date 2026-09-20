@@ -124,6 +124,23 @@
   min-width: 0;
 }
 
+/* File inputs retain a browser-specific intrinsic width.  The management grid
+   must be allowed to shrink after a version is uploaded; otherwise the open
+   upload disclosure can widen the whole document card and create page-level
+   horizontal scrolling. */
+.managementGrid details,
+.managementGrid details > *,
+.managementGrid .form-stack,
+.managementGrid .field {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.managementGrid input[type="file"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .checklistCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

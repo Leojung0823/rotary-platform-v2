@@ -38,11 +38,32 @@ function requireStagingConfiguration() {
 }
 
 async function expectNoHorizontalOverflow(page) {
-  const overflow = await page.evaluate(() => Math.max(
-    document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    document.body.scrollWidth - document.body.clientWidth,
-  ));
-  expect(overflow).toBeLessThanOrEqual(1);
+  const metrics = await page.evaluate(() => {
+    const viewport = document.documentElement.clientWidth;
+    const overflow = Math.max(
+      document.documentElement.scrollWidth - viewport,
+      document.body.scrollWidth - document.body.clientWidth,
+    );
+    const offenders = overflow <= 1 ? [] : Array.from(document.querySelectorAll("body *"))
+      .map((element) => ({
+        tag: element.tagName,
+        className: typeof element.className === "string" ? element.className : "",
+        left: Math.round(element.getBoundingClientRect().left),
+        right: Math.round(element.getBoundingClientRect().right),
+        width: Math.round(element.getBoundingClientRect().width),
+      }))
+      .filter((element) => element.right > viewport + 1 || element.left < -1)
+      .sort((left, right) => (right.right - viewport) - (left.right - viewport))
+      .slice(0, 12);
+    return { viewport, overflow, offenders };
+  });
+  if (metrics.overflow > 1) {
+    // Geometry only: do not put page text, cookies, or form values in the
+    // protected hosted log. This is enough to identify the offending layout
+    // container without leaking acceptance data.
+    console.log(`[staging-management] horizontal-overflow ${JSON.stringify(metrics)}`);
+  }
+  expect(metrics.overflow).toBeLessThanOrEqual(1);
 }
 
 async function login(page, email, password) {
@@ -345,6 +366,25 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
 
   test("從管理總覽完成活動建立、封面上傳、發布與取消", async ({ page }) => {
     test.setTimeout(180_000);
+
+    // Keep a safe transport-level distinction if cancellation stalls: a POST
+    // without a response is a server/DB wait, while no POST is a form/browser
+    // problem. Do not log request bodies or cookies from this protected run.
+    page.on("request", (request) => {
+      if (request.method() === "POST") {
+        console.log(`[staging-management] POST ${new URL(request.url()).pathname}`);
+      }
+    });
+    page.on("response", (response) => {
+      if (response.request().method() === "POST") {
+        console.log(`[staging-management] POST response ${response.status()} ${new URL(response.url()).pathname}`);
+      }
+    });
+    page.on("requestfailed", (request) => {
+      if (request.method() === "POST") {
+        console.log(`[staging-management] POST failed ${request.failure()?.errorText ?? "unknown"}`);
+      }
+    });
 
     await login(page, operatorEmail, operatorPassword);
     await openManagementOverview(page);

@@ -348,6 +348,15 @@ function parseAdvance(value: unknown): DuesFinanceAdvance {
   };
 }
 
+/**
+ * Mutation responses contain one freshly-written advance rather than the full
+ * ledger.  Client screens use this bounded parser to show that response
+ * immediately while the server projection refreshes in the background.
+ */
+export function parseDuesFinanceAdvance(value: unknown): DuesFinanceAdvance {
+  return parseAdvance(value);
+}
+
 function parseSummary(value: unknown): DuesFinanceSummary {
   if (!isRecord(value)) throw new Error("invalid_dues_finance_projection");
   const summary = {

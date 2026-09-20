@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Field, Input, Notice, Select } from "@/components/ui";
 import type {
   DuesFinanceAnnualDefault,
+  DuesFinanceAdvance,
   DuesFinanceManagementLedger,
   DuesFinancePaymentMethod,
   DuesFinanceRemitKeyKind,
 } from "@/lib/dues-finance/contracts";
+import { parseDuesFinanceAdvance } from "@/lib/dues-finance/contracts";
 import { APP_TIME_ZONE } from "@/lib/time";
 import styles from "./dues-finance-management.module.css";
 
@@ -85,6 +87,10 @@ async function postMutation(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
   if (!response.ok) throw new DuesFinanceRequestError(response.status);
+  const payload: unknown = await response.json();
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)
+    || !("data" in payload)) throw new Error("dues_finance_response_invalid");
+  return payload.data;
 }
 
 function formatDate(value: string) {
@@ -122,7 +128,24 @@ export function DuesFinanceManagement({
   permissions: ManagementPermissions;
 }) {
   const router = useRouter();
-  const ledger = initialLedger;
+  const [optimisticAdvances, setOptimisticAdvances] = useState<readonly DuesFinanceAdvance[]>([]);
+  const ledger = useMemo(() => {
+    if (optimisticAdvances.length === 0) return initialLedger;
+    const advances = [
+      ...optimisticAdvances,
+      ...initialLedger.advances.filter((advance) => !optimisticAdvances.some((item) => item.advanceId === advance.advanceId)),
+    ];
+    return {
+      ...initialLedger,
+      advances,
+      summary: {
+        ...initialLedger.summary,
+        advanceAmount: advances.reduce((total, advance) => total + advance.amount, 0),
+        reconciledAmount: advances.reduce((total, advance) => total + advance.reconciledAmount, 0),
+        advanceOutstandingAmount: advances.reduce((total, advance) => total + advance.outstandingAmount, 0),
+      },
+    };
+  }, [initialLedger, optimisticAdvances]);
   const dateRange = rotaryYearDateRange(ledger.rotaryYearStart);
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<"success" | "error">("success");
@@ -149,6 +172,13 @@ export function DuesFinanceManagement({
   const [rowAmount, setRowAmount] = useState("");
   const [remitKeyValue, setRemitKeyValue] = useState("");
   const [rememberRemitKey, setRememberRemitKey] = useState(true);
+
+  function replaceAdvance(nextAdvance: ReturnType<typeof parseDuesFinanceAdvance>) {
+    setOptimisticAdvances((current) => [
+      nextAdvance,
+      ...current.filter((advance) => advance.advanceId !== nextAdvance.advanceId),
+    ]);
+  }
 
   const unpaidCount = useMemo(
     () => ledger.receivables.filter((entry) => entry.outstandingAmount > 0).length,
@@ -187,11 +217,18 @@ export function DuesFinanceManagement({
     // 收款成功之後才做、而且不准把收款拖下水的後續動作。記住末五碼失敗只是
     // 下次要再認一次，那不是把一筆已經入帳的錢報成失敗的理由。
     followUp?: Record<string, unknown>,
+    onSuccess?: (data: unknown) => void,
   ) {
     setPending(action);
     setMessage(null);
     try {
-      await postMutation(body);
+      const data = await postMutation(body);
+      try {
+        onSuccess?.(data);
+      } catch {
+        // The mutation is already committed.  The server refresh remains the
+        // source of truth if a newly-added projection ever changes shape.
+      }
       if (followUp) {
         try {
           await postMutation(followUp);
@@ -359,7 +396,7 @@ export function DuesFinanceManagement({
     }, "代墊申請已建立。", () => {
       setAdvanceAmount("");
       setAdvanceDescription("");
-    });
+    }, undefined, (data) => replaceAdvance(parseDuesFinanceAdvance(data)));
   }
 
   function returnAdvance(event: FormEvent<HTMLFormElement>) {
@@ -371,7 +408,8 @@ export function DuesFinanceManagement({
       clubId: ledger.clubId,
       advanceId,
       reason: String(form.get("reason") ?? ""),
-    }, "代墊已退回，社員可修改後重新送出。", () => event.currentTarget.reset());
+    }, "代墊已退回，社員可修改後重新送出。", () => event.currentTarget.reset(), undefined,
+    (data) => replaceAdvance(parseDuesFinanceAdvance(data)));
   }
 
   function resubmitAdvance(event: FormEvent<HTMLFormElement>) {
@@ -383,7 +421,8 @@ export function DuesFinanceManagement({
       clubId: ledger.clubId,
       advanceId,
       note: String(form.get("note") ?? "").trim() || null,
-    }, "代墊已重新送出。", () => event.currentTarget.reset());
+    }, "代墊已重新送出。", () => event.currentTarget.reset(), undefined,
+    (data) => replaceAdvance(parseDuesFinanceAdvance(data)));
   }
 
   function approveReconciliation(event: FormEvent<HTMLFormElement>) {
@@ -397,7 +436,8 @@ export function DuesFinanceManagement({
       amount: Number(form.get("amount")),
       approvalNote: String(form.get("approvalNote") ?? "").trim() || null,
       idempotencyKey: newIdempotencyKey("reconciliation"),
-    }, "核銷已登錄。", () => event.currentTarget.reset());
+    }, "核銷已登錄。", () => event.currentTarget.reset(), undefined,
+    (data) => replaceAdvance(parseDuesFinanceAdvance(data)));
   }
 
   function reverseReconciliation(event: FormEvent<HTMLFormElement>) {
@@ -409,7 +449,8 @@ export function DuesFinanceManagement({
       clubId: ledger.clubId,
       reconciliationId,
       reason: String(form.get("reason") ?? ""),
-    }, "核銷已反向調整，原紀錄仍保留。", () => event.currentTarget.reset());
+    }, "核銷已反向調整，原紀錄仍保留。", () => event.currentTarget.reset(), undefined,
+    (data) => replaceAdvance(parseDuesFinanceAdvance(data)));
   }
 
   return <div className={styles.management}>
