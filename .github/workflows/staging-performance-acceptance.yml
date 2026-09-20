@@ -126,6 +126,7 @@ jobs:
             `- Browser cache condition: ${results.cacheMode}`,
             `- Measurement source: ${results.measurementSource}`,
             "- Metrics were collected after protected member/operator login in the same staging runtime.",
+            "- INP is reported as unmeasured when the browser exposes no qualifying Event Timing entry; no value is synthesized.",
             "- DevTools trace summaries keep only event counts and long-task durations; raw trace data was discarded.",
             "- No email address, password, page content, screenshots, video or HTML report was retained.",
             "",
@@ -134,7 +135,7 @@ jobs:
           ];
           for (const route of results.routes) {
             for (const sample of route.samples) {
-              lines.push(`| ${route.label} | ${sample.sample} | ${sample.lcpMs} | ${sample.fcpMs} | ${sample.ttfbMs} | ${sample.inpMs} |`);
+              lines.push(`| ${route.label} | ${sample.sample} | ${sample.lcpMs} | ${sample.fcpMs} | ${sample.ttfbMs} | ${sample.inpMs ?? "unmeasured"} |`);
             }
           }
           lines.push("", "| Page | Trace events | Long tasks (>=50 ms) | Longest long task (ms) | Raw trace retained |", "| --- | ---: | ---: | ---: | ---: |");
