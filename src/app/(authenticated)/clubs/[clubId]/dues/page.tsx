@@ -118,6 +118,7 @@ export default async function DuesFinanceManagementPage({
     </section>
     {membersResult.error && <Notice>社員選單目前無法載入；查看功能仍可使用，新增應收與代墊會暫時停用。</Notice>}
     <DuesFinanceManagement
+      key={selectedYear.id}
       initialLedger={ledger}
       annualDefault={annualDefault}
       members={parseMemberOptions(membersResult.data)}

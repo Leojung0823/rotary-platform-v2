@@ -107,10 +107,8 @@ function dateTimeLocalFromNow(daysFromNow, hour, minute = 0) {
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(hour)}:${pad(minute)}`;
 }
 
-function dateOnlyFromNow(daysFromNow = 0) {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + daysFromNow);
-  return date.toISOString().slice(0, 10);
+function rotaryYearStartDate(startYear) {
+  return `${startYear}-07-01`;
 }
 
 async function expectFinanceDownloads(page, expectedCsvText = null) {
@@ -485,7 +483,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     const clubId = new URL(page.url()).pathname.split("/")[2];
     expect(clubId).toMatch(/^[0-9a-f-]{36}$/u);
 
-    const { yearId } = await createDisposableRotaryYear(
+    const { startYear, yearId } = await createDisposableRotaryYear(
       page,
       clubId,
       `可回收社費驗收 ${Date.now()}`,
@@ -510,6 +508,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     const receiptMemberName = await receiptRow.locator("strong").first().textContent();
     if (!receiptMemberName) throw new Error("The staging finance receipt member name is missing.");
     await firstReceiptButton.click();
+    await page.getByLabel("收款日期").fill(rotaryYearStartDate(startYear));
     await page.getByLabel("本次收款").fill("2000");
     await page.getByRole("button", { name: "確認收款", exact: true }).click();
     await expect(page.getByText("收款已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
@@ -519,7 +518,7 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     const advanceForm = page.locator("form").filter({ has: page.getByLabel("代墊社員") }).first();
     const advanceDescription = `staging 財務驗收代墊 ${Date.now()}`;
     await advanceForm.getByLabel("金額").fill("800");
-    await advanceForm.getByLabel("支出日期").fill(dateOnlyFromNow());
+    await advanceForm.getByLabel("支出日期").fill(rotaryYearStartDate(startYear));
     await advanceForm.getByLabel("支出說明").fill(advanceDescription);
     await advanceForm.getByRole("button", { name: "送出代墊", exact: true }).click();
     await expect(page.getByText("代墊申請已建立。", { exact: true })).toBeVisible({ timeout: 30_000 });

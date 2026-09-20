@@ -364,6 +364,15 @@ begin
 
   begin
     perform public.record_dues_receipt(
+      'd4000000-0000-4000-8000-000000000001', date '2025-06-30', 'cash', null,
+      jsonb_build_array(jsonb_build_object('receivable_id', member_receivable_id, 'amount', 1)),
+      'dues-receipt-outside-year');
+    raise exception 'receipt outside the Rotary year was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+
+  begin
+    perform public.record_dues_receipt(
       'd4000000-0000-4000-8000-000000000001', current_date, 'cash', null,
       jsonb_build_array(jsonb_build_object('receivable_id', member_receivable_id, 'amount', 7000)),
       'dues-receipt-overage');

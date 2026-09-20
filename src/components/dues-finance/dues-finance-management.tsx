@@ -52,6 +52,21 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function rotaryYearDateRange(startYear: number) {
+  return {
+    min: `${startYear}-07-01`,
+    max: `${startYear + 1}-06-30`,
+  };
+}
+
+function defaultDateForRotaryYear(startYear: number) {
+  const range = rotaryYearDateRange(startYear);
+  const current = today();
+  if (current < range.min) return range.min;
+  if (current > range.max) return range.max;
+  return current;
+}
+
 function newIdempotencyKey(prefix: string) {
   const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   return `${prefix}-${id}`;
@@ -108,6 +123,7 @@ export function DuesFinanceManagement({
 }) {
   const router = useRouter();
   const ledger = initialLedger;
+  const dateRange = rotaryYearDateRange(ledger.rotaryYearStart);
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const [pending, setPending] = useState<string | null>(null);
@@ -119,13 +135,13 @@ export function DuesFinanceManagement({
   const [receivableSourceKind, setReceivableSourceKind] = useState<"manual" | "opening_balance">("manual");
   const [receivableNote, setReceivableNote] = useState("");
   const [receiptAmounts, setReceiptAmounts] = useState<Record<string, string>>({});
-  const [receivedOn, setReceivedOn] = useState(today);
+  const [receivedOn, setReceivedOn] = useState(() => defaultDateForRotaryYear(ledger.rotaryYearStart));
   const [paymentMethod, setPaymentMethod] = useState<DuesFinancePaymentMethod>("cash");
   const [referenceNote, setReferenceNote] = useState("");
   const [advanceMember, setAdvanceMember] = useState(members[0]?.membershipId ?? "");
   const [advanceAmount, setAdvanceAmount] = useState("");
   const [advanceDescription, setAdvanceDescription] = useState("");
-  const [advanceIncurredOn, setAdvanceIncurredOn] = useState(today);
+  const [advanceIncurredOn, setAdvanceIncurredOn] = useState(() => defaultDateForRotaryYear(ledger.rotaryYearStart));
   const [rosterQuery, setRosterQuery] = useState("");
   const [rosterFilter, setRosterFilter] = useState<RosterFilter>("unpaid");
   const [batchMode, setBatchMode] = useState(false);
@@ -470,7 +486,7 @@ export function DuesFinanceManagement({
             工具，但那一年發生幾次；實際發生的是一個人、一筆錢。 */}
         {batchMode && permissions.canManage ? <ActionForm onSubmit={recordReceipt} className={styles.batchForm}>
           <div className={styles.formGrid}>
-            <Field label="收款日期"><Input type="date" value={receivedOn} onChange={(event) => setReceivedOn(event.target.value)} required disabled={pending !== null} /></Field>
+            <Field label="收款日期" hint="限本扶輪年度"><Input type="date" min={dateRange.min} max={dateRange.max} value={receivedOn} onChange={(event) => setReceivedOn(event.target.value)} required disabled={pending !== null} /></Field>
             <Field label="收款方式"><Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as DuesFinancePaymentMethod)} disabled={pending !== null}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
             <Field label="核對備註（選填）"><Input value={referenceNote} onChange={(event) => setReferenceNote(event.target.value)} maxLength={500} placeholder="例如：轉帳末五碼" disabled={pending !== null} /></Field>
           </div>
@@ -509,7 +525,7 @@ export function DuesFinanceManagement({
             {openReceipt === receivable.receivableId && <ActionForm className={styles.rowReceipt} onSubmit={(event) => submitRowReceipt(event, receivable.receivableId, receivable.membershipId ?? null)}>
               <div className={styles.formGrid}>
                 <Field label="本次收款"><Input type="number" min="1" max={String(receivable.outstandingAmount)} step="1" value={rowAmount} onChange={(event) => setRowAmount(event.target.value)} required autoFocus disabled={pending !== null} /></Field>
-                <Field label="收款日期"><Input type="date" value={receivedOn} onChange={(event) => setReceivedOn(event.target.value)} required disabled={pending !== null} /></Field>
+                <Field label="收款日期" hint="限本扶輪年度"><Input type="date" min={dateRange.min} max={dateRange.max} value={receivedOn} onChange={(event) => setReceivedOn(event.target.value)} required disabled={pending !== null} /></Field>
                 <Field label="收款方式"><Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as DuesFinancePaymentMethod)} disabled={pending !== null}>{Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
                 {leavesARemitKey(paymentMethod)
                   ? <Field label="匯款末五碼（選填）">
@@ -562,7 +578,7 @@ export function DuesFinanceManagement({
       <ActionForm onSubmit={submitAdvance} className={styles.formGrid}>
         <Field label="代墊社員"><Select value={advanceMember || members[0]?.membershipId || ""} onChange={(event) => setAdvanceMember(event.target.value)} required disabled={pending !== null || members.length === 0}><option value="">請選擇社員</option>{members.map((member) => <option key={member.membershipId} value={member.membershipId}>{member.displayName}</option>)}</Select></Field>
         <Field label="金額"><Input type="number" min="1" step="1" value={advanceAmount} onChange={(event) => setAdvanceAmount(event.target.value)} required disabled={pending !== null} /></Field>
-        <Field label="支出日期"><Input type="date" value={advanceIncurredOn} onChange={(event) => setAdvanceIncurredOn(event.target.value)} required disabled={pending !== null} /></Field>
+        <Field label="支出日期" hint="限本扶輪年度"><Input type="date" min={dateRange.min} max={dateRange.max} value={advanceIncurredOn} onChange={(event) => setAdvanceIncurredOn(event.target.value)} required disabled={pending !== null} /></Field>
         <Field label="支出說明"><Input value={advanceDescription} onChange={(event) => setAdvanceDescription(event.target.value)} minLength={2} maxLength={1000} required placeholder="例如：活動場地訂金" disabled={pending !== null} /></Field>
         <Button type="submit" disabled={pending !== null || members.length === 0}>送出代墊</Button>
       </ActionForm>
