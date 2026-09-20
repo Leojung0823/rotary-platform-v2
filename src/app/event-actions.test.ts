@@ -175,6 +175,14 @@ describe("cancelEventAction", () => {
     );
   });
 
+  it("maps a client or network exception to the same safe retry message", async () => {
+    mocks.rpc.mockRejectedValue(new Error("network timeout with internal details"));
+
+    await expect(cancelEventAction(cancelFormData())).rejects.toThrow(
+      `redirect:/clubs/${clubId}/events?error=retryable&mode=management`,
+    );
+  });
+
   it("keeps the existing successful cancellation redirect", async () => {
     await expect(cancelEventAction(cancelFormData())).rejects.toThrow(
       `redirect:/clubs/${clubId}/events?success=event_cancelled&mode=management`,

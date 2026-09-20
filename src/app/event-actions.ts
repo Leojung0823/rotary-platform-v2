@@ -298,12 +298,22 @@ export async function cancelEventAction(formData: FormData) {
     redirect(invalidEventPath(formData));
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("cancel_club_event", {
-    p_club_id: clubId,
-    p_event_id: eventId,
-    p_reason: reason,
-  });
+  let rpcError: { message?: string } | null = null;
+  try {
+    const supabase = await createClient();
+    const result = await supabase.rpc("cancel_club_event", {
+      p_club_id: clubId,
+      p_event_id: eventId,
+      p_reason: reason,
+    });
+    rpcError = result.error;
+  } catch {
+    // A fetch/client failure has no reliable committed-state signal. The RPC
+    // is atomic, so tell the officer to retry instead of letting the action
+    // crash into the generic error boundary or appear to hang indefinitely.
+    redirect(eventPath(clubId, "error", "retryable", mode));
+  }
+  const error = rpcError;
   if (error) redirect(eventPath(clubId, "error", mapEventError(error.message), mode));
   revalidatePath("/events");
   revalidatePath(`/clubs/${clubId}/events`);
