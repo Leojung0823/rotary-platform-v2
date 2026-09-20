@@ -3,6 +3,25 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力結論（`54c08ef`；staging 已完成驗收）
+
+- 權威 `main`／`origin/main` exact SHA 為 `54c08ef6ab4dca6a75c488226a0bccf1f0b32961`；沒有 open PR。使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 必須保留，不可加入提交。
+- 今日完成的是生日 hosted acceptance 的 URL 斷言修正：社員模式的 `/birthday-collection` 可帶 `mode=member`。這是測試修正，不是放寬產品權限；沒有 migration、沒有改 RLS／登入／資料隔離、沒有修改 production。
+- 本機完整檢查通過：typecheck、lint、Vitest `199` 檔／`1477` tests、verify:db、migration guard、verification manifest、diff check。CI `35502874878`、Browser Smoke `35502874853`、Staging Release `35503046674`、Staging Go-Live `35503451357` 均成功。
+- staging health：`revision=54c08ef6ab4d`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`。Hosted birthday acceptance `35503580840` 成功。
+- 既有 hosted 證據：社費／收款／代墊／核銷／回收／報表 `35501504704` 成功；E-10 停權／退社／外社執行秘書負向矩陣 `35500891585` 成功。
+
+### 目前還沒完成
+
+- E-03：LINE follow 真人 `person_id` 配對核對與多社／外社／停權負向真人驗收。
+- E-06：登入後 LCP、FCP、TTFB、INP；目前 Chrome DevTools 沒有登入後 staging session，狀態是「未量測」。
+- E-07：真實手機／M1 與五位使用者測試。
+- E-08：production 發布決策與正式發布；不要自行修改 production。
+- E-11：各社 LINE OA／Rich Menu 外部設定與手機驗收。
+- E-09 recovery email／custom SMTP：產品決定暫緩。
+
+下一位接力先處理 E-03 或 E-06；不要重做已通過的生日 hosted acceptance、社費 hosted acceptance、E-10 負向矩陣或 E-05 額度停止提示。
+
 ## 2026-09-20 最新接力結論（`84a1670`；E-10 負向矩陣已完成）
 
 - 權威 `main`／`origin/main` exact SHA 為 `84a16708388d50f91754212d8d76e34bb2c193a3`；Staging Go-Live `35500736758` 已成功部署此 SHA，staging hosted member acceptance 與 HTTPS smoke 均通過。
