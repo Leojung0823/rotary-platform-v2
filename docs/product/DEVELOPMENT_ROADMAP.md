@@ -9,6 +9,7 @@
 - 今日完成登入後外殼的第二個效能調整：導覽未讀訊息徽章改在 `Suspense` 內補上，首頁不再等待這個非關鍵 RPC。沒有新增 migration、沒有改登入／權限／RLS／社團隔離、沒有新增公開快取。
 - 文件同步提交會改變 `main` 的指標；產品 exact SHA `7253ea009e570948953b796dcd29ea6b79591230` 已部署 staging。最新主線 exact SHA 請以 `git rev-parse origin/main` 現場核對。CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 成功，health `issues=[]`。
 - 5 次受保護效能樣本 `35521567024` 的中位數為：社員 `1132／432／411／16 ms`、管理 `748／364／329.1／16 ms`（LCP／FCP／TTFB／INP）。方向較舊基準低，但因不是同一 runtime／同一樣本條件，E-06 仍不能標完成；Chrome DevTools 登入後 trace 仍未取得。
+- 同一產品 runtime `7253ea009e57` 的重跑 `35523970567` 再取 5 次，中位數為社員 `776／360／343.3／16 ms`、管理 `564／300／269.8／16 ms`。這是重複觀測，不是修改前後因果證據；E-06 仍不能標完成。
 - 本機完整檢查通過，Vitest 為 `200` 檔／`1483` tests；lint 只有既有 warning。
 
 ### 目前地圖上的未結案項目

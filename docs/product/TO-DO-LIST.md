@@ -10,6 +10,7 @@
 - `7253ea009e570948953b796dcd29ea6b79591230` 已推到 `main`；CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功。
 - staging health：`revision=7253ea009e57`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`、`warnings=[]`。
 - 受保護效能測試 `35521567024` 已完成 5 次樣本：社員首頁中位數 LCP／FCP／TTFB／INP `1132／432／411／16 ms`；社務管理首頁 `748／364／329.1／16 ms`。數字方向較舊基準低，但受 runtime、冷／暖快取與樣本數差異影響，不能宣稱 E-06 已完成；Chrome DevTools 登入後 trace 仍未取得。
+- 同一產品 runtime `7253ea009e57` 以 run `35523970567` 再取 5 次：社員中位數 `776／360／343.3／16 ms`、社務管理 `564／300／269.8／16 ms`。這補強目前觀測但仍不是修改前後因果比較；E-06 維持未結案。
 - 本機 typecheck、lint、Vitest `200` 檔／`1483` tests、build、`verify:db`、migration guard、verification manifest 與 diff check 均通過；lint 僅有既有 warning。工作樹仍保留使用者既有未追蹤檔 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，未讀寫、未提交。
 
 ### 目前真正未完成

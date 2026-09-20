@@ -10,6 +10,7 @@
 - 今日完成第二個 E-06 關鍵路徑調整：導覽未讀訊息數只影響徽章，現在在 `Suspense` 中延後補上；登入後首頁不再為導覽徽章等待 RPC。沒有新增 migration、公開快取、權限／RLS／登入或社團隔離變更。
 - CI `35520595971`、Browser Smoke `35520595957`、Staging Release `35521243803`、Staging Go-Live `35521341648` 均成功；staging `/api/health` 是 `revision=7253ea009e57`、`status=ok`、`issues=[]`。
 - 效能 workflow `35521567024` 的 5 次中位數：社員 `1132／432／411／16 ms`、社務管理 `748／364／329.1／16 ms`（LCP／FCP／TTFB／INP）。這是 Playwright browser timing，方向較舊基準低，但不是同一 runtime／樣本條件，不能宣稱因果改善；登入後 Chrome DevTools trace 仍未取得，E-06 不結案。
+- 同一產品 runtime `7253ea009e57` 重跑 `35523970567` 的 5 次中位數為：社員 `776／360／343.3／16 ms`、社務管理 `564／300／269.8／16 ms`。這仍是 Playwright 重複觀測，不是修改前後因果證據；E-06 維持未結案。
 - 本機完整檢查通過：typecheck、lint、Vitest `200` 檔／`1483` tests、build、`verify:db`、migration guard、verification manifest、`git diff --check`；lint 只有既有 warning。
 - 文件提交 `a2211b1` 的自動 CI `35522696971` 與 Browser Smoke `35522696974` 均成功；文件同步不需要重新部署 staging。
 
