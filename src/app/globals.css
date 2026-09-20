@@ -190,7 +190,8 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
    each other, not by stretching one column of text across 1900px -- past about
    90 characters the eye loses the start of the next line. Inner grids spend the
    extra width; the measure stays readable. */
-.page-stack { display: grid; gap: var(--space-6); max-width: 1440px; margin: 0 auto; }
+.page-stack { display: grid; min-width: 0; gap: var(--space-6); max-width: 1440px; margin: 0 auto; }
+.page-stack > * { min-width: 0; }
 .narrow { max-width: 850px; }
 .page-header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 h1, h2, h3, p { margin-top: 0; }

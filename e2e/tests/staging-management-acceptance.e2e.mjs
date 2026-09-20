@@ -562,7 +562,10 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     await advanceForm.getByLabel("支出說明").fill(advanceDescription);
     await advanceForm.getByRole("button", { name: "送出代墊", exact: true }).click();
     await expect(page.getByText("代墊申請已建立。", { exact: true })).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText(advanceDescription, { exact: true })).toBeVisible();
+    // The description is intentionally rendered together with the incurred
+    // date in one metadata line, so exact text matching would reject a
+    // record that is visibly present.
+    await expect(page.getByText(advanceDescription, { exact: false })).toBeVisible();
 
     await page.getByRole("button", { name: "核准", exact: true }).last().click();
     await expect(page.getByText("核銷已登錄。", { exact: true })).toBeVisible({ timeout: 30_000 });
