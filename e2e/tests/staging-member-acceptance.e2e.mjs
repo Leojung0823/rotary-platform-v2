@@ -129,7 +129,7 @@ test.describe("受保護的 Hosted staging 社員驗收", () => {
       const collectionLink = page.getByRole("link", { name: "生日祝福任務", exact: true });
       await expect(collectionLink).toHaveCount(1);
       await collectionLink.click();
-      await expect(page).toHaveURL(/\/birthday-collection\?clubId=[0-9a-f-]{36}$/u);
+      await expect(page).toHaveURL(/\/birthday-collection\?clubId=[0-9a-f-]{36}(?:&mode=member)?$/u);
       await expect(page.getByRole("heading", { level: 1, name: "生日祝福徵集" })).toBeVisible();
       await expect(page.getByText("目前無法確認生日祝福徵集權限，請稍後重新整理。", { exact: true })).toHaveCount(0);
       await expectNoHorizontalOverflow(page);
