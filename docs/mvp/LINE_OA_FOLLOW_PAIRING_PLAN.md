@@ -1,7 +1,8 @@
 # LINE OA follow 事件自動配對社員 企劃書
 
 狀態：`[>]` 核心實作、verification、CI 與 staging 部署已完成；目前 staging runtime 為
-`1ef38bb50407`；仍待用真實帳號核對「配對到正確 person」及多社／外社／停權／退社負向案例。
+`7253ea009e57`；仍待用真實帳號核對「配對到正確 person」及多社／外社／停權／退社負向案例。
+2026-09-21 現場核對 staging health 為 `status=ok`、`issues=[]`、`warnings=[]`；產品程式沒有新增配對變更，未完成項仍是外部真人驗收。
 2026-09-12 補上解除配對後重新配對修正　　建立日期：2026-09-02（Asia/Taipei）
 預定執行者：**Codex（獨立分支）**　　平行分支：Claude 負責事件驅動自動推播，兩者不共用檔案。
 

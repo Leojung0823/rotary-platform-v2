@@ -2,13 +2,14 @@
 
 狀態：PR-1、PR-2 已完成並部署 staging；PR-3 真實驗收尚未完成（仍缺正確身份核對與負向案例）
 
-建立日期：2026-09-03（Asia/Taipei）　　更新日期：2026-09-16（Asia/Taipei）
+建立日期：2026-09-03（Asia/Taipei）　　更新日期：2026-09-21（Asia/Taipei）
 
-## 2026-09-16 最新狀態（優先於下方歷史部署紀錄）
+## 2026-09-21 最新狀態（優先於下方歷史部署紀錄）
 
 - GitHub `main` 最新 SHA 請以 `git rev-parse origin/main` 現場核對；產品程式基準為
-  `1ef38bb504075d7a197e99c2364db8b087cea22e`。
-- staging runtime：`1ef38bb50407`；`/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。production 沒有修改。
+  `7f1a8225d12aee5a71267c3929ec908789a399a5`（本次為文件同步，產品程式仍以 `7253ea0` 為基準）。
+- staging runtime：`7253ea009e57`；`/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。production 沒有修改。
+- PR-3 仍未結案：需要真實 LINE follow、正確 `person_id` 核對，以及多社／外社／停權／退社負向案例；本輪沒有假造這些證據。
 - 2026-09-16 管理頁核對發現 `HAPPY` 仍有 staging OA metadata、`LINE_OA_HAPPY_*` namespace、4 位 follower
   與既有推播紀錄；這是待釐清的 staging／mock 殘留，不代表 HAPPY 納入本次 rollout。未經明確決定前不使用 HAPPY。
 - PR-1、PR-2 的程式與 migration 已在目前 staging；這不等於 PR-3 的 LINE 真實 follow／精確身份配對驗收完成。

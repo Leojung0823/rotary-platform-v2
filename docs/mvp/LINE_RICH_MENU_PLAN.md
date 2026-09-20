@@ -1,9 +1,10 @@
 # LINE Rich Menu 每社社員入口企劃
 
-更新日期：2026-09-16（Asia/Taipei）
+更新日期：2026-09-21（Asia/Taipei）
 
 狀態：程式底座已進入 `main` 並部署 staging；目前產品範圍只使用 `PANCHIAO-ELITE`，HAPPY 不使用。
-staging runtime `1ef38bb50407` 健康；仍待 PANCHIAO-ELITE 的 OA 外部設定、旗標狀態確認與手機真人驗收。
+staging runtime `7253ea009e57` 健康；仍待 PANCHIAO-ELITE 的 OA 外部設定、旗標狀態確認與手機真人驗收。
+2026-09-21 現場核對 staging `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`；本輪沒有對 LINE 發布選單，也沒有把 HAPPY 納入範圍。
 2026-09-16 已登入管理頁實際核對，尚未看到 Rich Menu 發布區，與旗標尚未開啟相符；目前沒有圖片上傳、
 LINE 發布或手機驗收證據。
 2026-09-16 已把使用者提供的 2×2 設計另存為 `2500×1686`、`486,768 bytes` 的 JPEG；原始檔未覆蓋，
