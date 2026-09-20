@@ -31,7 +31,7 @@ describe("staging browser acceptance workflow safety", () => {
     expect(workflow).toContain("STAGING_EXPECT_BIRTHDAY_V2: ${{ inputs.expect_birthday_v2 }}");
     expect(stagingTest).toContain('process.env.STAGING_EXPECT_BIRTHDAY_V2 === "true"');
     expect(stagingTest).toContain('page.goto("/birthdays")');
-    expect(stagingTest).toContain("新設定預設公開月、日");
+    expect(stagingTest).toContain("新建立的生日設定預設公開月、日");
   });
 
   it("keeps birthday collection acceptance separately opt-in", () => {

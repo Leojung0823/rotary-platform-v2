@@ -119,7 +119,7 @@ test.describe("受保護的 Hosted staging 社員驗收", () => {
     if (expectBirthdayV2) {
       await page.goto("/birthdays");
       await expect(page.getByRole("heading", { level: 1, name: "生日祝福" })).toBeVisible();
-      await expect(page.getByText(/新設定預設公開月、日；尚未設定的舊資料仍維持不公開/u)).toBeVisible();
+      await expect(page.getByText(/新建立的生日設定預設公開月、日；既有尚未設定者仍不公開/u)).toBeVisible();
       await expect(page.getByText("目前無法確認生日祝福權限，請稍後重新整理。", { exact: true })).toHaveCount(0);
       await expectNoHorizontalOverflow(page);
     }
