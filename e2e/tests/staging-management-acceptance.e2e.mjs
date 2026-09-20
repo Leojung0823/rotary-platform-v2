@@ -728,7 +728,8 @@ test.describe("受保護的 Hosted staging 執行秘書驗收", () => {
     const adjustmentResponse = await adjustmentResponsePromise;
     expect(adjustmentResponse.status()).toBe(200);
     await page.goto(disposableFinanceUrl);
-    await expect(page.getByText(receiptMemberName, { exact: true })).toBeVisible({ timeout: 30_000 });
+    const receivablesSection = page.locator('section[aria-labelledby="dues-receivables-heading"]');
+    await expect(receivablesSection.getByText(receiptMemberName, { exact: true })).toBeVisible({ timeout: 30_000 });
   });
 
   test("E-10 負向角色矩陣不越權", async ({ browser }) => {
