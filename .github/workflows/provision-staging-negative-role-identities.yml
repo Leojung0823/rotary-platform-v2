@@ -1,0 +1,84 @@
+name: Provision Staging Negative Role Identities
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Enter PROVISION-STAGING-NEGATIVE-ROLES"
+        required: true
+        type: string
+      backup_confirmation:
+        description: "Enter BACKUP-READY after confirming the staging backup boundary"
+        required: true
+        type: string
+      project_identity_confirmation:
+        description: "Enter STAGING-PROJECT-VERIFIED after confirming the staging project"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provision-staging-negative-role-identities
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    name: Provision staging-only negative role identities
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_BASE_URL }}
+    env:
+      APP_ENV: staging
+      TRUSTED_ADMIN_ENVIRONMENT: staging
+      STAGING_PROVISION_NEGATIVE_ROLES: "true"
+      STAGING_NEGATIVE_ROLE_PROVISIONING_CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_BACKUP_CONFIRMATION: ${{ inputs.backup_confirmation }}
+      STAGING_PROJECT_IDENTITY_CONFIRMATION: ${{ inputs.project_identity_confirmation }}
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      STAGING_EXPECTED_CLUB_NAME: ${{ vars.STAGING_EXPECTED_CLUB_NAME }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      STAGING_TEST_SUSPENDED_EMAIL: ${{ secrets.STAGING_TEST_SUSPENDED_EMAIL }}
+      STAGING_TEST_SUSPENDED_PASSWORD: ${{ secrets.STAGING_TEST_SUSPENDED_PASSWORD }}
+      STAGING_TEST_ENDED_EMAIL: ${{ secrets.STAGING_TEST_ENDED_EMAIL }}
+      STAGING_TEST_ENDED_PASSWORD: ${{ secrets.STAGING_TEST_ENDED_PASSWORD }}
+      STAGING_TEST_OUTSIDER_SECRETARY_EMAIL: ${{ secrets.STAGING_TEST_OUTSIDER_SECRETARY_EMAIL }}
+      STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD: ${{ secrets.STAGING_TEST_OUTSIDER_SECRETARY_PASSWORD }}
+
+    steps:
+      - name: Check out the manual provisioning revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate staging-only provisioning inputs
+        run: node scripts/provision-staging-negative-role-identities.mjs --preflight
+
+      - name: Provision and verify reserved negative-role identities
+        run: node scripts/provision-staging-negative-role-identities.mjs
+
+      - name: Record safe result
+        if: success()
+        run: |
+          {
+            echo "### Staging negative-role identities provisioned"
+            echo "- The operation was limited to the staging environment."
+            echo "- Suspended member, ended member and cross-club executive secretary identities were verified without printing credentials."
+            echo "- No migration, deployment or production operation was performed."
+          } >> "$GITHUB_STEP_SUMMARY"
