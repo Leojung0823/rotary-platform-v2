@@ -2,11 +2,11 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-09-20 最新核對（`9a40e59`；活動取消例外轉為可重試）
+## 2026-09-20 最新核對（`093e8c0`；最新主線回歸已完成）
 
-- `main`／`origin/main` 已推到 `9a40e59fc8dc8df4652629ff4b251b8e9837d19b`。`cancelEventAction` 現在會把 Supabase client／RPC 例外導向既有 `retryable` 提示，不讓網路錯誤掉進通用錯誤頁；RPC 維持原子交易，沒有改登入、權限、資料隔離或 production。
+- `main`／`origin/main` 已推到 `093e8c038c1477cb54f948df593459800b0a8bf7`。`cancelEventAction` 現在會把 Supabase client／RPC 例外導向既有 `retryable` 提示，不讓網路錯誤掉進通用錯誤頁；RPC 維持原子交易，沒有改登入、權限、資料隔離或 production。
 - 本機已通過 typecheck、lint（既有 `readdirSync` warning）、Vitest `197` 檔／`1469` tests、build、`verify:db`、migration guard、verification manifest 與 diff check。沒有新增 migration。
-- Push 後自動 CI `35479916597` 已成功；Browser Smoke `35479916579` 在本段更新時仍執行中，沒有手動觸發或重跑。
+- 文件同步後自動 CI `35480288285` 與 Browser Smoke `35480288290` 均成功；沒有手動觸發或重跑。
 - 產品決策仍是 E-05「LINE 額度超過就停止並提示」：管理員在社務管理的 LINE OA 頁看到「LINE 推播已暫停」及部分送達數字，一般社員看不到；這部分已有本機與 staging 合成資料驗收，不需重做。
 - staging 尚未切到此 exact SHA；目前仍受 GitHub `SUPABASE_ACCESS_TOKEN` 無法授權 Supabase staging project 阻塞，production 沒有修改。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留不動。
 
