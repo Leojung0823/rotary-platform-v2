@@ -2,6 +2,14 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新終態核對（`4292e6f`；Browser Smoke 已完成）
+
+- `main`／`origin/main` exact SHA 為 `4292e6f3a42ca510b4cc7fd91d1ce296ee23296f`；沒有 open PR，工作樹只保留既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪未讀寫、未提交。
+- `0c8eda1` 的自動 CI `35469854563` 與 Browser Smoke `35469854515` 均成功；文件同步提交 `4292e6f` 的 CI `35469901220` 與 Browser Smoke `35469901225` 也均成功。本輪沒有手動觸發或重跑。
+- staging `/api/health` 仍回報 `status=ok`、`issues=[]`，但 runtime 仍是 `revision=07002d81be23`，尚未部署最新主線。
+- GitHub staging environment 的 `SUPABASE_ACCESS_TOKEN` 最後更新時間仍為 `2026-08-31T13:21:07Z`；尚未取得 staging project `vmmzdautcsgknhyqrsto` 的有效授權，因此 Go-Live、社費 hosted acceptance 與 E-10 負向矩陣仍不能執行。
+- E-05 額度超過「停止並提示」維持 `[x]`；E-03、E-06、E-07、E-08、E-10、E-11、社費 hosted 收款／核銷驗收仍是未結案的外部／決策項目，E-09 依產品決定暫緩。
+
 ## 2026-09-20 最新核對（`0c8eda1`；E-10 負向驗收入口已補齊）
 
 - `main`／`origin/main` 已同步至 `0c8eda142fa38a2dc07d182c58753efa78f74cbd`；本輪沒有手動觸發 CI 或 Browser Smoke，沒有 open PR。

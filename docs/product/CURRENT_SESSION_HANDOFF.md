@@ -3,6 +3,13 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新終態補充：Browser Smoke 已完成
+
+- `main`／`origin/main` exact SHA 為 `4292e6f3a42ca510b4cc7fd91d1ce296ee23296f`；沒有 open PR。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未讀寫、未提交。
+- `0c8eda1` 的 CI `35469854563` 與 Browser Smoke `35469854515` 均成功；文件提交 `4292e6f` 的 CI `35469901220` 與 Browser Smoke `35469901225` 也均成功，都是 push 後自動執行，沒有手動重跑。
+- staging health 仍為 `revision=07002d81be23`、`status=ok`、`issues=[]`；尚未切到 `4292e6f`。`SUPABASE_ACCESS_TOKEN` 仍是 2026-08-31 的舊值，對 staging project `vmmzdautcsgknhyqrsto` 的授權阻塞尚未解除。
+- 因此下一步仍是：取得 staging-only token 後，以最新 exact SHA 執行 Staging Release／Go-Live；成功後再跑社費 hosted acceptance、生日設定與 E-10 負向角色矩陣。E-03 真人 LINE 配對、E-06 登入後效能、E-07 實機、E-08 production、E-11 Rich Menu 仍需外部條件。
+
 ## 2026-09-20 最新接力補充：`0c8eda1` 已補 E-10 負向 hosted 驗收入口
 
 - `main`／`origin/main` exact SHA 為 `0c8eda142fa38a2dc07d182c58753efa78f74cbd`；本輪沒有手動觸發 CI／Browser Smoke，沒有 open PR。

@@ -2,6 +2,13 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新終態核對（`4292e6f`；自動回歸已完成）
+
+- `main`／`origin/main` exact SHA 為 `4292e6f3a42ca510b4cc7fd91d1ce296ee23296f`；沒有 open PR。既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未讀寫、未提交。
+- `0c8eda1` 的自動 CI `35469854563`、Browser Smoke `35469854515`，以及文件同步提交 `4292e6f` 的 CI `35469901220`、Browser Smoke `35469901225` 均成功；沒有手動觸發或重跑。
+- staging `/api/health` 仍為 `status=ok`、`issues=[]`、`revision=07002d81be23`，所以這些回歸結果不能被誤寫成最新主線已部署。GitHub staging `SUPABASE_ACCESS_TOKEN` 仍未取得 `vmmzdautcsgknhyqrsto` 授權。
+- 目前地圖上的未結案項目維持：E-03 follow 真人身份核對、E-06 同條件效能量測、E-07 實機／M1、E-08 production 決策、E-10 負向角色矩陣、E-11 各社 OA／Rich Menu，以及社費 hosted 收款／核銷驗收；E-09 依產品決定暫緩。E-05 額度超過停止並提示已完成。
+
 ## 2026-09-20 最新補充（`0c8eda1`：E-10 負向角色 hosted acceptance 已可執行）
 
 - 受保護的 `Staging Management Acceptance` 新增手動 `expect_negative_roles` 開關；只有明確開啟且三組保留 staging 測試身份都通過前置檢查時，才會跑停權、退社與外社執行秘書的負向案例。
