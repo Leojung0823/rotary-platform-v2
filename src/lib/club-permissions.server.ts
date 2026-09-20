@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type ClubPermissionReadResult = Readonly<{
@@ -59,3 +60,14 @@ export const readClubPermissions = cache(async (
     return { ok: false, permissions: [] };
   }
 });
+
+/**
+ * Management routes must fail closed before rendering a management shell.
+ * The RPCs remain the data and mutation boundary; this guard prevents an
+ * unauthorized tenant URL from rendering an empty management page as if it
+ * were valid.
+ */
+export async function requireClubPermission(clubId: string, permission: string) {
+  const result = await readClubPermissions(clubId);
+  if (!result.ok || !result.permissions.includes(permission)) redirect("/access-denied");
+}

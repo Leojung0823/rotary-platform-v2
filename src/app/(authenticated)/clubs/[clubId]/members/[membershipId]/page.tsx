@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { assignClubRoleAction, setMemberStatusAction, unbindLineIdentityAction, updateMemberAction } from "@/app/actions";
 import { setMemberAccountStatusAction } from "@/app/identity-actions";
 import { ClubAdminNav } from "@/components/club-admin-nav";
+import { requireClubPermission } from "@/lib/club-permissions.server";
 import { Badge, Button, Card, Field, Input, Notice, Select } from "@/components/ui";
 import { setMembershipTagsAction } from "@/app/tag-actions";
 
@@ -38,6 +39,7 @@ export default async function MemberDetailPage({ params, searchParams }: {
 }) {
   const { clubId, membershipId } = await params;
   const query = await searchParams;
+  await requireClubPermission(clubId, "member.manage");
   const supabase = await createClient();
   const [{ data, error }, permissions] = await Promise.all([
     supabase.rpc("list_club_members", { p_club_id: clubId, p_query: null, p_status: null }),

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireClubPermission } from "@/lib/club-permissions.server";
 import { archiveMemberTagAction, createMemberTagAction } from "@/app/tag-actions";
 import { createClient } from "@/lib/supabase/server";
 import { ClubAdminNav } from "@/components/club-admin-nav";
@@ -41,6 +42,7 @@ const tagMessages: Record<string, string> = {
 
 export default async function MembersPage({ params, searchParams }: { params: Promise<{ clubId: string }>; searchParams: Promise<{ q?: string; status?: string; success?: string; error?: string; count?: string }> }) {
   const { clubId } = await params; const query = await searchParams; const supabase = await createClient();
+  await requireClubPermission(clubId, "member.manage");
   // Issued together: the tag list is a separate question from the roster, and
   // waiting for one before asking the other would cost a round trip.
   const [membersResult, tagsResult] = await Promise.all([

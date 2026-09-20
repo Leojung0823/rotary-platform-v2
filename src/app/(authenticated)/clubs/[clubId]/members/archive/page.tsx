@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ClubAdminNav } from "@/components/club-admin-nav";
 import { Badge, EmptyState, Input, Notice } from "@/components/ui";
+import { requireClubPermission } from "@/lib/club-permissions.server";
 import { createClient } from "@/lib/supabase/server";
 import type { MemberRow } from "../page";
 
@@ -23,6 +24,7 @@ export default async function ArchivedMembersPage({
 }) {
   const { clubId } = await params;
   const query = await searchParams;
+  await requireClubPermission(clubId, "member.manage");
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("list_club_archived_members", {
     p_club_id: clubId,
