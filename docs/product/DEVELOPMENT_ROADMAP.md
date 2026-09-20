@@ -2,6 +2,14 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新工程進度（`1a977d1`；E-10 provisioning 入口已完成）
+
+- 已把 E-10 的三組 hosted 負向角色身份建立流程補齊，並推上 `main`：停權社員、退社社員、外社執行秘書各自使用保留的 staging 測試信箱；身份、社籍與管理權都會由 server-side service-role provisioning 檢查，遇到衝突就停止，不會覆蓋真人資料。
+- 新增的是手動 staging workflow 與可重跑的驗證模組，沒有新增 migration、沒有改權限／RLS、沒有部署產品 runtime，也沒有修改 production。GitHub staging secrets 已建立但值不進 repo、不在輸出顯示。
+- 本機已通過完整 Vitest `198` 檔／`1475` tests、typecheck、lint（既有 warning）、build、`verify:db`、migration guard、77 份 verification manifest 與 diff check。
+- E-10 仍不能標 `[x]`：下一步要在 workflow 人工輸入確認字串，先 provision，再用 `Staging Management Acceptance` 的 `expect_negative_roles=true` 取得 hosted 結果。此 workflow 尚未執行。
+- E-06 仍是「未量測」：Chrome DevTools MCP 沒有登入後 session，不能用登入頁數字代替；E-03、E-07、E-08、E-11 仍各自需要真人／實機／產品決策／外部 LINE 設定。E-09 依產品決定暫緩。
+
 ## 2026-09-20 今日進度收斂（`e57d4ff`）
 
 - 今日把社費 hosted acceptance 的最後一個測試誤判修好：調整應收後，驗收只在「收款名單」區塊尋找社員，避免同名 `<option>` 讓 Playwright strict mode 失敗。這是驗收工具修正，不是放寬產品權限或改資料庫。

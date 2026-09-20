@@ -2,6 +2,15 @@
 
 更新日期：2026-09-20（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-09-20 最新工程進度（`1a977d1`；E-10 provisioning 入口已完成）
+
+- `main`／`origin/main` exact SHA 為 `1a977d1`；本輪新增 staging-only 的負向角色身份 provisioning：`.github/workflows/provision-staging-negative-role-identities.yml`、`scripts/provision-staging-negative-role-identities.mjs` 與 `src/lib/staging-negative-role-provisioning.mjs`。
+- 它只會建立／確認三個保留測試身份：停權社員、退社社員、外社執行秘書。只接受 `example/test/invalid` 測試信箱；遇到真人資料、跨社籍、平台角色或非預期管理權會 fail closed，不覆蓋資料。沒有新增 migration、沒有改 RLS／權限、沒有部署或修改 production。
+- GitHub `staging` environment 的三組測試 email／password secrets 已建立，值沒有印出；workflow 仍須人工輸入三個確認字串後才會執行。E-10 目前是「provisioning 入口完成、等待 hosted 執行」，不是結案。
+- 本機驗證：Vitest `198` 檔／`1475` tests、typecheck、lint（只有既有 `src/lib/in-place-repairs.test.ts` warning）、build、`verify:db`、migration guard、verification manifest（77 SQL）與 `git diff --check` 均通過；資料庫 lint 仍只有既有 warning。
+- staging 產品 runtime 仍是 `e57d4ff02ac3`，本輪只推送驗收工具，沒有產品部署；既有 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未追蹤檔保留且未納入。
+- 尚未完成：E-03 LINE follow 真人身份核對、E-06 登入後 LCP／FCP／TTFB／INP（目前未量測）、E-07 真實手機／M1、E-08 production 發布決策、E-10 hosted 負向角色矩陣、E-11 各社 OA／Rich Menu 外部設定與手機驗證；E-09 recovery email 依產品決定暫緩。
+
 ## 2026-09-20 今日收尾核對（`e57d4ff`）
 
 - `main`／`origin/main` exact SHA 為 `e57d4ff02ac3070020cfe6e885adf4c8fb252cf9`；目前沒有 open PR。工作樹只保留既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md`，本輪沒有讀寫或提交它。

@@ -3,6 +3,14 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-09-20 最新接力結論（`1a977d1`；E-10 provisioning 入口已完成）
+
+- `main`／`origin/main` exact SHA 為 `1a977d1`。新增 `.github/workflows/provision-staging-negative-role-identities.yml` 與對應 provisioning 模組，只能對 staging 建立三個保留的負向角色測試身份；不新增 migration、不改權限、不部署產品、不碰 production。
+- GitHub staging environment 已設定三組測試身份 secrets，密碼值沒有輸出。workflow 需要人工輸入 `PROVISION-STAGING-NEGATIVE-ROLES`、`BACKUP-READY`、`STAGING-PROJECT-VERIFIED` 才會執行；執行後才可跑 management acceptance 的 `expect_negative_roles=true`。
+- 本機：Vitest `198`／`1475`、typecheck、lint（既有 warning）、build、`verify:db`、migration guard、77 份 verification manifest、diff check 通過。E-10 目前仍是「等待 hosted 執行」，不是已結案。
+- staging 產品 runtime 本輪沒有改動，仍是 `e57d4ff02ac3`。既有未追蹤 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留，不能加入提交。
+- 尚未結案仍包括：E-03 LINE follow 真人身份核對、E-06 登入後效能數字（未量測）、E-07 實機／M1、E-08 production 決策、E-10 hosted 負向角色矩陣、E-11 各社 OA／Rich Menu 外部設定與手機驗證；E-09 暫緩。
+
 ## 2026-09-20 今日接力結論（`e57d4ff`）
 
 - 權威 `main`／`origin/main` exact SHA 為 `e57d4ff02ac3070020cfe6e885adf4c8fb252cf9`；沒有 open PR。既有未追蹤 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 未讀寫、未提交。
