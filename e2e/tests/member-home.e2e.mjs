@@ -24,6 +24,35 @@ async function expectNoHorizontalOverflow(page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
+test("already-friend checks pairing in place and distinguishes lookup failures", async ({ page, context }, testInfo) => {
+  await login(page, "e2e-shell-line-oa-unpaired@example.test");
+  const taskCard = page.locator("section").filter({ has: page.getByRole("heading", { name: "待辦提醒", exact: true }) });
+  await expect(taskCard.getByRole("link", { name: /查看全部/u })).toHaveCount(0);
+  await page.getByRole("link", { name: /加入本社 LINE OA/u }).click();
+  await expect(page).toHaveURL(/\/me\/line-oa/u);
+  let response = { status: 503, body: {} };
+  await page.route("**/api/line-oa/onboarding/status?*", (route) => route.fulfill({
+    status: response.status,
+    contentType: "application/json",
+    body: JSON.stringify(response.body),
+  }));
+  const button = page.getByRole("button", { name: "我已經是好友，確認連接" });
+  await button.click();
+  await expect(page.getByRole("alert").filter({ hasText: "暫時無法查詢連接狀態" })).toBeVisible();
+  response = { status: 200, body: { connected: false, pairStatus: "unpaired" } };
+  await button.click();
+  await expect(page.getByRole("status")).toContainText("不代表您沒有加入好友");
+  await expect(button).toBeEnabled();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath("line-pairing-help.png"), fullPage: true });
+  response = { status: 200, body: { connected: true, pairStatus: "paired" } };
+  await button.click();
+  await expect(page.getByRole("heading", { name: /已連接/u })).toBeVisible();
+  await expect(button).toHaveCount(0);
+  await expect(page).toHaveURL(/\/me\/line-oa/u);
+  expect(context.pages()).toHaveLength(1);
+});
+
 test("member home is server-resolved, member-first, and responsive", async ({ page, browser }, testInfo) => {
   if (testInfo.project.name === "member-home-1440") {
     const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -67,7 +96,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     // The shell and the member pages must use the same active-club choice.
     // Without this assertion, /club-affairs silently fell back to the first
     // club even though the shell still said the second club was active.
-    await multiPage.getByRole("link", { name: "社務" }).click();
+    await multiPage.getByRole("link", { name: "服務計劃", exact: true }).click();
     await expect(multiPage).toHaveURL(/\/club-affairs\?mode=member$/u);
     await expect(multiPage.getByRole("heading", { name: "本機 Shell 第二社" })).toBeVisible();
     await expect(multiPage.getByRole("heading", { name: "本機 Shell 社員社" })).toHaveCount(0);

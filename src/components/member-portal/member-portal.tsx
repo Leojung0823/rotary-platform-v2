@@ -158,7 +158,7 @@ function DashboardCard({
   tone: "blue" | "green" | "amber";
   empty: string | null;
   /** Where this card's own "查看全部" goes. */
-  href: string;
+  href?: string;
   children: React.ReactNode;
 }) {
   return <section className={styles.panel}>
@@ -169,9 +169,9 @@ function DashboardCard({
       <h2 className={styles.cardTitle}>{title}</h2>
       {/* Each card links to its own list. This was hardcoded to /events, so
           "查看全部" under the notices sent a member to the events page. */}
-      <Link className={styles.panelLink} href={href} prefetch={false}>
+      {href && <Link className={styles.panelLink} href={href} prefetch={false}>
         查看全部 <PortalIcon name="chevronRight" size={16} />
-      </Link>
+      </Link>}
     </div>
     <div className={styles.panelRows}>{empty === null ? children : <p className={styles.panelEmpty}>{empty}</p>}</div>
   </section>;
@@ -253,7 +253,7 @@ export function MemberPortalBody({
           </div>)}
         </DashboardCard>
 
-        <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" href="/events" empty={tasks.length === 0 ? "目前沒有待辦事項" : null}>
+        <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" empty={tasks.length === 0 ? "目前沒有優先待辦提醒" : null}>
           {tasks.map((task) => <Link className={styles.taskRow} key={`${task.title}-${task.detail}`} href={task.href} prefetch={false}>
             <span className={`${styles.taskIcon} ${styles[`taskIcon_${task.tone}`]}`} aria-hidden="true">
               <PortalIcon name={task.icon === "bell" ? "bell" : task.icon === "document" ? "document" : "users"} size={19} />

@@ -3,7 +3,20 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-09-22 非人工工作盤點（掃描基準 `cbfff9f`）
+## 2026-09-22 UX 優化第一批（開發基準 `00f7418`）
+
+- 修正先前「沒有安全可做的工程項目」的結論：測試通過不代表操作體驗沒有改善空間。
+- 首頁待辦移除錯連活動的「查看全部」；依既有期限排序，保留 RPC 提供的全部五筆快照，再附加 LINE 提醒，不再擠掉第五筆。這仍是優先待辦快照，不是完整待辦中心。
+- LINE「我已經是好友，確認連接」改為頁內查詢；區分查詢失敗、尚未配對、已連接。只讀取既有 caller-only API，不偽造好友身份、不直接向 LINE 驗證、不變更配對規則。
+- 社員導覽改為「服務計劃」（手機「服務」）；年度計劃先於社團資料，最新成果／下一步／社員參與直接顯示，年度目標／執行活動可展開，更新日期提前顯示。
+- 我的捐款保留摘要與篩選，明細改為可展開；新展開按鈕有 48px 點擊高度與鍵盤焦點樣式。
+- 驗證：typecheck、lint、build、Vitest 205 檔／1508 tests、verify:db 全部 77 SQL、migration guard、verification manifest、diff check 通過。lint 仍有既有 unused `readdirSync` warning。
+- 本機 Chromium 針對性測試 11 passed／4 按既有 viewport 規則 skipped：桌機、375px、320px 首頁與 LINE 狀態；桌機／375px 捐款明細；管理員發布服務計劃及社員展開。LINE 狀態回應使用 mock，只驗證 UI 行為，不能替代真人好友驗收。
+- 本機獨立測試埠 3107，build 與 runtime 的 `NEXT_PUBLIC_SITE_URL` 必須一致，否則換社 redirect 會離開測試站。DB reset 後已依 superadmin → 啟用旗標 → fixtures 恢復本機測試資料。
+- 沒有 migration、登入／權限／RLS／跨社隔離變更。既有外部發布企劃與 `src/lib/publication/` 未追蹤工作保留，不納入本批。
+- 待辦：LINE 管理後台的日常操作／進階設定分區、完整待辦中心、真實手機與社員可用性驗收。發布狀態須另查 GitHub workflow 與 health；本節測試不是部署證據。
+
+## 2026-09-22 非人工工作盤點（掃描基準 `cbfff9f`；以下為歷史結論，已由上方 UX 檢查補正）
 
 - 本輪重新掃描目前主線、待辦、roadmap、LINE 配對／Rich Menu 程式與驗收工具；沒有新的產品 `TODO`／`FIXME`，也沒有安全可做而未做的工程項目。
 - LINE follow webhook／配對、批次配對、Rich Menu、社員首頁待辦的針對性測試 54/54 通過；完整 Vitest 201/201 檔、1489/1489 項測試、typecheck、lint、build、migration guard、verification manifest、diff check 均通過。

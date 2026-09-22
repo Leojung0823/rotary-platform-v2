@@ -20,7 +20,7 @@ import { currentExperienceMode } from "@/lib/experience-mode.server";
 import styles from "./club-affairs.module.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "社務" };
+export const metadata: Metadata = { title: "服務計劃" };
 
 type AffairsPage = {
   club: { club_id: string; club_code: string; club_name: string; english_name: string | null; member_count: number } | null;
@@ -91,26 +91,11 @@ export default async function ClubAffairsPage({
   return <div className="page-stack">
     <header className="page-header">
       <div>
-        <p className="eyebrow">社務 · {club.club_code}</p>
+        <p className="eyebrow">服務計劃 · {club.club_code}</p>
         <h1>{club.club_name}</h1>
         {club.english_name && <p className={styles.englishName}>{club.english_name}</p>}
       </div>
     </header>
-
-    <Card>
-      <div className="section-heading">
-        <div><p className="eyebrow">本社</p><h2>社團資料</h2></div>
-        <span>{club.member_count} 位社員</span>
-      </div>
-      {page.officers.length > 0
-        ? <ul className={styles.officerList}>
-          {page.officers.map((officer) => <li key={`${officer.role_key}-${officer.display_name}`}>
-            <Badge tone="neutral">{roleLabel[officer.role_key] ?? officer.role_key}</Badge>
-            <strong>{officer.display_name}</strong>
-          </li>)}
-        </ul>
-        : <p className="subtle">尚未指派社長、秘書或財務。</p>}
-    </Card>
 
     <Card>
       <div className="section-heading">
@@ -122,6 +107,7 @@ export default async function ClubAffairsPage({
 
       {page.service_plan
         ? <>
+          <p className="subtle">更新於 {updatedFormatter.format(new Date(page.service_plan.updated_at))}</p>
           <div className={styles.planIntro}>
             <h3 className={styles.planTitle}>{page.service_plan.title}</h3>
             {page.service_plan.annual_theme.trim() && <p className={styles.planTheme}>
@@ -150,12 +136,6 @@ export default async function ClubAffairsPage({
                 <p className={styles.serviceCategoryDescription}>{category.description}</p>
                 <dl className={styles.planFacts}>
                   <div className={styles.planFact}>
-                    <dt>年度目標</dt><dd>{planValue(section.annual_goal)}</dd>
-                  </div>
-                  <div className={styles.planFact}>
-                    <dt>執行活動</dt><dd>{planValue(section.activities)}</dd>
-                  </div>
-                  <div className={styles.planFact}>
                     <dt>最新成果</dt><dd>{planValue(section.latest_result)}</dd>
                   </div>
                   <div className={styles.planFact}>
@@ -165,10 +145,20 @@ export default async function ClubAffairsPage({
                     <dt>社員參與</dt><dd>{planValue(section.member_participation)}</dd>
                   </div>
                 </dl>
+                <details className="member-details">
+                  <summary>查看年度目標與執行活動</summary>
+                  <dl className={styles.planFacts}>
+                    <div className={styles.planFact}>
+                      <dt>年度目標</dt><dd>{planValue(section.annual_goal)}</dd>
+                    </div>
+                    <div className={styles.planFact}>
+                      <dt>執行活動</dt><dd>{planValue(section.activities)}</dd>
+                    </div>
+                  </dl>
+                </details>
               </article>;
             })}
           </div>
-          <p className="subtle">更新於 {updatedFormatter.format(new Date(page.service_plan.updated_at))}</p>
         </>
         : <p className="subtle">
           本年度的服務計劃尚未發布。
@@ -181,6 +171,21 @@ export default async function ClubAffairsPage({
           href={`/club-affairs?year=${year}`}
         >{rotaryYearLabel(year)}</Link>)}
       </div>}
+    </Card>
+
+    <Card>
+      <div className="section-heading">
+        <div><p className="eyebrow">本社</p><h2>社團資料</h2></div>
+        <span>{club.member_count} 位社員</span>
+      </div>
+      {page.officers.length > 0
+        ? <ul className={styles.officerList}>
+          {page.officers.map((officer) => <li key={`${officer.role_key}-${officer.display_name}`}>
+            <Badge tone="neutral">{roleLabel[officer.role_key] ?? officer.role_key}</Badge>
+            <strong>{officer.display_name}</strong>
+          </li>)}
+        </ul>
+        : <p className="subtle">尚未指派社長、秘書或財務。</p>}
     </Card>
 
     <Card>

@@ -78,6 +78,8 @@ test("a wordless pledge appears in the member's own ledger on 我的", async ({ 
   await expect(page.getByRole("heading", { name: "我的捐款" })).toBeVisible();
   await expect(page.getByText("承諾金額").first()).toBeVisible();
   await expect(page.getByText("NT$1,234").first()).toBeVisible();
+  await expect(page.getByText("（僅捐款，未留文字）").first()).not.toBeVisible();
+  await page.locator("summary").filter({ hasText: "查看捐款明細" }).click();
   // An entry with an amount and no words still has to read as something.
   await expect(page.getByText("（僅捐款，未留文字）").first()).toBeVisible();
   // Collected and outstanding are the point of a ledger.

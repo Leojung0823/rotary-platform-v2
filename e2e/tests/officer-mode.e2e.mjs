@@ -286,7 +286,11 @@ test("a service-plan manager keeps drafts private until publishing", async ({ pa
     await expect(memberPage.getByText(title, { exact: true })).toBeVisible();
     for (const category of serviceCategories) {
       await expect(memberPage.getByRole("heading", { name: category, exact: true })).toBeVisible();
+      await expect(memberPage.getByText(`${category}最新成果`, { exact: true })).toBeVisible();
+      await expect(memberPage.getByText(`${category}年度目標`, { exact: true })).not.toBeVisible();
     }
+    await memberPage.locator("summary").filter({ hasText: "查看年度目標與執行活動" }).first().click();
+    await expect(memberPage.getByText(`${serviceCategories[0]}年度目標`, { exact: true })).toBeVisible();
   } finally {
     await memberContext.close();
   }

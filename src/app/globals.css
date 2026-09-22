@@ -532,6 +532,15 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
 /* The registration roster on a management card: the counts are in the summary,
    because that is what an officer came for; the list is what they open when
    they are chasing replies. */
+.member-details > summary {
+  min-height: 48px;
+  padding: 12px 0;
+  color: var(--blue-ink);
+  cursor: pointer;
+  font-weight: var(--weight-medium);
+}
+.member-details > summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
 .roster-fold { margin: var(--space-4) 0 0; }
 .roster-fold > summary {
   min-height: 48px;

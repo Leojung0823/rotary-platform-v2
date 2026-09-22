@@ -107,7 +107,9 @@ const taskIcons: Record<MemberHomePendingTask["kind"], PortalTask["icon"]> = {
  * kind cannot be added in the database and land here silently mislabelled.
  */
 export function tasksFrom(tasks: readonly MemberHomePendingTask[]): readonly PortalTask[] {
-  return tasks.map((task) => {
+  return [...tasks].sort((left, right) =>
+    (left.hoursRemaining ?? Infinity) - (right.hoursRemaining ?? Infinity),
+  ).map((task) => {
     const urgency = pendingTaskUrgency(task);
     return {
       icon: taskIcons[task.kind],

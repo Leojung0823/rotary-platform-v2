@@ -38,6 +38,21 @@ function parsedTasks(rows: readonly Record<string, unknown>[]) {
 }
 
 describe("待辦提醒不只有活動報名", () => {
+  it("prioritizes deadlines without dropping tasks or mutating the snapshot", () => {
+    const parsed = parsedTasks([
+      task({ kind: "profile_incomplete", deadline: null, hours_remaining: null, action_path: "/me" }),
+      task({ hours_remaining: 100, action_path: "/events?later" }),
+      task({ kind: "birthday_wish", hours_remaining: 2, action_path: "/birthdays" }),
+      task({ hours_remaining: 100, action_path: "/events?tied" }),
+      task({ kind: "dues_outstanding", deadline: null, hours_remaining: null, action_path: "/dues" }),
+    ])!;
+    const original = structuredClone(parsed);
+    expect(tasksFrom(parsed).map((item) => item.href)).toEqual([
+      "/birthdays", "/events?later", "/events?tied", "/me", "/dues",
+    ]);
+    expect(parsed).toEqual(original);
+  });
+
   it("emits every kind the page knows how to draw", () => {
     for (const kind of pendingTaskKinds) {
       expect(projection, `the projection never emits ${kind}`).toContain(`'kind', '${kind}'`);

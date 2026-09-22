@@ -78,11 +78,10 @@ async function PortalBody({
     ? null
     : featuredEventFrom(projection.primaryEvent, undefined);
   const lineOaTask = lineOaResolution?.ok ? lineOaTaskFrom(lineOaResolution.status) : null;
-  // Put the one task that unlocks club notifications first. The home list is
-  // intentionally capped at five rows, so an unfinished OA setup cannot be
-  // hidden behind five older reminders.
+  // The RPC supplies a priority snapshot, not every outstanding task. Keep
+  // every supplied item; onboarding must not displace a deadline reminder.
   const tasks = lineOaTask
-    ? [lineOaTask, ...tasksFrom(projection.pendingTasks)].slice(0, 5)
+    ? [...tasksFrom(projection.pendingTasks), lineOaTask]
     : tasksFrom(projection.pendingTasks);
 
   return <MemberPortalBody

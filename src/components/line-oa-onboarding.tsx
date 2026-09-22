@@ -8,7 +8,7 @@ import {
 } from "@/lib/line/oa-onboarding";
 import styles from "./line-oa-onboarding.module.css";
 
-type Phase = "idle" | "opening_line" | "verifying" | "connected" | "help";
+type Phase = "idle" | "opening_line" | "verifying" | "connected" | "help" | "error";
 
 function connectedResponse(value: unknown): boolean {
   return typeof value === "object"
@@ -47,15 +47,22 @@ export function LineOaOnboarding({
         credentials: "same-origin",
         headers: { accept: "application/json" },
       });
-      if (!result.ok) return false;
+      if (!result.ok) return "error";
       const body: unknown = await result.json();
-      if (!connectedResponse(body)) return false;
+      if (typeof body !== "object" || body === null || !("connected" in body)
+        || typeof body.connected !== "boolean") return "error";
+      if (!connectedResponse(body)) {
+        if ("pairStatus" in body && body.pairStatus === "conflict") {
+          setStatus((current) => ({ ...current, pairStatus: "conflict" }));
+        }
+        return "pending";
+      }
       setStatus((current) => ({ ...current, friendStatus: "following", pairStatus: "paired" }));
       setPhase("connected");
       clearPolling();
-      return true;
+      return "connected";
     } catch {
-      return false;
+      return "error";
     }
   }, [clearPolling, status.clubId]);
 
@@ -66,7 +73,12 @@ export function LineOaOnboarding({
 
     const tick = async () => {
       setPhase("verifying");
-      if (await refresh()) return;
+      const result = await refresh();
+      if (result === "connected") return;
+      if (result === "error") {
+        setPhase("error");
+        return;
+      }
       remaining -= 1;
       if (remaining <= 0) {
         setPhase("help");
@@ -135,7 +147,10 @@ export function LineOaOnboarding({
       </p>}
       {phase === "verifying" && <p className={styles.progress} role="status">正在確認是否完成連接…</p>}
       {phase === "help" && <p className={styles.progress} role="status">
-        還沒確認到連接。若您原本就是好友，請開啟聊天室；目前仍可由社務幹部協助配對。
+        系統尚未確認好友與社員身份的配對，不代表您沒有加入好友。若已加入，請稍後再次確認，或請社務幹部協助配對。
+      </p>}
+      {phase === "error" && <p className={styles.warning} role="alert">
+        暫時無法查詢連接狀態，請稍後重試；這不代表您沒有加入好友。
       </p>}
       {dismissError && <p className={styles.warning} role="alert">目前無法儲存提醒時間，請稍後再試。</p>}
 
@@ -153,15 +168,19 @@ export function LineOaOnboarding({
         >
           加入本社 LINE
         </a>
-        <a
+        <button
+          type="button"
           className="button button-secondary"
-          href={status.joinUrl ?? undefined}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => startPolling("help")}
+          disabled={phase === "verifying" || phase === "opening_line"}
+          onClick={async () => {
+            clearPolling();
+            setPhase("verifying");
+            const result = await refresh();
+            if (result !== "connected") setPhase(result === "error" ? "error" : "help");
+          }}
         >
-          我已經是好友
-        </a>
+          {phase === "verifying" ? "正在確認…" : "我已經是好友，確認連接"}
+        </button>
         {surface === "home" && <button
           type="button"
           className={styles.later}

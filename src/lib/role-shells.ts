@@ -51,7 +51,7 @@ const navigationByMode: Readonly<Record<ExperienceMode, readonly NavigationDefin
     { id: "events", label: "活動", mobileLabel: "活動", icon: "calendar", href: () => "/events" },
     { id: "interact", label: "社內互動", mobileLabel: "互動", icon: "chat", href: () => "/interact" },
     { id: "directory", label: "社員名錄", mobileLabel: "社員", icon: "users", href: () => "/directory" },
-    { id: "club-affairs", label: "社務", mobileLabel: "社務", icon: "building", href: () => "/club-affairs" },
+    { id: "club-affairs", label: "服務計劃", mobileLabel: "服務", icon: "building", href: () => "/club-affairs" },
     { id: "account", label: "我的", mobileLabel: "我的", icon: "user", href: () => "/me" },
   ],
   management: [

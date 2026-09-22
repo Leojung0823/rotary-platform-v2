@@ -207,7 +207,9 @@ export default async function IdentityCenterPage({
           <strong className="metric-value metric-text">{formatMoney(ledger.totals.outstanding_total)}</strong>
         </Card>
       </div>
-      {ledger.entries.length === 0 ? <p className="subtle">這個期間還沒有捐款承諾。</p> : <div className="table-wrap" data-mobile-cards>
+      {ledger.entries.length === 0 ? <p className="subtle">這個期間還沒有捐款承諾。</p> : <details className="member-details">
+        <summary>查看捐款明細（{ledger.entries.length} 筆）</summary>
+        <div className="table-wrap" data-mobile-cards>
         <table>
           <thead><tr><th>日期</th><th>內容</th><th>承諾</th><th>已收</th><th>未收</th></tr></thead>
           <tbody>
@@ -220,7 +222,8 @@ export default async function IdentityCenterPage({
             </tr>)}
           </tbody>
         </table>
-      </div>}
+        </div>
+      </details>}
       <p className="hint">「已收」由社務幹部登記；金額是否對同社公開由您在祝福牆自行決定，這份明細只有您看得到。</p>
     </Card>}
 
