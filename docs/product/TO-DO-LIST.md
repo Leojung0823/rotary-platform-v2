@@ -1,6 +1,15 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-21（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-22（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-09-22 非人工工作收尾（掃描基準 `cbfff9f`）
+
+> 本輪先把不需要真人、手機或 production 決策的工作全部重新核對；沒有新增產品程式、migration、權限變更或部署。
+
+- 原始碼與驗收工具沒有發現新的 `TODO`／`FIXME` 工作；LINE follow 配對、Rich Menu、首頁待辦與安全邊界的針對性測試共 6 個檔案、54 項全數通過。
+- 完整 Vitest 為 201 個檔案／1489 項測試全數通過；`typecheck`、`build`、migration guard、verification manifest 與 `git diff --check` 通過。lint 只有既有的 `src/lib/in-place-repairs.test.ts` 未使用 `readdirSync` 警告。
+- 掃描當下 `main` 與 `origin/main` 同步在 `cbfff9f`；工作樹另有使用者／平行工作留下的未追蹤檔案，均未讀寫、未加入提交。
+- 因此目前沒有可安全代替真人驗收的工程工作；未結案清單只剩 E-03、E-07、E-08、E-11，以及依產品決定暫緩的 E-09。E-06 同條件效能比較與 E-10 負向矩陣已有完成證據。
 
 ## 2026-09-21 今日最新進度（產品 exact SHA `7253ea0`；staging 已發布）
 

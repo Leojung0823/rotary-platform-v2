@@ -1,6 +1,12 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-09-21（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-09-22（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-09-22 非人工工作已收尾（掃描基準 `cbfff9f`）
+
+- 本輪重新核對 roadmap、handoff、待辦、原始碼與驗收工具；沒有新的產品 `TODO`／`FIXME`，也沒有可以在不碰真人帳號、手機或 production 的前提下安全完成的工程項目。
+- LINE 配對／Rich Menu／首頁待辦針對性測試 54/54 通過；完整 Vitest 201 個檔案／1489 項測試、typecheck、build、migration guard、verification manifest 與 diff check 均通過。
+- 未結案項目維持 E-03、E-07、E-08、E-11；E-09 recovery email／custom SMTP 依產品決定暫緩。E-06 同條件效能比較與 E-10 負向矩陣不重做。
 
 ## 2026-09-21 今日最新現況（產品／staging `7253ea0`；主線 SHA 以現場核對為準）
 

@@ -1,7 +1,14 @@
-# 交接筆記（持續更新；最新核對 2026-09-21；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-09-22；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-09-22 非人工工作盤點（掃描基準 `cbfff9f`）
+
+- 本輪重新掃描目前主線、待辦、roadmap、LINE 配對／Rich Menu 程式與驗收工具；沒有新的產品 `TODO`／`FIXME`，也沒有安全可做而未做的工程項目。
+- LINE follow webhook／配對、批次配對、Rich Menu、社員首頁待辦的針對性測試 54/54 通過；完整 Vitest 201/201 檔、1489/1489 項測試、typecheck、lint、build、migration guard、verification manifest、diff check 均通過。
+- 沒有修改 production、LINE Developers Console、真實 LINE 帳號或 staging 資料；使用者既有未追蹤的 `docs/product/EXTERNAL_PLATFORM_PUBLISHING_PLAN_V1.md` 保留不動。
+- 下一步只能等外部條件：E-03 乾淨真人 LINE 配對與負向案例、E-07 實機／五人測試、E-08 production 決策、E-11 各社 OA／Rich Menu 外部設定與手機驗收；E-09 維持暫緩。
 
 ### E-06 同條件前後比較已完成（run `35528969873`）
 
