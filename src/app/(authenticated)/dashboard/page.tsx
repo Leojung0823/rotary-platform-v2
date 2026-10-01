@@ -5,6 +5,7 @@ import { Badge, Card, EmptyState, Notice } from "@/components/ui";
 import { ExperienceContextResolver } from "@/components/experience-context-resolver";
 import { ContextUnavailableScreen } from "@/components/context-unavailable";
 import { MemberPortalHome } from "@/components/member-portal/member-portal-home";
+import { PwaInstallCard } from "@/components/pwa/install-experience";
 import { RoleAwareDashboardLanding } from "@/components/role-aware-dashboard";
 import { resolveDashboardRoleContext } from "@/lib/dashboard-role-context";
 import { hasPlatformAccess, requireIdentity, type Identity } from "@/lib/auth";
@@ -111,6 +112,8 @@ async function LegacyDashboard({
           )}
         </div>
       </header>
+
+      <PwaInstallCard />
 
       {error ? (
         <Notice tone="error">目前無法讀取扶輪社資料，請稍後重新整理。</Notice>

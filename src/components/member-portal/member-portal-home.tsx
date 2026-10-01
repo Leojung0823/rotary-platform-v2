@@ -16,6 +16,7 @@ import {
 } from "@/lib/member-portal/from-projection";
 import { MemberPortalBody, MemberPortalHeader, MemberPortalShell } from "./member-portal";
 import { NotificationBellItems, NotificationBellLoading } from "./notification-bell-items";
+import { PwaInstallCard } from "@/components/pwa/install-experience";
 
 const todayDate = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, month: "long", day: "numeric" });
 const todayWeekday = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, weekday: "long" });
@@ -127,6 +128,7 @@ export function MemberPortalHome({
         <BellNotifications clubId={activeClub.clubId} messageCentre={features.messageCentre} />
       </Suspense>}
     />
+    <PwaInstallCard />
     <Suspense fallback={<MemberPortalBodyLoading />}>
       <PortalBody activeClub={activeClub} features={features} messagesHref={messagesHref} />
     </Suspense>

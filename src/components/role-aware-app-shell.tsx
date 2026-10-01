@@ -25,6 +25,7 @@ import {
   resolveRoleShell,
 } from "@/lib/role-shells";
 import styles from "./role-aware-app-shell.module.css";
+import { INSTALL_PAGE_HREF } from "@/lib/pwa/install";
 
 const activeClubPreferenceActionPath = "/api/preferences/active-club";
 
@@ -197,6 +198,7 @@ function AccountMenu({
     <div className={styles.accountPanel}>
       {displayableEmail(identity) && <p>{displayableEmail(identity)}</p>}
       <Link href={`/me?mode=${encodeURIComponent(mode)}`} prefetch={false}>我的帳號</Link>
+      <Link href={INSTALL_PAGE_HREF} prefetch={false}>安裝到手機</Link>
       {managedClub && <a href={`/clubs/${encodeURIComponent(managedClub.clubId)}/members?mode=management`}>進入社務管理</a>}
       {canReturnToMember && <a href={modeHref("member")}>回社員模式</a>}
       <form action="/api/auth/line/logout?redirect=1" method="post">

@@ -3,6 +3,7 @@ import { displayableEmail, type Identity } from "@/lib/auth";
 import { Notice } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./app-shell.module.css";
+import { INSTALL_PAGE_HREF } from "@/lib/pwa/install";
 
 type ManageableClub = { club_id: string; club_name: string; permission_level: string };
 
@@ -40,6 +41,7 @@ export async function LegacyAppShell({
         <Link href="/events">活動</Link>
         {messageBoardEnabled && <Link href="/board">留言板</Link>}
         <Link href="/me">會員中心</Link>
+        <Link href={INSTALL_PAGE_HREF}>安裝到手機</Link>
         {manageableClubs.length === 1 && <Link href={`/clubs/${manageableClubs[0].club_id}/members?mode=management`}>社團管理</Link>}
         {manageableClubs.length > 1 && manageableClubs.map((club) => (
           <Link key={club.club_id} href={`/clubs/${club.club_id}/members?mode=management`}>社團管理・{club.club_name}</Link>
@@ -58,6 +60,7 @@ export async function LegacyAppShell({
       <Link href="/events">活動</Link>
       {messageBoardEnabled && <Link href="/board">留言板</Link>}
       <Link href="/me">我的</Link>
+      <Link href={INSTALL_PAGE_HREF}>安裝到手機</Link>
       {firstManageableClubId && <Link href={`/clubs/${firstManageableClubId}/members?mode=management`}>社團</Link>}
       {isPlatform && <Link href="/platform/clubs">平台</Link>}
       <form className={styles.mobileLogout} action="/api/auth/line/logout?redirect=1" method="post">

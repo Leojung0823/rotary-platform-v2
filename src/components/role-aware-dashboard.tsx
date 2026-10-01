@@ -3,6 +3,7 @@ import { Badge, Card, EmptyState } from "@/components/ui";
 import { activeClubForMode, type ExperienceContext, type ExperienceMode } from "@/lib/experience-context";
 import type { Identity } from "@/lib/auth";
 import { managementToolsForClub, type ManagementToolFeatures } from "@/lib/management-tools";
+import { PwaInstallCard } from "@/components/pwa/install-experience";
 
 const modeContent: Readonly<Record<ExperienceMode, Readonly<{
   eyebrow: string;
@@ -81,6 +82,8 @@ export function RoleAwareDashboardLanding({
       </div>
       {activeClub && <Badge tone="success">{activeClub.clubName}</Badge>}
     </header>
+
+    <PwaInstallCard />
 
     {mode === "platform" ? <Card>
       <h2>平台管理工作台</h2>

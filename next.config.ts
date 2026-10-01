@@ -47,6 +47,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/icon.svg", headers: publicAppShellHeaders },
+      { source: "/icons/:path*", headers: publicAppShellHeaders },
       { source: "/manifest.webmanifest", headers: publicAppShellHeaders },
       { source: "/offline.html", headers: publicAppShellHeaders },
       { source: "/sw.js", headers: serviceWorkerHeaders },
