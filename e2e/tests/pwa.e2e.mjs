@@ -20,6 +20,10 @@ async function launchStandaloneContext(browserType, userDataDirectory) {
   return context;
 }
 
+async function expectPathname(page, pathname) {
+  await expect.poll(() => new URL(page.url()).pathname).toBe(pathname);
+}
+
 test("公開安裝頁、Manifest 與圖示具備 PWA 安裝所需資料", async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name !== "pwa-1440", "PWA acceptance runs in its dedicated project.");
 
@@ -174,7 +178,13 @@ test("本機模擬 LINE Login 後，獨立模式瀏覽器重開仍保留 Supabas
     await expect(page.getByRole("heading", { name: "模擬 LINE Login" })).toBeVisible();
     await page.locator('input[name="subject"]').fill("U-e2e-shell-line-oa-unpaired");
     await page.getByRole("button", { name: "同意並登入" }).click();
-    await expect(page).toHaveURL(/\/dashboard$/u);
+    // The local mock's Server Action redirects to the OAuth callback. Next
+    // handles that first hop client-side, so perform the callback as the full
+    // document GET that the external provider makes in production.
+    await expectPathname(page, "/api/auth/line/callback");
+    const callbackResponse = await page.goto(page.url());
+    expect(callbackResponse?.ok()).toBeTruthy();
+    await expectPathname(page, "/dashboard");
     await expect(page.locator("main h1").first()).toContainText("，您好");
     await page.goto(new URL("/install", baseURL).toString());
     await expect(page.getByRole("heading", { name: "已從桌面開啟「我是扶輪人」" })).toBeVisible();
@@ -184,7 +194,7 @@ test("本機模擬 LINE Login 後，獨立模式瀏覽器重開仍保留 Supabas
     context = await launchStandaloneContext(browserType, userDataDirectory);
     page = context.pages()[0] ?? await context.newPage();
     await page.goto(new URL("/dashboard", baseURL).toString());
-    await expect(page).toHaveURL(/\/dashboard$/u);
+    await expectPathname(page, "/dashboard");
     await expect(page.locator("main h1").first()).toContainText("，您好");
   } finally {
     await context?.close();
