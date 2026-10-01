@@ -14,6 +14,7 @@ import { Badge, Button, Card, Field, Input, Notice, Select } from "@/components/
 import { createClient } from "@/lib/supabase/server";
 import { safeMessage } from "@/lib/validation";
 import { APP_TIME_ZONE } from "@/lib/time";
+import { externalMemberInvitationUrl } from "@/lib/members/external-invitation-url";
 
 export const metadata: Metadata = { referrer: "no-referrer" };
 
@@ -81,13 +82,13 @@ export default async function InvitationsPage({
   const activeJoinLink = joinLinks?.links.find((link) => link.link_status === "active") ?? null;
   const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const newJoinUrl = query.joinToken
-    ? `${siteOrigin}/join-club?token=${encodeURIComponent(query.joinToken)}`
+    ? externalMemberInvitationUrl(siteOrigin, "/join-club", query.joinToken)
     : null;
 
   if (error) return <Notice tone="error">您沒有管理邀請的權限。</Notice>;
   const invitations = (data ?? []) as Invitation[];
   const inviteUrl = query.token
-    ? `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/join?token=${query.token}`
+    ? externalMemberInvitationUrl(siteOrigin, "/join", query.token)
     : null;
   const qr = inviteUrl
     ? await QRCode.toDataURL(inviteUrl, { width: 320, margin: 2, errorCorrectionLevel: "M" })

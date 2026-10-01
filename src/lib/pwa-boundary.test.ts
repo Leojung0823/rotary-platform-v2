@@ -218,6 +218,19 @@ describe("PWA cache boundary", () => {
     }
   });
 
+  it("adds the external-open hint to every shareable member invitation URL", () => {
+    const invitationsPage = source("src/app/(authenticated)/clubs/[clubId]/invitations/page.tsx");
+    const memberPage = source("src/app/(authenticated)/clubs/[clubId]/members/[membershipId]/page.tsx");
+    const importRoute = source("src/app/api/v1/clubs/[clubId]/members/import/route.ts");
+    for (const consumer of [invitationsPage, memberPage, importRoute]) {
+      expect(consumer).toContain("externalMemberInvitationUrl");
+    }
+    expect(invitationsPage).toContain('externalMemberInvitationUrl(siteOrigin, "/join", query.token)');
+    expect(invitationsPage).toContain('externalMemberInvitationUrl(siteOrigin, "/join-club", query.joinToken)');
+    expect(memberPage).toContain('externalMemberInvitationUrl(siteUrl, "/join", query.token)');
+    expect(importRoute).toContain('externalMemberInvitationUrl(siteUrl, "/join", token)');
+  });
+
   it("keeps the current Supabase browser session on the SSR cookie storage path", () => {
     const browserClient = source("src/lib/supabase/client.ts");
     const serverClient = source("src/lib/supabase/server.ts");

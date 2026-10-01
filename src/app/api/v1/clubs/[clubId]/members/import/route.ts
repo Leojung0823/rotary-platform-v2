@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { externalMemberInvitationUrl } from "@/lib/members/external-invitation-url";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ clubId: string }> }) {
   const origin = request.headers.get("origin");
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     sheet.addRow({
       name,
       result: result.error ? "失敗" : "已建立",
-      url: token ? `${siteUrl}/join?token=${token}` : "",
+      url: token ? externalMemberInvitationUrl(siteUrl, "/join", token) : "",
     });
   }
 

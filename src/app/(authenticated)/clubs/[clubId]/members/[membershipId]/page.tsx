@@ -11,6 +11,7 @@ type MembershipTag = { tag_id: string; tag_name: string; description: string | n
 import { createClient } from "@/lib/supabase/server";
 import { safeMessage } from "@/lib/validation";
 import type { MemberRow } from "../page";
+import { externalMemberInvitationUrl } from "@/lib/members/external-invitation-url";
 
 type AccountLifecycle = {
   has_account: boolean;
@@ -110,7 +111,7 @@ export default async function MemberDetailPage({ params, searchParams }: {
           </form>}
     </Card>
     {query.token && <Card><h2>重新綁定邀請</h2><p>請安全地將此一次性連結交給社員：</p>
-      <div className="token-value">{`${siteUrl}/join?token=${query.token}`}</div></Card>}
+      <div className="token-value">{externalMemberInvitationUrl(siteUrl, "/join", query.token)}</div></Card>}
 
     <div className="metric-grid">
       <Card><span className="metric-label">平台帳號</span><strong className="metric-value metric-text">{lifecycle?.has_account ? statusLabel[lifecycle.account_status ?? ""] ?? lifecycle.account_status : "尚未建立"}</strong></Card>
