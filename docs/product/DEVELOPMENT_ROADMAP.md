@@ -2,14 +2,15 @@
 
 更新日期：2026-10-02（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39；本機完成、尚未發布）
+## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39；已推 main、尚未部署 staging）
 
 - 依 Issue #39 完成公告草稿、編輯、立即發布草稿、預定發布、取消排程、置頂、封存、到期與生命週期紀錄；排程公告只進 App，不呼叫 LINE／Email，原有立即發布流程不變。
-- 隔離分支：`codex/announcements-scheduling-v09`，基於 `main@b6a184bb4c445a8d06dde919ce171f85a36ec66e`。重新 fetch 後 `origin/main` 仍是同一 SHA，GitHub 沒有 open PR；本變更尚未合併、部署或對社員開啟。
+- 已推送到 `main`：`3a1d855badb5472394f9bcf2b7789f97a922de75`（Issue #39 已由 GitHub 自動關閉）。沒有開 PR；這不代表已部署或已對社員開啟。
 - 新增 migration `20261002000100_club_message_scheduling_v09.sql`、排程 API／GitHub Actions workflow、權限驗證與 UI；沿用既有 `announcements_v09` 旗標，scheduler 僅接受 staging 且旗標啟用時執行。
 - 本機驗證：`npm test -- --maxWorkers=2` 207 檔／1515 tests 通過；typecheck、lint、build、`verify:db`（包含 78 份 SQL verification）、migration guard、verification manifest、`git diff --check` 通過。Lint 只有既有 unused `readdirSync` 警告。
 - 訊息中心 Playwright：桌機公告送出／社員閱讀與置頂、草稿編輯／排程／取消，加上 Android 412px、窄版 320px 會員頁與水平溢位檢查，共 5 passed、4 個資料變更測試依 viewport 規則略過。
-- 發布前仍需在 GitHub 建立／確認 `message-center-scheduler` environment，設定 `STAGING_BASE_URL` 與 `MESSAGE_CENTER_SCHEDULER_SECRET`；值不得寫入 repo。合併後要對 exact SHA 走 Staging Release → Go-Live、健康檢查與 staging 排程驗收。這些都尚未發生；production 未修改。
+- GitHub CI `36916823618` 與 Browser Smoke `36916823523` 均已成功，驗證的是功能 commit `3a1d855...`。加密 staging 備份 workflow `36917733396` 停在 `staging` 人工核准，尚未匯出或驗證備份；不得繞過核准。
+- `message-center-scheduler` environment 尚未設定。排程 workflow 現在有 fail-closed 開關：repository variable `MESSAGE_CENTER_SCHEDULER_ENABLED` 未設為 `true` 時，定時觸發會略過；設定方式與啟用前提見 `docs/deployment/STAGING_RUNBOOK.md`。部署前仍需對最新 exact SHA 走 Staging Release → Go-Live、核實備份、健康檢查與 staging 排程驗收。這些都尚未發生；production 未修改。
 - 根目錄 checkout 另有使用者與平行工作修改；本輪在獨立 worktree 作業，沒有改動或納入那些檔案。
 
 ## 2026-09-22 非人工工作已收尾（掃描基準 `cbfff9f`）

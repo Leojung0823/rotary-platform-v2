@@ -116,13 +116,14 @@ staging 的 protected route；不要把 service-role key 放進 workflow。
 environment；不要使用會要求人工核准的 deployment `staging` environment。
 
 - Deployment branches 只允許 `main`；不設定 required reviewer。
+- 在 repository 的 **Settings → Secrets and variables → Actions → Variables** 設定 `MESSAGE_CENTER_SCHEDULER_ENABLED`。未設定或不是字串 `true` 時，每 5 分鐘的排程會安全略過；只有確認 GitHub environment、staging 網址、伺服器 secret 與 `announcements_v09` 旗標都就緒後，才設為 `true`。這是 repository variable（不是 environment variable），讓 workflow 能在進入 environment 前先判斷是否啟用。
 - 只設定 `STAGING_BASE_URL` variable，值為 staging HTTPS origin。
 - 只設定 `MESSAGE_CENTER_SCHEDULER_SECRET` secret，使用至少 32 字元的獨立高熵隨機值。
 - 不放 `SUPABASE_*`、`STAGING_DEPLOY_HOOK`、測試帳號或其他部署 secrets。
 - `.github/workflows/message-center-scheduler.yml` 每 5 分鐘呼叫 staging protected route。Route 只在 `APP_ENV=staging` 接受工作，並先檢查既有 `announcements_v09` flag；不可把排程改接到 production。
 - 透過 GitHub Actions secret/variable 設定後，不要把 secret 值貼到聊天、commit、issue、workflow log 或 shell history。
 
-草稿與排程公告是 App 內通知，不會送 LINE 或 Email。要真正啟用本機功能旗標之外的 staging 排程，仍需完成這個 GitHub environment 的外部設定；在 secret 尚未設定前，workflow 會明確失敗，不會改用其他憑證。
+草稿與排程公告是 App 內通知，不會送 LINE 或 Email。排程觸發器在啟用變數尚未設為 `true` 時會略過；手動執行則可用來診斷，缺少 environment 或 secret 時會明確失敗，不會改用其他憑證。
 
 ## 4. 部署平台啟動前檢查
 

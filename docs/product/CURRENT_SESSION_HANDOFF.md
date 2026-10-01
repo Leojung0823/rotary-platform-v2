@@ -5,13 +5,13 @@
 
 ## 2026-10-02 訊息中心 V0.9 排程公告接力
 
-- Issue #39「V0.9 Goal: 公告、站內通知與排程送達」仍是 OPEN，GitHub 當下沒有 open PR。最新 `origin/main`／此功能分支基底 exact SHA 為 `b6a184bb4c445a8d06dde919ce171f85a36ec66e`。
+- Issue #39「V0.9 Goal: 公告、站內通知與排程送達」已由 main commit `3a1d855badb5472394f9bcf2b7789f97a922de75` 關閉；目前沒有 open PR。最新主線 SHA 請用 `git rev-parse origin/main` 現場確認。
 - 實作在獨立 worktree `/Users/leoj/.codex/worktrees/announcement-scheduling-v09/rotary`、分支 `codex/announcements-scheduling-v09`。根目錄 checkout 有既存 LINE OA UI 與外部發布文件等使用者／平行工作，**不要覆蓋、stage 或混進本功能**。
 - 功能完成項目：訊息草稿與編輯、排程／取消、立即發布草稿、到期、置頂、封存、稽核、私有 scheduler queue、退避重試、staging-only cron/API、手機版訊息中心；舊的立即發布流程沒有被替換，排程不送 LINE／Email。
 - Migration `20261002000100_club_message_scheduling_v09.sql` 是本輪新增、尚未部署的 forward-only migration。沿用 `announcements_v09`；scheduler route 必須同時滿足 `APP_ENV=staging`、有效 bearer secret 與既有 flag。權限驗證包含一般社員、外社社員、停權帳號及 service-role 邊界。
 - 本機驗證全通過：Vitest 207 files／1515 tests、typecheck、lint、build、`npm run verify:db`、`npm run check:migrations`、`npm run check:db-verifications`（78 SQL files）、`git diff --check`。Lint 仍只有既有 `src/lib/in-place-repairs.test.ts` unused `readdirSync` 警告。
 - E2E 訊息中心：桌機 3/3 通過；Android 412px 與 320px 各跑社員唯讀頁與橫向溢位斷言通過，資料變更測試依規則略過；合計 5 passed／4 skipped。
-- 尚未 commit、push、合併或部署。提交前先重看 branch diff 與 `git status`；再依 repo 慣例同步 main 並觀察 change-scope CI／Browser Smoke。Staging scheduler 要求 GitHub `message-center-scheduler` environment 的 `STAGING_BASE_URL` variable 及 `MESSAGE_CENTER_SCHEDULER_SECRET` secret，未設定前排程不能執行。部署須 exact-SHA Staging Release → Go-Live，並等環境核准；本輪未碰 staging／production。
+- GitHub CI `36916823618` 與 Browser Smoke `36916823523` 均已成功，驗證的是功能 commit `3a1d855...`。加密 staging 備份 run `36917733396` 等待 `staging` 人工核准，尚未匯出／驗證；不可自行核准或繞過。Staging scheduler environment 尚未建立／設定，排程 workflow 的 fail-closed 開關為 repository variable `MESSAGE_CENTER_SCHEDULER_ENABLED=true`；完整前置條件見 `docs/deployment/STAGING_RUNBOOK.md`。在 exact-SHA Staging Release、核實備份、Go-Live 人工核准與 health／staging 驗收前，不要宣稱已部署；production 未修改。
 - DB reset 後已按正確順序恢復本機 superadmin → 啟用本機 role-shell/member-home scenario → fixtures；沒有輸出憑證。
 
 ## 2026-09-22 UX 優化第一批（開發基準 `00f7418`）
