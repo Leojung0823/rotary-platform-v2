@@ -12,8 +12,37 @@ export type ClubMessage = {
 
 export type ClubMessageInbox = {
   messages: ClubMessage[];
+  pinnedMessages: ClubMessage[];
   unreadCount: number;
   nextCursorPayload: unknown;
+};
+
+export type ClubMessageLifecycleStatus =
+  | "draft"
+  | "scheduled"
+  | "active"
+  | "cancelled"
+  | "archived"
+  | "expired"
+  | "failed";
+
+export type ClubMessageLifecycle = {
+  id: string;
+  title: string;
+  body: string;
+  status: ClubMessageLifecycleStatus;
+  audience_kind: ClubMessage["audience_kind"];
+  scheduled_at: string | null;
+  published_at: string | null;
+  expires_at: string | null;
+  pinned_at: string | null;
+  created_at: string;
+  updated_at: string;
+  recipient_count: number;
+  read_count: number;
+  audience_tag_ids: string[];
+  audience_membership_ids: string[];
+  audience_tag_names: string[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -80,11 +109,77 @@ function parseCount(value: unknown) {
 
 export function parseClubMessageInbox(value: unknown): ClubMessageInbox {
   if (!isRecord(value) || !Array.isArray(value.messages)) throw new Error("invalid_message_projection");
+  const pinned = value.pinned_messages ?? [];
+  if (!Array.isArray(pinned)) throw new Error("invalid_message_projection");
   return {
     messages: value.messages.map(parseClubMessage),
+    pinnedMessages: pinned.map(parseClubMessage),
     unreadCount: parseCount(value.unread_count),
     nextCursorPayload: value.next_cursor ?? null,
   };
+}
+
+const lifecycleStatuses: ClubMessageLifecycleStatus[] = [
+  "draft", "scheduled", "active", "cancelled", "archived", "expired", "failed",
+];
+
+function parseNullableDate(value: unknown) {
+  if (value === null) return null;
+  if (typeof value !== "string" || Number.isNaN(Date.parse(value))) {
+    throw new Error("invalid_message_projection");
+  }
+  return value;
+}
+
+function parseUuidArray(value: unknown) {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error("invalid_message_projection");
+  }
+  return value as string[];
+}
+
+function parseStringArray(value: unknown) {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error("invalid_message_projection");
+  }
+  return value as string[];
+}
+
+export function parseClubMessageLifecycle(value: unknown): ClubMessageLifecycle {
+  if (!isRecord(value)
+    || typeof value.id !== "string"
+    || typeof value.title !== "string"
+    || typeof value.body !== "string"
+    || typeof value.status !== "string"
+    || !lifecycleStatuses.includes(value.status as ClubMessageLifecycleStatus)
+    || !isAudienceKind(value.audience_kind)
+    || typeof value.created_at !== "string"
+    || typeof value.updated_at !== "string") {
+    throw new Error("invalid_message_projection");
+  }
+  return {
+    id: value.id,
+    title: value.title,
+    body: value.body,
+    status: value.status as ClubMessageLifecycleStatus,
+    audience_kind: value.audience_kind,
+    scheduled_at: parseNullableDate(value.scheduled_at),
+    published_at: parseNullableDate(value.published_at),
+    expires_at: parseNullableDate(value.expires_at),
+    pinned_at: parseNullableDate(value.pinned_at),
+    created_at: value.created_at,
+    updated_at: value.updated_at,
+    recipient_count: parseCount(value.recipient_count),
+    read_count: parseCount(value.read_count),
+    audience_tag_ids: parseUuidArray(value.audience_tag_ids),
+    audience_membership_ids: parseUuidArray(value.audience_membership_ids),
+    audience_tag_names: parseStringArray(value.audience_tag_names),
+  };
+}
+
+export function parseClubMessageLifecycleList(value: unknown): ClubMessageLifecycle[] {
+  if (!isRecord(value) || !Array.isArray(value.messages)) throw new Error("invalid_message_projection");
+  return value.messages.map(parseClubMessageLifecycle);
 }
 
 export function parseReadReceipt(value: unknown) {

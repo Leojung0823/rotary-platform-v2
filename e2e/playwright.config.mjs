@@ -31,6 +31,7 @@ const lineRichMenuTestMatch = /line-rich-menu\.e2e\.mjs/;
 const boardAudienceTestMatch = /board-audience\.e2e\.mjs/;
 const eventDetailTestMatch = /event-detail\.e2e\.mjs/;
 const eventCoverTestMatch = /event-cover\.e2e\.mjs/;
+const messageCenterTestMatch = /message-center\.e2e\.mjs/;
 const dynamicCheckinOffTestMatch = /dynamic-checkin-off\.e2e\.mjs/;
 const dynamicCheckinRollbackScenario = process.env.E2E_CHECKIN_QR_ROLLBACK;
 
@@ -70,6 +71,11 @@ export default defineConfig({
         deviceScaleFactor: 2.625,
       },
       testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|pwa\.e2e\.mjs|line-rich-menu\.e2e\.mjs/,
+    },
+    {
+      name: "message-center-320",
+      testMatch: messageCenterTestMatch,
+      use: { viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
     },
     {
       name: "role-shells-1440",

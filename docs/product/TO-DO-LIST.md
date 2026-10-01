@@ -1,6 +1,23 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-09-22（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-02（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39）
+
+### 本機已完成，尚未合併／部署
+
+- 幹部可存草稿、編輯、立即發布草稿、排程、取消、置頂、封存並查看生命週期狀態；社員看不到草稿／未到期的排程公告，置頂內容不會在一般訊息分頁重複。
+- 排程發布會在執行時重新檢查社團與有效社員／帳號；不寄送 LINE 或 Email。原有立即發布功能維持原樣。
+- 分支 `codex/announcements-scheduling-v09`；目前 `main`／`origin/main` 為 `b6a184bb4c445a8d06dde919ce171f85a36ec66e`，沒有 open PR。功能尚未合併或部署，不能視為已上線。
+- 本機完整驗證：207 個 Vitest 檔案／1515 tests、typecheck、lint、build、`verify:db`、migration guard、78 份 verification manifest、diff check 均通過；lint 有一個既有 unused `readdirSync` warning。
+- Playwright 訊息中心桌機、Android 412px 與 320px：5 passed、4 skipped（兩條會改資料的流程只在桌機跑）。
+
+### 發布前外部設定／驗收
+
+1. 在 GitHub 為 scheduler 設定 `message-center-scheduler` environment，建立 `STAGING_BASE_URL` variable 與 `MESSAGE_CENTER_SCHEDULER_SECRET` secret；secret 僅存 GitHub，不放 repo 或聊天。
+2. 合併後先對 `main` exact SHA 跑 Staging Release，再經核准執行 Staging Go-Live；不能沿用其他 SHA 的 plan。
+3. 確認 staging `/api/health` 無 issues，並以 staging 測試社驗收草稿、排程送達、取消、置頂與社員資料隔離；手動觸發 scheduler 後再確認每 5 分鐘 workflow 正常。
+4. 目前沒有任何 staging／production 更新，也沒有開啟或修改 hosted feature flag。production 排程仍由 API 的 `APP_ENV=staging` 限制拒絕。
 
 ## 2026-09-22 非人工工作收尾（掃描基準 `cbfff9f`）
 

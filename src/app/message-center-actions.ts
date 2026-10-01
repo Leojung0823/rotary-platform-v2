@@ -2,7 +2,12 @@
 
 import { pushClubMessageToLine } from "@/lib/line/message-center-push";
 import type { MessagePushOutcome } from "@/lib/line/message-push-outcome";
-import { parseClubMessage, parseReadReceipt } from "@/lib/message-center/contracts";
+import {
+  parseClubMessage,
+  parseClubMessageLifecycle,
+  parseClubMessageLifecycleList,
+  parseReadReceipt,
+} from "@/lib/message-center/contracts";
 import {
   normalizeMessageBody,
   normalizeMessageTitle,
@@ -27,6 +32,14 @@ export type MessageActionResult =
 export type ReadActionResult =
   | { ok: true; readAt: string; unreadCount: number }
   | { ok: false; reason: "forbidden" | "failed" };
+
+export type MessageLifecycleActionResult =
+  | { ok: true; message: ReturnType<typeof parseClubMessageLifecycle> }
+  | {
+      ok: false;
+      reason: "invalid_input" | "forbidden" | "schedule_failed" | "failed";
+      persisted?: ReturnType<typeof parseClubMessageLifecycle>;
+    };
 
 // The message centre is a client component that calls these actions
 // imperatively and keeps its own inbox, sent and delivery state. Revalidating
@@ -135,4 +148,143 @@ export async function withdrawClubMessageAction(
     p_message_id: messageId.toLowerCase(),
   });
   return { ok: !error };
+}
+
+function readOptionalIsoDate(value: FormDataEntryValue | null) {
+  if (value === null || value === "") return { ok: true as const, value: null };
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/u.test(value)) {
+    return { ok: false as const };
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return { ok: false as const };
+  return { ok: true as const, value: parsed.toISOString() };
+}
+
+async function readLifecycleMessage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  clubId: string,
+  messageId: string,
+) {
+  const { data, error } = await supabase.rpc("list_club_message_lifecycle", {
+    p_club_id: clubId,
+    p_limit: 100,
+  });
+  if (error) return null;
+  try {
+    return parseClubMessageLifecycleList(data).find((message) => message.id === messageId) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveClubMessageDraftAction(formData: FormData): Promise<MessageLifecycleActionResult> {
+  const clubId = String(formData.get("clubId") ?? "").toLowerCase();
+  const rawMessageId = String(formData.get("messageId") ?? "").toLowerCase();
+  const messageId = rawMessageId === "" ? null : rawMessageId;
+  if (!uuidPattern.test(clubId) || (messageId !== null && !uuidPattern.test(messageId))) {
+    return { ok: false, reason: "invalid_input" };
+  }
+
+  let title: string;
+  let body: string;
+  try {
+    title = normalizeMessageTitle(formData.get("title"));
+    body = normalizeMessageBody(formData.get("body"));
+  } catch {
+    return { ok: false, reason: "invalid_input" };
+  }
+  const audience = audienceFrom(formData);
+  if (!audience) return { ok: false, reason: "invalid_input" };
+
+  const expiresAt = readOptionalIsoDate(formData.get("expiresAt"));
+  const scheduledAt = readOptionalIsoDate(formData.get("scheduledAt"));
+  const intent = formData.get("draftIntent");
+  if (!expiresAt.ok || !scheduledAt.ok || (intent !== "save" && intent !== "schedule" && intent !== "publish")) {
+    return { ok: false, reason: "invalid_input" };
+  }
+  if (intent !== "schedule" && scheduledAt.value !== null) return { ok: false, reason: "invalid_input" };
+  if (intent === "schedule" && scheduledAt.value === null) return { ok: false, reason: "invalid_input" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("save_club_message_draft", {
+    p_club_id: clubId,
+    p_message_id: messageId,
+    p_title: title,
+    p_body: body,
+    p_tag_ids: audience.tagIds,
+    p_membership_ids: audience.membershipIds,
+    p_expires_at: expiresAt.value,
+  });
+  if (error || typeof data !== "object" || data === null || !("id" in data)) {
+    return { ok: false, reason: failureReason(error) };
+  }
+
+  const savedMessageId = String((data as { id: unknown }).id).toLowerCase();
+  if (!uuidPattern.test(savedMessageId)) return { ok: false, reason: "failed" };
+
+  if (intent === "schedule") {
+    const scheduled = await supabase.rpc("schedule_club_message", {
+      p_club_id: clubId,
+      p_message_id: savedMessageId,
+      p_scheduled_at: scheduledAt.value,
+    });
+    if (scheduled.error) {
+      return {
+        ok: false,
+        reason: "schedule_failed",
+        persisted: await readLifecycleMessage(supabase, clubId, savedMessageId) ?? undefined,
+      };
+    }
+  } else if (intent === "publish") {
+    const published = await supabase.rpc("publish_club_message_draft_now", {
+      p_club_id: clubId,
+      p_message_id: savedMessageId,
+    });
+    if (published.error) {
+      return {
+        ok: false,
+        reason: failureReason(published.error),
+        persisted: await readLifecycleMessage(supabase, clubId, savedMessageId) ?? undefined,
+      };
+    }
+  }
+
+  const message = await readLifecycleMessage(supabase, clubId, savedMessageId);
+  return message ? { ok: true, message } : { ok: false, reason: "failed" };
+}
+
+async function manageLifecycleMessage(
+  rpcName: string,
+  clubId: string,
+  messageId: string,
+  parameters: Record<string, unknown> = {},
+): Promise<MessageLifecycleActionResult> {
+  if (!uuidPattern.test(clubId) || !uuidPattern.test(messageId)) return { ok: false, reason: "invalid_input" };
+  const normalizedClubId = clubId.toLowerCase();
+  const normalizedMessageId = messageId.toLowerCase();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc(rpcName as never, {
+    p_club_id: normalizedClubId,
+    p_message_id: normalizedMessageId,
+    ...parameters,
+  } as never);
+  if (error) return { ok: false, reason: failureReason(error) };
+  const message = await readLifecycleMessage(supabase, normalizedClubId, normalizedMessageId);
+  return message ? { ok: true, message } : { ok: false, reason: "failed" };
+}
+
+export async function publishClubMessageDraftAction(clubId: string, messageId: string) {
+  return manageLifecycleMessage("publish_club_message_draft_now", clubId, messageId);
+}
+
+export async function cancelScheduledClubMessageAction(clubId: string, messageId: string) {
+  return manageLifecycleMessage("cancel_scheduled_club_message", clubId, messageId);
+}
+
+export async function setClubMessagePinnedAction(clubId: string, messageId: string, pinned: boolean) {
+  return manageLifecycleMessage("set_club_message_pinned", clubId, messageId, { p_pinned: pinned });
+}
+
+export async function archiveClubMessageAction(clubId: string, messageId: string) {
+  return manageLifecycleMessage("archive_club_message", clubId, messageId);
 }

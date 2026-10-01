@@ -77,3 +77,18 @@ npm run flags:enable:staging announcements_v09  # staging，需要 .env.staging
 `src/lib/api/json-request.ts`（同源判斷、有上限的 JSON 讀取）與 `src/lib/api/cursor.ts`（keyset 游標編解碼）是從留言板抽出來的，留言板改為呼叫同一份實作，行為由它原本的測試保住。訊息中心用的是游標那一份；請求防護留在共用模組裡，下一個需要 API mutation 的功能不必再抄一次。
 
 `/messages` 也加進 `src/proxy.ts` 的 `PROTECTED_SESSION_PATHS`，所以匿名訪客會在串流開始前就被導向 `/login`，而不是先拿到一個 200 的空殼。
+
+## V0.9 排程公告（2026-10-02）
+
+V0.9 延伸既有訊息中心，不替換立即發布流程：
+
+- 幹部可儲存／修改草稿、立即發布草稿、排定發布時間、取消排程、置頂已發布公告、封存與查看生命週期狀態。
+- 發布時間到時，排程服務會重新確認固定受眾仍符合本社有效社員／帳號條件，再建立投遞快照；過期或已無有效收件人的排程不會發送。
+- 排程與草稿只會建立 App 內公告，不會呼叫 LINE、Email 或任何外部投遞服務。原有立即發布流程保持原樣（含既有 LINE 推播嘗試）。
+- 置頂公告由獨立的社員 RPC 投影，和按發布時間分頁的收件匣分開，避免置頂項目在不同分頁重複或改變游標順序。
+- 排程 job 使用鎖定與重試、退避、冪等狀態；生命週期稽核 append-only，不記錄公告標題／內文或個人識別資訊。
+- 排程 route 僅允許 `APP_ENV=staging`，並檢查既有 `announcements_v09` 旗標；資料表不開放瀏覽器直接存取，mutation 仍走 RPC，所有 manager RPC 重新驗證該社 `member.manage`。
+
+GitHub Actions 的 staging scheduler 需要獨立的 `message-center-scheduler` environment、`STAGING_BASE_URL` variable 與 `MESSAGE_CENTER_SCHEDULER_SECRET` secret。設定步驟見 `docs/deployment/STAGING_RUNBOOK.md` §3.2。這是外部設定，不會由程式碼提交或 migration 自動建立。
+
+V0.9 是否已部署、旗標是否開啟、scheduler secret 是否設定，必須分別以實際 workflow、staging health／頁面與 GitHub environment 設定核對；本文件與本機測試本身不代表 staging 已啟用。

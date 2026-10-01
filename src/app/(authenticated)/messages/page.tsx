@@ -7,9 +7,9 @@ import {
   readActiveClubPreference,
 } from "@/lib/experience-context-cookie";
 import {
+  parseClubMessageLifecycleList,
   parseClubMessageInbox,
-  parseSentClubMessages,
-  type SentClubMessage,
+  type ClubMessageLifecycle,
 } from "@/lib/message-center/contracts";
 import { encodeMessageCursor } from "@/lib/message-center/validation";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
@@ -95,12 +95,13 @@ export default async function MessagesPage({
 
   // Independent reads, so they are issued together: on the free Render plan a
   // sequential round trip costs about 180ms each.
-  const [inboxResult, permissionsResult] = await Promise.all([
+  const [inboxResult, pinnedResult, permissionsResult] = await Promise.all([
     supabase.rpc("list_my_club_messages", { p_club_id: selectedClub.club_id, p_limit: 20 }),
+    supabase.rpc("list_my_pinned_club_messages", { p_club_id: selectedClub.club_id }),
     supabase.rpc("list_my_permissions", { p_club_id: selectedClub.club_id }),
   ]);
 
-  if (inboxResult.error) {
+  if (inboxResult.error || pinnedResult.error) {
     return <div className="page-stack">
       <MessageHeader />
       <div className="empty-state" role="alert">
@@ -112,9 +113,12 @@ export default async function MessagesPage({
 
   let inbox;
   try {
-    inbox = parseClubMessageInbox(inboxResult.data);
+    inbox = parseClubMessageInbox({
+      ...(inboxResult.data as Record<string, unknown>),
+      pinned_messages: pinnedResult.data,
+    });
   } catch {
-    inbox = { messages: [], unreadCount: 0, nextCursorPayload: null };
+    inbox = { messages: [], pinnedMessages: [], unreadCount: 0, nextCursorPayload: null };
   }
 
   const canSend = !permissionsResult.error
@@ -123,7 +127,8 @@ export default async function MessagesPage({
 
   let audienceTags: { tag_id: string; tag_name: string; member_count: number }[] = [];
   let audienceMembers: { membership_id: string; display_name: string }[] = [];
-  let sent: SentClubMessage[] = [];
+  let lifecycle: ClubMessageLifecycle[] = [];
+  let lifecycleUnavailable = false;
   if (canSend) {
     const [tagsResult, membersResult, sentResult] = await Promise.all([
       supabase.rpc("list_club_member_tags", { p_club_id: selectedClub.club_id }),
@@ -132,7 +137,7 @@ export default async function MessagesPage({
         p_query: null,
         p_status: "active",
       }),
-      supabase.rpc("list_club_sent_messages", { p_club_id: selectedClub.club_id, p_limit: 20 }),
+      supabase.rpc("list_club_message_lifecycle", { p_club_id: selectedClub.club_id, p_limit: 100 }),
     ]);
     if (!tagsResult.error) {
       audienceTags = ((tagsResult.data as { tags?: typeof audienceTags } | null)?.tags ?? []);
@@ -144,9 +149,10 @@ export default async function MessagesPage({
       }));
     }
     try {
-      sent = sentResult.error ? [] : parseSentClubMessages(sentResult.data);
+      if (sentResult.error) throw new Error("message_lifecycle_unavailable");
+      lifecycle = parseClubMessageLifecycleList(sentResult.data);
     } catch {
-      sent = [];
+      lifecycleUnavailable = true;
     }
   }
 
@@ -157,13 +163,15 @@ export default async function MessagesPage({
       clubId={selectedClub.club_id}
       initialInbox={{
         messages: inbox.messages,
+        pinned_messages: inbox.pinnedMessages,
         unread_count: inbox.unreadCount,
         next_cursor: encodeMessageCursor(inbox.nextCursorPayload),
       }}
       canSend={canSend}
       audienceTags={audienceTags}
       audienceMembers={audienceMembers}
-      initialSent={sent}
+      initialLifecycle={lifecycle}
+      lifecycleUnavailable={lifecycleUnavailable}
     />
   </div>;
 }

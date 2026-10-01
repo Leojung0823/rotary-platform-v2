@@ -110,6 +110,20 @@ Secret 更新後，必須針對當時最新的 `main` SHA 重新執行 `Staging 
 `.github/workflows/birthday-collection-scheduler.yml` 只會使用這個 environment，並且仍只呼叫
 staging 的 protected route；不要把 service-role key 放進 workflow。
 
+## 3.2 建立 GitHub `message-center-scheduler` environment
+
+公告 V0.9 的排程發布只會啟用 staging。要讓 draft/scheduled 公告自動發布，需另外建立名稱完全相同的 GitHub
+environment；不要使用會要求人工核准的 deployment `staging` environment。
+
+- Deployment branches 只允許 `main`；不設定 required reviewer。
+- 只設定 `STAGING_BASE_URL` variable，值為 staging HTTPS origin。
+- 只設定 `MESSAGE_CENTER_SCHEDULER_SECRET` secret，使用至少 32 字元的獨立高熵隨機值。
+- 不放 `SUPABASE_*`、`STAGING_DEPLOY_HOOK`、測試帳號或其他部署 secrets。
+- `.github/workflows/message-center-scheduler.yml` 每 5 分鐘呼叫 staging protected route。Route 只在 `APP_ENV=staging` 接受工作，並先檢查既有 `announcements_v09` flag；不可把排程改接到 production。
+- 透過 GitHub Actions secret/variable 設定後，不要把 secret 值貼到聊天、commit、issue、workflow log 或 shell history。
+
+草稿與排程公告是 App 內通知，不會送 LINE 或 Email。要真正啟用本機功能旗標之外的 staging 排程，仍需完成這個 GitHub environment 的外部設定；在 secret 尚未設定前，workflow 會明確失敗，不會改用其他憑證。
+
 ## 4. 部署平台啟動前檢查
 
 在部署平台的 staging 環境執行：
