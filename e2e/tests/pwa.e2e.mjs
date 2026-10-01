@@ -77,6 +77,28 @@ test("公開安裝頁、Manifest 與圖示具備 PWA 安裝所需資料", async 
   await expect(page.locator("body")).not.toContainText("PWA");
 });
 
+test("複製安裝連結時附上 LINE 外部瀏覽器參數", async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== "pwa-1440", "PWA acceptance runs in its dedicated project.");
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        async writeText(value) {
+          window.__pwaCopiedInstallLink = value;
+        },
+      },
+    });
+  });
+  const page = await context.newPage();
+  await page.goto(new URL("/install", baseURL).toString());
+  await page.getByRole("button", { name: "複製安裝連結" }).click();
+  await expect(page.getByText("安裝連結已複製，可以貼到 LINE 分享給社友。", { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.__pwaCopiedInstallLink))
+    .toBe(new URL("/install?openExternalBrowser=1", baseURL).toString());
+  await context.close();
+});
+
 test("iPhone 安裝頁顯示加入主畫面的三步驟", async ({ browser }, testInfo) => {
   test.skip(testInfo.project.name !== "pwa-1440", "PWA acceptance runs in its dedicated project.");
   const context = await browser.newContext({
