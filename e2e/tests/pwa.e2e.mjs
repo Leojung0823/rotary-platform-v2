@@ -1,6 +1,24 @@
 import { expect, test } from "@playwright/test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+const standaloneUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+
+async function launchStandaloneContext(browserType, userDataDirectory) {
+  const context = await browserType.launchPersistentContext(userDataDirectory, {
+    viewport: { width: 390, height: 844 },
+    userAgent: standaloneUserAgent,
+    isMobile: true,
+    hasTouch: true,
+    deviceScaleFactor: 3,
+  });
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "standalone", { configurable: true, value: true });
+  });
+  return context;
+}
 
 test("公開安裝頁、Manifest 與圖示具備 PWA 安裝所需資料", async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name !== "pwa-1440", "PWA acceptance runs in its dedicated project.");
@@ -133,6 +151,45 @@ test("桌面獨立視窗不顯示安裝步驟", async ({ browser }, testInfo) =>
   await expect(page.getByRole("heading", { name: "在手機上安裝" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "iPhone：加入主畫面" })).toHaveCount(0);
   await context.close();
+});
+
+// This exercises the app's local mock callback and cookie persistence in an
+// installed-mode Chromium profile. Real iOS/Android LINE Login remains a
+// separate device-acceptance gate.
+test("本機模擬 LINE Login 後，獨立模式瀏覽器重開仍保留 Supabase Session", async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== "pwa-1440", "PWA acceptance runs in its dedicated project.");
+  test.skip(
+    !process.env.E2E_ROLE_PASSWORD || process.env.E2E_REMOTE === "1",
+    "Requires the isolated local LINE identity fixture; never runs against a remote environment.",
+  );
+
+  const userDataDirectory = await mkdtemp(join(tmpdir(), "rotary-pwa-standalone-"));
+  const browserType = browser.browserType();
+  let context;
+
+  try {
+    context = await launchStandaloneContext(browserType, userDataDirectory);
+    let page = context.pages()[0] ?? await context.newPage();
+    await page.goto(new URL("/api/auth/line/start?returnTo=%2Fdashboard", baseURL).toString());
+    await expect(page.getByRole("heading", { name: "模擬 LINE Login" })).toBeVisible();
+    await page.locator('input[name="subject"]').fill("U-e2e-shell-line-oa-unpaired");
+    await page.getByRole("button", { name: "同意並登入" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/u);
+    await expect(page.locator("main h1").first()).toContainText("，您好");
+    await page.goto(new URL("/install", baseURL).toString());
+    await expect(page.getByRole("heading", { name: "已從桌面開啟「我是扶輪人」" })).toBeVisible();
+
+    await context.close();
+    context = null;
+    context = await launchStandaloneContext(browserType, userDataDirectory);
+    page = context.pages()[0] ?? await context.newPage();
+    await page.goto(new URL("/dashboard", baseURL).toString());
+    await expect(page).toHaveURL(/\/dashboard$/u);
+    await expect(page.locator("main h1").first()).toContainText("，您好");
+  } finally {
+    await context?.close();
+    await rm(userDataDirectory, { recursive: true, force: true });
+  }
 });
 
 test("偵測到新版後提示使用者，只有點擊更新才要求啟用等待中的版本", async ({ browser }, testInfo) => {
