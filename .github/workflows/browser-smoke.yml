@@ -85,13 +85,16 @@ jobs:
           admin_password="$(openssl rand -hex 24)"
           role_password="$(openssl rand -hex 24)"
           operator_password="$(openssl rand -hex 24)"
+          line_mock_signing_secret="$(openssl rand -hex 32)"
           echo "::add-mask::$admin_password"
           echo "::add-mask::$role_password"
           echo "::add-mask::$operator_password"
+          echo "::add-mask::$line_mock_signing_secret"
           {
             echo "E2E_ADMIN_PASSWORD=$admin_password"
             echo "E2E_ROLE_PASSWORD=$role_password"
             echo "VERIFY_OPERATOR_PASSWORD=$operator_password"
+            echo "E2E_LINE_MOCK_SIGNING_SECRET=$line_mock_signing_secret"
           } >> "$GITHUB_ENV"
           echo "Ephemeral local E2E credentials generated and masked."
 
@@ -152,7 +155,7 @@ jobs:
           LINE_LOGIN_CHANNEL_ID=
           LINE_LOGIN_CHANNEL_SECRET=
           LINE_LOGIN_CALLBACK_URL=
-          LINE_MOCK_SIGNING_SECRET=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          LINE_MOCK_SIGNING_SECRET=$E2E_LINE_MOCK_SIGNING_SECRET
           LINE_OA_MODE=mock
           EOF
           echo "Local E2E environment created. Credential values were not printed."
