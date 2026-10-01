@@ -50,6 +50,7 @@ describe("member LINE Rich Menu definition", () => {
       expect(url.origin).toBe(siteUrl);
       expect(url.searchParams.get("clubId")).toBe(clubId);
       expect(url.searchParams.get("mode")).toBe("member");
+      expect(url.searchParams.get("openExternalBrowser")).toBe("1");
       expect(url.pathname).not.toContain("/clubs/");
       expect(url.pathname).not.toContain("management");
     }

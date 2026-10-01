@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { composeEventPushText } from "./event-push";
+import { composeEventPushText, eventUrl } from "./event-push";
 
 const evaluateCurrentFeatureFlag = vi.hoisted(() => vi.fn());
 const loadClubOaDispatchContext = vi.hoisted(() => vi.fn());
@@ -145,9 +145,19 @@ describe("event push text", () => {
       location: "大拙匠人",
       startsAt: "2026-09-17T10:30:00.000Z",
     });
-    expect(text).toContain("/events/a1000000-0000-4000-8000-000000000004");
+    const link = text.split("\n").find((line) => line.startsWith("http"));
+    expect(link).toBeTruthy();
+    const url = new URL(link!);
+    expect(url.pathname).toBe("/events/a1000000-0000-4000-8000-000000000004");
+    expect(url.searchParams.get("openExternalBrowser")).toBe("1");
     // On its own line: LINE only makes a URL tappable when nothing crowds it.
-    expect(text.split("\n").some((line) => line.startsWith("http") && line.endsWith("000000000004"))).toBe(true);
+    expect(text.split("\n").some((line) => line === link)).toBe(true);
+  });
+
+  it("adds LINE external-browser mode to the event deep link", () => {
+    const url = new URL(eventUrl("a1000000-0000-4000-8000-000000000005"));
+    expect(url.pathname).toBe("/events/a1000000-0000-4000-8000-000000000005");
+    expect(url.searchParams.get("openExternalBrowser")).toBe("1");
   });
 
   it("survives an unparseable start time without printing Invalid Date", () => {
