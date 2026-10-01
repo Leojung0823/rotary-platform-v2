@@ -14,6 +14,7 @@ const memberFacingEventReaders = [
   "get_my_club_event",
   "list_my_event_page",
   "get_my_member_home_projection",
+  "list_my_member_pending_tasks",
   // A write, and the more serious half: the lists never offered a targeted
   // event, but nothing refused a registration for one.
   "set_my_event_registration",

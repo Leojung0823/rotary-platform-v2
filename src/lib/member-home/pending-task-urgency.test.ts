@@ -4,6 +4,7 @@ import { pendingTaskUrgency, urgentWithinHours } from "./pending-task-urgency";
 import type { MemberHomePendingTask } from "@/lib/member-home";
 
 const task = (hoursRemaining: number): MemberHomePendingTask => ({
+  taskId: "event-response-1",
   kind: "event_response",
   title: "十月例會",
   detail: "",
@@ -35,7 +36,7 @@ describe("how urgent an unanswered registration looks", () => {
     // the parser rejects the row, but the filter conditions have no such
     // backstop: widen them and a member is nagged about events that already
     // closed, or that they already answered.
-    const migration = readFileSync("supabase/migrations/20260915000400_member_home_pending_tasks.sql", "utf8");
+    const migration = readFileSync("supabase/migrations/20261002000200_member_task_center.sql", "utf8");
     expect(migration).toContain("'hours_remaining'");
     expect(migration).toContain("'kind', 'event_response'");
 
@@ -45,8 +46,8 @@ describe("how urgent an unanswered registration looks", () => {
     // filter entirely left the test green.
     const start = migration.indexOf("), awaiting_response as (");
     expect(start, "the awaiting_response CTE is gone").toBeGreaterThan(-1);
-    const cte = migration.slice(start, migration.indexOf("), presented_events as (", start));
-    expect(cte).toContain("now() <= registration_deadline");
+    const cte = migration.slice(start, migration.indexOf("), dues_outstanding as (", start));
+    expect(cte).toContain("public.event_registration_is_open(registration_deadline, starts_at, ends_at)");
     expect(cte).toContain("now() < starts_at");
     expect(cte).toContain("my_response is null or my_response = 'pending'");
   });

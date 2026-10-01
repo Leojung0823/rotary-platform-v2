@@ -2,13 +2,14 @@ import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { latestDefinition } from "@/lib/attendance/latest-definition";
 
-const projection = latestDefinition("get_my_member_home_projection");
+const projection = latestDefinition("list_my_member_pending_tasks");
 
-/** The pending_tasks block, which is where a reminder's destination is set. */
+/** The task union, which is where each reminder's destination is set. */
 const pendingTasks = (() => {
-  const from = projection.indexOf("'pending_tasks'");
-  const to = projection.indexOf("'notifications'", from);
-  expect(from, "pending_tasks is gone from the projection").toBeGreaterThan(-1);
+  const from = projection.indexOf("candidate_tasks as (");
+  const to = projection.indexOf("), counted as (", from);
+  expect(from, "candidate task union is gone from the projection").toBeGreaterThan(-1);
+  expect(to, "task candidate count is gone").toBeGreaterThan(from);
   return projection.slice(from, to);
 })();
 
@@ -57,8 +58,14 @@ describe("每一個提醒都要指向真的存在的一頁", () => {
     // /dues shows one Rotary year at a time and opens on the newest, so a bare
     // /dues showed this year -- settled -- to a member who owes from last.
     expect(destinations.some((path) => path.startsWith("/dues"))).toBe(true);
-    expect(destinations, "the link does not say which year").toContain("/dues?yearId=");
+    expect(destinations.some((path) => path.startsWith("/dues?yearId=")), "the link does not say which year").toBe(true);
     expect(destinations, "/me/finance was never a route").not.toContain("/me/finance");
+  });
+
+  it("keeps club-specific actions on the same membership-owned club", () => {
+    for (const path of ["/events?", "/dues?", "/birthday-collection?", "/messages?"]) {
+      expect(pendingTasks.slice(pendingTasks.indexOf(path))).toContain("p_club_id");
+    }
   });
 
   it("asks the filesystem rather than a list written here", () => {

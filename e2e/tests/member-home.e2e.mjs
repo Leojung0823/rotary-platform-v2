@@ -27,7 +27,7 @@ async function expectNoHorizontalOverflow(page) {
 test("already-friend checks pairing in place and distinguishes lookup failures", async ({ page, context }, testInfo) => {
   await login(page, "e2e-shell-line-oa-unpaired@example.test");
   const taskCard = page.locator("section").filter({ has: page.getByRole("heading", { name: "待辦提醒", exact: true }) });
-  await expect(taskCard.getByRole("link", { name: /查看全部/u })).toHaveCount(0);
+  await expect(taskCard.getByRole("link", { name: /查看全部/u })).toHaveAttribute("href", /\/tasks\?clubId=.*mode=member/u);
   await page.getByRole("link", { name: /加入本社 LINE OA/u }).click();
   await expect(page).toHaveURL(/\/me\/line-oa/u);
   let response = { status: 503, body: {} };
@@ -66,7 +66,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     // LINE Login identity, so binding is the first actionable task.
     const bindingTask = memberPage.getByRole("link", { name: "先綁定 LINE 身份" });
     await expect(bindingTask).toBeVisible();
-    await expect(bindingTask).toHaveAttribute("href", "/me/line-oa");
+    await expect(bindingTask).toHaveAttribute("href", /\/me\/line-oa\?clubId=.*mode=member/u);
     await expect(memberPage.getByRole("link", { name: "加入本社 LINE" })).toHaveCount(0);
     await expect(memberPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
     await expect(memberPage.getByRole("heading", { name: "本機社員首頁例會" })).toBeVisible();
@@ -83,7 +83,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     // treating the account as complete.
     const lineOaTask = lineOaPage.getByRole("link", { name: /加入本社 LINE OA/u });
     await expect(lineOaTask).toBeVisible();
-    await expect(lineOaTask).toHaveAttribute("href", "/me/line-oa");
+    await expect(lineOaTask).toHaveAttribute("href", /\/me\/line-oa\?clubId=.*mode=member/u);
     await lineOaContext.close();
 
     const multiContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -126,7 +126,7 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
   // the member is asked to follow the club OA.
   const lineOaTask = page.getByRole("link", { name: "先綁定 LINE 身份" });
   await expect(lineOaTask).toBeVisible();
-  await expect(lineOaTask).toHaveAttribute("href", "/me/line-oa");
+  await expect(lineOaTask).toHaveAttribute("href", /\/me\/line-oa\?clubId=.*mode=member/u);
   await expect(page.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "主要導覽" })).toHaveCount(1);
   if (testInfo.project.name === "member-home-320") await expectNoHorizontalOverflow(page);
@@ -180,4 +180,23 @@ test("每張卡片的查看全部連到自己的清單", async ({ page }, testIn
   const notices = page.locator("section").filter({ hasText: "社團訊息" }).first();
   await expect(notices.getByRole("heading", { name: "社團訊息" })).toBeVisible();
   await expect(notices.getByRole("link", { name: /查看全部/u })).toHaveAttribute("href", /\/messages\?/u);
+
+  const tasks = page.locator("section").filter({ has: page.getByRole("heading", { name: "待辦提醒", exact: true }) });
+  const taskListLink = tasks.getByRole("link", { name: /查看全部/u });
+  await expect(taskListLink).toHaveAttribute("href", /\/tasks\?clubId=.*mode=member/u);
+  await taskListLink.click();
+  await expect(page).toHaveURL(/\/tasks\?clubId=.*mode=member/u);
+  await expect(page.getByRole("heading", { name: "我的待辦", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "返回社員首頁" })).toBeVisible();
+});
+
+test("社員待辦頁在窄手機畫面可讀且沒有橫向溢位", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "member-home-320", "one narrow mobile width is enough for the task page");
+  await login(page, "e2e-shell-ordinary@example.test");
+
+  const tasks = page.locator("section").filter({ has: page.getByRole("heading", { name: "待辦提醒", exact: true }) });
+  await tasks.getByRole("link", { name: /查看全部/u }).click();
+  await expect(page).toHaveURL(/\/tasks\?clubId=.*mode=member/u);
+  await expect(page.getByRole("heading", { name: "我的待辦", exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
 });

@@ -33,6 +33,7 @@ export type PortalUpcomingEvent = Readonly<{
 }>;
 
 export type PortalTask = Readonly<{
+  id: string;
   icon: "bell" | "document" | "user";
   title: string;
   detail: string;

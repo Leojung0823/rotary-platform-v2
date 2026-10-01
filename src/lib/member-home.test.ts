@@ -153,6 +153,23 @@ describe("member-home projection contract", () => {
     expect(parseMemberHomeProjection(projection({ event_id: "internal" }))).toBeNull();
   });
 
+  it("requires stable, unique identities for pending tasks", () => {
+    const task = {
+      task_id: "22222222-2222-4222-8222-222222222222",
+      kind: "event_response",
+      title: "本週例會",
+      detail: "",
+      action_path: "/events",
+      deadline: "2026-08-12T10:00:00.000Z",
+      hours_remaining: 24,
+      count: null,
+    };
+    expect(parseMemberHomeProjection(projection({ pending_tasks: [task] }))?.pendingTasks[0]?.taskId)
+      .toBe(task.task_id);
+    expect(parseMemberHomeProjection(projection({ pending_tasks: [{ ...task, task_id: "bad/id" }] }))).toBeNull();
+    expect(parseMemberHomeProjection(projection({ pending_tasks: [task, task] }))).toBeNull();
+  });
+
   it("rejects an internal identifier added to an event", () => {
     expect(parseMemberHomeProjection(projection({ primary_event: { ...event, id: "internal" } }))).toBeNull();
   });

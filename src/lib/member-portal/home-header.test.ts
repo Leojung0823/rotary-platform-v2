@@ -70,12 +70,12 @@ describe("each dashboard card links to its own list", () => {
     expect(card.slice(0, 200)).toContain("href={messagesHref}");
   });
 
-  it("links complete lists but not the mixed priority-task snapshot", () => {
+  it("links complete lists, including the dedicated member task center", () => {
     const cards = [...portal.matchAll(/<DashboardCard[^>]*>/gu)].map((match) => match[0]);
     expect(cards.length).toBeGreaterThanOrEqual(3);
     const tasks = cards.find((card) => card.includes('title="待辦提醒"'));
     expect(tasks).toBeDefined();
-    expect(tasks).not.toContain("href=");
+    expect(tasks).toContain("href={taskCenterHref}");
     for (const card of cards.filter((card) => card !== tasks)) expect(card).toContain("href=");
     expect(portal).toContain("{href && <Link");
     expect(portal).toContain("href={task.href}");

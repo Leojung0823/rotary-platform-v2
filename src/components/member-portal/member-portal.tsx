@@ -188,6 +188,8 @@ export type MemberPortalContentProps = {
   announcements: readonly PortalAnnouncement[];
   /** Where the notices card's "查看全部" goes; the message centre. */
   messagesHref: string;
+  /** Where the priority snapshot's "查看全部" opens the complete task list. */
+  taskCenterHref: string;
   /** Optional feature shortcuts kept on the home page. */
   entries: readonly PortalEntry[];
   /** Anything the home must still carry, such as the LINE pairing prompt. */
@@ -218,6 +220,7 @@ export function MemberPortalBody({
   tasks,
   announcements,
   messagesHref,
+  taskCenterHref,
   entries,
   children,
 }: Omit<MemberPortalContentProps, "member" | "today">) {
@@ -253,8 +256,8 @@ export function MemberPortalBody({
           </div>)}
         </DashboardCard>
 
-        <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" empty={tasks.length === 0 ? "目前沒有優先待辦提醒" : null}>
-          {tasks.map((task) => <Link className={styles.taskRow} key={`${task.title}-${task.detail}`} href={task.href} prefetch={false}>
+        <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" href={taskCenterHref} empty={tasks.length === 0 ? "目前沒有優先待辦提醒" : null}>
+          {tasks.map((task) => <Link className={styles.taskRow} key={task.id} href={task.href} prefetch={false}>
             <span className={`${styles.taskIcon} ${styles[`taskIcon_${task.tone}`]}`} aria-hidden="true">
               <PortalIcon name={task.icon === "bell" ? "bell" : task.icon === "document" ? "document" : "users"} size={19} />
             </span>

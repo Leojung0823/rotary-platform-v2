@@ -106,18 +106,25 @@ const taskIcons: Record<MemberHomePendingTask["kind"], PortalTask["icon"]> = {
  * one kind. Each row now carries its own, and its own destination -- so a new
  * kind cannot be added in the database and land here silently mislabelled.
  */
-export function tasksFrom(tasks: readonly MemberHomePendingTask[]): readonly PortalTask[] {
+export function tasksFrom(
+  tasks: readonly MemberHomePendingTask[],
+  options: Readonly<{ compactEventTitles?: boolean }> = {},
+): readonly PortalTask[] {
+  const compactEventTitles = options.compactEventTitles ?? true;
   return [...tasks].sort((left, right) =>
     (left.hoursRemaining ?? Infinity) - (right.hoursRemaining ?? Infinity),
   ).map((task) => {
     const urgency = pendingTaskUrgency(task);
     return {
+      id: task.taskId,
       icon: taskIcons[task.kind],
-      title: task.kind === "event_response" ? "回覆活動報名" : task.title,
-      detail: task.count === null
-        ? task.detail
+      title: task.kind === "event_response" && compactEventTitles ? "回覆活動報名" : task.title,
+      detail: task.kind === "event_response"
+        ? compactEventTitles ? task.title : task.detail || "請回覆是否參加"
+        : task.count === null
+          ? task.detail
         // "3 則" says more than repeating the title on both lines.
-        : `${task.count} 則`,
+          : `${task.count} 則`,
       // No deadline means no countdown, not a blank pill: a task that cannot be
       // late says nothing about time at all.
       status: urgency?.label ?? null,
@@ -133,49 +140,54 @@ export function tasksFrom(tasks: readonly MemberHomePendingTask[]): readonly Por
  * not gain a second identity lookup, while the member still sees one coherent
  * list of things that need attention.
  */
-export function lineOaTaskFrom(status: LineOaOnboardingStatus): PortalTask | null {
+export function lineOaTaskFrom(status: LineOaOnboardingStatus, clubId?: string): PortalTask | null {
   if (!status.oaAvailable || status.pairStatus === "paired") return null;
+  const clubQuery = clubId ? `?clubId=${encodeURIComponent(clubId)}&mode=member` : "";
 
   if (status.pairStatus === "conflict") {
     return {
+      id: "line-oa-onboarding",
       icon: "user",
       title: "LINE 身份待確認",
       detail: "請社務幹部協助處理",
       status: null,
       tone: "neutral",
-      href: "/me/line-oa",
+      href: `/me/line-oa${clubQuery}`,
     };
   }
 
   if (!status.lineLoginBound) {
     return {
+      id: "line-oa-onboarding",
       icon: "user",
       title: "先綁定 LINE 身份",
       detail: "完成後才能確認本社好友身份",
       status: null,
       tone: "neutral",
-      href: "/me/line-oa",
+      href: `/me/line-oa${clubQuery}`,
     };
   }
 
   if (status.friendStatus === "following") {
     return {
+      id: "line-oa-onboarding",
       icon: "bell",
       title: "LINE OA 待完成配對",
       detail: "已加入本社 LINE，等待身份確認",
       status: null,
       tone: "neutral",
-      href: "/me/line-oa",
+      href: `/me/line-oa${clubQuery}`,
     };
   }
 
   return {
+    id: "line-oa-onboarding",
     icon: "bell",
     title: status.friendStatus === "unfollowed" ? "重新加入本社 LINE OA" : "加入本社 LINE OA",
     detail: "加入後可接收本社重要通知",
     status: null,
     tone: "neutral",
-    href: "/me/line-oa",
+    href: `/me/line-oa${clubQuery}`,
   };
 }
 

@@ -266,4 +266,162 @@ begin
 end;
 $$;
 
+-- The separate task-centre RPC keeps the short home snapshot bounded while
+-- exposing every outstanding event response through stable, club-scoped pages.
+insert into public.club_events (
+  id, club_id, event_type, title, starts_at, ends_at, registration_deadline,
+  counts_for_attendance, event_status, created_by_app_account_id,
+  updated_by_app_account_id, published_at
+)
+select
+  ('5a000000-0000-4000-8000-' || lpad(series::text, 12, '0'))::uuid,
+  '4d000000-0000-4000-8000-000000000001',
+  'regular_meeting',
+  format('待辦分頁活動 %s', series),
+  now() + series * interval '1 day',
+  now() + series * interval '1 day' + interval '2 hours',
+  now() + series * interval '1 day' - interval '1 hour',
+  true,
+  'published',
+  '4c000000-0000-0000-0000-000000000002',
+  '4c000000-0000-0000-0000-000000000002',
+  now()
+from generate_series(2, 22) as series;
+
+insert into public.clubs (id, club_code, club_name, club_status, activated_at) values
+  ('4d000000-0000-4000-8000-000000000003', 'TASKS-OUTSIDE', '待辦外社', 'active', now());
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '4a000000-0000-0000-0000-000000000001', true);
+insert into public.task_test_state (key, value) values
+  ('task_page_0', public.list_my_member_pending_tasks('4d000000-0000-4000-8000-000000000001', 20, 0, true)),
+  ('task_page_1', public.list_my_member_pending_tasks('4d000000-0000-4000-8000-000000000001', 20, 20, true)),
+  ('task_summary', public.list_my_member_pending_tasks('4d000000-0000-4000-8000-000000000001', 5, 0, false)),
+  ('task_home', public.get_my_member_home_projection('4d000000-0000-4000-8000-000000000001'));
+reset role;
+
+do $$
+declare
+  first_page jsonb;
+  second_page jsonb;
+  summary jsonb;
+  home jsonb;
+  all_event_tasks integer;
+  unique_event_tasks integer;
+begin
+  select value into first_page from public.task_test_state where key = 'task_page_0';
+  select value into second_page from public.task_test_state where key = 'task_page_1';
+  select value into summary from public.task_test_state where key = 'task_summary';
+  select value into home from public.task_test_state where key = 'task_home';
+
+  if first_page ->> 'club_id' <> '4d000000-0000-4000-8000-000000000001'
+     or (first_page ->> 'total_count')::integer <> 22
+     or jsonb_array_length(first_page -> 'tasks') <> 20
+     or (first_page ->> 'next_offset')::integer <> 20 then
+    raise exception 'the first full task page is incomplete or has wrong tenant metadata: %', first_page;
+  end if;
+
+  if jsonb_array_length(second_page -> 'tasks') <> 2
+     or second_page -> 'next_offset' <> 'null'::jsonb then
+    raise exception 'the final task page is incomplete: %', second_page;
+  end if;
+
+  with rows as (
+    select entry from jsonb_array_elements(first_page -> 'tasks') as entry
+    union all
+    select entry from jsonb_array_elements(second_page -> 'tasks') as entry
+  )
+  select count(*) filter (where entry ->> 'kind' = 'event_response')::integer,
+         count(distinct entry ->> 'task_id') filter (where entry ->> 'kind' = 'event_response')::integer
+    into all_event_tasks, unique_event_tasks
+  from rows;
+
+  if all_event_tasks <> 22 or unique_event_tasks <> 22 then
+    raise exception 'pagination omitted or duplicated tasks: total %, unique %', all_event_tasks, unique_event_tasks;
+  end if;
+
+  if jsonb_array_length(summary -> 'tasks') <> 5
+     or jsonb_array_length(home -> 'pending_tasks') <> 5
+     or home -> 'pending_tasks' <> summary -> 'tasks' then
+    raise exception 'home priority snapshot no longer matches the bounded canonical task projection: %, %',
+      home -> 'pending_tasks', summary -> 'tasks';
+  end if;
+
+  if exists (
+    select 1 from jsonb_array_elements(first_page -> 'tasks') as entry
+    where entry ->> 'task_id' is null
+       or entry ->> 'action_path' not like '%clubId=4d000000-0000-4000-8000-000000000001%'
+       or entry ->> 'action_path' not like '%mode=member%'
+  ) then
+    raise exception 'a club-specific task lacks stable identity or its member-scoped destination: %', first_page;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not has_function_privilege('authenticated', 'public.list_my_member_pending_tasks(uuid,integer,integer,boolean)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.list_my_member_pending_tasks(uuid,integer,integer,boolean)', 'EXECUTE') then
+    raise exception 'task RPC grants are not authenticated-only';
+  end if;
+end;
+$$;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '4a000000-0000-0000-0000-000000000001', true);
+do $$
+begin
+  begin
+    perform public.list_my_member_pending_tasks('4d000000-0000-4000-8000-000000000003', 20, 0, true);
+    raise exception 'a member read another club task list';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    perform public.list_my_member_pending_tasks('4d000000-0000-4000-8000-000000000001', 0, 0, true);
+    raise exception 'an invalid page size was accepted';
+  exception when invalid_parameter_value then null;
+  end;
+
+  begin
+    perform public.list_my_member_pending_tasks('4d000000-0000-4000-8000-000000000001', 20, -1, true);
+    raise exception 'a negative offset was accepted';
+  exception when invalid_parameter_value then null;
+  end;
+end;
+$$;
+reset role;
+
+update public.club_memberships set membership_status = 'suspended'
+where id = '4e000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '4a000000-0000-0000-0000-000000000001', true);
+do $$
+begin
+  begin
+    perform public.list_my_member_pending_tasks('4d000000-0000-4000-8000-000000000001', 20, 0, true);
+    raise exception 'a suspended membership read the task list';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$$;
+reset role;
+update public.club_memberships set membership_status = 'active'
+where id = '4e000000-0000-4000-8000-000000000001';
+
+update public.app_accounts set account_status = 'suspended'
+where id = '4c000000-0000-0000-0000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '4a000000-0000-0000-0000-000000000001', true);
+do $$
+begin
+  begin
+    perform public.list_my_member_pending_tasks('4d000000-0000-4000-8000-000000000001', 20, 0, true);
+    raise exception 'a suspended account read the task list';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$$;
+reset role;
+
 rollback;

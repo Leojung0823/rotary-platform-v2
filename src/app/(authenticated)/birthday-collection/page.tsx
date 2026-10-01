@@ -64,7 +64,8 @@ export default async function BirthdayCollectionPage({
   ]);
   if (!evaluation.enabled) notFound();
 
-  const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
+  const preferredClubId = readActiveClubPreference(query.clubId)
+    ?? readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
   const contextResolution = await resolveExperienceContext(preferredClubId);
   const activeClub = contextResolution.ok
     ? activeClubForMode(contextResolution.context, mode === "management" ? "management" : "member")

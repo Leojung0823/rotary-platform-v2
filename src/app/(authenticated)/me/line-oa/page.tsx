@@ -12,9 +12,14 @@ import { resolveExperienceContext } from "@/lib/experience-context.server";
 import { resolveLineOaOnboardingStatus } from "@/lib/line/oa-onboarding.server";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 
-export default async function MyLineOaPage() {
-  const [identity, cookieStore] = await Promise.all([requireIdentity(), cookies()]);
-  const preferredClubId = readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
+export default async function MyLineOaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clubId?: string }>;
+}) {
+  const [identity, cookieStore, query] = await Promise.all([requireIdentity(), cookies(), searchParams]);
+  const preferredClubId = readActiveClubPreference(query.clubId)
+    ?? readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
   const [evaluation, context] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "line_oa_onboarding_v1", subjectUuid: identity.id }),
     resolveExperienceContext(preferredClubId),
@@ -27,7 +32,11 @@ export default async function MyLineOaPage() {
   // One club: the one the shell switcher is pointing at. Listing every club at
   // once asked the member which official account they were looking at, which is
   // the question the switcher already answers.
-  const activeClub = activeClubForMode(context.context, "member");
+  const requestedClubId = readActiveClubPreference(query.clubId);
+  const activeClub = requestedClubId
+    ? context.context.memberClubs.find((club) => club.clubId.toLowerCase() === requestedClubId.toLowerCase())
+      ?? activeClubForMode(context.context, "member")
+    : activeClubForMode(context.context, "member");
   const resolution = activeClub ? await resolveLineOaOnboardingStatus(activeClub.clubId) : null;
   const hasOtherClubs = context.context.memberClubs.length > 1;
 

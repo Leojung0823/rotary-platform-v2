@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { latestDefinition } from "@/lib/attendance/latest-definition";
 
-const projection = latestDefinition("get_my_member_home_projection");
+const projection = latestDefinition("list_my_member_pending_tasks");
 const rule = latestDefinition("birthday_wish_action_status");
 
 /** The branch of pending_tasks that decides whether a wish is still owed. */

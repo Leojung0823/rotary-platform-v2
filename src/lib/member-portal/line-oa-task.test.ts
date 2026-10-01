@@ -23,10 +23,11 @@ function status(overrides: Record<string, unknown> = {}) {
 
 describe("LINE OA home task", () => {
   it("shows a join task when the member has not followed", () => {
-    expect(lineOaTaskFrom(status())).toMatchObject({
+    expect(lineOaTaskFrom(status(), clubId)).toMatchObject({
       title: "加入本社 LINE OA",
       detail: "加入後可接收本社重要通知",
-      href: "/me/line-oa",
+      id: "line-oa-onboarding",
+      href: `/me/line-oa?clubId=${clubId}&mode=member`,
     });
   });
 

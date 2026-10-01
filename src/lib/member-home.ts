@@ -80,6 +80,8 @@ export type PendingTaskKind = (typeof pendingTaskKinds)[number];
  * reminder that cannot be late must not be able to say 「即將截止」.
  */
 export type MemberHomePendingTask = Readonly<{
+  /** Stable source identity for rendering a row and merging caller-only tasks. */
+  taskId: string;
   kind: PendingTaskKind;
   title: string;
   detail: string;
@@ -255,9 +257,13 @@ function parseUpcomingEvents(value: unknown): readonly MemberHomeUpcomingEvent[]
 
 const maximumPendingTasks = 5;
 
-function parsePendingTask(value: unknown): MemberHomePendingTask | null {
+export function parseMemberHomePendingTask(value: unknown): MemberHomePendingTask | null {
   if (!isRecord(value)
-    || !hasExactKeys(value, ["kind", "title", "detail", "action_path", "deadline", "hours_remaining", "count"])
+    || !hasExactKeys(value, ["task_id", "kind", "title", "detail", "action_path", "deadline", "hours_remaining", "count"])
+    || typeof value.task_id !== "string"
+    || value.task_id.length === 0
+    || value.task_id.length > 128
+    || !/^[A-Za-z0-9:-]+$/u.test(value.task_id)
     || !includes(pendingTaskKinds, value.kind)
     || typeof value.title !== "string"
     || value.title.length === 0
@@ -267,9 +273,7 @@ function parsePendingTask(value: unknown): MemberHomePendingTask | null {
     // A relative path this app serves, never a URL: the row decides where a
     // tap goes, and an absolute one would let the projection send a member off
     // the platform.
-    || typeof value.action_path !== "string"
-    || !value.action_path.startsWith("/")
-    || value.action_path.startsWith("//")
+    || !isSafeActionPath(value.action_path)
     || value.action_path.length > 200) return null;
 
   // Deadline and countdown arrive together or not at all. One without the
@@ -292,6 +296,7 @@ function parsePendingTask(value: unknown): MemberHomePendingTask | null {
   }
 
   return {
+    taskId: value.task_id,
     kind: value.kind,
     title: value.title,
     detail: value.detail,
@@ -304,9 +309,60 @@ function parsePendingTask(value: unknown): MemberHomePendingTask | null {
 
 function parsePendingTasks(value: unknown): readonly MemberHomePendingTask[] | null {
   if (!Array.isArray(value) || value.length > maximumPendingTasks) return null;
-  const tasks = value.map(parsePendingTask);
+  const tasks = value.map(parseMemberHomePendingTask);
   if (tasks.some((task) => task === null)) return null;
-  return tasks as MemberHomePendingTask[];
+  const complete = tasks as MemberHomePendingTask[];
+  if (new Set(complete.map((task) => task.taskId)).size !== complete.length) return null;
+  return complete;
+}
+
+export type MemberTaskPage = Readonly<{
+  clubId: string;
+  offset: number;
+  pageSize: number;
+  totalCount: number;
+  nextOffset: number | null;
+  tasks: readonly MemberHomePendingTask[];
+}>;
+
+/** Parse the member-only task RPC and reject cross-club or mismatched pages. */
+export function parseMemberTaskPage(
+  value: unknown,
+  expected: Readonly<{ clubId: string; offset: number; pageSize: number }>,
+): MemberTaskPage | null {
+  if (!isRecord(value)
+    || !hasExactKeys(value, ["club_id", "offset", "page_size", "total_count", "next_offset", "tasks"])
+    || typeof value.club_id !== "string"
+    || value.club_id.toLowerCase() !== expected.clubId.toLowerCase()
+    || !Number.isSafeInteger(value.offset)
+    || value.offset !== expected.offset
+    || !Number.isSafeInteger(value.page_size)
+    || value.page_size !== expected.pageSize
+    || !Number.isSafeInteger(value.total_count)
+    || (value.total_count as number) < 0
+    || (value.next_offset !== null
+      && (!Number.isSafeInteger(value.next_offset) || (value.next_offset as number) <= expected.offset))
+    || !Array.isArray(value.tasks)
+    || value.tasks.length > expected.pageSize) return null;
+
+  const tasks = value.tasks.map(parseMemberHomePendingTask);
+  if (tasks.some((task) => task === null)) return null;
+  const complete = tasks as MemberHomePendingTask[];
+  if (new Set(complete.map((task) => task.taskId)).size !== complete.length) return null;
+  const totalCount = value.total_count as number;
+  const expectedNextOffset = expected.offset + expected.pageSize < totalCount
+    ? expected.offset + expected.pageSize
+    : null;
+  if (value.next_offset !== expectedNextOffset) return null;
+
+  return {
+    clubId: value.club_id,
+    offset: expected.offset,
+    pageSize: expected.pageSize,
+    totalCount,
+    nextOffset: expectedNextOffset,
+    tasks: complete,
+  };
 }
 
 function parseNotifications(value: unknown): MemberHomeNotifications | null {

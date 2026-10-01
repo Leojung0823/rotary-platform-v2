@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { latestDefinition } from "@/lib/attendance/latest-definition";
 import { pendingTaskKinds, parseMemberHomeProjection } from "@/lib/member-home";
@@ -5,6 +6,8 @@ import { pendingTaskUrgency } from "./pending-task-urgency";
 import { tasksFrom } from "@/lib/member-portal/from-projection";
 
 const projection = latestDefinition("get_my_member_home_projection");
+const taskProjection = latestDefinition("list_my_member_pending_tasks");
+const taskMigration = readFileSync("supabase/migrations/20261002000200_member_task_center.sql", "utf8");
 
 /** The kinds that genuinely have a due date. */
 const withDeadline = ["event_response", "birthday_wish"];
@@ -13,6 +16,8 @@ const withoutDeadline = ["dues_outstanding", "unread_messages", "profile_incompl
 
 function task(overrides: Record<string, unknown>) {
   return {
+    task_id: String(overrides.task_id
+      ?? `task-${String(overrides.action_path ?? overrides.kind ?? "event-response").replace(/[^A-Za-z0-9:-]/gu, "-")}`),
     kind: "event_response",
     title: "十月例會",
     detail: "",
@@ -70,6 +75,15 @@ describe("待辦提醒不只有活動報名", () => {
       })];
       expect(parsedTasks(rows)?.[0].kind, `${kind} did not parse`).toBe(kind);
     }
+  });
+
+  it("uses one stable, paginated projection for the complete task center", () => {
+    expect(taskProjection).toContain("'task_id'");
+    expect(taskProjection).toContain("'total_count', counted.total_count");
+    expect(taskProjection).toContain("'next_offset'");
+    expect(taskProjection).toContain("p_all_tasks then null::integer");
+    expect(taskProjection).toContain("where ordered.position > p_offset");
+    expect(taskMigration).toContain("public.list_my_member_pending_tasks(p_club_id, 5, 0, false)");
   });
 });
 
@@ -251,9 +265,14 @@ describe("清單有長度上限，而上限是 parser 說了算", () => {
   // parser refuses a list longer than it agreed to carry. A member with six
   // reminders had no home page.
   const longestAccepted = (() => {
-    const row = () => task({ kind: "dues_outstanding", deadline: null, hours_remaining: null });
+    const row = (index: number) => task({
+      task_id: `dues-${index}`,
+      kind: "dues_outstanding",
+      deadline: null,
+      hours_remaining: null,
+    });
     for (let length = 1; length <= 64; length += 1) {
-      if (parsedTasks(Array.from({ length }, row)) === null) return length - 1;
+      if (parsedTasks(Array.from({ length }, (_, index) => row(index))) === null) return length - 1;
     }
     throw new Error("the parser accepts any length; this guard has nothing to check");
   })();
@@ -262,7 +281,12 @@ describe("清單有長度上限，而上限是 parser 說了算", () => {
     expect(longestAccepted).toBeGreaterThan(0);
     expect(parsedTasks(Array.from(
       { length: longestAccepted + 1 },
-      () => task({ kind: "dues_outstanding", deadline: null, hours_remaining: null }),
+      (_, index) => task({
+        task_id: `dues-${index}`,
+        kind: "dues_outstanding",
+        deadline: null,
+        hours_remaining: null,
+      }),
     ))).toBeNull();
   });
 
