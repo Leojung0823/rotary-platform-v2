@@ -4,20 +4,21 @@
 
 ## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39）
 
-### 本機已完成，尚未合併／部署
+### 已合併至 main，尚未部署 staging
 
 - 幹部可存草稿、編輯、立即發布草稿、排程、取消、置頂、封存並查看生命週期狀態；社員看不到草稿／未到期的排程公告，置頂內容不會在一般訊息分頁重複。
 - 排程發布會在執行時重新檢查社團與有效社員／帳號；不寄送 LINE 或 Email。原有立即發布功能維持原樣。
-- 分支 `codex/announcements-scheduling-v09`；`origin/main` 已包含本機備份安全修正 `363e7cf`，目前沒有 open PR（最新 SHA 以 `git rev-parse origin/main` 為準）。公告功能尚未合併或部署，不能視為已上線；備份工具 commit 不代表訊息中心已部署。
+- 功能 commit `3a1d855badb5472394f9bcf2b7789f97a922de75` 已是 `origin/main` 的祖先，GitHub Issue #39 已關閉；目前沒有 open PR。實作分支 `codex/announcements-scheduling-v09` 是來源紀錄，不代表仍有未合併工作。最新主線 SHA 以 `git rev-parse origin/main` 現場核對。
+- Staging 尚未部署此功能：`/api/health` 最近回報 revision `b6a184bb4c44`（status ok、issues 空），而待核准的 Staging Release run `36920967197` 使用舊 SHA `e388933b6818a5d61fcfe3035935550ec76c9ff7`；不要核准或沿用它。必須以當前 `main` exact SHA 建立新的 release plan。
 - 本機完整驗證：207 個 Vitest 檔案／1515 tests、typecheck、lint、build、`verify:db`、migration guard、78 份 verification manifest、diff check 均通過；lint 有一個既有 unused `readdirSync` warning。
 - Playwright 訊息中心桌機、Android 412px 與 320px：5 passed、4 skipped（兩條會改資料的流程只在桌機跑）。
 
 ### 發布前外部設定／驗收
 
-1. 在 GitHub 為 scheduler 設定 `message-center-scheduler` environment，建立 `STAGING_BASE_URL` variable 與 `MESSAGE_CENTER_SCHEDULER_SECRET` secret；secret 僅存 GitHub，不放 repo 或聊天。
-2. 合併後先對 `main` exact SHA 跑 Staging Release，再經核准執行 Staging Go-Live；不能沿用其他 SHA 的 plan。
-3. 確認 staging `/api/health` 無 issues，並以 staging 測試社驗收草稿、排程送達、取消、置頂與社員資料隔離；手動觸發 scheduler 後再確認每 5 分鐘 workflow 正常。
-4. 目前沒有任何 staging／production 更新，也沒有開啟或修改 hosted feature flag。production 排程仍由 API 的 `APP_ENV=staging` 限制拒絕。
+1. E-12 本機加密備份仍未完成；先由使用者在本機安全補齊 `.env.staging` 所需憑證並完成備份／還原演練。不要把憑證貼到聊天，也不要改用會上傳 artifact 的舊 workflow。
+2. 以當前 `main` exact SHA 跑新的 Staging Release，再經 staging 人工核准執行 Staging Go-Live；不能核准或沿用 run `36920967197` 的舊 SHA plan。
+3. GitHub 尚無 `message-center-scheduler` environment，也沒有 repository variable `MESSAGE_CENTER_SCHEDULER_ENABLED`；排程目前 fail closed。部署並完成 staging 手動驗收後，才按 `docs/deployment/STAGING_RUNBOOK.md` 建立 scheduler environment、設定 URL／獨立 secret，最後由管理者明確啟用排程。
+4. 部署後確認 staging `/api/health` revision 與 issues，並驗收草稿、排程送達、取消、置頂及社員資料隔離；確認手動 scheduler 與週期 workflow。`announcements_v09` hosted flag 狀態尚未重新確認，不能推定已開啟。production 未修改。
 
 ## 2026-09-22 非人工工作收尾（掃描基準 `cbfff9f`）
 
