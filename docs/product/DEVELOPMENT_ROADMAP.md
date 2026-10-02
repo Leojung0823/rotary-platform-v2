@@ -4,7 +4,7 @@
 
 ## 2026-10-02 本機備份安全修正（main `363e7cf`；尚未完成匯出）
 
-- 舊的 staging logical-backup workflow 會把加密檔放進 GitHub Actions artifact 一天，與「備份只存本機加密檔」不符；已在 main `363e7cf` 移除，不能再用舊流程。CI `36948071991` 成功；Browser Smoke `36948072084` 當前狀態須以 GitHub 現場核對。
+- 舊的 staging logical-backup workflow 會把加密檔放進 GitHub Actions artifact 一天，與「備份只存本機加密檔」不符；已在 main `363e7cf` 移除，不能再用舊流程。CI `36948071991` 與 Browser Smoke `36948072084` 均成功。
 - 本機命令 `npm run backup:staging:local` 已加入固定 staging 身分檢查、乾淨 exact `main` 檢查、repo 外私密輸出，以及 AES-256-GCM／RSA-OAEP-SHA256 加密；合成資料、完整測試與本機資料庫驗證通過。
 - 真實匯出尚未開始：本機 `.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`，工具在連線前 fail closed，沒有讀 staging、沒有建立檔案、沒有上傳或部署。E-12 維持待辦；歷史 9/15 backup 不是目前可用備份，也沒有 restore 演練。
 
