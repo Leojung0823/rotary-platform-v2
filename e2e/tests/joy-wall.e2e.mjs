@@ -253,7 +253,11 @@ test("club officers can batch different private Joy questions while ordinary mem
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
 
   const batchTitle = `批次不同題目 ${Date.now()}`;
+  const batchDueOn = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
   const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const recipientContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   try {
     await signIn(page, "e2e-shell-member-manager@example.test");
     await page.goto(new URL("/joy?mode=management", baseURL).toString());
@@ -270,6 +274,7 @@ test("club officers can batch different private Joy questions while ordinary mem
     await recipients.getByRole("checkbox", { name: "一般社員" }).check();
     await recipients.getByRole("checkbox", { name: "已綁定但未加入 OA 的社員" }).check();
     await page.getByLabel("這批任務的名稱").fill(batchTitle);
+    await page.getByLabel("回答截止日（台北日期，選填）").fill(batchDueOn);
     page.once("dialog", (dialog) => dialog.accept());
     const dispatchResponsePromise = page.waitForResponse((response) =>
       response.url().includes("/api/v1/joy/question-batches?") && response.request().method() === "POST",
@@ -282,11 +287,23 @@ test("club officers can batch different private Joy questions while ordinary mem
 
     const batchCard = page.locator("article").filter({ hasText: batchTitle }).last();
     await expect(batchCard.getByText("0/2 已回答", { exact: false })).toBeVisible();
+    await expect(batchCard.getByText(`回答截止：${batchDueOn}（台北）`)).toBeVisible();
     await batchCard.getByRole("button", { name: "查看明細" }).click();
     const promptRows = batchCard.locator("li > div > span");
     await expect(promptRows).toHaveCount(2);
     const prompts = await promptRows.allTextContents();
     expect(new Set(prompts).size, "each assignee must get a different prompt").toBe(2);
+
+    const recipient = await recipientContext.newPage();
+    await signIn(recipient, "e2e-shell-line-oa-unpaired@example.test");
+    await recipient.goto(new URL(`/tasks?clubId=${clubId}&mode=member`, baseURL).toString());
+    const assignedTask = recipient.getByRole("link").filter({ hasText: batchTitle }).first();
+    await expect(assignedTask).toBeVisible();
+    await expect(assignedTask.getByText(`截止 ${batchDueOn}`)).toBeVisible();
+    await assignedTask.click();
+    await expect(recipient).toHaveURL(/focusPostId=/u);
+    const assignedQuestion = recipient.getByRole("article").filter({ hasText: batchTitle }).first();
+    await expect(assignedQuestion.getByRole("button", { name: "送出回答" })).toBeVisible();
 
     const ordinaryMember = await memberContext.newPage();
     await signIn(ordinaryMember, memberEmail);
@@ -295,5 +312,6 @@ test("club officers can batch different private Joy questions while ordinary mem
     await expect(ordinaryMember.getByRole("heading", { name: "無法存取", exact: true })).toBeVisible();
   } finally {
     await memberContext.close();
+    await recipientContext.close();
   }
 });

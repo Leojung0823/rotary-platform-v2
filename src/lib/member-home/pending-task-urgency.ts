@@ -21,6 +21,7 @@ export type PendingTaskUrgency = Readonly<{
  * 「即將截止」.
  */
 export function pendingTaskUrgency(task: MemberHomePendingTask): PendingTaskUrgency | null {
+  if (task.isOverdue) return { label: "已逾期", tone: "danger" };
   if (task.hoursRemaining === null) return null;
   if (task.hoursRemaining < urgentWithinHours) return { label: "即將截止", tone: "danger" };
 

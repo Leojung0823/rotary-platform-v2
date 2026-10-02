@@ -26,6 +26,14 @@ function formattedDate(value: string) {
   }).format(new Date(value));
 }
 
+function taiwanToday() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Asia/Taipei",
+  }).formatToParts(new Date());
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 export function JoyQuestionManager({
   clubId,
   initialPage,
@@ -39,6 +47,7 @@ export function JoyQuestionManager({
   const requestIdRef = useRef<string | null>(null);
   const [promptText, setPromptText] = useState("");
   const [batchTitle, setBatchTitle] = useState("");
+  const [batchDueOn, setBatchDueOn] = useState("");
   const [recipientSearch, setRecipientSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [pendingKey, setPendingKey] = useState<string | null>(null);
@@ -114,7 +123,8 @@ export function JoyQuestionManager({
   async function dispatchBatch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectionHasEnoughPrompts) return;
-    const confirmed = window.confirm(`確定要派發「${batchTitle.trim()}」給 ${selectedCount} 位社員嗎？每位社員會收到一題不同的私密待辦。`);
+    const deadlineDescription = batchDueOn ? `，截止日為 ${batchDueOn}（台北時間）` : "，不設定截止日";
+    const confirmed = window.confirm(`確定要派發「${batchTitle.trim()}」給 ${selectedCount} 位社員${deadlineDescription}嗎？每位社員會收到一題不同的私密待辦。`);
     if (!confirmed) return;
     requestIdRef.current ??= crypto.randomUUID();
     setPendingKey("dispatch"); setError(null); setNotice(null);
@@ -125,11 +135,12 @@ export function JoyQuestionManager({
           title: batchTitle,
           recipientMembershipIds: [...selectedIds],
           requestId: requestIdRef.current,
+          dueOn: batchDueOn || null,
         }),
       });
       await readData(response);
       requestIdRef.current = null;
-      setSelectedIds(new Set()); setBatchTitle("");
+      setSelectedIds(new Set()); setBatchTitle(""); setBatchDueOn("");
       setNotice(`已派發給 ${selectedCount} 位社員；每人收到一題不同的私密待辦。`);
       router.refresh();
     } catch {
@@ -191,6 +202,11 @@ export function JoyQuestionManager({
           <input id="joy-question-batch-title" value={batchTitle} onChange={(event) => setBatchTitle(event.target.value)}
             maxLength={100} required placeholder="例如：十月社友交流提問" />
         </label>
+        <label className={styles.field} htmlFor="joy-question-batch-due-on">回答截止日（台北日期，選填）
+          <input id="joy-question-batch-due-on" type="date" min={taiwanToday()} value={batchDueOn}
+            onChange={(event) => setBatchDueOn(event.target.value)} />
+          <span className={styles.help}>當日結束前都能回答；逾期後待辦仍會保留，也仍可回答。</span>
+        </label>
         <div className={styles.recipientHeader}>
           <label className={styles.search}>搜尋社員
             <input type="search" value={recipientSearch} onChange={(event) => setRecipientSearch(event.target.value)} placeholder="輸入社員姓名" />
@@ -225,7 +241,8 @@ export function JoyQuestionManager({
       <header className={styles.sectionHeader}><div><p className="eyebrow">只顯示回答狀態，不顯示回答內容</p><h2 id="joy-question-batch-history-title">最近派發紀錄</h2></div></header>
       {initialPage.batches.length === 0 ? <p className={styles.empty}>目前還沒有批次派發紀錄。</p> :
         <div className={styles.batchList}>{initialPage.batches.map((batch) => <article key={batch.id} className={styles.batchCard}>
-          <div className={styles.batchSummary}><div><h3>{batch.title}</h3><time dateTime={batch.created_at}>{formattedDate(batch.created_at)}</time></div>
+          <div className={styles.batchSummary}><div><h3>{batch.title}</h3><time dateTime={batch.created_at}>{formattedDate(batch.created_at)}</time>
+            <p>{batch.due_on ? `回答截止：${batch.due_on}（台北）` : "沒有設定回答期限"}</p></div>
             <p>{batch.answered_count}/{batch.assignment_count} 已回答 · {batch.unavailable_count} 則已隱藏或不可用</p>
             <button type="button" aria-expanded={openBatch === batch.id} onClick={() => void toggleBatch(batch.id)}>
               {openBatch === batch.id ? "收合明細" : "查看明細"}

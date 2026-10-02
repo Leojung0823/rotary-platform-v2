@@ -90,6 +90,8 @@ export type MemberHomePendingTask = Readonly<{
   actionPath: string;
   deadline: string | null;
   hoursRemaining: number | null;
+  /** True only when the server says this still-open task has passed its deadline. */
+  isOverdue?: boolean;
   /** How many, for the kinds that count rather than name one thing. */
   count: number | null;
 }>;
@@ -260,8 +262,11 @@ function parseUpcomingEvents(value: unknown): readonly MemberHomeUpcomingEvent[]
 const maximumPendingTasks = 5;
 
 export function parseMemberHomePendingTask(value: unknown): MemberHomePendingTask | null {
+  const hasOverdueField = isRecord(value) && Object.hasOwn(value, "is_overdue");
   if (!isRecord(value)
-    || !hasExactKeys(value, ["task_id", "kind", "title", "detail", "action_path", "deadline", "hours_remaining", "count"])
+    || !hasExactKeys(value, hasOverdueField
+      ? ["task_id", "kind", "title", "detail", "action_path", "deadline", "hours_remaining", "count", "is_overdue"]
+      : ["task_id", "kind", "title", "detail", "action_path", "deadline", "hours_remaining", "count"])
     || typeof value.task_id !== "string"
     || value.task_id.length === 0
     || value.task_id.length > 128
@@ -276,6 +281,7 @@ export function parseMemberHomePendingTask(value: unknown): MemberHomePendingTas
     // tap goes, and an absolute one would let the projection send a member off
     // the platform.
     || !isSafeActionPath(value.action_path)
+    || (hasOverdueField && typeof value.is_overdue !== "boolean")
     || value.action_path.length > 200) return null;
 
   // Deadline and countdown arrive together or not at all. One without the
@@ -291,6 +297,7 @@ export function parseMemberHomePendingTask(value: unknown): MemberHomePendingTas
   } else if (value.hours_remaining !== null) {
     return null;
   }
+  if (value.is_overdue === true && !hasDeadline) return null;
 
   if (!(value.count === null
     || (typeof value.count === "number" && Number.isSafeInteger(value.count) && value.count > 0))) {
@@ -305,6 +312,7 @@ export function parseMemberHomePendingTask(value: unknown): MemberHomePendingTas
     actionPath: value.action_path,
     deadline: (value.deadline as string | null) ?? null,
     hoursRemaining: (value.hours_remaining as number | null) ?? null,
+    isOverdue: value.is_overdue === true,
     count: (value.count as number | null) ?? null,
   };
 }

@@ -31,6 +31,11 @@ describe("how urgent an unanswered registration looks", () => {
     }
   });
 
+  it("marks a deadline-passed but still-actionable task as overdue", () => {
+    expect(pendingTaskUrgency({ ...task(0), kind: "joy_question", isOverdue: true }))
+      .toEqual({ label: "已逾期", tone: "danger" });
+  });
+
   it("rests on the fields the projection actually returns", () => {
     // hoursRemaining is computed in SQL. If that field is renamed or dropped
     // the parser rejects the row, but the filter conditions have no such

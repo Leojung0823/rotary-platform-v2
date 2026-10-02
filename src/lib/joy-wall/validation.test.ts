@@ -94,12 +94,21 @@ describe("Joy Wall input validation", () => {
     expect(() => parseUpdateJoyQuestionPromptBody({ promptText: "太短", isActive: true, sortOrder: 20 })).toThrow();
     expect(parseJoyQuestionBatchBody({
       title: "十月社員提問", recipientMembershipIds: [memberOne], requestId,
-    })).toMatchObject({ title: "十月社員提問", recipientMembershipIds: [memberOne], requestId });
+    })).toMatchObject({ title: "十月社員提問", recipientMembershipIds: [memberOne], requestId, dueOn: null });
+    expect(parseJoyQuestionBatchBody({
+      title: "十月社員提問", recipientMembershipIds: [memberOne], requestId, dueOn: "2026-10-31",
+    })).toMatchObject({ dueOn: "2026-10-31" });
     expect(() => parseJoyQuestionBatchBody({
       title: "十月社員提問", recipientMembershipIds: [memberOne, memberOne], requestId,
     })).toThrow();
     expect(() => parseJoyQuestionBatchBody({
       title: "十月社員提問", recipientMembershipIds: [], requestId,
+    })).toThrow();
+    expect(() => parseJoyQuestionBatchBody({
+      title: "十月社員提問", recipientMembershipIds: [memberOne], requestId, dueOn: "2026-02-30",
+    })).toThrow();
+    expect(() => parseJoyQuestionBatchBody({
+      title: "十月社員提問", recipientMembershipIds: [memberOne], requestId, dueOn: "2026-10-31T23:59:59Z",
     })).toThrow();
   });
 });

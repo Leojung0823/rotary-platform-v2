@@ -10,11 +10,12 @@ export async function POST(request: NextRequest) {
   try {
     const clubId = parseJoyClubId(request.nextUrl.searchParams.get("club_id"));
     const body = parseJoyQuestionBatchBody(await readJoyJson(request));
-    const { data, error } = await client.rpc("dispatch_joy_question_batch", {
+    const { data, error } = await client.rpc("dispatch_joy_question_batch_with_deadline", {
       p_club_id: clubId,
       p_title: body.title,
       p_recipient_membership_ids: body.recipientMembershipIds,
       p_request_id: body.requestId,
+      p_due_on: body.dueOn,
     });
     if (error) return joyRpcFailure(error);
     return joySuccess(data, 201);

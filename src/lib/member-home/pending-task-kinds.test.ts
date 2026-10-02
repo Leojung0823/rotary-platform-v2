@@ -9,11 +9,12 @@ const projection = latestDefinition("get_my_member_home_projection");
 const taskProjection = latestDefinition("list_my_member_pending_tasks");
 const taskMigration = readFileSync("supabase/migrations/20261002000200_member_task_center.sql", "utf8");
 const joyTaskMigration = readFileSync("supabase/migrations/20261002000400_joy_iou_member_tasks.sql", "utf8");
+const joyQuestionDeadlineMigration = readFileSync("supabase/migrations/20261003000700_joy_question_task_deadlines.sql", "utf8");
 
 /** The kinds that genuinely have a due date. */
-const withDeadline = ["event_response", "birthday_wish"];
+const withDeadline = ["event_response", "birthday_wish", "joy_question"];
 /** The kinds that cannot be late, and so must never say they are. */
-const withoutDeadline = ["dues_outstanding", "unread_messages", "profile_incomplete", "joy_question"];
+const withoutDeadline = ["dues_outstanding", "unread_messages", "profile_incomplete"];
 
 function task(overrides: Record<string, unknown>) {
   return {
@@ -98,11 +99,35 @@ describe("待辦提醒不只有活動報名", () => {
     });
   });
 
+  it("keeps an overdue question visible with an explicit overdue status", () => {
+    const parsed = parsedTasks([task({
+      kind: "joy_question",
+      title: "回答社員提問",
+      detail: "截止 2026-10-01",
+      action_path: "/joy?clubId=95000000-0000-4000-8000-000000000001&mode=member&focusPostId=95000000-0000-4000-8000-000000000002",
+      deadline: "2026-10-02T00:00:00.000Z",
+      hours_remaining: 0,
+      is_overdue: true,
+    })])!;
+    expect(parsed[0].isOverdue).toBe(true);
+    expect(tasksFrom(parsed)[0]).toMatchObject({ status: "已逾期", tone: "danger" });
+    expect(parsedTasks([task({ kind: "joy_question", deadline: null, hours_remaining: null, is_overdue: true })]))
+      .toBeNull();
+    expect(parsedTasks([task({ kind: "joy_question", is_overdue: "yes" })])).toBeNull();
+  });
+
   it("emits every kind the page knows how to draw", () => {
     for (const kind of pendingTaskKinds) {
       const emittingDefinition = kind === "joy_iou" || kind === "joy_question" ? joyTaskMigration : projection;
       expect(emittingDefinition, `the projection never emits ${kind}`).toContain(`'kind', '${kind}'`);
     }
+  });
+
+  it("projects assigned-question deadlines in Taiwan time and leaves overdue tasks answerable", () => {
+    expect(joyQuestionDeadlineMigration).toContain("question_batch.due_on");
+    expect(joyQuestionDeadlineMigration).toContain("at time zone 'Asia/Taipei'");
+    expect(joyQuestionDeadlineMigration).toContain("'is_overdue'");
+    expect(joyQuestionDeadlineMigration).not.toMatch(/where[\s\S]*?due_on\s*>=/iu);
   });
 
   it("keeps overdue IOUs visible without inventing a negative countdown", () => {
@@ -140,7 +165,7 @@ describe("一個不可能遲到的提醒不准說自己快遲到了", () => {
   // goes wrong if a profile is never completed. Giving those a countdown would
   // be inventing a date nobody set.
   it.each(withoutDeadline)("%s carries no deadline in the projection", (kind) => {
-    const source = kind === "joy_question" ? joyTaskMigration : projection;
+    const source = projection;
     const branch = source.slice(source.indexOf(`'kind', '${kind}'`));
     const upToCount = branch.slice(0, branch.indexOf("'count',"));
     expect(upToCount).toContain("'deadline', null");
@@ -148,6 +173,10 @@ describe("一個不可能遲到的提醒不准說自己快遲到了", () => {
   });
 
   it.each(withDeadline)("%s does carry one", (kind) => {
+    if (kind === "joy_question") {
+      expect(joyQuestionDeadlineMigration).toContain("'hours_remaining', case");
+      return;
+    }
     const branch = projection.slice(projection.indexOf(`'kind', '${kind}'`));
     const upToCount = branch.slice(0, branch.indexOf("'count',"));
     expect(upToCount).not.toContain("'hours_remaining', null");

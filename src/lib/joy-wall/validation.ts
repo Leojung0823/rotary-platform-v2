@@ -180,15 +180,17 @@ export function parseUpdateJoyQuestionPromptBody(value: unknown) {
 }
 
 export function parseJoyQuestionBatchBody(value: unknown) {
-  if (!isRecord(value) || !exactKeys(value, ["title", "recipientMembershipIds", "requestId"])
+  if (!isRecord(value) || !exactKeys(value, ["title", "recipientMembershipIds", "requestId", "dueOn"])
     || !Array.isArray(value.recipientMembershipIds) || value.recipientMembershipIds.length < 1
-    || value.recipientMembershipIds.length > 250) throw new Error("invalid_body");
+    || value.recipientMembershipIds.length > 250
+    || (value.dueOn !== undefined && value.dueOn !== null && !validDateOnly(value.dueOn))) throw new Error("invalid_body");
   const recipientMembershipIds = value.recipientMembershipIds.map((id) => uuid(id, "invalid_body"));
   if (new Set(recipientMembershipIds).size !== recipientMembershipIds.length) throw new Error("invalid_body");
   return {
     title: normalizedText(value.title, 100),
     recipientMembershipIds,
     requestId: uuid(value.requestId, "invalid_body"),
+    dueOn: (value.dueOn ?? null) as string | null,
   };
 }
 

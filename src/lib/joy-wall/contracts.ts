@@ -88,6 +88,7 @@ export type JoyQuestionBatchSummary = {
   id: string;
   title: string;
   created_at: string;
+  due_on: string | null;
   assignment_count: number;
   answered_count: number;
   unavailable_count: number;
@@ -106,6 +107,7 @@ export type JoyQuestionBatchDetail = {
   id: string;
   title: string;
   created_at: string;
+  due_on: string | null;
   assignments: Array<{
     post_id: string;
     recipient_membership_id: string;
@@ -135,6 +137,11 @@ function isOneOf<T extends readonly string[]>(values: T, value: unknown): value 
 }
 function isTimestamp(value: unknown): value is string {
   return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+function isDateOnly(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(value)
+    && Number.isFinite(Date.parse(`${value}T00:00:00Z`))
+    && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 }
 function safeHttpUrl(value: unknown): value is string | null {
   if (value === null) return true;
@@ -295,8 +302,10 @@ export function parseJoyQuestionManagerPage(value: unknown): JoyQuestionManagerP
   }
   const prompts = value.prompts.map(parseJoyQuestionPrompt);
   const batches = value.batches.map((batch): JoyQuestionBatchSummary => {
+    const dueOn = isRecord(batch) ? batch.due_on : undefined;
     if (!isRecord(batch) || typeof batch.id !== "string" || typeof batch.title !== "string"
       || !isTimestamp(batch.created_at) || !isNonNegativeInteger(batch.assignment_count)
+      || !(dueOn === null || isDateOnly(dueOn))
       || !isNonNegativeInteger(batch.answered_count) || !isNonNegativeInteger(batch.unavailable_count)
       || Number(batch.answered_count) > Number(batch.assignment_count)
       || Number(batch.unavailable_count) > Number(batch.assignment_count)) {
@@ -327,6 +336,9 @@ export function parseJoyQuestionBatchDetail(value: unknown): JoyQuestionBatchDet
     || !isTimestamp(value.created_at) || !Array.isArray(value.assignments)) {
     throw new Error("invalid_joy_question_batch_detail");
   }
+  if (!(value.due_on === null || isDateOnly(value.due_on))) {
+    throw new Error("invalid_joy_question_batch_detail");
+  }
   const assignments = value.assignments.map((assignment) => {
     if (!isRecord(assignment) || typeof assignment.post_id !== "string"
       || typeof assignment.recipient_membership_id !== "string"
@@ -337,5 +349,5 @@ export function parseJoyQuestionBatchDetail(value: unknown): JoyQuestionBatchDet
     }
     return assignment as JoyQuestionBatchDetail["assignments"][number];
   });
-  return { id: value.id, title: value.title, created_at: value.created_at, assignments };
+  return { id: value.id, title: value.title, created_at: value.created_at, due_on: value.due_on, assignments };
 }

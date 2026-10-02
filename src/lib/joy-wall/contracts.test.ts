@@ -53,7 +53,7 @@ describe("Joy Wall response contracts", () => {
       prompts: [{ id: "prompt-1", prompt_text: "最近有什麼值得感謝？", source: "platform", is_active: true,
         sort_order: 10, can_edit: false }],
       batches: [{ id: "batch-1", title: "本月提問", created_at: "2026-10-02T00:00:00.000Z",
-        assignment_count: 1, answered_count: 0, unavailable_count: 0 }],
+        due_on: null, assignment_count: 1, answered_count: 0, unavailable_count: 0 }],
     };
     expect(parseJoyQuestionManagerPage(page)).toMatchObject({ distinct_active_prompt_count: 1 });
     expect(() => parseJoyQuestionManagerPage({ ...page, prompts: [{ ...page.prompts[0], can_edit: true }] }))
@@ -68,10 +68,13 @@ describe("Joy Wall response contracts", () => {
     }])).toHaveLength(1);
     expect(parseJoyQuestionBatchDetail({
       id: "batch-1", title: "本月提問", created_at: "2026-10-02T00:00:00.000Z",
+      due_on: "2026-10-15",
       assignments: [{ post_id: "post-1", recipient_membership_id: "member-1", recipient_display_name: "社員乙",
         prompt_text: "最近有什麼值得感謝？", answered: true, available: true }],
-    }).assignments[0]).toMatchObject({ answered: true, available: true });
-    expect(() => parseJoyQuestionBatchDetail({ id: "batch-1", title: "本月提問", created_at: "bad", assignments: [] }))
+    })).toMatchObject({ due_on: "2026-10-15", assignments: [{ answered: true, available: true }] });
+    expect(() => parseJoyQuestionBatchDetail({ id: "batch-1", title: "本月提問", created_at: "bad", due_on: null, assignments: [] }))
       .toThrow("invalid_joy_question_batch_detail");
+    expect(() => parseJoyQuestionBatchDetail({ id: "batch-1", title: "本月提問", created_at: "2026-10-02T00:00:00.000Z",
+      due_on: "2026-02-30", assignments: [] })).toThrow("invalid_joy_question_batch_detail");
   });
 });

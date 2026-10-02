@@ -81,6 +81,7 @@ begin
     'public.create_joy_question_prompt(uuid,text)',
     'public.update_joy_question_prompt(uuid,uuid,text,boolean,integer)',
     'public.dispatch_joy_question_batch(uuid,text,uuid[],uuid)',
+    'public.dispatch_joy_question_batch_with_deadline(uuid,text,uuid[],uuid,date)',
     'public.get_joy_question_batch_detail(uuid,uuid)'
   ] loop
     if has_function_privilege('anon', routine, 'EXECUTE')
@@ -125,6 +126,11 @@ begin
     'a9800000-0000-4000-8000-000000000001'
   ); raise exception 'Question dispatch ignored the disabled Joy Wall flag';
   exception when insufficient_privilege then null; end;
+  begin perform public.dispatch_joy_question_batch_with_deadline(
+    'a9500000-0000-4000-8000-000000000001', '本月提問', array['a9600000-0000-4000-8000-000000000002'::uuid],
+    'a9800000-0000-4000-8000-000000000001', null::date
+  ); raise exception 'Dated question dispatch ignored the disabled Joy Wall flag';
+  exception when insufficient_privilege then null; end;
 end $$;
 reset role;
 
@@ -149,6 +155,8 @@ declare
   replay jsonb;
   detail jsonb;
   updated_prompt jsonb;
+  batch_due_on date := (pg_catalog.statement_timestamp() at time zone 'Asia/Taipei')::date + 2;
+  legacy_batch jsonb;
 begin
   prompt := public.create_joy_question_prompt(
     'a9500000-0000-4000-8000-000000000001', '今年哪一次服務最讓你感受到團隊力量？'
@@ -199,32 +207,67 @@ begin
     raise exception 'Platform question edit capability must project as false, never null';
   end if;
 
-  batch := public.dispatch_joy_question_batch(
+  batch := public.dispatch_joy_question_batch_with_deadline(
     'a9500000-0000-4000-8000-000000000001', '十月社員交流提問',
     array['a9600000-0000-4000-8000-000000000002'::uuid, 'a9600000-0000-4000-8000-000000000003'::uuid],
-    'a9800000-0000-4000-8000-000000000002'
+    'a9800000-0000-4000-8000-000000000002', batch_due_on
   );
   perform set_config('joy.question_batch_id', batch->>'id', true);
-  if (batch->>'assignment_count')::integer <> 2 or (batch->>'replayed')::boolean then
+  perform set_config('joy.question_due_on', batch_due_on::text, true);
+  if (batch->>'assignment_count')::integer <> 2 or (batch->>'replayed')::boolean
+    or (batch->>'due_on')::date <> batch_due_on then
     raise exception 'Question batch did not create the requested assignments';
   end if;
-  replay := public.dispatch_joy_question_batch(
+  manager_page := public.get_joy_question_manager_page('a9500000-0000-4000-8000-000000000001');
+  if not exists (
+    select 1 from jsonb_array_elements(manager_page->'batches') as row(batch_json)
+    where batch_json->>'id' = batch->>'id' and batch_json->>'due_on' = batch_due_on::text
+  ) then
+    raise exception 'Manager history did not display the batch due date';
+  end if;
+
+  replay := public.dispatch_joy_question_batch_with_deadline(
     'a9500000-0000-4000-8000-000000000001', '十月社員交流提問',
     array['a9600000-0000-4000-8000-000000000002'::uuid, 'a9600000-0000-4000-8000-000000000003'::uuid],
-    'a9800000-0000-4000-8000-000000000002'
+    'a9800000-0000-4000-8000-000000000002', batch_due_on
   );
   if replay->>'id' <> batch->>'id' or replay->>'replayed' <> 'true'
     or (replay->>'assignment_count')::integer <> 2 then
     raise exception 'Identical batch retry created duplicate assignments';
   end if;
   begin
-    perform public.dispatch_joy_question_batch(
+    perform public.dispatch_joy_question_batch_with_deadline(
       'a9500000-0000-4000-8000-000000000001', '不同標題',
       array['a9600000-0000-4000-8000-000000000002'::uuid, 'a9600000-0000-4000-8000-000000000003'::uuid],
-      'a9800000-0000-4000-8000-000000000002'
+      'a9800000-0000-4000-8000-000000000002', batch_due_on
     );
     raise exception 'Idempotency key accepted a different batch payload';
   exception when invalid_parameter_value then null; end;
+  begin
+    perform public.dispatch_joy_question_batch_with_deadline(
+      'a9500000-0000-4000-8000-000000000001', '十月社員交流提問',
+      array['a9600000-0000-4000-8000-000000000002'::uuid, 'a9600000-0000-4000-8000-000000000003'::uuid],
+      'a9800000-0000-4000-8000-000000000002', batch_due_on + 1
+    );
+    raise exception 'Idempotency key accepted a changed due date';
+  exception when invalid_parameter_value then null; end;
+  begin
+    perform public.dispatch_joy_question_batch_with_deadline(
+      'a9500000-0000-4000-8000-000000000001', '已過期的截止日',
+      array['a9600000-0000-4000-8000-000000000002'::uuid],
+      'a9800000-0000-4000-8000-000000000006', batch_due_on - 3
+    );
+    raise exception 'A new question batch accepted a past due date';
+  exception when invalid_parameter_value then null; end;
+
+  legacy_batch := public.dispatch_joy_question_batch(
+    'a9500000-0000-4000-8000-000000000001', '舊版呼叫相容測試',
+    array['a9600000-0000-4000-8000-000000000002'::uuid],
+    'a9800000-0000-4000-8000-000000000007'
+  );
+  if legacy_batch->>'due_on' is not null then
+    raise exception 'Legacy four-argument dispatch must continue without a deadline';
+  end if;
   begin
     perform public.dispatch_joy_question_batch(
       'a9500000-0000-4000-8000-000000000001', '重複社員',
@@ -246,6 +289,7 @@ begin
     'a9500000-0000-4000-8000-000000000001', (batch->>'id')::uuid
   );
   if jsonb_array_length(detail->'assignments') <> 2
+    or detail->>'due_on' <> batch_due_on::text
     or (select count(distinct assignment->>'prompt_text') from jsonb_array_elements(detail->'assignments') as assignment) <> 2
     or detail::text like '%answer_content%' or detail::text like '%response_content%' then
     raise exception 'Batch detail is not private, unique, or answer-content-free: %', detail;
@@ -295,14 +339,17 @@ do $$
 declare
   task_page jsonb;
   opened_post jsonb;
-  question_content text;
+  task_row jsonb;
 begin
   task_page := public.list_my_member_pending_tasks_with_joy_tasks(
     'a9500000-0000-4000-8000-000000000001', 50, 0, true, true
   );
-  if not exists (select 1 from jsonb_array_elements(task_page->'tasks') as task
-    where task->>'kind' = 'joy_question' and task->>'task_id' = current_setting('joy.question_post_one')
-      and task->>'title' = '回答社員提問') then
+  select task into task_row from jsonb_array_elements(task_page->'tasks') as rows(task)
+  where task->>'kind' = 'joy_question' and task->>'task_id' = current_setting('joy.question_post_one');
+  if task_row is null or task_row->>'title' <> '回答社員提問'
+    or task_row->>'deadline' is null
+    or task_row->>'is_overdue' <> 'false'
+    or task_row->>'detail' not like '%' || current_setting('joy.question_due_on') || '%' then
     raise exception 'First recipient did not receive the assigned Joy task: %', task_page;
   end if;
   opened_post := public.get_my_joy_question_post(
@@ -313,7 +360,42 @@ begin
     or opened_post->>'can_answer' <> 'true' then
     raise exception 'First recipient could not securely open their assigned private question';
   end if;
-  question_content := opened_post->>'content';
+end $$;
+reset role;
+
+-- An expired deadline is a status, not an answer lock or an invisible task.
+update public.joy_question_batches
+set due_on = (pg_catalog.statement_timestamp() at time zone 'Asia/Taipei')::date - 1
+where id = current_setting('joy.question_batch_id')::uuid;
+select set_config('joy.question_due_on', (
+  select due_on::text from public.joy_question_batches
+  where id = current_setting('joy.question_batch_id')::uuid
+), true);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a9100000-0000-4000-8000-000000000002', true);
+do $$
+declare
+  task_page jsonb;
+  task_row jsonb;
+  opened_post jsonb;
+begin
+  task_page := public.list_my_member_pending_tasks_with_joy_tasks(
+    'a9500000-0000-4000-8000-000000000001', 50, 0, true, true
+  );
+  select task into task_row from jsonb_array_elements(task_page->'tasks') as rows(task)
+  where task->>'kind' = 'joy_question' and task->>'task_id' = current_setting('joy.question_post_one');
+  if task_row is null or task_row->>'is_overdue' <> 'true'
+    or (task_row->>'hours_remaining')::integer <> 0
+    or task_row->>'detail' not like '%' || current_setting('joy.question_due_on') || '%' then
+    raise exception 'Overdue question task disappeared or lost its due date: %', task_page;
+  end if;
+  opened_post := public.get_my_joy_question_post(
+    'a9500000-0000-4000-8000-000000000001', current_setting('joy.question_post_one')::uuid
+  );
+  if opened_post->>'can_answer' <> 'true' then
+    raise exception 'A passed question deadline incorrectly locked the answer';
+  end if;
   perform public.create_joy_comment(
     'a9500000-0000-4000-8000-000000000001', current_setting('joy.question_post_one')::uuid,
     null, 'answer', '我最感受到團隊力量的是共同服務那一天。'
@@ -325,7 +407,6 @@ begin
     where task->>'kind' = 'joy_question' and task->>'task_id' = current_setting('joy.question_post_one')) then
     raise exception 'Answered batch question remained in the task center';
   end if;
-  if question_content is null then raise exception 'Assigned question content was empty'; end if;
 end $$;
 reset role;
 
