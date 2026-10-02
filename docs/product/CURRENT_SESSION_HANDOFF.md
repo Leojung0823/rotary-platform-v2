@@ -10,12 +10,19 @@
 - 本機驗證：215 個 Vitest 檔／1,571 項、typecheck、lint、build、migration guard、82 份 SQL verification、DB lint、diff check 通過；DB lint 僅 3 項既有警告。隔離 Supabase 乾淨重播後 82 份 SQL 全通過；桌機 Joy Wall E2E 5/5、手機唯讀 3/3 通過，12 個非桌機寫入案例依規則略過。
 - 沒有重置預設本機 Supabase、沒有連線或修改 staging／production，也沒有部署或開啟旗標。Issue #4 仍有其他未完成模組與外部驗收；本切片不代表 Issue #4 完成。
 
-## 2026-10-03 歡喜牆題庫與批次派發續作
+## 2026-10-03 歡喜牆批次提問截止日續作
+
+- 在題庫與批次派題的既有流程上新增可選的台灣日曆截止日。幹部可不設定期限；有設定時，社員待辦與管理批次歷史／明細會顯示截止日。逾期只標示狀態，任務不消失且仍可回答。
+- 新增四支 migration：`20261003000400_joy_question_batch_deadlines.sql` 至 `20261003000700_joy_question_task_deadlines.sql`。新 RPC 包裝原四參數 dispatcher，保留舊呼叫相容；新派發拒絕過去日期，同一 request ID 重試需保留同一日期。沒有開新旗標，沒有更動 LINE／登入／社籍或 hosted 設定。
+- 驗證：Vitest 215 檔／1,574 項、typecheck、lint、build、migration guard、verification manifest 83 SQL、隔離 Supabase 全量重播與 83 份 SQL verification、指定 Joy Wall Playwright 1/1 通過。隔離 DB lint 有 3 項既有 warning。預設本機 DB 未重置，staging／production 未連線或修改。
+- 功能 commit `77bf732` 已從 `codex/joy-question-deadlines` fast-forward 推上 `main`；文件同步後的最新 SHA 請現場核對。尚未部署；`joy_wall_v1` 仍預設關閉。GitHub 自動 CI `37070036690` 與 Browser Smoke `37070036695` 目前執行中，沒有手動派發 workflow。完成後核對其結果；不可把本機 E2E 或 SQL 驗證說成 hosted 驗收。Issue #4 其他待開發模組與 staging／真人驗收仍未完成。
+
+## 2026-10-03 歡喜牆題庫與批次派發續作（此前已同步 main）
 
 - 功能 commit `0aad68cdef512dec78ef56dd610efe0a2fdcc17d`：migration `20261003000200_joy_question_bank_batch_dispatch.sql`；新管理頁、API、題庫 CRUD、批次派題不同題目及桌機 Playwright 流程。本次同步 main 後以 `git rev-parse origin/main` 核對最新 SHA。
 - 伺服器與 DB RPC 都要求 `joy.moderate`、有效社員、正確社別及 `joy_wall_v1` 啟用；flag 預設關閉。本批沒有改 RLS 或繞過 RPC。平台題目唯讀、社團題目可管理；每批限 250 人，每人不同題目，冪等防重、每小時最多 5 批；答案內容不進管理歷史。
 - 驗證完成：Vitest 215 檔／1,570 項、typecheck、lint、build、migration guard、verification manifest 81 檔、isolated Supabase 乾淨重播與 81 份 SQL verification、DB lint、diff check；Joy Wall 桌機 E2E 4/4 passed。DB lint 有 3 項既有警告。瀏覽器與 DB fixtures 都在隔離環境；沒有重置原本本機資料。
-- staging／production 未連線或修改；`joy_wall_v1` 未開；沒有部署。Issue #4 仍有其他未完成範圍：職務／活動／生日／扶輪年度目標、截止日、草稿與排程、匿名建議箱、封鎖、回覆動作、素材整合與保存政策，以及 E-12 和其他 hosted／真人驗收。
+- staging／production 未連線或修改；`joy_wall_v1` 未開；沒有部署。Issue #4 仍有其他未完成範圍：職務／活動／生日／扶輪年度目標、一般貼文截止日、草稿與排程、匿名建議箱、封鎖、回覆動作、素材整合與保存政策，以及 E-12 和其他 hosted／真人驗收。批次提問截止日已由本輪另行實作。
 
 ## 2026-10-03 非金錢 IOU 到期提醒續作
 
