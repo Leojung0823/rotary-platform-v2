@@ -151,6 +151,10 @@ function defaultCommentType(post: JoyPost): JoyCommentType {
 export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, focusedPostId }: JoyWallProps) {
   const [posts, setPosts] = useState([...initialPosts]);
   const [cursor, setCursor] = useState(initialCursor);
+  const [favoritePosts, setFavoritePosts] = useState<JoyPost[]>([]);
+  const [favoriteCursor, setFavoriteCursor] = useState<string | null>(null);
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
   const [postType, setPostType] = useState<JoyPostType>("blessing");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -179,7 +183,9 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
   const [reportReason, setReportReason] = useState<JoyReportReason>("inappropriate");
   const [reportedIds, setReportedIds] = useState<string[]>([]);
 
-  const visiblePosts = useMemo(() => filter === "all" ? posts : posts.filter((post) => post.post_type === filter), [filter, posts]);
+  const activePosts = showFavorites ? favoritePosts : posts;
+  const activeCursor = showFavorites ? favoriteCursor : cursor;
+  const visiblePosts = useMemo(() => filter === "all" ? activePosts : activePosts.filter((post) => post.post_type === filter), [activePosts, filter]);
   const audienceCount = audienceIds.length;
   const contentLength = Array.from(content).length;
   const focusedQuestionId = initialPosts.find((post) =>
@@ -235,6 +241,8 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
       });
       const post = parseJoyPost(await readData<unknown>(response));
       setPosts((current) => [post, ...current]);
+      setShowFavorites(false);
+      setFilter("all");
       setPostType("blessing"); setTitle(""); setContent(""); setVisibilityScope("club"); setAudienceIds([]);
       setIouRecipientId(""); setIouDueOn("");
       setStateMessage(isIou ? "非現金承諾已送出，只有你和指定社員看得到。" : "已分享。內容只會提供給您選擇的對象。");
@@ -244,19 +252,75 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
   }
 
   async function loadMore() {
-    if (!cursor || loadingMore) return;
+    if (!activeCursor || loadingMore) return;
     setLoadingMore(true); setStateMessage(null);
     try {
-      const query = new URLSearchParams({ club_id: clubId, cursor, limit: "20" });
+      const query = new URLSearchParams({ club_id: clubId, cursor: activeCursor, limit: "20", view: showFavorites ? "favorites" : "all" });
       const response = await fetch(`/api/v1/joy/posts?${query.toString()}`, { cache: "no-store" });
       const result = await readData<{ posts: unknown[]; next_cursor: string | null }>(response);
       const nextPosts = result.posts.map(parseJoyPost);
-      setPosts((current) => {
+      const appendUnique = (current: JoyPost[]) => {
         const existingIds = new Set(current.map((post) => post.id));
         return [...current, ...nextPosts.filter((post) => !existingIds.has(post.id))];
-      }); setCursor(result.next_cursor);
+      };
+      if (showFavorites) {
+        setFavoritePosts(appendUnique);
+        setFavoriteCursor(result.next_cursor);
+      } else {
+        setPosts(appendUnique);
+        setCursor(result.next_cursor);
+      }
     } catch (error) { setStateMessage(requestFailureMessage(error, "暫時無法載入更多分享，請稍後再試。")); }
     finally { setLoadingMore(false); }
+  }
+
+  async function openFavorites() {
+    if (favoritesLoaded) {
+      setShowFavorites(true);
+      setFilter("all");
+      setStateMessage(null);
+      return;
+    }
+    setPendingId("favorites");
+    setStateMessage(null);
+    try {
+      const query = new URLSearchParams({ club_id: clubId, limit: "20", view: "favorites" });
+      const response = await fetch(`/api/v1/joy/posts?${query.toString()}`, { cache: "no-store" });
+      const result = await readData<{ posts: unknown[]; next_cursor: string | null }>(response);
+      setFavoritePosts(result.posts.map(parseJoyPost));
+      setFavoriteCursor(result.next_cursor);
+      setFavoritesLoaded(true);
+      setShowFavorites(true);
+      setFilter("all");
+    } catch (error) {
+      setStateMessage(requestFailureMessage(error, "目前無法載入您的收藏，請稍後再試。"));
+    } finally { setPendingId(null); }
+  }
+
+  async function toggleFavorite(post: JoyPost) {
+    const isFavorite = !post.is_favorited;
+    setPendingId(`favorite:${post.id}`);
+    setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, `/posts/${encodeURIComponent(post.id)}/favorite`), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFavorite }),
+      });
+      const result = await readData<{ is_favorited: boolean }>(response);
+      if (result.is_favorited !== isFavorite) throw new JoyRequestError("invalid_favorite_response");
+      const updateFavoriteState = (items: JoyPost[]) => items.map((item) =>
+        item.id === post.id ? { ...item, is_favorited: result.is_favorited } : item,
+      );
+      setPosts(updateFavoriteState);
+      if (favoritesLoaded) {
+        setFavoritePosts((current) => isFavorite
+          ? [{ ...post, is_favorited: true }, ...current.filter((item) => item.id !== post.id)]
+          : current.filter((item) => item.id !== post.id));
+      }
+      setStateMessage(isFavorite ? "已加入您的收藏；只有您自己看得到。" : "已從您的收藏移除。");
+    } catch (error) {
+      setStateMessage(requestFailureMessage(error, "收藏狀態沒有更新，請稍後再試。"));
+    } finally { setPendingId(null); }
   }
 
   async function toggleComments(postId: string) {
@@ -470,9 +534,18 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
         <div><p className="eyebrow">社內好事簿</p><h2 id="joy-feed-title">看看大家分享什麼</h2></div>
         <span aria-live="polite" className={styles.postCount}>
           {filter === "all"
-            ? cursor ? `已載入 ${posts.length} 則` : `${posts.length} 則`
-            : `${visiblePosts.length} 則此類別${cursor ? ` · 已載入 ${posts.length} 則` : ""}`}
+            ? `${showFavorites ? "我的收藏" : "社內動態"} · ${activeCursor ? `已載入 ${activePosts.length} 則` : `${activePosts.length} 則`}`
+            : `${visiblePosts.length} 則此類別${activeCursor ? ` · 已載入 ${activePosts.length} 則` : ""}`}
         </span>
+      </div>
+      <div className={styles.filters} role="group" aria-label="切換分享範圍">
+        <button type="button" aria-pressed={!showFavorites} className={!showFavorites ? styles.filterActive : styles.filter}
+          onClick={() => { setShowFavorites(false); setFilter("all"); setStateMessage(null); }}>社內動態</button>
+        <button type="button" aria-pressed={showFavorites} className={showFavorites ? styles.filterActive : styles.filter}
+          disabled={pendingId === "favorites"} onClick={() => void openFavorites()}>
+          {pendingId === "favorites" ? "載入收藏中…" : "我的收藏"}
+        </button>
+        {showFavorites && <span className={styles.favoritePrivacy}>收藏只對自己可見</span>}
       </div>
       <div className={styles.filters} role="group" aria-label="依分享類別篩選">
         <button type="button" aria-pressed={filter === "all"} className={filter === "all" ? styles.filterActive : styles.filter} onClick={() => setFilter("all")}>全部</button>
@@ -480,9 +553,12 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
           aria-pressed={filter === type} onClick={() => setFilter(type)}>{postTypeLabels[type]}</button>)}
       </div>
       {visiblePosts.length === 0
-        ? <div className={styles.empty}><span aria-hidden="true">✦</span><strong>{filter === "all" ? "這裡還沒有分享" : "這個類別還沒有分享"}</strong>
-          <p>{filter === "all" ? "留下第一份祝福、感謝或回憶，讓社內的好事被看見。" : "試試其他類別，或回到全部分享。"}</p>
-          {filter !== "all" && <button type="button" onClick={() => setFilter("all")}>顯示全部分享</button>}
+        ? <div className={styles.empty}><span aria-hidden="true">✦</span>
+          <strong>{showFavorites ? "您還沒有收藏的分享" : filter === "all" ? "這裡還沒有分享" : "這個類別還沒有分享"}</strong>
+          <p>{showFavorites ? "看到想留著的祝福或回憶，按下「收藏」後就能在這裡快速找回。" : filter === "all" ? "留下第一份祝福、感謝或回憶，讓社內的好事被看見。" : "試試其他類別，或回到全部分享。"}</p>
+          {showFavorites
+            ? <button type="button" onClick={() => { setShowFavorites(false); setFilter("all"); }}>回到社內動態</button>
+            : filter !== "all" && <button type="button" onClick={() => setFilter("all")}>顯示全部分享</button>}
         </div>
         : <div className={styles.postList}>{visiblePosts.map((post) => {
           const postComments = comments[post.id]?.items ?? [];
@@ -555,6 +631,12 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
                 </button>)}
               </div>}
               <div className={styles.actionLinks}>
+                {!post.is_hidden && <button type="button" aria-pressed={post.is_favorited}
+                  aria-label={post.is_favorited ? "從我的收藏移除" : "加入我的收藏"}
+                  className={post.is_favorited ? styles.favoriteSelected : undefined}
+                  disabled={pendingId === `favorite:${post.id}`} onClick={() => void toggleFavorite(post)}>
+                  {pendingId === `favorite:${post.id}` ? "更新中…" : post.is_favorited ? "已收藏" : "收藏"}
+                </button>}
                 {!post.is_hidden && !post.iou && <button type="button" onClick={() => void toggleComments(post.id)}>
                   {commentsOpen[post.id] ? "收起留言" : `留言與回應（${post.comment_count}）`}
                 </button>}
@@ -597,7 +679,7 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
             </section>}
           </article>;
         })}</div>}
-      {cursor && <button type="button" className={styles.loadMore} onClick={() => void loadMore()} disabled={loadingMore}>
+      {activeCursor && <button type="button" className={styles.loadMore} onClick={() => void loadMore()} disabled={loadingMore}>
         {loadingMore ? "載入中…" : "查看更多分享"}
       </button>}
       <p className={styles.footerNote}>歡喜牆僅供社內交流。若內容讓您不舒服，可以檢舉請幹部協助。</p>

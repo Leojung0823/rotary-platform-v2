@@ -76,7 +76,7 @@ async function renderSelectedWall(
   const focusedPostPromise = focusIouId
     ? supabase.rpc("get_my_joy_iou_post", { p_club_id: selectedClub.club_id, p_post_id: focusIouId })
     : focusPostId
-      ? supabase.rpc("get_my_joy_question_post", { p_club_id: selectedClub.club_id, p_post_id: focusPostId })
+      ? supabase.rpc("get_my_joy_question_post_with_favorite", { p_club_id: selectedClub.club_id, p_post_id: focusPostId })
       : Promise.resolve({ data: null, error: null });
   const [postsResult, audienceResult, permissionResult, focusedPostResult] = await Promise.all([
     supabase.rpc("list_joy_posts", {
@@ -84,6 +84,7 @@ async function renderSelectedWall(
       p_cursor_created_at: null,
       p_cursor_id: null,
       p_limit: 20,
+      p_favorites_only: false,
     }),
     supabase.rpc("list_joy_member_options", { p_club_id: selectedClub.club_id }),
     readClubPermissions(selectedClub.club_id),

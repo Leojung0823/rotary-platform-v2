@@ -58,6 +58,7 @@
 .filters { display: flex; gap: .45rem; overflow-x: auto; padding: .15rem .1rem .45rem; scrollbar-width: thin; }
 .filter, .filterActive { flex: 0 0 auto; min-height: 2.75rem; border: 1px solid #d7e2e9; border-radius: 999px; padding: .42rem .72rem; background: #fff; color: #41586c; font: inherit; font-size: .82rem; cursor: pointer; }
 .filterActive { border-color: #0d719f; background: #e7f4fa; color: #075579; font-weight: 700; }
+.favoritePrivacy { flex: 0 0 auto; align-self: center; color: #64778a; font-size: .8rem; }
 .postList { display: grid; gap: .9rem; }
 .post { padding: clamp(.9rem, 2.5vw, 1.25rem); min-width: 0; }
 .focusedPost { scroll-margin-top: 1rem; outline: 3px solid #e4af37; outline-offset: 2px; }
@@ -89,6 +90,8 @@
 .reaction small { color: #63788a; }
 .actionLinks { display: flex; flex-wrap: wrap; gap: .8rem; }
 .actionLinks button, .replyButton { min-height: 2.75rem; border: 0; padding: .25rem .1rem; background: transparent; color: #086b9b; font: inherit; font-size: .84rem; font-weight: 650; cursor: pointer; }
+.actionLinks button:disabled { opacity: .6; cursor: wait; }
+.actionLinks .favoriteSelected { color: #835600; }
 .reported { color: #52725e; font-size: .84rem; }
 .reportForm { display: flex; align-items: flex-end; gap: .6rem; margin-top: .8rem; padding: .75rem; border-radius: .8rem; background: #f5f8fa; }
 .reportForm .field { flex: 1; }

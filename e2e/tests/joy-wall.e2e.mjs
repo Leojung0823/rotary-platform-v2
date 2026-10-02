@@ -54,6 +54,44 @@ test("a member can open Joy Wall, use accessible filters, and choose who may see
   await expect(page.getByRole("radio", { name: /全社社員可見/u })).toHaveCount(0);
 });
 
+test("a member can privately save a post and find it again in My Favorites", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const title = `私人收藏驗收 ${Date.now()}`;
+  const content = "這是一則只有我自己的收藏清單會記住的分享。";
+  await signIn(page, "e2e-shell-member-manager@example.test");
+  await openJoyWall(page);
+  await page.getByLabel("一句標題（選填）").fill(title);
+  await page.getByLabel("分享內容").fill(content);
+  const createResponsePromise = page.waitForResponse((response) =>
+    response.url().includes("/api/v1/joy/posts?") && response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "分享", exact: true }).click();
+  const createResponse = await createResponsePromise;
+  expect(createResponse.status()).toBe(201);
+
+  const postCard = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(postCard).toBeVisible();
+  const saveButton = postCard.getByRole("button", { name: "加入我的收藏" });
+  await saveButton.click();
+  await expect(postCard.getByRole("button", { name: "從我的收藏移除" })).toBeVisible();
+  await page.reload();
+  const reloadedCard = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(reloadedCard.getByRole("button", { name: "從我的收藏移除" })).toBeVisible();
+
+  const views = page.getByRole("group", { name: "切換分享範圍" });
+  await views.getByRole("button", { name: "我的收藏" }).click();
+  const favoriteCard = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(favoriteCard).toBeVisible();
+  await expect(page.getByText("收藏只對自己可見")).toBeVisible();
+  await favoriteCard.getByRole("button", { name: "從我的收藏移除" }).click();
+  await expect(page.getByRole("article").filter({ hasText: title })).toHaveCount(0);
+
+  await views.getByRole("button", { name: "社內動態" }).click();
+  await expect(page.getByRole("article").filter({ hasText: title }).first()).toBeVisible();
+});
+
 test("a private non-cash IOU needs acceptance and two separate completion confirmations", async ({
   browser,
   page,

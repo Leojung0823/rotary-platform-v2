@@ -7,6 +7,7 @@ import {
   parseJoyIouActionBody,
   parseJoyModerationBody,
   parseJoyReactionBody,
+  parseJoyFavoriteBody,
   parseJoyReportBody,
   parseUpdateJoyPostBody,
   parseCreateJoyQuestionPromptBody,
@@ -79,6 +80,9 @@ describe("Joy Wall input validation", () => {
     expect(parseJoyReportBody({ reason: "privacy" })).toBe("privacy");
     expect(parseJoyModerationBody({ action: "hide", reviewerNote: "已確認" })).toEqual({ action: "hide", reviewerNote: "已確認" });
     expect(() => parseJoyModerationBody({ action: "delete", reviewerNote: null })).toThrow();
+    expect(parseJoyFavoriteBody({ isFavorite: true })).toBe(true);
+    expect(parseJoyFavoriteBody({ isFavorite: false })).toBe(false);
+    expect(() => parseJoyFavoriteBody({ isFavorite: true, actorId: memberOne })).toThrow();
   });
 
   it("validates club prompt edits and distinct, bounded batch recipients", () => {

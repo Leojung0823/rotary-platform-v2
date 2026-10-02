@@ -2,13 +2,20 @@
 
 更新日期：2026-10-03（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-03 歡喜牆私人收藏（程式與本機驗收完成；尚未部署）
+
+- 新增社員個人「我的收藏」檢視與貼文收藏／取消收藏，含重新載入後保留狀態。收藏只供本人檢視，不改變貼文原有社團／指定對象／私人可見範圍。
+- 新 migration `20261003000300_joy_post_favorites.sql` 以私有表、RLS、撤銷直接讀寫及 authenticated RPC 保存收藏；跨社、停權、非貼文讀者、旗標關閉及不同社員資料隔離已納入資料庫驗證。沿用既有預設關閉的 `joy_wall_v1`，本次未開旗標。
+- 驗證：215 個 Vitest 檔／1,571 項通過；typecheck、lint、build、migration guard、82 份資料庫驗證、隔離 DB lint、Joy Wall 桌機 5/5 與手機唯讀 3/3 通過；12 個非桌機寫入案例依測試規則略過。DB lint 僅有 3 項既有警告。沒有重置預設本機 DB，未連線或修改 hosted 環境。
+- Issue #4 仍開啟；程式完成不等於部署或社員可用，仍待受保護的 staging 發布及驗收。
+
 ## 2026-10-03 歡喜牆題庫與批次派題（程式已同步 main；尚未部署）
 
 - 實作 commit `0aad68cdef512dec78ef56dd610efe0a2fdcc17d` 新增幹部專用題庫管理頁、題目新增／編輯／停用、社員選取搜尋與不同題目批次派發；社員模式直接造訪管理網址仍由伺服器拒絕。
 - 每批最多 250 位本社有效社員；每人得到不同的私密提問任務，使用既有 Joy 回答待辦與完成流程。題目快照避免後續編輯影響已派任務；冪等識別與每小時限額防止網路重試或大量誤派。歷史只顯示收件人、題目與回答狀態，不回傳回答文字。
 - 新 migration `20261003000200_joy_question_bank_batch_dispatch.sql` 與 verification 已併入 main，沿用預設關閉的 `joy_wall_v1`，沒有增加旗標或改動 hosted。尚未部署或開放社員使用。
 - 本機驗證：215 檔／1,570 項 Vitest、typecheck、lint、build、migration guard、81 份 SQL verification、DB lint、diff check 通過；Joy Wall 桌機 Playwright 4/4 通過。DB lint 的 3 項 warning 均為既有項目。所有 DB reset／fixtures 僅使用隔離 Supabase 專案。
-- Issue #4 仍開啟。後續尚有職務／活動／生日／扶輪年度目標、截止日、草稿／排程／置頂／收藏、匿名建議箱、封鎖、回覆動作、生日／回憶素材整合與保存政策；staging、LINE 真人和其他外部驗收也仍是獨立閘門。
+- Issue #4 仍開啟。後續尚有職務／活動／生日／扶輪年度目標、截止日、草稿／排程／置頂、匿名建議箱、封鎖、回覆動作、生日／回憶素材整合與保存政策；staging、LINE 真人和其他外部驗收也仍是獨立閘門。
 
 ## 2026-10-03 歡喜牆 V1 與 IOU 提醒（main `c0d6e44`；尚未部署；Issue #4 仍開啟）
 

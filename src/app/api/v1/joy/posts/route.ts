@@ -17,11 +17,14 @@ export async function GET(request: NextRequest) {
     const clubId = parseJoyClubId(request.nextUrl.searchParams.get("club_id"));
     const limit = parseJoyLimit(request.nextUrl.searchParams.get("limit"));
     const cursor = decodeJoyCursor(request.nextUrl.searchParams.get("cursor"));
+    const view = request.nextUrl.searchParams.get("view") ?? "all";
+    if (view !== "all" && view !== "favorites") return joyFailure(400);
     const { data, error } = await client.rpc("list_joy_posts", {
       p_club_id: clubId,
       p_cursor_created_at: cursor?.createdAt ?? null,
       p_cursor_id: cursor?.id ?? null,
       p_limit: limit,
+      p_favorites_only: view === "favorites",
     });
     if (error) return joyRpcFailure(error);
     const projection = parseJoyPosts(data);

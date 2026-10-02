@@ -3,6 +3,13 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-10-03 歡喜牆私人收藏續作
+
+- 新增社員個人收藏／取消收藏及「我的收藏」檢視，重新載入後會保留收藏狀態。收藏只供本人檢視，不改貼文原有可見範圍；資料透過 authenticated RPC 存取，私有表開啟 RLS 並撤銷直接讀寫。
+- 新 migration：`20261003000300_joy_post_favorites.sql`，verification：`supabase/verification/joy_post_favorites_security.sql`。覆蓋跨社、停權、非貼文讀者、旗標關閉、其他社員收藏不可見，以及提問直達頁的收藏狀態隔離。沿用 `joy_wall_v1`，沒有開旗標。
+- 本機驗證：215 個 Vitest 檔／1,571 項、typecheck、lint、build、migration guard、82 份 SQL verification、DB lint、diff check 通過；DB lint 僅 3 項既有警告。隔離 Supabase 乾淨重播後 82 份 SQL 全通過；桌機 Joy Wall E2E 5/5、手機唯讀 3/3 通過，12 個非桌機寫入案例依規則略過。
+- 沒有重置預設本機 Supabase、沒有連線或修改 staging／production，也沒有部署或開啟旗標。Issue #4 仍有其他未完成模組與外部驗收；本切片不代表 Issue #4 完成。
+
 ## 2026-10-03 歡喜牆題庫與批次派發續作
 
 - 功能 commit `0aad68cdef512dec78ef56dd610efe0a2fdcc17d`：migration `20261003000200_joy_question_bank_batch_dispatch.sql`；新管理頁、API、題庫 CRUD、批次派題不同題目及桌機 Playwright 流程。本次同步 main 後以 `git rev-parse origin/main` 核對最新 SHA。

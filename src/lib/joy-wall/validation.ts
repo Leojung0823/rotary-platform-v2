@@ -142,6 +142,13 @@ export function parseJoyReactionBody(value: unknown) {
   return value.reactionType as (typeof joyReactionTypes)[number];
 }
 
+export function parseJoyFavoriteBody(value: unknown) {
+  if (!isRecord(value) || !exactKeys(value, ["isFavorite"]) || typeof value.isFavorite !== "boolean") {
+    throw new Error("invalid_body");
+  }
+  return value.isFavorite;
+}
+
 export function parseJoyReportBody(value: unknown) {
   if (!isRecord(value) || !exactKeys(value, ["reason"]) || typeof value.reason !== "string"
     || !joyReportReasons.includes(value.reason as (typeof joyReportReasons)[number])) throw new Error("invalid_body");

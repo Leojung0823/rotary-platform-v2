@@ -45,6 +45,7 @@ export type JoyPost = {
   can_archive: boolean;
   can_answer: boolean;
   is_hidden: boolean;
+  is_favorited: boolean;
   comment_count: number;
   reaction_counts: Partial<Record<JoyReactionType, number>>;
   my_reaction: JoyReactionType | null;
@@ -184,6 +185,7 @@ export function parseJoyPost(value: unknown): JoyPost {
     || typeof value.can_edit !== "boolean" || typeof value.can_archive !== "boolean"
     || typeof value.can_answer !== "boolean"
     || typeof value.is_hidden !== "boolean"
+    || (value.is_favorited !== undefined && typeof value.is_favorited !== "boolean")
     || !Number.isInteger(value.comment_count) || Number(value.comment_count) < 0
     || !isRecord(value.reaction_counts)
     || (value.my_reaction !== null && !isOneOf(joyReactionTypes, value.my_reaction))
@@ -212,6 +214,7 @@ export function parseJoyPost(value: unknown): JoyPost {
     can_archive: value.can_archive,
     can_answer: value.can_answer,
     is_hidden: value.is_hidden,
+    is_favorited: value.is_favorited === true,
     comment_count: Number(value.comment_count),
     reaction_counts: reactions,
     my_reaction: value.my_reaction as JoyReactionType | null,

@@ -18,11 +18,14 @@ describe("Joy Wall security and UX boundaries", () => {
   const reportRoute = source("app/api/v1/joy/reports/route.ts");
   const createIouRoute = source("app/api/v1/joy/ious/route.ts");
   const iouActionRoute = source("app/api/v1/joy/ious/[postId]/route.ts");
+  const joyPage = source("app/(authenticated)/joy/page.tsx");
+  const favoriteMigration = source("../supabase/migrations/20261003000300_joy_post_favorites.sql");
   const mutationRoutes = [
     postsRoute,
     itemRoute,
     commentRoute,
     source("app/api/v1/joy/posts/[postId]/reaction/route.ts"),
+    source("app/api/v1/joy/posts/[postId]/favorite/route.ts"),
     source("app/api/v1/joy/posts/[postId]/report/route.ts"),
     reportRoute,
     createIouRoute,
@@ -39,12 +42,14 @@ describe("Joy Wall security and UX boundaries", () => {
 
   it("requires authenticated server RPCs and same-origin checks for every mutation", () => {
     expect(postsRoute).toContain("authenticatedJoyClient");
+    expect(postsRoute).toContain('p_favorites_only: view === "favorites"');
     expect(postsRoute).toContain("joyMutationAllowed(request)");
     expect(itemRoute.match(/joyMutationAllowed\(request\)/gu)).toHaveLength(2);
     expect(commentRoute).toContain("joyMutationAllowed(request)");
     expect(reportRoute).toContain("joyMutationAllowed(request)");
     expect(createIouRoute).toContain('client.rpc("create_joy_iou"');
     expect(iouActionRoute).toContain('client.rpc("act_joy_iou"');
+    expect(source("app/api/v1/joy/posts/[postId]/favorite/route.ts")).toContain('client.rpc("set_joy_post_favorite"');
     for (const route of mutationRoutes) {
       expect(route).toContain("featureEnabled");
       expect(route).toContain("joyFailure(404)");
@@ -76,8 +81,14 @@ describe("Joy Wall security and UX boundaries", () => {
     expect(taskMigration).toContain("answer.author_app_account_id = actor_id");
     expect(taskMigration).toContain("answer.comment_type = 'answer'");
     expect(taskMigration).toContain("public.get_my_joy_question_post(uuid, uuid)");
-    expect(page).toContain('supabase.rpc("get_my_joy_question_post"');
     expect(page).toContain("focusPostId");
+  });
+
+  it("projects only the caller's favorite state in the initial and focused feed", () => {
+    expect(joyPage).toContain("p_favorites_only: false");
+    expect(joyPage).toContain('supabase.rpc("get_my_joy_question_post_with_favorite"');
+    expect(favoriteMigration).toContain("public.get_my_joy_question_post(p_club_id, p_post_id)");
+    expect(favoriteMigration).toContain("favorite.app_account_id = actor_id");
   });
 
   it("keeps the question bank behind management mode, club permission, and the existing fail-closed flag", () => {

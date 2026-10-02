@@ -25,7 +25,9 @@ const basePost = {
 describe("Joy Wall response contracts", () => {
   it("requires a server-projected answer capability", () => {
     expect(parseJoyPost(basePost).can_answer).toBe(false);
+    expect(parseJoyPost(basePost).is_favorited).toBe(false);
     expect(parseJoyPost({ ...basePost, can_answer: true }).can_answer).toBe(true);
+    expect(parseJoyPost({ ...basePost, is_favorited: true }).is_favorited).toBe(true);
     const withoutCapability = Object.fromEntries(
       Object.entries(basePost).filter(([key]) => key !== "can_answer"),
     ) as Record<string, unknown>;
