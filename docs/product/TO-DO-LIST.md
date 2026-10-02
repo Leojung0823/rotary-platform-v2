@@ -500,8 +500,8 @@ production 沒有修改。
 - `[x]` PR #140 進度文件同步：已合併；純文件變更，更新 #139 合併後的主線／staging 落差與待辦證據。
 - `[x]` PR #141 LINE OA rollout 決策同步：已合併，merge `feebd590`；純文件變更，記錄本次只使用 `PANCHIAO-ELITE`，HAPPY 不納入 rollout。
 - `[x]` PR #145 UI 首頁卡片對齊修正：已合併，merge `450a42d`；已包含在本次 staging Go-Live。
-- `[x]` PR #143／#144／#146／#147 staging 受控 logical backup workflow：已合併；最後一版 merge `93d341c3`，不新增資料庫結構，
-  只建立受保護的備份工作流程。
+- `[x]` PR #143／#144／#146／#147 曾建立 staging 受控 logical backup workflow：最後一版 merge `93d341c3`，不新增資料庫結構；
+  但它會把加密檔暫存上傳到 GitHub Actions。依「備份只存本機加密檔」要求，2026-10-02 已退役該遠端 workflow，改由本機 CLI 取代。
 
 目前有 open PR #188、#189；#123、#124、#126、#127、#130、#132、#135、#139 均已隨 Go-Live `34912921064` 發布；
 `20260914001100_club_service_plan_v2.sql`、`20260915000100_event_push_version_contract.sql` 與
@@ -511,12 +511,11 @@ production 沒有修改。
 ## 2026-09-15 受控備份與 staging Go-Live 證據
 
 - 使用者已授權受控 logical export；備份只保留在本機加密檔，不把明文資料放進 repo 或長期留在 GitHub。
-- workflow `.github/workflows/staging-logical-backup.yml` 只接受 `main` 的 exact SHA，固定 staging Supabase project／Render host，
-  並要求 staging environment 核准；先匯出 `public` schema 與 data-only dump，再以本機提供的 X.509 recipient certificate 加密後才上傳。
+- 這是 2026-09-15 的歷史流程：workflow 曾固定 staging project／Render host、要求 staging environment 核准，並將加密檔短暫上傳至 GitHub Actions；
+  artifact 後來已刪除。該 workflow 已於 2026-10-02 退役，不可再執行，因為「只存本機」不允許 GitHub artifact。
 - 最終 backup run `34912448897` 成功。加密 artifact `10374966439` 已下載到本機、checksum 驗證成功，並在本機解密確認 archive
   同時包含 schema 與資料（含 `club_events`、`line_push_logs`）；明文驗證檔與 GitHub artifact 已刪除並確認不存在。
-- 本機現在只保留加密 payload、checksum，以及分開保存且權限為 `600` 的解密 private key／recipient certificate；實際位置是
-  `~/Documents/Rotary-Staging-Backups/2026-09-15/`。不要刪除解密材料，否則日後無法還原這份備份。
+- 當時記錄的本機副本與解密材料位置是 `~/Documents/Rotary-Staging-Backups/2026-09-15/`；目前是否仍存在、檔案是否完整，須重新檢查本機後才能確認。不要因歷史紀錄就視為目前可用備份。
 - Go-Live run `34912921064` 使用 `backup_confirmation=BACKUP-READY`、`plan_run_id=34912834525`、同一個 exact SHA，
   migration、部署、health、HTTPS smoke 與 hosted member acceptance 全部成功。這不代表 production 已發布；production 仍未修改。
 
@@ -823,18 +822,19 @@ production 沒有修改。
 - **必要動作**：確認 production 備份／還原點、HTTPS 網域、server secrets、migration plan、人工核准閘門與回復步驟。
 - **安全界線**：本清單更新前 production 沒有修改；任何 production 操作要另開明確 release 任務。
 
-### E-12 staging 受控 logical backup `[x]`
+### E-12 staging 本機加密 logical backup `[>]`
 
 - **限制仍在**：staging Supabase Free 方案沒有內建 project backup／PITR；因此採用受控匯出，不把它誤稱為 Supabase 原生備份。
-- **已完成**：`.github/workflows/staging-logical-backup.yml` 固定 staging project／Render host，只接受 `main` exact SHA，
-  並要求 staging environment 核准。workflow 匯出 `public` schema 與 data-only dump，使用 X.509 recipient certificate 加密後才產生 artifact。
-- **最終證據**：backup run `34912448897` 成功；artifact `10374966439` 已下載本機並完成 checksum 與本機解密驗證，
-  archive 內含 schema／資料及 `club_events`、`line_push_logs`。驗證後已刪除明文檔與 GitHub artifact，並確認 artifact 不存在。
-- **保存規則**：目前只保留本機加密 payload、checksum，以及權限為 `600` 的 private key／recipient certificate，位置為
-  `~/Documents/Rotary-Staging-Backups/2026-09-15/`；不提交 repo、不把明文資料留在 GitHub。不要刪除解密材料，否則無法還原。
+- **歷史證據**：2026-09-15 backup run `34912448897` 曾把加密 artifact `10374966439` 放在 GitHub Actions，之後下載、解密驗證，再刪除 artifact 與明文檔。這證明當時匯出成功，
+  但不符合目前的「備份只存本機」規則；舊流程與舊位置都不視為目前可用備份。
+- **待核准舊 run 已取消**：`36917733396`（source SHA `3a1d855`）原本仍等待 staging 核准；2026-10-02 已取消，結論為 `cancelled`，沒有建立備份。舊 SHA `e388933` 的 Staging Release plan `36920967197` 仍停在人工核准，未套用；它不是目前版本的 plan。
+- **安全修正**：已移除 `.github/workflows/staging-logical-backup.yml`，避免再產生 hosted artifact；本機命令 `npm run backup:staging:local` 只會保存 AES-256-GCM 密文與 checksum，
+  使用 RSA-OAEP-SHA256 包裝資料金鑰，輸出與私鑰都必須在 repo 外。新流程不讀取或上傳至 GitHub artifact。
+- **尚未完成**：本機 exporter 尚待本機驗證與合併；本輪沒有連線 staging、沒有建立新備份、也沒有測試還原。E-12 要等這些證據齊備才能結案。
+- **範圍限制**：dump 僅含 `public` schema 與資料，不包含 `auth` schema、Storage 物件內容、project secrets 或平台設定；檔案解密與 gzip 驗證不是完整 restore 演練。
 - **與 Go-Live 的關係**：Go-Live `34912921064` 以 `BACKUP-READY`、plan `34912834525` 與同一個 exact SHA 完成；
   migration apply、部署、health、HTTPS smoke 與 hosted member acceptance 全部成功。production 仍未修改。
-- **後續規則**：之後若 migration 會刪除／改型別／搬資料，仍要在 Go-Live 前重新做一次受控匯出並驗證；production 不得直接沿用 staging 的權宜方案。
+- **後續規則**：之後若 migration 會刪除／改型別／搬資料，仍要在 Go-Live 前建立 local-only 匯出並驗證可用的回復方式；production 不得直接沿用 staging 的權宜方案。
 
 ### E-09 Recovery email 與 custom SMTP `[!]`（暫緩）
 
@@ -1278,8 +1278,7 @@ typecheck、lint、`npm test`（110 檔／705 tests）、build、`npm run verify
 8. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起。
 9. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
 10. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併 PR #107 並隨 `34912921064` 部署 staging，待各社 OA 設定與真人驗收。
-11. **E-12：staging 受控 logical backup** `[x]`：`34912448897` 已成功匯出、加密、下載、checksum／本機解密驗證，GitHub artifact 與明文均已清除；
-    未來有破壞性 migration 時要重做同樣的受控備份流程。
+11. **E-12：staging 本機加密 logical backup** `[>]`：`34912448897` 是歷史流程，曾短暫使用 GitHub artifact，不能代表目前符合「只存本機」的規則；本機 exporter 尚待驗證、合併與新一輪匯出，且未做 restore 演練。
 
 ## 歷史驗證證據（管理模式輪，2026-09-02）
 

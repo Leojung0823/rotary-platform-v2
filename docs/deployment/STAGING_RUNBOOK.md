@@ -167,6 +167,48 @@ Plan 不會套用 migration、不會 reset remote database，也不會載入 see
 
 只有 plan 結果正確、staging backup/rollback point 已由操作者確認，而且 deployment hook 明確只指向 staging service 時才能執行：
 
+#### 只在本機建立加密 logical backup
+
+使用 repository 的本機命令，不使用 GitHub Actions 備份 workflow（已退役）。這個命令會以唯讀方式查詢固定的 Supabase staging project metadata，並直接對該 staging database 執行 `pg_dump`；它不會呼叫 Render、改寫 hosted 資料，或上傳檔案。
+
+- 在乾淨、已更新的 `main` checkout 確認 `.env.staging` 已有 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`。不要把值貼進終端命令、聊天、Git 或 log。
+- 在 repository 外建立權限為 `700` 的私人目錄，產生 RSA 3072-bit 接收憑證與私鑰。私鑰不可放進 repository、不可提交；遺失私鑰就無法解密備份。
+  私鑰是未加密 PEM，必須存放在已啟用 FileVault 的本機磁碟，且維持目錄 `700`、私鑰 `600`；不要放在同步雲端資料夾。
+
+```bash
+mkdir -m 700 /absolute/private/path/rotary-backup-keys
+openssl req -x509 -newkey rsa:3072 -sha256 -nodes \
+  -keyout /absolute/private/path/rotary-backup-keys/staging-recipient-key.pem \
+  -out /absolute/private/path/rotary-backup-keys/staging-recipient-cert.pem \
+  -days 365 -subj "/CN=Rotary Staging Backup"
+chmod 600 /absolute/private/path/rotary-backup-keys/staging-recipient-key.pem
+chmod 600 /absolute/private/path/rotary-backup-keys/staging-recipient-cert.pem
+```
+
+- 在 repository 外再選一個權限 `700` 的輸出目錄，執行：
+
+```bash
+npm run backup:staging:local -- \
+  --output-dir /absolute/private/path/rotary-staging-backups \
+  --recipient-cert /absolute/private/path/rotary-backup-keys/staging-recipient-cert.pem \
+  --recipient-key /absolute/private/path/rotary-backup-keys/staging-recipient-key.pem
+```
+
+若使用不含 `.env.staging` 的乾淨 worktree，不要複製 secrets；改以 Node 的 `--env-file` 指回既有 env 檔，再執行同一個 script 與參數：
+
+```bash
+node --env-file=/absolute/path/to/.env.staging scripts/export-local-staging-backup.mjs \
+  --output-dir /absolute/private/path/rotary-staging-backups \
+  --recipient-cert /absolute/private/path/rotary-backup-keys/staging-recipient-cert.pem \
+  --recipient-key /absolute/private/path/rotary-backup-keys/staging-recipient-key.pem
+```
+
+命令只接受固定 staging project ref，並驗證 Supabase Management API 回傳的 project ref、含 `staging` 的名稱、可連線狀態及 database hostname。匯出來源必須是乾淨、與 `origin/main` 同一個 commit 的 `main`。密碼只透過子程序環境傳遞，不放在命令參數或輸出。
+
+匯出只涵蓋 `public` schema 與資料，經本機 gzip 後使用 AES-256-GCM 加密，資料金鑰以 RSA-OAEP-SHA256 包裝；本機會驗證加密認證標記與 gzip 完整性，並寫入 SHA-256 checksum。暫存輸出只含密文；發生錯誤會清除本次建立的暫存檔。輸出檔、checksum 及解密私鑰都必須留在 repository 外的私人位置。
+
+這是 `public` schema logical backup，不是完整 Supabase project backup：不包含 `auth` schema、Storage object bytes、project secrets 或其他平台設定。工具驗證的是本機解密與壓縮完整性，不會自動把資料還原到另一個 Supabase project；因此不得只憑「檔案已產生」就宣稱完整災難還原已演練。
+
 1. 進入 Actions → Staging Go-Live → Run workflow；Branch 必須是 `main`。
 2. `expected_sha` 輸入 plan 的完整 40 字元 commit SHA。
 3. `plan_run_id` 輸入剛完成的 Staging Release plan run id。
@@ -188,7 +230,7 @@ production identifier 命中或不健康狀態一律 fail closed，response 與 
 全新 project 尚無 schema，因此測試社團與社員只能在 migration apply 後建立。完成下列順序：
 
 1. 建立名稱含 `staging`、與 production 完全分離的 Hosted Supabase project。
-2. 建立並私密保存可用的 backup／logical dump；沒有可用 rollback point 不得繼續。
+2. 若這是全新且確認為空的 project，記錄「目前沒有資料可備份」；若是既有 project，依本節建立並私密保存 local-only logical backup。Backup 不等於已完成 restore 演練。
 3. 設定 GitHub `staging` environment variables 與 secrets，包括 `SUPABASE_SERVICE_ROLE_KEY` 與必填的 production inventory。
 4. 對合併後的 exact `main` SHA 執行成功的 `Staging Release` plan。
 5. 執行 `Staging Go-Live`，除了既有四個 inputs 外設定：

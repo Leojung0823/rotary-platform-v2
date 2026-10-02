@@ -2,6 +2,12 @@
 
 更新日期：2026-10-02（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-02 本機備份安全修正（`codex/local-staging-backup`；尚未合併）
+
+- 舊的 staging logical-backup workflow 會把加密檔放進 GitHub Actions artifact 一天，與「備份只存本機加密檔」不符；本分支已移除該 workflow，不能再用舊流程。
+- 新本機命令 `npm run backup:staging:local` 正在加入固定 staging 身分檢查、乾淨 exact `main` 檢查、repo 外私密輸出，以及 AES-256-GCM／RSA-OAEP-SHA256 加密；目前尚未合併到 GitHub `main`。
+- 目前只跑合成資料測試，沒有連 staging、沒有匯出真實資料、沒有上傳或部署，也沒有進行 restore 演練。E-12 維持待辦；只要本機驗證／合併／新匯出尚未完成，就不可把歷史 9/15 backup 當成目前可用備份。
+
 ## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39；已推 main、尚未部署 staging）
 
 - 依 Issue #39 完成公告草稿、編輯、立即發布草稿、預定發布、取消排程、置頂、封存、到期與生命週期紀錄；排程公告只進 App，不呼叫 LINE／Email，原有立即發布流程不變。
@@ -400,7 +406,7 @@ Staging 的合成社費資料不代表正式金流已上線；正式環境收款
 - PR #139：修復社務頁年度預設值型別錯誤；已合併，新增 `20260915000200_club_service_plan_year_cast.sql` 與對應 verification，沒有修改歷史 migration 或權限。
 - PR #140：進度文件同步；已合併，純文件變更。
 - PR #141：LINE OA rollout 決策同步；已合併，純文件變更，記錄本次只使用 `PANCHIAO-ELITE`，HAPPY 不納入 rollout。
-- PR #143／#144／#146／#147：staging 受控 logical backup workflow；已合併，最後一版將加密檔保留至 upload 完成後才清理，不新增資料庫結構。
+- PR #143／#144／#146／#147：當時曾建立 staging 受控 logical backup workflow；2026-10-02 依本機-only 政策在 `codex/local-staging-backup` 移除遠端 artifact 流程，該分支尚未合併。
 - PR #145：首頁卡片對齊修正；已合併，已隨本次 Go-Live 發布。
 
 自上次更新後，主線已推進到「權限與資料底座 → 角色脈絡 → Shell → 社員首頁 → Dynamic QR 簽到 → GPS 簽到 → 出席 UI」全部完成。權威來源是 GitHub `main`；扶輪社名稱編輯、祝福 IOU、生日祝福 V2、文件中心與年度交接、社內留言板、活動封面圖片、首頁通知摘要、帳號安全分層與登入 recovery hardening 都已進入主線。
@@ -463,8 +469,7 @@ Staging Go-Live `35083792540` 已發布產品程式 `1ef38bb`。後續主線只�
   `issues=[]`、`warnings=[]`；production 沒有修改。
 - 因此目前 `main` 的程式與 migration 已包含在 staging release；Rich Menu、社費／報表、生日設定、
   社務服務計劃、活動編輯、活動推播版本與 active-club redirect 的「已部署」狀態已更新，但各自的 hosted／真人／OA 驗收仍依 E-01–E-11 管理。
-- 主線已加入 staging 受控 logical backup workflow；最後一次 backup run `34912448897` 成功，細節與本機保存規則見
-  `TO-DO-LIST.md` 的 E-12。
+- 當時主線曾有 staging 受控 logical backup workflow；backup run `34912448897` 是歷史紀錄，細節與目前政策修正見 `TO-DO-LIST.md` 的 E-12。
 - 主線 CI `34855905908` 的 database job 在設定 Supabase CLI 時遇到外部 HTTP 504；validate job 通過，不能把這次工具下載失敗當成程式檢查通過。
 - Staging Release `34842549154` 的 dry-run 曾明確拒絕地點 migration，原因是遠端已有 `20260914000800`。#115 已把 `include_all` 做成預設關閉的明確 workflow input；#118 進一步把未套用的地點 migration 改為 `20260914000900`，消除 clean reset 的同號錯誤。
 - 目前 `main` 的 migration 版本已無重複；下一次 staging 發布應使用最新 `main` 的 exact SHA，並先確認 plan／Go-Live 的 migration 與 health 結果。
@@ -848,7 +853,7 @@ PR-01c 不做：
 [完成] PR #40 Announcements/Notifications · 首頁通知 projection
 [完成] PR-07a 帳號安全核心 · PR-07b 行動版 IA／accessibility 核心
 [已部署程式] PR #107 Rich Menu · PR #108 社費／收款／核銷 · PR #109 手機 Web App · PR #110 生日設定 · PR #111 社務服務計劃 · PR #113 地點查座標 · PR #124 結構化年度服務計劃 V2 · PR #126 已發佈活動編輯 · PR #127 手機／桌機共用設計系統第二輪 · PR #130 管理模式邊界 · PR #132 活動推播版本契約 · PR #135 活動切換社團公開網址 · PR #145 首頁卡片修正
-[已合併／工具] PR #117 同頁模式導覽修正 · PR #118 migration collision repair · PR #119 migration collision guard · PR #120 活動封面 · PR #122 UI design system · PR #123 UI 層次與 header gutter · PR #125、#136–#141 進度與 rollout 文件同步 · PR #143／#144／#146／#147 staging 受控 logical backup workflow
+[已合併／工具] PR #117 同頁模式導覽修正 · PR #118 migration collision repair · PR #119 migration collision guard · PR #120 活動封面 · PR #122 UI design system · PR #123 UI 層次與 header gutter · PR #125、#136–#141 進度與 rollout 文件同步 · PR #143／#144／#146／#147（舊 staging backup workflow；本機-only 替代尚未合併）
 [已完成 E-01] Flex staging 發布／旗標／真人收訊
 [已完成 E-02] 生日邀請實際送達／冪等重跑
 [外部待辦 E-03] LINE Login identity follow 自動配對真人驗收
@@ -856,12 +861,12 @@ PR-01c 不做：
 [外部待辦 E-06／E-07／E-10] 效能量測／實機與 M1／雙重社籍驗收
 [產品決策 E-08／E-09] production 準備／Recovery email（若重啟）
 [後續開發／外部待辦 E-11] LINE Rich Menu／完整 OA 整合
-[已完成 E-12] staging 受控 logical backup；Free 方案沒有原生 backup／PITR，採加密匯出
+[待辦 E-12] staging 本機-only 加密 logical backup；Free 方案沒有原生 backup／PITR，需完成新流程與新鮮匯出
 ```
 
 ## Current Next Actions
 
-目前仍未結案的項目，完整清單與證據以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準；E-01、E-02、E-04、E-05、E-12 已完成，E-09 依產品決定暫緩。下一步不是重新開發 E-05，而是依照外部條件依序補驗收：
+目前仍未結案的項目，完整清單與證據以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準；E-01、E-02、E-04、E-05 已完成，E-09 依產品決定暫緩；E-12 因備份保存政策改為本機-only 而重新開啟。下一步不是重新開發 E-05，而是依照外部條件依序補驗收：
 
 1. **E-03：follow 自動配對真人驗收** `[>]`：用乾淨真人帳號確認 LINE Login 身份自動對到正確 person，再測多社／外社／停權／退社；目前程式與日期窗口防護已完成，缺的是人核對的證據。
 2. **E-10：雙重社籍與跨社執行秘書驗收** `[x]`：`35500891585` 已完成停權／退社／外社執行秘書的 staging 負向矩陣；跨社社員管理 URL 會被 `/access-denied` 擋下。
