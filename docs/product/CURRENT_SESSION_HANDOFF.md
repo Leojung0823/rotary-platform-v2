@@ -12,7 +12,7 @@
 - 本機驗證全通過：Vitest 207 files／1515 tests、typecheck、lint、build、`npm run verify:db`、`npm run check:migrations`、`npm run check:db-verifications`（78 SQL files）、`git diff --check`。Lint 仍只有既有 `src/lib/in-place-repairs.test.ts` unused `readdirSync` 警告。
 - E2E 訊息中心：桌機 3/3 通過；Android 412px 與 320px 各跑社員唯讀頁與橫向溢位斷言通過，資料變更測試依規則略過；合計 5 passed／4 skipped。
 - GitHub CI `36916823618` 與 Browser Smoke `36916823523` 均已成功，驗證的是功能 commit `3a1d855...`。Staging Release plan `36920967197`（`e388933`）仍在人工核准中，尚未套用。Logical backup run `36917733396`（`3a1d855`）於 2026-10-02 取消，因舊 workflow 會把加密檔上傳 GitHub artifact，違反「只存本機」要求；此 run 沒有產生備份。Staging scheduler environment 尚未建立／設定，排程 workflow 的 fail-closed 開關為 repository variable `MESSAGE_CENTER_SCHEDULER_ENABLED=true`；完整前置條件見 `docs/deployment/STAGING_RUNBOOK.md`。在 exact-SHA Staging Release、核實備份、Go-Live 人工核准與 health／staging 驗收前，不要宣稱已部署；production 未修改。
-- E-12 本機替代方案正在隔離 worktree `/Users/leoj/.codex/worktrees/rotary-local-backup`、分支 `codex/local-staging-backup` 開發：固定 staging identity、repo 外 private output、AES-256-GCM／RSA-OAEP-SHA256；尚未合併、尚未連 staging、沒有匯出真實資料或測試 restore。舊 GitHub backup workflow 已在該本機分支移除，但尚未進 `main`；不得核准已取消的 `36917733396` 或重新 dispatch 舊流程。
+- E-12 安全修正已推 main `363e7cf0b56c69af65c05b9a38bf677c913bd04f`：退役會上傳 GitHub artifact 的舊 workflow；本機 exporter 與測試已合併，CI `36948071991` 成功。Browser Smoke `36948072084` 狀態須現場核對。實際匯出在本機憑證預檢時停止，因 `.env.staging` 缺少三個 Supabase project/ref、access token、database password 變數；尚未連 staging、沒有產生新備份或測試 restore。不得核准已取消的 `36917733396`，也不得重派舊 workflow。Staging scheduler environment 尚未建立／設定；production 未修改。
 - DB reset 後已按正確順序恢復本機 superadmin → 啟用本機 role-shell/member-home scenario → fixtures；沒有輸出憑證。
 
 ## 2026-09-22 UX 優化第一批（開發基準 `00f7418`）

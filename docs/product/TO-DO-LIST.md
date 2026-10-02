@@ -8,7 +8,7 @@
 
 - 幹部可存草稿、編輯、立即發布草稿、排程、取消、置頂、封存並查看生命週期狀態；社員看不到草稿／未到期的排程公告，置頂內容不會在一般訊息分頁重複。
 - 排程發布會在執行時重新檢查社團與有效社員／帳號；不寄送 LINE 或 Email。原有立即發布功能維持原樣。
-- 分支 `codex/announcements-scheduling-v09`；目前 `main`／`origin/main` 為 `b6a184bb4c445a8d06dde919ce171f85a36ec66e`，沒有 open PR。功能尚未合併或部署，不能視為已上線。
+- 分支 `codex/announcements-scheduling-v09`；目前 `origin/main` 為 `363e7cf0b56c69af65c05b9a38bf677c913bd04f`，沒有 open PR。公告功能尚未合併或部署，不能視為已上線；其後的 `363e7cf` 只更新本機備份安全工具，不代表訊息中心已部署。
 - 本機完整驗證：207 個 Vitest 檔案／1515 tests、typecheck、lint、build、`verify:db`、migration guard、78 份 verification manifest、diff check 均通過；lint 有一個既有 unused `readdirSync` warning。
 - Playwright 訊息中心桌機、Android 412px 與 320px：5 passed、4 skipped（兩條會改資料的流程只在桌機跑）。
 
@@ -828,9 +828,8 @@ production 沒有修改。
 - **歷史證據**：2026-09-15 backup run `34912448897` 曾把加密 artifact `10374966439` 放在 GitHub Actions，之後下載、解密驗證，再刪除 artifact 與明文檔。這證明當時匯出成功，
   但不符合目前的「備份只存本機」規則；舊流程與舊位置都不視為目前可用備份。
 - **待核准舊 run 已取消**：`36917733396`（source SHA `3a1d855`）原本仍等待 staging 核准；2026-10-02 已取消，結論為 `cancelled`，沒有建立備份。舊 SHA `e388933` 的 Staging Release plan `36920967197` 仍停在人工核准，未套用；它不是目前版本的 plan。
-- **安全修正**：已移除 `.github/workflows/staging-logical-backup.yml`，避免再產生 hosted artifact；本機命令 `npm run backup:staging:local` 只會保存 AES-256-GCM 密文與 checksum，
-  使用 RSA-OAEP-SHA256 包裝資料金鑰，輸出與私鑰都必須在 repo 外。新流程不讀取或上傳至 GitHub artifact。
-- **尚未完成**：本機 exporter 尚待本機驗證與合併；本輪沒有連線 staging、沒有建立新備份、也沒有測試還原。E-12 要等這些證據齊備才能結案。
+- **安全修正**：已在 main `363e7cf` 移除 `.github/workflows/staging-logical-backup.yml`，避免再產生 hosted artifact；本機命令 `npm run backup:staging:local` 只會保存 AES-256-GCM 密文與 checksum，使用 RSA-OAEP-SHA256 包裝資料金鑰，輸出與私鑰都必須在 repo 外。CI `36948071991` 成功；Browser Smoke `36948072084` 狀態以 GitHub 現場核對。新流程不讀取或上傳至 GitHub artifact。
+- **目前阻礙**：本機 exporter、完整測試與隔離 `verify:db` 已通過並合併；實際匯出因 `.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`，在連線前安全拒絕。沒有讀取 staging、沒有產生新備份；需在本機安全提供憑證後重試。E-12 仍待新鮮加密匯出與 restore 演練。
 - **範圍限制**：dump 僅含 `public` schema 與資料，不包含 `auth` schema、Storage 物件內容、project secrets 或平台設定；檔案解密與 gzip 驗證不是完整 restore 演練。
 - **與 Go-Live 的關係**：Go-Live `34912921064` 以 `BACKUP-READY`、plan `34912834525` 與同一個 exact SHA 完成；
   migration apply、部署、health、HTTPS smoke 與 hosted member acceptance 全部成功。production 仍未修改。
