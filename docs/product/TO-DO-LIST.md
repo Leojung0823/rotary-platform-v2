@@ -1,6 +1,33 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-10-02（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-03（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-10-03 歡喜牆 V1（核心與本機驗收完成；待整合及 hosted 驗收；Issue #4 尚未完成）
+
+- 從 `origin/main`／`8db6b76` 建立 `codex/joy-wall-v1`。已完成本社歡喜牆 V1：祝福／感謝／迎新／鼓勵／回憶／提問／其他分享；全社、指定社員、私人對象；貼文編輯／封存、留言與一層回覆、表情、檢舉，以及社長／秘書的受權限檢舉處理和稽核紀錄。
+- 新增 migrations `20261002000300_joy_wall_v1.sql`、`20261002000400_joy_iou_member_tasks.sql`，feature flag `joy_wall_v1` 預設關閉且未 seed；所有新表啟用 RLS、瀏覽器直接讀寫撤銷，操作透過有社別／有效社員檢查的 RPC。頁面與每支 API 都會重新檢查旗標；旗標關閉時 API 回 404。發文每小時 20 則、留言每分鐘 8 則且每小時 40 則、檢舉每小時 5 則，皆在資料庫依社團與本人限流，超量回 429 並提示稍後再試。尚未部署任何 hosted 環境。
+- 已補上非金錢 IOU 核心流程：承諾人提出、收件人接受／婉拒、承諾人開始、雙方各自確認完成、任一方在完成前附理由取消；到期狀態依台灣日期投影，狀態異動寫入稽核紀錄。IOU 只供雙方查看、不含捐款金額欄位，並與既有捐款祝福 IOU 分開。尚未做 LINE／站內到期提醒或逾期通知。
+- 已接上社員待辦中心：收件社員在 IOU 提出後看到待回覆；承諾人只在接受後看到待開始；履行中只有尚未確認的一方看到提醒。逾期項目仍顯示「已逾期」和原到期日，沒有誤導性的負倒數；直達連結只提供給 IOU 參與者。主動 LINE／站內到期通知仍未完成。
+- 已補上指定社員／私人提問的待回答流程：被指定的社員收到一則待辦，點擊可安全直達提問並預選「回答」，送出有效回答後待辦消失；發問者不會收到自己的待辦，未被指定的社員看不到任務與私人貼文；全社提問不會自動派給全體社員。此版尚未有題庫管理、批次派題或截止日。
+- 追加 UX 改善：分享類別篩選有螢幕閱讀器選取狀態；篩選結果為空時可一鍵回到全部；筆數會區分目前類別數與已載入總數；表情反應、留言／回覆連結、可見範圍選項與社員選擇列至少 44px 高。歡喜牆 E2E 覆蓋 1440／412／375／320px，含實際觸控目標尺寸斷言。隔離本機瀏覽器驗收共 12 個案例：6 passed、6 skipped；四種寬度各一個唯讀／無障礙案例通過，兩個會寫入資料的 IOU／提問流程只在桌機執行並通過（其他寬度依測試規則略過）。未跑整套 Browser Smoke、CI 或 hosted 驗收。
+- 瀏覽器驗收曾抓到一般貼文／提問建立回 400：`create_joy_post` 與 `update_own_joy_post` 回傳漏掉前端合約要求的 `iou: null`。已修正兩個 SQL projection，並在資料庫安全驗證加入新增／編輯回傳欄位斷言；修正後提問回答待辦與 IOU 雙方完成流程都通過。
+- 本輪驗證：Vitest 213 檔／1551 tests、typecheck、lint、build、migration guard、79 個 verification manifest 檔案與 diff check 通過。第一次並行測試有 6 個全 repo schema 掃描測試逾時；單一 worker 重跑全部通過。完整 `npm run verify:db` 在獨立臨時 Supabase 專案曾通過；本輪另一次完整執行也完成所有 migrations、資料庫 lint 與 79 份 SQL verification。資料庫 lint 有 3 項既有警告。
+- 本輪操作事故：第二次執行 DB 驗證時誤用原本本機 Supabase 專案；目前 migrations 已完整重建、79 份 SQL verification 通過，但原有本機資料與 Auth 測試帳號已被 reset。Staging／production 未連線或修改；尚未重建 superadmin／測試 fixtures，也未確認使用者是否有本機備份。
+- 本機功能與驗證已完成；migrations 尚未部署到 hosted 環境，`joy_wall_v1` 預設關閉，也沒有修改 production。發布仍須走受保護的 Staging Release／Go-Live 與 hosted 驗收。GitHub 最近一次掃描 open PR 為 0。Issue #4「V0.3 社務互動核心」仍為 open，這次只完成其中一個歡喜牆切片，不能標成整個 V0.3 完成。
+
+### 歡喜牆依 Issue #4 尚未完成的範圍
+
+- 非金錢 IOU 核心及社員待辦已在本機實作；仍待主動到期／逾期 LINE／站內通知，以及 hosted／真人驗收。
+- 可管理的題庫與批次派發不同題目（目前只有手動指定對象的待回答流程）；職務、活動、生日專案、扶輪年度等目標；草稿／排程／置頂／收藏；匿名建議箱與封鎖互動。
+- 回覆「收到／感謝／要求隱藏」、本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
+- 以上屬於 Issue #4 的後續獨立開發，不能由本次本機測試或新頁面存在推定完成；真人、staging、LINE provider／Rich Menu 與 production 待辦仍依本文件後續清單處理。
+
+## 2026-10-03 全專案進度掃描
+
+- `origin/main` 為 `8db6b7653cc77e54d6965bafa9418e7ec72e3bf1`；本地歡喜牆分支從此 SHA 開始，尚未 commit／push。GitHub 目前 open PR 為 0；open issues 為 #4、#25、#36、#44、#55。
+- 本輪讀取 staging `/api/health` 回報 `revision=b6a184bb4c44`、`status=ok`、`issues=[]`、`warnings=[]`；該 revision 是 `origin/main` 的祖先，主線已在它之後 8 個 commit。這不代表目前 main 已部署。production 未修改。
+- 最新主線 CI `36954517297` 成功，但 Browser Smoke `36954517294` 失敗。失敗紀錄含 GPS 簽到成功提示未出現，以及 Rich Menu 測試仍直接找預設收合的進階設定卡片。後者的測試調整正在另一個有未提交工作的 worktree；本分支未修改那份平行工作。
+- 尚待真人／外部閘門：#25 iPhone／Android 實機及 staging 社員流程；#36 開啟 staging attendance flag 並驗收；#44 真人完成收到新 recovery email 到重設密碼；#55 五位社員／幹部 M1 測試；E-03 LINE OA follow 真人身份負向案例、E-11 各社 OA／Rich Menu 外部設定、E-12 本機加密備份與 restore 演練。#4 仍有其他獨立功能未開發，不能因歡喜牆 V1 完成就關閉。
 
 ## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39）
 

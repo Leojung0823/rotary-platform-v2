@@ -8,11 +8,12 @@ import { tasksFrom } from "@/lib/member-portal/from-projection";
 const projection = latestDefinition("get_my_member_home_projection");
 const taskProjection = latestDefinition("list_my_member_pending_tasks");
 const taskMigration = readFileSync("supabase/migrations/20261002000200_member_task_center.sql", "utf8");
+const joyTaskMigration = readFileSync("supabase/migrations/20261002000400_joy_iou_member_tasks.sql", "utf8");
 
 /** The kinds that genuinely have a due date. */
 const withDeadline = ["event_response", "birthday_wish"];
 /** The kinds that cannot be late, and so must never say they are. */
-const withoutDeadline = ["dues_outstanding", "unread_messages", "profile_incomplete"];
+const withoutDeadline = ["dues_outstanding", "unread_messages", "profile_incomplete", "joy_question"];
 
 function task(overrides: Record<string, unknown>) {
   return {
@@ -58,10 +59,57 @@ describe("待辦提醒不只有活動報名", () => {
     expect(parsed).toEqual(original);
   });
 
+  it("sends an IOU task to its private IOU and marks its own type with a heart", () => {
+    const parsed = parsedTasks([task({
+      task_id: "95000000-0000-4000-8000-000000000001",
+      kind: "joy_iou",
+      title: "IOU 已逾期：確認完成",
+      detail: "整理活動照片 · 已逾期（原定 2026-10-01）",
+      action_path: "/joy?clubId=95000000-0000-4000-8000-000000000001&mode=member&focusIouId=95000000-0000-4000-8000-000000000001",
+      deadline: null,
+      hours_remaining: null,
+    })])!;
+    const [portalTask] = tasksFrom(parsed);
+    expect(portalTask).toMatchObject({
+      icon: "heart",
+      title: "IOU 已逾期：確認完成",
+      detail: "整理活動照片 · 已逾期（原定 2026-10-01）",
+      href: expect.stringContaining("focusIouId="),
+      status: null,
+    });
+  });
+
+  it("sends an invited question task to the addressed post without a false deadline", () => {
+    const parsed = parsedTasks([task({
+      task_id: "95000000-0000-4000-8000-000000000002",
+      kind: "joy_question",
+      title: "回答社員提問",
+      detail: "服務活動最難忘的事 · 來自 社友甲",
+      action_path: "/joy?clubId=95000000-0000-4000-8000-000000000001&mode=member&focusPostId=95000000-0000-4000-8000-000000000002",
+      deadline: null,
+      hours_remaining: null,
+    })])!;
+    expect(tasksFrom(parsed)[0]).toMatchObject({
+      icon: "bell",
+      title: "回答社員提問",
+      detail: "服務活動最難忘的事 · 來自 社友甲",
+      href: expect.stringContaining("focusPostId="),
+      status: null,
+    });
+  });
+
   it("emits every kind the page knows how to draw", () => {
     for (const kind of pendingTaskKinds) {
-      expect(projection, `the projection never emits ${kind}`).toContain(`'kind', '${kind}'`);
+      const emittingDefinition = kind === "joy_iou" || kind === "joy_question" ? joyTaskMigration : projection;
+      expect(emittingDefinition, `the projection never emits ${kind}`).toContain(`'kind', '${kind}'`);
     }
+  });
+
+  it("keeps overdue IOUs visible without inventing a negative countdown", () => {
+    expect(joyTaskMigration).toContain("item.due_on < (pg_catalog.statement_timestamp() at time zone 'Asia/Taipei')::date");
+    expect(joyTaskMigration).toContain("'deadline', task.deadline");
+    expect(joyTaskMigration).toContain("when task.deadline is null then null");
+    expect(joyTaskMigration).toContain("'hours_remaining', case");
   });
 
   it("parses each of them", () => {
@@ -92,7 +140,8 @@ describe("一個不可能遲到的提醒不准說自己快遲到了", () => {
   // goes wrong if a profile is never completed. Giving those a countdown would
   // be inventing a date nobody set.
   it.each(withoutDeadline)("%s carries no deadline in the projection", (kind) => {
-    const branch = projection.slice(projection.indexOf(`'kind', '${kind}'`));
+    const source = kind === "joy_question" ? joyTaskMigration : projection;
+    const branch = source.slice(source.indexOf(`'kind', '${kind}'`));
     const upToCount = branch.slice(0, branch.indexOf("'count',"));
     expect(upToCount).toContain("'deadline', null");
     expect(upToCount).toContain("'hours_remaining', null");

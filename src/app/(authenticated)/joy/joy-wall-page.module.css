@@ -1,0 +1,40 @@
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.clubHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.clubHeading h2 { margin: 0; }
+
+.skeletonComposer,
+.skeletonPost {
+  min-height: 13rem;
+  border: 1px solid #dbe5ee;
+  border-radius: 1.25rem;
+  background: linear-gradient(100deg, #f2f6fa 20%, #e8eff5 38%, #f2f6fa 58%);
+  background-size: 220% 100%;
+  animation: joyShimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonComposer { min-height: 18rem; }
+.skeletonPost { min-height: 11rem; }
+
+@keyframes joyShimmer {
+  to { background-position-x: -220%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonComposer, .skeletonPost { animation: none; }
+}
+
+@media (max-width: 600px) {
+  .header, .clubHeading { align-items: flex-start; flex-direction: column; }
+}

@@ -1,0 +1,16 @@
+.list { display: grid; gap: .8rem; }
+.card { display: grid; gap: .75rem; padding: 1rem; border: 1px solid #dce5ec; border-radius: 1rem; background: #fff; }
+.card header { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; color: #66798a; font-size: .85rem; }
+.reason { border-radius: 999px; padding: .3rem .6rem; background: #fff0d7; color: #805500; font-weight: 700; }
+.card h2 { margin: 0; font-size: 1.08rem; }
+.content { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+.card label { display: grid; gap: .35rem; color: #455b6c; font-size: .88rem; font-weight: 650; }
+.card textarea { resize: vertical; padding: .65rem; border: 1px solid #cad7e0; border-radius: .65rem; font: inherit; }
+.actions { display: flex; justify-content: flex-end; gap: .5rem; }
+.actions button { border: 0; border-radius: 999px; padding: .58rem .95rem; background: #a53e36; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.actions .dismiss { border: 1px solid #ccd8e1; background: #fff; color: #435a6e; }
+.actions button:disabled { opacity: .6; }
+.empty { display: grid; justify-items: center; gap: .35rem; padding: 2rem; border: 1px dashed #ccd9e2; border-radius: 1rem; color: #41596b; }
+.empty span { color: #738596; font-size: .9rem; }
+.error { padding: .7rem; border-radius: .65rem; background: #fff1ef; color: #8b332d; }
+@media (max-width: 520px) { .actions { flex-direction: column; } .actions button { width: 100%; } }

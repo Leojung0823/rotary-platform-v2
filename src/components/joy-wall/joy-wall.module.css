@@ -1,0 +1,134 @@
+.layout { display: grid; gap: 1.5rem; }
+.composer, .post {
+  border: 1px solid #dce6ee;
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 8px 28px rgb(18 48 76 / 5%);
+}
+.composer { padding: clamp(1rem, 3vw, 1.5rem); }
+.sectionIntro, .feedHeader { display: flex; align-items: center; gap: .9rem; }
+.sectionIntro { margin-bottom: 1.2rem; }
+.sectionIntro h2, .feedHeader h2 { margin: 0; }
+.sparkle {
+  display: grid; width: 2.7rem; height: 2.7rem; place-items: center; flex: 0 0 auto;
+  color: #835600; background: #fff0c2; border-radius: 50%; font-size: 1.4rem;
+}
+.field { display: grid; gap: .4rem; min-width: 0; color: #34485b; font-size: .9rem; font-weight: 650; }
+.field input, .field select, .field textarea {
+  width: 100%; min-width: 0; border: 1px solid #cbd7e1; border-radius: .7rem;
+  background: #fff; color: #172b3e; padding: .7rem .8rem; font: inherit; font-weight: 400;
+}
+.field input, .field select { min-height: 2.75rem; }
+.field textarea { resize: vertical; line-height: 1.6; }
+.field :focus-visible, .filter:focus-visible, .filterActive:focus-visible,
+.reaction:focus-visible, .reactionSelected:focus-visible, .actionLinks button:focus-visible,
+.replyButton:focus-visible, .composerFooter button:focus-visible, .iouActions button:focus-visible,
+.loadMore:focus-visible, .empty button:focus-visible, .commentForm > button:focus-visible,
+.reportForm > button:focus-visible { outline: 3px solid #54a9db; outline-offset: 2px; }
+.formRow { display: grid; grid-template-columns: minmax(10rem, .7fr) minmax(0, 1.3fr); gap: .8rem; margin-bottom: .8rem; }
+.counter { margin-top: .35rem; color: #64778a; text-align: right; font-size: .78rem; }
+.visibility { display: grid; gap: .55rem; margin: 1.1rem 0 .4rem; padding: 0; border: 0; }
+.visibility legend, .audiencePicker legend { margin-bottom: .5rem; color: #233a4f; font-weight: 700; }
+.radioOption {
+  display: flex; gap: .65rem; align-items: flex-start; border: 1px solid #e0e8ee;
+  min-height: 2.75rem; border-radius: .8rem; padding: .7rem .8rem; cursor: pointer;
+}
+.radioOption input, .memberOption input { accent-color: #0876a8; margin-top: .22rem; }
+.radioOption span { display: grid; gap: .18rem; }
+.radioOption small, .audiencePicker small { color: #66798b; line-height: 1.45; }
+.audiencePicker { margin: .75rem 0 0; padding: .8rem; border: 1px solid #dce6ee; border-radius: .85rem; }
+.memberOptions { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .4rem; max-height: 14rem; overflow: auto; padding: .15rem; }
+.memberOption { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .35rem; min-width: 0; border-radius: .55rem; cursor: pointer; }
+.memberOption:hover { background: #f3f7fa; }
+.memberOption > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avatar { position: relative; display: grid; width: 2.35rem; height: 2.35rem; flex: 0 0 auto; place-items: center; overflow: hidden; border-radius: 50%; background: #e6f2f7; color: #165878; font-weight: 750; }
+.avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.composerFooter { display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-top: .8rem; }
+.privacyNote { color: #577064; font-size: .82rem; }
+.composerFooter button, .commentForm > button, .reportForm > button, .actionRow > button:last-child,
+.moderationActions > button:last-child {
+  border: 0; border-radius: 999px; padding: .65rem 1.15rem; background: #0876a8; color: #fff;
+  min-height: 2.75rem; font: inherit; font-weight: 700; cursor: pointer;
+}
+.composerFooter button:disabled, .commentForm > button:disabled, .reportForm > button:disabled { opacity: .55; cursor: not-allowed; }
+.stateMessage { margin: .8rem 0 0; padding: .65rem .8rem; border-radius: .65rem; background: #f1f7fa; color: #27556d; font-size: .9rem; }
+.feed { display: grid; gap: .9rem; }
+.feedHeader { justify-content: space-between; align-items: flex-end; }
+.postCount { color: #65778a; font-size: .86rem; }
+.filters { display: flex; gap: .45rem; overflow-x: auto; padding: .15rem .1rem .45rem; scrollbar-width: thin; }
+.filter, .filterActive { flex: 0 0 auto; min-height: 2.75rem; border: 1px solid #d7e2e9; border-radius: 999px; padding: .42rem .72rem; background: #fff; color: #41586c; font: inherit; font-size: .82rem; cursor: pointer; }
+.filterActive { border-color: #0d719f; background: #e7f4fa; color: #075579; font-weight: 700; }
+.postList { display: grid; gap: .9rem; }
+.post { padding: clamp(.9rem, 2.5vw, 1.25rem); min-width: 0; }
+.focusedPost { scroll-margin-top: 1rem; outline: 3px solid #e4af37; outline-offset: 2px; }
+.postHeader { display: flex; align-items: center; gap: .7rem; }
+.author { display: grid; gap: .18rem; min-width: 0; }
+.author strong { overflow-wrap: anywhere; }
+.author span { color: #718295; font-size: .8rem; }
+.postType { margin-left: auto; flex: 0 0 auto; border-radius: 999px; padding: .3rem .6rem; background: #f1f5f7; color: #455d6e; font-size: .78rem; }
+.scopeLine { margin: .8rem 0 .45rem; color: #6c7e8e; font-size: .78rem; }
+.iouPrivacyNote { margin: 0 0 .75rem; color: #557084; font-size: .88rem; line-height: 1.5; }
+.iouCard { display: grid; gap: .65rem; margin-top: .9rem; padding: .9rem; border: 1px solid #d8e7ed; border-radius: .9rem; background: #f6fafb; }
+.iouStatusRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; color: #536a7b; font-size: .85rem; }
+.iouStatus, .iouOverdue { border-radius: 999px; padding: .28rem .65rem; background: #e2f3eb; color: #176342; font-size: .82rem; }
+.iouOverdue { background: #fff0d2; color: #875a00; }
+.iouDetail { margin: 0; color: #40586b; font-size: .88rem; line-height: 1.55; overflow-wrap: anywhere; }
+.iouConfirmations { display: flex; flex-wrap: wrap; gap: .8rem; color: #4c6578; font-size: .82rem; }
+.iouActions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.iouActions button { border: 0; border-radius: 999px; padding: .55rem .9rem; min-height: 2.75rem; background: #0876a8; color: #fff; font: inherit; font-size: .86rem; font-weight: 700; cursor: pointer; }
+.iouActions .secondaryButton { border: 1px solid #cedbe4 !important; background: #fff !important; color: #385267 !important; }
+.iouActions button:disabled { opacity: .55; cursor: not-allowed; }
+.postBody h3 { margin: 0 0 .4rem; color: #1a3044; font-size: 1.1rem; }
+.postBody p, .comment p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.hiddenPost { border-color: #e2c995; background: #fffdf7; }
+.hiddenNotice { margin: .8rem 0; padding: .55rem .7rem; border-radius: .6rem; background: #fff0c6; color: #745400; font-size: .86rem; }
+.actions { display: grid; gap: .6rem; margin-top: 1rem; padding-top: .75rem; border-top: 1px solid #edf1f4; }
+.reactions { display: flex; gap: .35rem; overflow-x: auto; padding: .1rem .1rem .25rem; }
+.reaction, .reactionSelected { display: flex; align-items: center; gap: .35rem; flex: 0 0 auto; min-height: 2.75rem; border: 1px solid #dce5eb; border-radius: 999px; padding: .35rem .55rem; background: #fff; color: #536779; font: inherit; font-size: .77rem; cursor: pointer; }
+.reactionSelected { border-color: #efc14d; background: #fff5d5; color: #704d00; }
+.reaction small { color: #63788a; }
+.actionLinks { display: flex; flex-wrap: wrap; gap: .8rem; }
+.actionLinks button, .replyButton { min-height: 2.75rem; border: 0; padding: .25rem .1rem; background: transparent; color: #086b9b; font: inherit; font-size: .84rem; font-weight: 650; cursor: pointer; }
+.reported { color: #52725e; font-size: .84rem; }
+.reportForm { display: flex; align-items: flex-end; gap: .6rem; margin-top: .8rem; padding: .75rem; border-radius: .8rem; background: #f5f8fa; }
+.reportForm .field { flex: 1; }
+.comments { display: grid; gap: .65rem; margin-top: .9rem; padding: .85rem; border-radius: .9rem; background: #f7f9fb; }
+.comments h4 { margin: 0; color: #263e52; }
+.commentList { display: grid; gap: .35rem; }
+.comment { display: flex; align-items: flex-start; gap: .55rem; padding: .55rem; border-radius: .7rem; background: #fff; }
+.comment > div { min-width: 0; }
+.comment .avatar { width: 2rem; height: 2rem; font-size: .8rem; }
+.commentMeta { display: flex; flex-wrap: wrap; gap: .45rem; align-items: baseline; margin-bottom: .25rem; }
+.commentMeta strong { color: #293f52; font-size: .86rem; }
+.commentMeta span { color: #788898; font-size: .74rem; }
+.comment p { font-size: .9rem; }
+.reply { margin: .35rem 0 .35rem 1.8rem; background: #edf4f7; }
+.replyButton { margin: 0 0 .2rem 2.9rem; font-size: .78rem; }
+.replying { display: flex; align-items: center; gap: .6rem; margin: 0; color: #455b6d; font-size: .85rem; }
+.replying button { min-height: 2.75rem; border: 0; background: none; color: #086b9b; cursor: pointer; font: inherit; }
+.commentForm { display: grid; gap: .6rem; padding-top: .55rem; border-top: 1px solid #e2e9ef; }
+.commentForm > button { justify-self: end; }
+.editForm { display: grid; gap: .7rem; }
+.actionRow { display: flex; justify-content: flex-end; gap: .5rem; }
+.secondaryButton { border: 1px solid #cedbe4 !important; background: #fff !important; color: #385267 !important; }
+.loadMore { justify-self: center; border: 1px solid #cddbe4; border-radius: 999px; padding: .6rem 1.1rem; background: #fff; color: #176789; font: inherit; font-weight: 650; cursor: pointer; }
+.loadMore:disabled { opacity: .55; }
+.empty { display: grid; justify-items: center; gap: .65rem; padding: 2rem 1rem; border: 1px dashed #cbd9e2; border-radius: 1rem; background: #fbfdfe; text-align: center; }
+.empty > span { color: #d79a13; font-size: 1.6rem; }
+.empty p, .footerNote { margin: 0; color: #718294; font-size: .88rem; line-height: 1.5; }
+.empty button { min-height: 2.75rem; border: 1px solid #cbd9e2; border-radius: 999px; padding: .55rem .9rem; background: #fff; color: #086b9b; font: inherit; font-weight: 700; cursor: pointer; }
+.footerNote { text-align: center; }
+.muted { margin: 0; color: #748596; font-size: .88rem; }
+
+@media (max-width: 620px) {
+  .formRow { grid-template-columns: 1fr; }
+  .composerFooter { align-items: stretch; flex-direction: column; }
+  .composerFooter button { width: 100%; }
+  .reportForm { align-items: stretch; flex-direction: column; }
+  .reportForm > button { width: 100%; }
+  .visibility { gap: .45rem; }
+  .memberOptions { grid-template-columns: 1fr; max-height: 12rem; }
+  .feedHeader { align-items: flex-start; }
+  .postType { font-size: .72rem; }
+  .reply { margin-left: .85rem; }
+}

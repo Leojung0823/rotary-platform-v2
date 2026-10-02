@@ -29,6 +29,7 @@ const lineOaAudienceTestMatch = /line-oa-audience\.e2e\.mjs/;
 const pwaTestMatch = /pwa\.e2e\.mjs/;
 const lineRichMenuTestMatch = /line-rich-menu\.e2e\.mjs/;
 const boardAudienceTestMatch = /board-audience\.e2e\.mjs/;
+const joyWallTestMatch = /joy-wall\.e2e\.mjs/;
 const eventDetailTestMatch = /event-detail\.e2e\.mjs/;
 const eventCoverTestMatch = /event-cover\.e2e\.mjs/;
 const messageCenterTestMatch = /message-center\.e2e\.mjs/;
@@ -60,7 +61,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       use: { viewport: { width: 1440, height: 900 } },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|pwa\.e2e\.mjs|line-rich-menu\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|pwa\.e2e\.mjs|line-rich-menu\.e2e\.mjs|joy-wall\.e2e\.mjs/,
     },
     {
       name: "android-chromium",
@@ -70,7 +71,7 @@ export default defineConfig({
         hasTouch: true,
         deviceScaleFactor: 2.625,
       },
-      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|pwa\.e2e\.mjs|line-rich-menu\.e2e\.mjs/,
+      testIgnore: /role-shells.*\.e2e\.mjs|event-create-form\.e2e\.mjs|member-home.*\.e2e\.mjs|dynamic-checkin.*\.e2e\.mjs|location-checkin\.e2e\.mjs|mobile-nav-contrast\.e2e\.mjs|event-cover\.e2e\.mjs|birthday-collection\.e2e\.mjs|birthday-v2\.e2e\.mjs|pwa\.e2e\.mjs|line-rich-menu\.e2e\.mjs|joy-wall\.e2e\.mjs/,
     },
     {
       name: "message-center-320",
@@ -164,6 +165,13 @@ export default defineConfig({
       testMatch: boardAudienceTestMatch,
       use: { viewport: { width: 1440, height: 900 } },
     },
+    ...[1440, 412, 375, 320].map((width) => ({
+      name: `joy-wall-${width}`,
+      testMatch: joyWallTestMatch,
+      use: width <= 412
+        ? { viewport: { width, height: width === 320 ? 700 : 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
+        : { viewport: { width, height: 900 } },
+    })),
     ...[1440, 375].map((width) => ({
       name: `line-oa-audience-${width}`,
       testMatch: lineOaAudienceTestMatch,

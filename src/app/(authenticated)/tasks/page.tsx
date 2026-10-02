@@ -42,9 +42,10 @@ export default async function MemberTasksPage({
   const preferredClubId = readActiveClubPreference(query.clubId)
     ?? readActiveClubPreference(cookieStore.get(activeClubCookieName)?.value);
   const contextPromise = resolveExperienceContext(preferredClubId);
-  const [homeEvaluation, lineEvaluation, mode, contextResolution] = await Promise.all([
+  const [homeEvaluation, lineEvaluation, joyEvaluation, mode, contextResolution] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "member_home_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "line_oa_onboarding_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "joy_wall_v1", subjectUuid: identity.id }),
     currentExperienceMode(identity.id),
     contextPromise,
   ]);
@@ -69,11 +70,12 @@ export default async function MemberTasksPage({
 
   const supabase = await createClient();
   const [taskResult, lineOaResolution] = await Promise.all([
-    supabase.rpc("list_my_member_pending_tasks", {
+    supabase.rpc("list_my_member_pending_tasks_with_joy_tasks", {
       p_club_id: activeClub.clubId,
       p_limit: memberTaskPageSize,
       p_offset: offset,
       p_all_tasks: true,
+      p_include_joy_tasks: joyEvaluation.enabled,
     }),
     lineEvaluation.enabled
       ? resolveLineOaOnboardingStatus(activeClub.clubId)

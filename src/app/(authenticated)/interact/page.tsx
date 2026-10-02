@@ -15,8 +15,9 @@ export default async function InteractPage() {
   const identity = await requireIdentity();
   // Each destination renders notFound() when its flag is off, so only offer a
   // card when the same server-side evaluation says the page will open.
-  const [messageBoard, birthdayWishesV1, birthdayWishesV2, blessingIou, duesFinance] = await Promise.all([
+  const [messageBoard, joyWall, birthdayWishesV1, birthdayWishesV2, blessingIou, duesFinance] = await Promise.all([
     evaluateCurrentFeatureFlag({ key: "message_board_v1", subjectUuid: identity.id }),
+    evaluateCurrentFeatureFlag({ key: "joy_wall_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v1", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "birthday_wishes_v2", subjectUuid: identity.id }),
     evaluateCurrentFeatureFlag({ key: "blessing_iou_v1", subjectUuid: identity.id }),
@@ -31,6 +32,14 @@ export default async function InteractPage() {
       title: "留言板",
       body: "在社內公開留言、回覆與討論。",
       icon: "chat",
+    });
+  }
+  if (joyWall.enabled) {
+    entries.push({
+      href: "/joy",
+      title: "歡喜牆",
+      body: "分享祝福、感謝和社內回憶，與社員溫暖互動。",
+      icon: "heart",
     });
   }
   if (birthdayWishesEnabled) {

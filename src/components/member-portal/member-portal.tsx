@@ -259,7 +259,7 @@ export function MemberPortalBody({
         <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" href={taskCenterHref} empty={tasks.length === 0 ? "目前沒有優先待辦提醒" : null}>
           {tasks.map((task) => <Link className={styles.taskRow} key={task.id} href={task.href} prefetch={false}>
             <span className={`${styles.taskIcon} ${styles[`taskIcon_${task.tone}`]}`} aria-hidden="true">
-              <PortalIcon name={task.icon === "bell" ? "bell" : task.icon === "document" ? "document" : "users"} size={19} />
+              <PortalIcon name={task.icon === "bell" ? "bell" : task.icon === "document" ? "document" : task.icon === "heart" ? "heart" : "users"} size={19} />
             </span>
             <span className={styles.rowText}>
               <strong>{task.title}</strong>

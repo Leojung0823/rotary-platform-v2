@@ -111,12 +111,22 @@ export const productFeatures: ProductFeature[] = [
   {
     slug: "message-board",
     title: "社內留言板",
-    summary: "同社社員可查看與發表貼文，編輯及刪除保留本人權限邊界。",
+    summary: "社內簡單留言與近況分享。",
     category: "溝通與內容",
     status: "available",
     phase: "目前可測試",
     href: "/board",
     featureFlagKey: "message_board_v1",
+  },
+  {
+    slug: "joy-wall",
+    title: "歡喜牆",
+    summary: "分享祝福、感謝、迎新與回憶；可指定閱讀對象、留言互動並由幹部處理檢舉。",
+    category: "溝通與內容",
+    status: "available",
+    phase: "V1 完成，等待分階段啟用",
+    href: "/joy",
+    featureFlagKey: "joy_wall_v1",
   },
   {
     slug: "announcements-and-notifications",

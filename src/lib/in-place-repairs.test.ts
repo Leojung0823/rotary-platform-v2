@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { migrationDefining, migrationFilenames } from "@/lib/attendance/latest-definition";
@@ -23,6 +23,11 @@ function repairs(): Repair[] {
     if (!text.includes("pg_get_functiondef") && !text.includes("to_regprocedure")) continue;
     const target = /'public\.(\w+)\([^)]*\)'/u.exec(text)?.[1];
     expect(target, `${file} repairs a function in place but names none`).toBeTruthy();
+    // A migration may read an existing definition to create a separate wrapper.
+    // That does not rewrite the source function and must not be treated as an
+    // in-place repair (or it would need the repair-only before/after markers).
+    const createdFunction = /'create or replace function public\.(\w+)\(/u.exec(text)?.[1];
+    if (createdFunction && createdFunction !== target) continue;
     // Both spellings this repository has used: a plain quoted string, and a
     // dollar-quoted block for text that itself contains quotes.
     const pairs = [

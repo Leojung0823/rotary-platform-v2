@@ -54,6 +54,11 @@ describe("product feature map", () => {
       href: "/blessings",
       featureFlagKey: "blessing_iou_v1",
     });
+    expect(findProductFeature("joy-wall")).toMatchObject({
+      status: "available",
+      href: "/joy",
+      featureFlagKey: "joy_wall_v1",
+    });
   });
 
 });

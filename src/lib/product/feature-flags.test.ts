@@ -151,6 +151,23 @@ describe("feature flag evaluation truth table", () => {
     })).toMatchObject({ enabled: false, reason: "environment_not_allowed" });
   });
 
+  it("keeps Joy Wall dark until explicitly enabled and provides an emergency off switch", () => {
+    expect(flagsRequiringExplicitEnable).toContain("joy_wall_v1");
+    expect(evaluateFeatureFlag({
+      key: "joy_wall_v1",
+      record: null,
+      environment: "staging",
+      pepper,
+    })).toMatchObject({ enabled: false, reason: "missing_configuration" });
+    expect(evaluateFeatureFlag({
+      key: "joy_wall_v1",
+      record: enabledRecord,
+      environment: "staging",
+      pepper,
+      env: { DISABLE_JOY_WALL: "true" },
+    })).toMatchObject({ enabled: false, reason: "kill_switch" });
+  });
+
   it("keeps zero percent disabled and one hundred percent enabled", () => {
     expect(evaluateFeatureFlag({
       key: "role_shells_v2",
