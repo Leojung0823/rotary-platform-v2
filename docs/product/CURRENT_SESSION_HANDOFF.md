@@ -1,7 +1,17 @@
-# 交接筆記（持續更新；最新核對 2026-10-02；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-10-03；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-10-03 非金錢 IOU 到期提醒續作
+
+- 權威主線／本分支起點為 `57d5fc78b19afc900301dfcb4aa618b082cabe29`；目前分支 `codex/joy-iou-deadline-reminders`，實作及文件尚未 commit／push，GitHub open PR 為 0。沒有改另一個 worktree 裡的 Rich Menu UX 工作。
+- 完成 staging-only 的非金錢 IOU LINE 提醒：每位社員每天最多收到「今天到期」及「已逾期」各一則摘要；只在該社員仍有可處理項目、有效社籍／帳號、LINE OA 已配對且其 LINE 通知開啟時寄送。內容只有件數與安全連結，不傳 IOU 貼文、祝福文字或對象姓名；不新增站內提醒。
+- 使用既有 message-center scheduler endpoint，不加新 secret／workflow。兩個旗標 `joy_wall_v1`、`line_oa_event_push_v1` 都必須在 staging 開啟；額度限制時停止該社其餘提醒，錯誤由既有 LINE OA 管理頁的 quota notice 呈現。未知送達結果不自動重試；資料庫另限制推播摘要欄位，拒絕任意私密文字。
+- 新增 migration `20261003000100_joy_iou_deadline_reminders.sql`、server scheduler、API route tests 與 SQL security verification。migration 尚未部署，未開旗標、未觸發 LINE 推播，未修改 hosted／production。
+- 驗證通過：Vitest 215 檔／1565 tests、typecheck、lint、build、migration guard、80 檔 verification manifest、diff check；隔離 Supabase 專案重新套用所有 migration、DB lint 及 80 份 SQL verification 全通過。lint 只有 3 項既有警告。為避免重置原本本機資料，沒有對預設 Supabase 專案執行 `npm run verify:db`。
+- GitHub 當前 Browser Smoke `37039603756` 在基礎 SHA `57d5fc7` 失敗，與本分支尚未提交的修改無關；Staging Release `37039951580` 仍在待核准狀態，且也是該基礎 SHA 的 plan。不能把它當本功能驗收或部署證據。
+- 待辦：依 repo 節奏提交並同步 main 後看自動 CI；staging 發布仍需 E-12 本機加密備份及 Go-Live 核准。發布後確認 scheduler 設定與雙旗標，再做真人 LINE 到期／逾期、限額停送提示及跨社員隔離驗收。Issue #4 其餘規劃與真人／外部項目仍未完成。
 
 ## 2026-10-02 訊息中心 V0.9 排程公告接力
 

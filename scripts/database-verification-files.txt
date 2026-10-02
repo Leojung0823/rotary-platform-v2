@@ -77,3 +77,4 @@ supabase/verification/membership_remit_keys.sql
 supabase/verification/bank_statement_lines.sql
 supabase/verification/line_oa_quota_notice_security.sql
 supabase/verification/joy_wall_v1_security.sql
+supabase/verification/joy_iou_deadline_reminders_security.sql

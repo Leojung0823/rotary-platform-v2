@@ -2,23 +2,24 @@
 
 更新日期：2026-10-03（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-03 歡喜牆 V1（本機分支 `codex/joy-wall-v1`；Issue #4 仍開啟）
+## 2026-10-03 歡喜牆 V1 與 IOU 提醒（本機分支 `codex/joy-iou-deadline-reminders`；Issue #4 仍開啟）
 
-- 從主線基準 `8db6b76` 開始，完成一個獨立、預設關閉的歡喜牆 V1：社內／指定社員／私人閱讀範圍、貼文與留言互動、檢舉審核及稽核紀錄。另新增非金錢 IOU：私密提出、接受／婉拒、開始、雙方確認完成、附理由取消，以及按台灣日期判定逾期；不同於捐款祝福 IOU，不記錄金額。跨社資料、停權帳號、私密內容和管理權限有資料庫驗證 SQL。頁面與 API 皆 fail closed；資料庫另限制每人每社每小時 20 則貼文、每分鐘 8 則／每小時 40 則留言、每小時 5 則檢舉，超量回 429。
-- 已把非金錢 IOU 接進既有社員待辦中心：收件社員看見「待回覆」，承諾人只在對方接受後看見「待開始」，履行中則只提醒尚未確認的一方；逾期仍保留並明確標註。待辦直達連結只會開啟參與者可讀的私人 IOU，不提供負數倒數。指定社員／私人提問會為收件社員建立待回答事項，送出「回答」後即清除；全社提問不會變成全員大量待辦。題目沒有期限，也沒有主動 LINE／站內推播提醒。
-- 本輪程式驗證：`npm test -- --maxWorkers=1 --minWorkers=1`（213 檔／1551 tests）、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications`（79 份 SQL 清單）及 `git diff --check` 通過。第一次並行測試有 6 個全 repo schema 掃描測試逾時；單一 worker 重跑全部通過。`npm run verify:db` 曾在獨立臨時 Supabase 專案完整通過；本輪亦完成所有 migrations、資料庫 lint 與 79 份 SQL verification。資料庫 lint 有 3 項既有警告。
-- 本輪操作事故：第二次執行 DB 驗證時誤用原本本機 Supabase 專案；目前 migrations 已完整重建、79 份 SQL verification 通過，但原有本機資料與 Auth 測試帳號已被 reset。Staging／production 未連線或修改；尚未重建 superadmin／測試 fixtures，也未確認使用者是否有本機備份。
+- 歡喜牆 V1 已合併在 `main@57d5fc7`，功能包含社內／指定社員／私人閱讀範圍、貼文與留言互動、檢舉審核及稽核紀錄。另含非金錢 IOU：私密提出、接受／婉拒、開始、雙方確認完成、附理由取消，以及按台灣日期判定逾期；不同於捐款祝福 IOU，不記錄金額。跨社資料、停權帳號、私密內容和管理權限有資料庫驗證 SQL。頁面與 API 皆 fail closed；資料庫另限制貼文、留言及檢舉頻率，超量回 429。
+- 已把非金錢 IOU 接進既有社員待辦中心：收件社員看見「待回覆」，承諾人只在對方接受後看見「待開始」，履行中則只提醒尚未確認的一方；逾期仍保留並明確標註。待辦直達連結只會開啟參與者可讀的私人 IOU，不提供負數倒數。指定社員／私人提問會為收件社員建立待回答事項，送出「回答」後即清除；全社提問不會變成全員大量待辦。2026-10-03 新增每天每人每類至多一則的 staging-only LINE 到期／逾期提醒；不含祝福／IOU 原文與對象姓名，也不新增站內通知。
+- IOU 提醒沿用既有 message-center scheduler，需要 `joy_wall_v1` 與 `line_oa_event_push_v1` 兩個 staging 旗標同時開啟。LINE 額度受限時停止該社其他提醒，管理員沿用 LINE OA 頁面查看 quota notice；未知送達結果不自動重送。資料庫只接受安全的推播摘要欄位，避免私密內容被寫進推播紀錄。
+- 本機分支最新驗證：完整 Vitest 215 檔／1565 tests、typecheck、lint、build、migration guard、80 份 verification manifest 與 diff check 通過。以獨立 Supabase 專案重建所有 migrations 後，DB lint 與 80 份 SQL verification 全通過；lint 僅有 3 項既有警告。沒有在含原本使用者資料的預設本機 Supabase 專案執行會重置資料的 `npm run verify:db`。
+- 操作事故紀錄：先前一次 DB 驗證誤用原本本機 Supabase 專案，將原有本機資料與 Auth 測試帳號 reset；目前尚未重建 superadmin／測試 fixtures，也未確認使用者是否有本機備份。此續作改用獨立 Supabase 專案，原本的 `rotary-platform-v2` 容器未被重置；Staging／production 未連線或修改。
 - 續作 UX 修正：類別篩選加上 `aria-pressed`、空篩選可回到全部、筆數明確區分類別數與已載入總數；表情反應、留言／回覆連結、可見範圍選項與社員選擇列都至少 44px 高，方便手機操作。Playwright 覆蓋 1440／412／375／320px，含觸控目標尺寸、水平溢位與篩選狀態斷言。隔離本機瀏覽器驗收共 12 個案例：6 passed、6 skipped；四種寬度各一個唯讀／無障礙案例通過，兩個資料異動流程只在桌機執行並通過（其餘依測試規則略過）。
-- 瀏覽器測試發現並修正一般貼文／提問 RPC 漏回傳 `iou: null` 的合約錯誤；資料庫 verification 現在涵蓋建立與編輯回傳。完整 DB 驗證、歡喜牆 IOU 與提問待辦瀏覽器流程均通過。沒有跑整套 Browser Smoke、CI 或 hosted 驗收。
-- Migrations `20261002000300_joy_wall_v1.sql`、`20261002000400_joy_iou_member_tasks.sql` 尚未部署到 hosted 環境；`joy_wall_v1` 預設關閉，沒有修改 hosted／production。需依受保護的 Staging Release／Go-Live 流程另行發布與驗收。
+- 瀏覽器測試發現並修正一般貼文／提問 RPC 漏回傳 `iou: null` 的合約錯誤；資料庫 verification 現在涵蓋建立與編輯回傳。Joy Wall 本機 Playwright 12 例 6 passed／6 skipped。`main@57d5fc7` 的 CI `37039603639` 通過，但 Browser Smoke `37039603756` 失敗（GPS 成功文案、Rich Menu 區塊可見性、祝福金額空白驗證文案）；這些是 reminder 分支建立前的基線失敗，仍待另行 triage。沒有 hosted 驗收。
+- Migrations `20261002000300_joy_wall_v1.sql`、`20261002000400_joy_iou_member_tasks.sql`、`20261003000100_joy_iou_deadline_reminders.sql` 尚未部署到 hosted 環境；`joy_wall_v1` 預設關閉，提醒旗標未開，沒有觸發 LINE 推播或修改 hosted／production。當前 branch 以 main SHA `57d5fc78b19afc900301dfcb4aa618b082cabe29` 為基礎，尚未 commit／push；GitHub open PR 為 0。需依受保護的 Staging Release／Go-Live 流程另行發布與真人驗收。
 
 ## 2026-10-03 全專案狀態對齊
 
-- `origin/main` exact SHA 為 `8db6b7653cc77e54d6965bafa9418e7ec72e3bf1`，目前 open PR 為 0；GitHub open issues 為 #4、#25、#36、#44、#55。歡喜牆尚在未提交的 `codex/joy-wall-v1` worktree。
+- `origin/main` exact SHA 為 `57d5fc78b19afc900301dfcb4aa618b082cabe29`；目前 open PR 為 0。提醒功能在未提交的 `codex/joy-iou-deadline-reminders` worktree，以此 SHA 為基礎。
 - staging `/api/health` 回報 revision `b6a184bb4c44`、status `ok`、issues 與 warnings 皆空；它是目前 main 的祖先，main 領先 8 個 commit，故不能把 main 最新功能當成已部署。
-- SHA `8db6b76` 的 CI run `36954517297` 成功，Browser Smoke run `36954517294` 失敗。失敗紀錄含 GPS 簽到成功提示未出現，以及 Rich Menu 測試仍假設進階設定預設展開；Rich Menu 測試調整正在平行 worktree 的未提交變更中，本分支未覆寫它。
+- `main@57d5fc7` 的 CI run `37039603639` 成功，Browser Smoke `37039603756` 失敗，涵蓋 GPS 簽到成功提示、Rich Menu 可見性與祝福金額空白驗證文案三類。Rich Menu 有平行 worktree 的未提交調整；本分支未覆寫它。Staging Release plan `37039951580` 仍待人工核准且只對應 `57d5fc7`，不含本分支提醒 migration。
 - 尚待外部／真人：#25 實機與 hosted 社員驗收、#36 staging 出席旗標及角色隔離驗收、#44 recovery email 真人閉環、#55 五位 M1 測試、E-03 LINE follow 真人身份與負向案例、E-11 各社 LINE OA／Rich Menu 設定、E-12 加密備份及 restore 演練。Issue #4 仍有未開發模組與其餘驗收，歡喜牆 V1 只是其中一個垂直切片。
-- 這不是 Issue #4 的完成宣告。非金錢 IOU 尚待主動到期／逾期提醒及 LINE／站內通知；歡喜牆仍待可管理題庫與批次派題、職務／活動／生日／扶輪年度等目標、草稿排程、匿名建議箱、封鎖與媒體整合；明細列於 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的「歡喜牆 V1」段落。Issue #4 其餘六個模組與外部驗收也仍要逐項核對。
+- 這不是 Issue #4 的完成宣告。非金錢 IOU LINE 到期／逾期提醒已在本地分支實作，尚待 main 整合、staging 發布與真人收訊；站內通知未新增。歡喜牆仍待可管理題庫與批次派題、職務／活動／生日／扶輪年度等目標、草稿排程、匿名建議箱、封鎖與媒體整合；明細列於 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的「歡喜牆 V1」段落。Issue #4 其餘模組與外部驗收也仍要逐項核對。
 
 ## 2026-10-02 本機備份安全修正（main `363e7cf`；尚未完成匯出）
 

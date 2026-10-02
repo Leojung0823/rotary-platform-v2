@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { hasValidMessageCenterSchedulerSecret } from "@/lib/message-center/scheduler-auth";
 import { createTrustedAdminClient } from "@/lib/supabase/admin";
+import { pushJoyIouDeadlineReminders } from "@/lib/line/joy-iou-deadline-reminders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,16 +33,29 @@ export async function POST(request: NextRequest) {
       p_environment: "staging",
     });
     if (flag.error) return responseBody({ ok: false, reason: "scheduler_unavailable" }, 503);
-    if (flag.data !== true) {
-      return responseBody({ ok: true, status: "skipped", reason: "announcements_disabled" });
+    let announcements: Record<string, unknown> = {
+      status: "skipped",
+      reason: "announcements_disabled",
+    };
+    if (flag.data === true) {
+      const result = await admin.rpc("run_club_message_scheduler", {
+        p_as_of: new Date().toISOString(),
+        p_limit: 50,
+      });
+      if (result.error) return responseBody({ ok: false, reason: "scheduler_failed" }, 503);
+      announcements = { status: "completed", result: result.data };
     }
 
-    const result = await admin.rpc("run_club_message_scheduler", {
-      p_as_of: new Date().toISOString(),
-      p_limit: 50,
+    const joyIouReminders = await pushJoyIouDeadlineReminders(admin);
+    if (joyIouReminders.status === "failed") {
+      return responseBody({ ok: false, reason: "scheduler_failed" }, 503);
+    }
+    return responseBody({
+      ok: true,
+      status: "completed",
+      announcements,
+      joy_iou_reminders: joyIouReminders,
     });
-    if (result.error) return responseBody({ ok: false, reason: "scheduler_failed" }, 503);
-    return responseBody({ ok: true, status: "completed", result: result.data });
   } catch {
     return responseBody({ ok: false, reason: "scheduler_unavailable" }, 503);
   }
