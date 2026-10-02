@@ -10,7 +10,7 @@
 - 使用既有 message-center scheduler endpoint，不加新 secret／workflow。兩個旗標 `joy_wall_v1`、`line_oa_event_push_v1` 都必須在 staging 開啟；額度限制時停止該社其餘提醒，錯誤由既有 LINE OA 管理頁的 quota notice 呈現。未知送達結果不自動重試；資料庫另限制推播摘要欄位，拒絕任意私密文字。
 - 新增 migration `20261003000100_joy_iou_deadline_reminders.sql`、server scheduler、API route tests 與 SQL security verification。migration 尚未部署，未開旗標、未觸發 LINE 推播，未修改 hosted／production。
 - 驗證通過：Vitest 215 檔／1565 tests、typecheck、lint、build、migration guard、80 檔 verification manifest、diff check；隔離 Supabase 專案重新套用所有 migration、DB lint 及 80 份 SQL verification 全通過。lint 只有 3 項既有警告。為避免重置原本本機資料，沒有對預設 Supabase 專案執行 `npm run verify:db`。
-- 新 commit 的 GitHub CI `37047451791` 已成功；Browser Smoke `37047452022` 尚在執行。基礎 SHA `57d5fc7` 的 Browser Smoke `37039603756` 失敗（GPS、Rich Menu、祝福金額空白驗證三類），不能把它或本機測試當 hosted 驗收。Staging Release `37039951580` 仍待核准但只對應舊 SHA `57d5fc7`，不可當本功能的 release plan。
+- 功能 commit `c0d6e44` 的 GitHub CI `37047451791` 成功；其後只同步文件的 successor `10de5bd` 上，CI `37048232877` 與 Browser Smoke `37048232868` 也都成功，驗證內容包含同一提醒程式碼。較早 base `57d5fc7` 的 Browser Smoke `37039603756` 曾失敗（GPS、Rich Menu、祝福金額空白驗證三類），但後續 successor 的 Smoke 已成功。Staging Release `37039951580` 仍待核准但只對應舊 SHA `57d5fc7`，不可當本功能的 release plan。
 - staging `/api/health` 仍是 `b6a184bb4c44`、status ok、issues 空，沒有部署本功能。GitHub 尚無 `message-center-scheduler` environment，也沒有 scheduler repository variable；兩個產品旗標未因本次開發而開啟。待辦：E-12 本機加密備份及 restore、以正確 SHA 重新做 staging release 與 Go-Live 核准，設定 scheduler 與雙旗標後再做真人 LINE、額度通知和跨社員隔離驗收。Issue #4 其餘規劃與真人／外部項目仍未完成。
 
 ## 2026-10-02 訊息中心 V0.9 排程公告接力

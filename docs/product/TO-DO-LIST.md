@@ -9,13 +9,13 @@
 - 提醒需 `joy_wall_v1` 與 `line_oa_event_push_v1` 兩個 staging 旗標都啟用。每日排程沿用既有 message-center scheduler；若 LINE 回報額度限制，該社後續提醒停止，既有 LINE OA 管理頁顯示管理員通知。網路逾時標成結果不明，不自動重送，避免重複推播。
 - 新 migration `20261003000100_joy_iou_deadline_reminders.sql`、server scheduler、排程路由測試及資料庫安全驗證已在 main；migration 尚未部署，旗標／排程沒有啟用，沒有發送 LINE 訊息，也沒有修改 hosted／production。
 - 驗證：Vitest 215 檔／1565 tests、typecheck、lint、build、migration guard、verification manifest（80 SQL 檔）、diff check 通過；隔離 Supabase 專案完整套用 migrations、DB lint 與 80 份 SQL verification 通過。`npm run verify:db` 未對原本本機 Supabase 執行，因該命令會重置使用者資料。DB lint 僅有原有 3 項警告。
-- GitHub CI `37047451791` 已成功；Browser Smoke `37047452022` 仍在執行。舊 Browser Smoke `37039603756` 在基礎 SHA `57d5fc7` 失敗，包含 GPS／Rich Menu／祝福金額表單三類斷言。Staging Release `37039951580` 仍待核准但對應舊 SHA `57d5fc7`，不可核准為本功能部署。尚待 E-12 本機加密備份與 Go-Live 核准；目前沒有 `message-center-scheduler` GitHub environment 或 scheduler repository variable。部署後再確認設定與兩旗標，做真人 LINE 收訊、額度通知與不重複推播驗收。
+- GitHub CI `37047451791` 已成功；其後只同步文件的 `10de5bd` 上，CI `37048232877` 與 Browser Smoke `37048232868` 均成功，測試內容包含同一提醒程式碼。早期 base `57d5fc7` 的 Browser Smoke `37039603756` 曾因 GPS／Rich Menu／祝福金額表單三類斷言失敗，但較新的 successor Smoke 已成功。Staging Release `37039951580` 仍待核准但只對應舊 SHA `57d5fc7`，不能用於本功能部署。尚待 E-12 本機加密備份與 Go-Live 核准；目前沒有 `message-center-scheduler` GitHub environment 或 scheduler repository variable。部署後再確認設定與兩旗標，做真人 LINE 收訊、額度通知與不重複推播驗收。
 
 ## 2026-10-03 歡喜牆 V1（核心已進 main；待 staging／真人驗收；Issue #4 尚未完成）
 
 - Joy Wall V1 已合併在 `main` commit `57d5fc78b19afc900301dfcb4aa618b082cabe29`：祝福／感謝／迎新／鼓勵／回憶／提問／其他分享；全社、指定社員、私人對象；貼文編輯／封存、留言與一層回覆、表情、檢舉，以及社長／秘書的權限檢舉處理和稽核紀錄。
 - Migrations `20261002000300_joy_wall_v1.sql`、`20261002000400_joy_iou_member_tasks.sql` 已在 main，feature flag `joy_wall_v1` 預設關閉且未 seed；新表啟用 RLS、瀏覽器直接讀寫撤銷，操作透過有社別／有效社員檢查的 RPC。頁面與每支 API 都重新檢查旗標；旗標關閉時 API 回 404。貼文／留言／檢舉依社團與本人限流。這兩個 migration 尚未部署 hosted。
-- 已補上非金錢 IOU 核心流程：承諾人提出、收件人接受／婉拒、承諾人開始、雙方各自確認完成、任一方在完成前附理由取消；到期狀態依台灣日期投影，狀態異動寫入稽核紀錄。IOU 只供雙方查看、不含捐款金額欄位，並與既有捐款祝福 IOU 分開。主動 LINE 到期／逾期提醒已在本機分支實作；未新增站內通知，尚待整合及 hosted 驗收。
+- 已補上非金錢 IOU 核心流程：承諾人提出、收件人接受／婉拒、承諾人開始、雙方各自確認完成、任一方在完成前附理由取消；到期狀態依台灣日期投影，狀態異動寫入稽核紀錄。IOU 只供雙方查看、不含捐款金額欄位，並與既有捐款祝福 IOU 分開。主動 LINE 到期／逾期提醒已由 `c0d6e44` 推上 main；未新增站內通知，尚待 hosted 部署與真人驗收。
 - 已接上社員待辦中心：收件社員在 IOU 提出後看到待回覆；承諾人只在接受後看到待開始；履行中只有尚未確認的一方看到提醒。逾期項目仍顯示「已逾期」和原到期日，沒有誤導性的負倒數；直達連結只提供給 IOU 參與者。提醒分支沿用既有待辦與 scheduler，細節見本文件最上方續作紀錄。
 - 已補上指定社員／私人提問的待回答流程：被指定的社員收到一則待辦，點擊可安全直達提問並預選「回答」，送出有效回答後待辦消失；發問者不會收到自己的待辦，未被指定的社員看不到任務與私人貼文；全社提問不會自動派給全體社員。此版尚未有題庫管理、批次派題或截止日。
 - 追加 UX 改善：分享類別篩選有螢幕閱讀器選取狀態；篩選結果為空時可一鍵回到全部；筆數會區分目前類別數與已載入總數；表情反應、留言／回覆連結、可見範圍選項與社員選擇列至少 44px 高。歡喜牆 E2E 覆蓋 1440／412／375／320px，含實際觸控目標尺寸斷言。隔離本機瀏覽器驗收共 12 個案例：6 passed、6 skipped；四種寬度各一個唯讀／無障礙案例通過，兩個會寫入資料的 IOU／提問流程只在桌機執行並通過（其他寬度依測試規則略過）。這些是本機功能 E2E，不等於 hosted 驗收。
@@ -26,16 +26,16 @@
 
 ### 歡喜牆依 Issue #4 尚未完成的範圍
 
-- 非金錢 IOU 核心及社員待辦已進 main；主動 LINE 到期／逾期提醒另在本文件最上方所列本機分支，站內提醒未新增。仍待 reminder 整合、staging／真人驗收。
+- 非金錢 IOU 核心、社員待辦及主動 LINE 到期／逾期提醒都已進 main；提醒仍未部署 staging，站內提醒未新增。仍待 E-12 備份閘門、staging 部署及真人收訊驗收。
 - 可管理的題庫與批次派發不同題目（目前只有手動指定對象的待回答流程）；職務、活動、生日專案、扶輪年度等目標；草稿／排程／置頂／收藏；匿名建議箱與封鎖互動。
 - 回覆「收到／感謝／要求隱藏」、本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
 - 以上屬於 Issue #4 的後續獨立開發，不能由本次本機測試或新頁面存在推定完成；真人、staging、LINE provider／Rich Menu 與 production 待辦仍依本文件後續清單處理。
 
 ## 2026-10-03 全專案進度掃描
 
-- `origin/main` 為 `c0d6e446ac38552767f0d680a4fb8024fc2943b6`，包含提醒功能；GitHub 目前 open PR 為 0；open issues 為 #4、#25、#36、#44、#55。
+- 提醒功能 commit `c0d6e446ac38552767f0d680a4fb8024fc2943b6` 已在 main；其後有文件同步提交，最新主線 SHA 請以 `git rev-parse origin/main` 現場核對。GitHub 當時核對 open PR 為 0；open issues 為 #4、#25、#36、#44、#55。
 - 本輪 staging `/api/health` 回報 `revision=b6a184bb4c44`、`status=ok`、`issues=[]`、`warnings=[]`；該 revision 早於目前 main，故 main 最新程式尚未部署。production 未修改。
-- 本次 main commit `c0d6e44` 的 CI `37047451791` 成功，Browser Smoke `37047452022` 尚在執行；基礎 SHA `57d5fc7` 的 Smoke `37039603756` 失敗，含 GPS 成功提示、Rich Menu 區塊可見性及祝福金額空白驗證文案三類斷言。Staging Release `37039951580` 仍待核准但只對應舊 SHA，不包含提醒 migration，也不是已部署證據。
+- 功能 commit `c0d6e44` 的 CI `37047451791` 成功；後續文件提交 `10de5bd` 的 CI `37048232877` 與 Browser Smoke `37048232868` 均成功，該 Smoke 包含同一功能程式碼。更早的 base Smoke `37039603756` 曾有 GPS、Rich Menu、祝福金額表單三類失敗，較新的 Smoke 已成功。Staging Release `37039951580` 仍待核准但只對應舊 SHA，不包含提醒 migration，也不是已部署證據。
 - 尚待真人／外部閘門：#25 iPhone／Android 實機及 staging 社員流程；#36 開啟 staging attendance flag 並驗收；#44 真人完成收到新 recovery email 到重設密碼；#55 五位社員／幹部 M1 測試；E-03 LINE OA follow 真人身份負向案例、E-11 各社 OA／Rich Menu 外部設定、E-12 本機加密備份與 restore 演練。#4 仍有其他獨立功能未開發，不能因歡喜牆 V1 完成就關閉。
 
 ## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39）
