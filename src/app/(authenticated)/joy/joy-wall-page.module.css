@@ -13,6 +13,7 @@
 }
 
 .clubHeading h2 { margin: 0; }
+.managementLinks { display: flex; flex-wrap: wrap; gap: .5rem; }
 
 .skeletonComposer,
 .skeletonPost {
@@ -37,4 +38,5 @@
 
 @media (max-width: 600px) {
   .header, .clubHeading { align-items: flex-start; flex-direction: column; }
+  .managementLinks { width: 100%; }
 }

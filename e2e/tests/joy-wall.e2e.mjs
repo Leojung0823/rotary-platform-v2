@@ -205,3 +205,57 @@ test("an invited member gets a question task that clears after an answer", async
     await bystanderContext.close();
   }
 });
+
+test("club officers can batch different private Joy questions while ordinary members are denied the manager page", async ({
+  browser,
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  test.setTimeout(45_000);
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const batchTitle = `批次不同題目 ${Date.now()}`;
+  const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  try {
+    await signIn(page, "e2e-shell-member-manager@example.test");
+    await page.goto(new URL("/joy?mode=management", baseURL).toString());
+    const managerLink = page.getByRole("link", { name: "題庫與派題" });
+    await expect(managerLink).toBeVisible();
+    const questionsHref = await managerLink.getAttribute("href");
+    expect(questionsHref).toBeTruthy();
+    const clubId = new URL(questionsHref, baseURL).pathname.match(/\/clubs\/([^/]+)\/joy\/questions/u)?.[1];
+    expect(clubId).toMatch(/^[0-9a-f-]{36}$/iu);
+
+    await page.goto(new URL(questionsHref, baseURL).toString());
+    await expect(page.getByRole("heading", { name: "提問題庫與派發" })).toBeVisible();
+    const recipients = page.getByRole("group", { name: "派給哪些社員（最多 250 位）" });
+    await recipients.getByRole("checkbox", { name: "一般社員" }).check();
+    await recipients.getByRole("checkbox", { name: "已綁定但未加入 OA 的社員" }).check();
+    await page.getByLabel("這批任務的名稱").fill(batchTitle);
+    page.once("dialog", (dialog) => dialog.accept());
+    const dispatchResponsePromise = page.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/question-batches?") && response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "派發給 2 位社員" }).click();
+    const dispatchResponse = await dispatchResponsePromise;
+    const payload = await dispatchResponse.json().catch(() => null);
+    expect(dispatchResponse.status(), `batch dispatch returned ${dispatchResponse.status()} (${payload?.error ?? "no error code"})`)
+      .toBe(201);
+
+    const batchCard = page.locator("article").filter({ hasText: batchTitle }).last();
+    await expect(batchCard.getByText("0/2 已回答", { exact: false })).toBeVisible();
+    await batchCard.getByRole("button", { name: "查看明細" }).click();
+    const promptRows = batchCard.locator("li > div > span");
+    await expect(promptRows).toHaveCount(2);
+    const prompts = await promptRows.allTextContents();
+    expect(new Set(prompts).size, "each assignee must get a different prompt").toBe(2);
+
+    const ordinaryMember = await memberContext.newPage();
+    await signIn(ordinaryMember, memberEmail);
+    await ordinaryMember.goto(new URL(`/clubs/${clubId}/joy/questions?mode=management`, baseURL).toString());
+    await expect(ordinaryMember).toHaveURL(/\/access-denied(?:\?|$)/u);
+    await expect(ordinaryMember.getByRole("heading", { name: "無法存取", exact: true })).toBeVisible();
+  } finally {
+    await memberContext.close();
+  }
+});

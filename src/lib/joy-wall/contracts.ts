@@ -75,6 +75,57 @@ export type JoyReport = {
   author_display_name: string;
 };
 
+export type JoyQuestionPrompt = {
+  id: string;
+  prompt_text: string;
+  source: "platform" | "club";
+  is_active: boolean;
+  sort_order: number;
+  can_edit: boolean;
+};
+export type JoyQuestionBatchSummary = {
+  id: string;
+  title: string;
+  created_at: string;
+  assignment_count: number;
+  answered_count: number;
+  unavailable_count: number;
+};
+export type JoyQuestionManagerPage = {
+  prompts: JoyQuestionPrompt[];
+  batches: JoyQuestionBatchSummary[];
+  distinct_active_prompt_count: number;
+};
+export type JoyQuestionRecipient = {
+  membership_id: string;
+  display_name: string;
+  avatar_url: string | null;
+};
+export type JoyQuestionBatchDetail = {
+  id: string;
+  title: string;
+  created_at: string;
+  assignments: Array<{
+    post_id: string;
+    recipient_membership_id: string;
+    recipient_display_name: string;
+    prompt_text: string;
+    answered: boolean;
+    available: boolean;
+  }>;
+};
+
+export function parseJoyQuestionPrompt(value: unknown): JoyQuestionPrompt {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.prompt_text !== "string"
+    || (value.source !== "platform" && value.source !== "club")
+    || typeof value.is_active !== "boolean" || !Number.isSafeInteger(value.sort_order)
+    || typeof value.can_edit !== "boolean" || value.can_edit !== (value.source === "club")
+    || value.prompt_text.trim().length === 0 || Array.from(value.prompt_text).length > 200) {
+    throw new Error("invalid_joy_question_prompt");
+  }
+  return value as JoyQuestionPrompt;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -228,4 +279,60 @@ export function parseJoyReports(value: unknown): JoyReport[] {
       author_display_name: row.author_display_name,
     }];
   });
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return Number.isSafeInteger(value) && Number(value) >= 0;
+}
+
+export function parseJoyQuestionManagerPage(value: unknown): JoyQuestionManagerPage {
+  if (!isRecord(value) || !Array.isArray(value.prompts) || !Array.isArray(value.batches)
+    || !isNonNegativeInteger(value.distinct_active_prompt_count)) {
+    throw new Error("invalid_joy_question_manager_page");
+  }
+  const prompts = value.prompts.map(parseJoyQuestionPrompt);
+  const batches = value.batches.map((batch): JoyQuestionBatchSummary => {
+    if (!isRecord(batch) || typeof batch.id !== "string" || typeof batch.title !== "string"
+      || !isTimestamp(batch.created_at) || !isNonNegativeInteger(batch.assignment_count)
+      || !isNonNegativeInteger(batch.answered_count) || !isNonNegativeInteger(batch.unavailable_count)
+      || Number(batch.answered_count) > Number(batch.assignment_count)
+      || Number(batch.unavailable_count) > Number(batch.assignment_count)) {
+      throw new Error("invalid_joy_question_manager_page");
+    }
+    return batch as JoyQuestionBatchSummary;
+  });
+  return {
+    prompts,
+    batches,
+    distinct_active_prompt_count: value.distinct_active_prompt_count,
+  };
+}
+
+export function parseJoyQuestionRecipients(value: unknown): JoyQuestionRecipient[] {
+  if (!Array.isArray(value)) throw new Error("invalid_joy_question_recipients");
+  return value.map((recipient): JoyQuestionRecipient => {
+    if (!isRecord(recipient) || typeof recipient.membership_id !== "string"
+      || typeof recipient.display_name !== "string" || !safeHttpUrl(recipient.avatar_url)) {
+      throw new Error("invalid_joy_question_recipients");
+    }
+    return recipient as JoyQuestionRecipient;
+  });
+}
+
+export function parseJoyQuestionBatchDetail(value: unknown): JoyQuestionBatchDetail {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.title !== "string"
+    || !isTimestamp(value.created_at) || !Array.isArray(value.assignments)) {
+    throw new Error("invalid_joy_question_batch_detail");
+  }
+  const assignments = value.assignments.map((assignment) => {
+    if (!isRecord(assignment) || typeof assignment.post_id !== "string"
+      || typeof assignment.recipient_membership_id !== "string"
+      || typeof assignment.recipient_display_name !== "string"
+      || typeof assignment.prompt_text !== "string" || typeof assignment.answered !== "boolean"
+      || typeof assignment.available !== "boolean") {
+      throw new Error("invalid_joy_question_batch_detail");
+    }
+    return assignment as JoyQuestionBatchDetail["assignments"][number];
+  });
+  return { id: value.id, title: value.title, created_at: value.created_at, assignments };
 }

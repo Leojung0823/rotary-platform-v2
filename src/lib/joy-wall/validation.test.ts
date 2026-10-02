@@ -9,6 +9,9 @@ import {
   parseJoyReactionBody,
   parseJoyReportBody,
   parseUpdateJoyPostBody,
+  parseCreateJoyQuestionPromptBody,
+  parseUpdateJoyQuestionPromptBody,
+  parseJoyQuestionBatchBody,
 } from "./validation";
 
 const memberOne = "64000000-0000-4000-8000-000000000001";
@@ -76,5 +79,23 @@ describe("Joy Wall input validation", () => {
     expect(parseJoyReportBody({ reason: "privacy" })).toBe("privacy");
     expect(parseJoyModerationBody({ action: "hide", reviewerNote: "已確認" })).toEqual({ action: "hide", reviewerNote: "已確認" });
     expect(() => parseJoyModerationBody({ action: "delete", reviewerNote: null })).toThrow();
+  });
+
+  it("validates club prompt edits and distinct, bounded batch recipients", () => {
+    const requestId = "64000000-0000-4000-8000-000000000003";
+    expect(parseCreateJoyQuestionPromptBody({ promptText: "最近哪件事讓你很感謝？" }))
+      .toEqual({ promptText: "最近哪件事讓你很感謝？" });
+    expect(parseUpdateJoyQuestionPromptBody({ promptText: "最近哪件事讓你很感謝？", isActive: false, sortOrder: 20 }))
+      .toMatchObject({ isActive: false, sortOrder: 20 });
+    expect(() => parseUpdateJoyQuestionPromptBody({ promptText: "太短", isActive: true, sortOrder: 20 })).toThrow();
+    expect(parseJoyQuestionBatchBody({
+      title: "十月社員提問", recipientMembershipIds: [memberOne], requestId,
+    })).toMatchObject({ title: "十月社員提問", recipientMembershipIds: [memberOne], requestId });
+    expect(() => parseJoyQuestionBatchBody({
+      title: "十月社員提問", recipientMembershipIds: [memberOne, memberOne], requestId,
+    })).toThrow();
+    expect(() => parseJoyQuestionBatchBody({
+      title: "十月社員提問", recipientMembershipIds: [], requestId,
+    })).toThrow();
   });
 });

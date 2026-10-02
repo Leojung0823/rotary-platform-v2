@@ -8,6 +8,9 @@ describe("Joy Wall security and UX boundaries", () => {
   const taskPage = source("app/(authenticated)/tasks/page.tsx");
   const taskMigration = source("../supabase/migrations/20261002000400_joy_iou_member_tasks.sql");
   const moderationPage = source("app/(authenticated)/clubs/[clubId]/joy/moderation/page.tsx");
+  const questionManagerPage = source("app/(authenticated)/clubs/[clubId]/joy/questions/page.tsx");
+  const questionManagerComponent = source("components/joy-wall/joy-question-manager.tsx");
+  const questionMigration = source("../supabase/migrations/20261003000200_joy_question_bank_batch_dispatch.sql");
   const component = source("components/joy-wall/joy-wall.tsx");
   const postsRoute = source("app/api/v1/joy/posts/route.ts");
   const itemRoute = source("app/api/v1/joy/posts/[postId]/route.ts");
@@ -75,5 +78,36 @@ describe("Joy Wall security and UX boundaries", () => {
     expect(taskMigration).toContain("public.get_my_joy_question_post(uuid, uuid)");
     expect(page).toContain('supabase.rpc("get_my_joy_question_post"');
     expect(page).toContain("focusPostId");
+  });
+
+  it("keeps the question bank behind management mode, club permission, and the existing fail-closed flag", () => {
+    expect(questionManagerPage).toContain('key: "joy_wall_v1"');
+    expect(questionManagerPage).toContain('requireClubPermission(clubId, "joy.moderate")');
+    expect(questionManagerPage).toContain('query.mode !== "management"');
+    expect(page).toContain('canModerate && mode === "management"');
+    expect(page).toContain("/joy/questions?mode=management");
+    expect(questionManagerComponent).toContain("crypto.randomUUID()");
+    expect(questionManagerComponent).toContain("每位被選社員會收到一則待回答提問");
+    expect(questionManagerComponent).toContain("不會公開給其他社員");
+  });
+
+  it("keeps question-bank mutations server-authorized, idempotent, and answer-private", () => {
+    const mutationRoutes = [
+      source("app/api/v1/joy/question-bank/route.ts"),
+      source("app/api/v1/joy/question-bank/[promptId]/route.ts"),
+      source("app/api/v1/joy/question-batches/route.ts"),
+    ];
+    for (const route of mutationRoutes) {
+      expect(route).toContain("authenticatedJoyClient");
+      expect(route).toContain("joyMutationAllowed(request)");
+      expect(route).toContain("featureEnabled");
+      expect(route).toContain("joyFailure(404)");
+    }
+    expect(questionMigration).toContain("joy_question_batch_idempotency_conflict");
+    expect(questionMigration).toContain("joy_question_batch_assignments_prompt_unique");
+    expect(questionMigration).toContain("visibility_scope");
+    expect(questionMigration).toContain("joy_batch_question_immutable");
+    expect(questionMigration).toContain("'answered', exists (");
+    expect(questionMigration).not.toContain("'answer_content'");
   });
 });

@@ -112,11 +112,14 @@ async function renderSelectedWall(
     return <>
       <section className={styles.clubHeading}>
         <div><p className="eyebrow">{selectedClub.club_code}</p><h2>{selectedClub.club_name}</h2></div>
-        {canModerate && mode === "management" && (
+        {canModerate && mode === "management" && <div className={styles.managementLinks}>
+          <Link className="button button-secondary" href={`/clubs/${encodeURIComponent(selectedClub.club_id)}/joy/questions?mode=management`}>
+            題庫與派題
+          </Link>
           <Link className="button button-secondary" href={`/clubs/${encodeURIComponent(selectedClub.club_id)}/joy/moderation?mode=management`}>
             管理檢舉
           </Link>
-        )}
+        </div>}
       </section>
       {(focusIouId || focusPostId) && !focusedPost && <Notice tone="info">
         這則內容已更新或目前無法查看；您仍可在下方瀏覽歡喜牆。

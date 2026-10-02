@@ -148,6 +148,45 @@ export function parseJoyReportBody(value: unknown) {
   return value.reason as (typeof joyReportReasons)[number];
 }
 
+export function parseJoyQuestionPromptId(value: string) { return uuid(value, "invalid_prompt_id"); }
+
+export function parseCreateJoyQuestionPromptBody(value: unknown) {
+  if (!isRecord(value) || !exactKeys(value, ["promptText"])) throw new Error("invalid_body");
+  const promptText = normalizedText(value.promptText, 200);
+  if (Array.from(promptText).length < 5) throw new Error("invalid_body");
+  return { promptText };
+}
+
+export function parseUpdateJoyQuestionPromptBody(value: unknown) {
+  if (!isRecord(value) || !exactKeys(value, ["promptText", "isActive", "sortOrder"])
+    || typeof value.isActive !== "boolean" || !Number.isSafeInteger(value.sortOrder)
+    || Number(value.sortOrder) < 0 || Number(value.sortOrder) > 10000) {
+    throw new Error("invalid_body");
+  }
+  const promptText = normalizedText(value.promptText, 200);
+  if (Array.from(promptText).length < 5) throw new Error("invalid_body");
+  return {
+    promptText,
+    isActive: value.isActive,
+    sortOrder: Number(value.sortOrder),
+  };
+}
+
+export function parseJoyQuestionBatchBody(value: unknown) {
+  if (!isRecord(value) || !exactKeys(value, ["title", "recipientMembershipIds", "requestId"])
+    || !Array.isArray(value.recipientMembershipIds) || value.recipientMembershipIds.length < 1
+    || value.recipientMembershipIds.length > 250) throw new Error("invalid_body");
+  const recipientMembershipIds = value.recipientMembershipIds.map((id) => uuid(id, "invalid_body"));
+  if (new Set(recipientMembershipIds).size !== recipientMembershipIds.length) throw new Error("invalid_body");
+  return {
+    title: normalizedText(value.title, 100),
+    recipientMembershipIds,
+    requestId: uuid(value.requestId, "invalid_body"),
+  };
+}
+
+export function parseJoyQuestionBatchId(value: string) { return uuid(value, "invalid_batch_id"); }
+
 export function parseJoyModerationBody(value: unknown) {
   if (!isRecord(value) || !exactKeys(value, ["action", "reviewerNote"])
     || (value.action !== "hide" && value.action !== "dismiss")) throw new Error("invalid_body");
