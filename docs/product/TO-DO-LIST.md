@@ -2,14 +2,14 @@
 
 更新日期：2026-10-03（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-03 續作：非金錢 IOU 到期提醒（本機已實作，尚未合併／部署）
+## 2026-10-03 續作：非金錢 IOU 到期提醒（已推 main，尚未部署）
 
-- 本分支 `codex/joy-iou-deadline-reminders` 以 `origin/main`／`57d5fc78b19afc900301dfcb4aa618b082cabe29` 為基礎；目前程式與文件仍是未提交修改，GitHub open PR 為 0。
+- commit `c0d6e446ac38552767f0d680a4fb8024fc2943b6` 已從 `codex/joy-iou-deadline-reminders` 直接推到 `main`，以 `57d5fc78b19afc900301dfcb4aa618b082cabe29` 為起點；GitHub open PR 為 0。
 - 新增 staging-only LINE 提醒：每位社員每天最多一則「今天到期」及一則「已逾期」，只提醒仍有待處理任務、有效社籍／帳號、已配對 LINE OA 好友且個人 LINE 通知已開啟的參與者。訊息只含件數與安全的歡喜牆連結，不含祝福、IOU 原文或對象姓名；不新增站內通知。
 - 提醒需 `joy_wall_v1` 與 `line_oa_event_push_v1` 兩個 staging 旗標都啟用。每日排程沿用既有 message-center scheduler；若 LINE 回報額度限制，該社後續提醒停止，既有 LINE OA 管理頁顯示管理員通知。網路逾時標成結果不明，不自動重送，避免重複推播。
-- 新 migration `20261003000100_joy_iou_deadline_reminders.sql`、server scheduler、排程路由測試及資料庫安全驗證已加入本機分支；migration 尚未部署，旗標／排程沒有啟用，沒有發送 LINE 訊息，也沒有修改 hosted／production。
+- 新 migration `20261003000100_joy_iou_deadline_reminders.sql`、server scheduler、排程路由測試及資料庫安全驗證已在 main；migration 尚未部署，旗標／排程沒有啟用，沒有發送 LINE 訊息，也沒有修改 hosted／production。
 - 驗證：Vitest 215 檔／1565 tests、typecheck、lint、build、migration guard、verification manifest（80 SQL 檔）、diff check 通過；隔離 Supabase 專案完整套用 migrations、DB lint 與 80 份 SQL verification 通過。`npm run verify:db` 未對原本本機 Supabase 執行，因該命令會重置使用者資料。DB lint 僅有原有 3 項警告。
-- 尚待：提交／推送後的 GitHub CI；staging 加密備份及 Go-Live 核准；確認 message-center scheduler 設定與兩個旗標，再做真人 LINE 收訊、額度通知與不重複推播驗收。既有 Browser Smoke `37039603756` 對舊 SHA `57d5fc7` 失敗，不是本分支驗收結果；Staging Release `37039951580` 是該舊 SHA 的待核准 plan，不可視為本功能已部署。
+- GitHub CI `37047451791` 已成功；Browser Smoke `37047452022` 仍在執行。舊 Browser Smoke `37039603756` 在基礎 SHA `57d5fc7` 失敗，包含 GPS／Rich Menu／祝福金額表單三類斷言。Staging Release `37039951580` 仍待核准但對應舊 SHA `57d5fc7`，不可核准為本功能部署。尚待 E-12 本機加密備份與 Go-Live 核准；目前沒有 `message-center-scheduler` GitHub environment 或 scheduler repository variable。部署後再確認設定與兩旗標，做真人 LINE 收訊、額度通知與不重複推播驗收。
 
 ## 2026-10-03 歡喜牆 V1（核心已進 main；待 staging／真人驗收；Issue #4 尚未完成）
 
@@ -22,7 +22,7 @@
 - 瀏覽器驗收曾抓到一般貼文／提問建立回 400：`create_joy_post` 與 `update_own_joy_post` 回傳漏掉前端合約要求的 `iou: null`。已修正兩個 SQL projection，並在資料庫安全驗證加入新增／編輯回傳欄位斷言；修正後提問回答待辦與 IOU 雙方完成流程都通過。
 - 原 Joy Wall 本機瀏覽器驗收 12 例（6 passed／6 skipped；寫入流程只在桌機執行）。`57d5fc7` 的 GitHub CI `37039603639` 成功，Browser Smoke `37039603756` 失敗；Staging Release `37039951580` 仍在待核准且只對應 `57d5fc7`，不是 reminder branch 的 plan，也不是部署證據。
 - 過往操作事故：曾誤用原本本機 Supabase 專案重置資料，原有本機資料與 Auth 測試帳號被 reset；尚未重建 superadmin／測試 fixtures，也未確認使用者是否有本機備份。這次續作另用臨時隔離 Supabase 專案，完整驗證 80 份 SQL，並在結束後停止隔離服務；原預設本機 DB 未被本輪重置。Staging／production 未連線或修改。
-- Joy Wall 核心已在 main，但尚未部署 hosted；`joy_wall_v1` 預設關閉。Reminder 續作另在文件最上方所列本機分支，未提交。沒有修改 production。發布須走受保護的 Staging Release／Go-Live 與 hosted 驗收。Issue #4 仍為 open；這只是其中一個歡喜牆切片，不能標成整個 V0.3 完成。
+- Joy Wall 核心與 IOU 提醒程式已在 main，但尚未部署 hosted；`joy_wall_v1` 預設關閉，提醒旗標未開。沒有修改 production。發布須走受保護的 Staging Release／Go-Live 與 hosted 驗收。Issue #4 仍為 open；這只是其中一個歡喜牆切片，不能標成整個 V0.3 完成。
 
 ### 歡喜牆依 Issue #4 尚未完成的範圍
 
@@ -33,9 +33,9 @@
 
 ## 2026-10-03 全專案進度掃描
 
-- `origin/main` 為 `57d5fc78b19afc900301dfcb4aa618b082cabe29`；本地 reminder 分支以此 SHA 為基礎，尚未 commit／push。GitHub 目前 open PR 為 0；open issues 為 #4、#25、#36、#44、#55。
+- `origin/main` 為 `c0d6e446ac38552767f0d680a4fb8024fc2943b6`，包含提醒功能；GitHub 目前 open PR 為 0；open issues 為 #4、#25、#36、#44、#55。
 - 本輪 staging `/api/health` 回報 `revision=b6a184bb4c44`、`status=ok`、`issues=[]`、`warnings=[]`；該 revision 早於目前 main，故 main 最新程式尚未部署。production 未修改。
-- `57d5fc7` 的 GitHub CI `37039603639` 成功；同 SHA Browser Smoke `37039603756` 失敗，記錄到 GPS 簽到成功提示、LINE Rich Menu 區塊可見性、以及祝福金額空白驗證文案三類斷言失敗。這是 reminder 分支建立前的基線結果，需另行分流修復／核對，不能歸因於尚未推送的提醒變更。Staging Release `37039951580` 仍待人工核准，僅對應 `57d5fc7`，不包含提醒 migration，也不是已部署證據。
+- 本次 main commit `c0d6e44` 的 CI `37047451791` 成功，Browser Smoke `37047452022` 尚在執行；基礎 SHA `57d5fc7` 的 Smoke `37039603756` 失敗，含 GPS 成功提示、Rich Menu 區塊可見性及祝福金額空白驗證文案三類斷言。Staging Release `37039951580` 仍待核准但只對應舊 SHA，不包含提醒 migration，也不是已部署證據。
 - 尚待真人／外部閘門：#25 iPhone／Android 實機及 staging 社員流程；#36 開啟 staging attendance flag 並驗收；#44 真人完成收到新 recovery email 到重設密碼；#55 五位社員／幹部 M1 測試；E-03 LINE OA follow 真人身份負向案例、E-11 各社 OA／Rich Menu 外部設定、E-12 本機加密備份與 restore 演練。#4 仍有其他獨立功能未開發，不能因歡喜牆 V1 完成就關閉。
 
 ## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39）
