@@ -1,0 +1,95 @@
+.sectionNav {
+  scroll-margin-top: var(--space-5);
+}
+
+.advancedSettings {
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.advancedSummary {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+  list-style: none;
+}
+
+.advancedSummary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedSummary:focus-visible {
+  outline: 3px solid var(--blue-ink);
+  outline-offset: -3px;
+}
+
+.summaryText {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.summaryText strong {
+  color: var(--navy);
+  font-size: var(--text-subtitle);
+}
+
+.summaryText small {
+  color: var(--muted);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
+.summaryAction {
+  display: inline-flex;
+  min-height: var(--space-9);
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--blue-ink);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.summaryAction::after {
+  content: "＋";
+  font-size: var(--text-subtitle);
+}
+
+.advancedSettings[open] > .advancedSummary {
+  border-bottom: 1px solid var(--line);
+}
+
+.advancedSettings[open] .summaryAction::after {
+  content: "−";
+}
+
+.advancedContent {
+  padding: var(--space-4);
+}
+
+.operations {
+  display: grid;
+  gap: var(--space-4);
+  scroll-margin-top: var(--space-5);
+}
+
+.anchorTarget {
+  scroll-margin-top: var(--space-5);
+}
+
+@media (max-width: 420px) {
+  .advancedSummary {
+    align-items: flex-start;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .summaryText small {
+    max-width: 28ch;
+  }
+}

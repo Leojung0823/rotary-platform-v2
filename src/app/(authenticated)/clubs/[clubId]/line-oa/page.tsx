@@ -28,6 +28,7 @@ import {
 import { safeMessage } from "@/lib/validation";
 import type { MemberRow } from "../members/page";
 import { APP_TIME_ZONE } from "@/lib/time";
+import styles from "./line-oa-admin.module.css";
 import {
   describeLineOaQuotaNotice,
   parseLineOaQuotaNotice,
@@ -184,6 +185,15 @@ export default async function LineOaPage({
     if (conflicted > 0) parts.push(`${conflicted} 位有重複配對，需要人工確認`);
     return `${parts.join("；")}。`;
   };
+  const openAdvancedSettings = Boolean(
+    query.success === "configured"
+      || query.success === "verified"
+      || query.success === "disabled"
+      || query.success === "rich_menu_published"
+      || query.success === "rich_menu_disabled"
+      || query.error?.startsWith("oa_")
+      || query.error?.startsWith("rich_menu_"),
+  );
   return (
     <div className="page-stack">
       <header>
@@ -192,6 +202,15 @@ export default async function LineOaPage({
         <p>Webhook、好友配對與訊息推播；此模組不參與登入。</p>
       </header>
       <ClubAdminNav clubId={clubId} />
+      <nav
+        className={`tabs ${styles.sectionNav}`}
+        aria-label="LINE OA 管理區段"
+      >
+        <a href="#line-oa-operations">日常操作</a>
+        <a href="#line-oa-followers">好友配對</a>
+        <a href="#line-oa-push-history">推播紀錄</a>
+        <a href="#line-oa-advanced-settings">進階設定</a>
+      </nav>
       {query.error && (
         <Notice tone="error">
           {errors[query.error] ?? safeMessage(query.error)}
@@ -199,61 +218,78 @@ export default async function LineOaPage({
       )}
       {query.success && (
         <Notice tone="success">
-          {query.success === "bulk_paired" ? bulkPairedMessage() : success[query.success]}
+          {query.success === "bulk_paired"
+            ? bulkPairedMessage()
+            : success[query.success]}
         </Notice>
       )}
       {quotaNotice && (
         <Notice tone="error">
           <strong>LINE 推播已暫停：</strong>
-          已達 LINE 的推播頻率或方案額度上限，系統已停止後續批次。{describeLineOaQuotaNotice(quotaNotice)}
+          已達 LINE 的推播頻率或方案額度上限，系統已停止後續批次。
+          {describeLineOaQuotaNotice(quotaNotice)}
           請先確認方案額度，再查看下方推播紀錄後決定是否重試；系統不會盲目把剩餘批次送出。
         </Notice>
       )}
-      <div className="two-column">
-        <Card>
-          <h2>OA 設定</h2>
-          <form action={configureLineOaAction} className="form-stack">
-            <input type="hidden" name="clubId" value={clubId} />
-            <Field label="顯示名稱">
-              <Input
-                name="displayName"
-                required
-                defaultValue={oa.account?.display_name ?? "本社 LINE OA"}
-              />
-            </Field>
-            <Field label="Basic ID">
-              <Input
-                name="basicId"
-                placeholder="@rotary"
-                defaultValue={oa.account?.basic_id ?? ""}
-              />
-            </Field>
-            <Field label="Channel ID（非 secret）">
-              <Input
-                name="channelId"
-                defaultValue={oa.account?.channel_id ?? ""}
-              />
-            </Field>
-            <Notice>
-              Channel secret 與 access token 只由各社專屬的 server environment
-              key 讀取，不儲存在瀏覽器或資料表。
-            </Notice>
+      <details
+        id="line-oa-advanced-settings"
+        className={styles.advancedSettings}
+        open={openAdvancedSettings}
+      >
+        <summary className={styles.advancedSummary}>
+          <span className={styles.summaryText}>
+            <strong>進階設定</strong>
+            <small>OA 連線驗證、Webhook 與 Rich Menu；通常只需設定一次</small>
+          </span>
+          <span className={styles.summaryAction}>設定選項</span>
+        </summary>
+        <div className={`two-column ${styles.advancedContent}`}>
+          <Card>
+            <h2>OA 設定</h2>
+            <form action={configureLineOaAction} className="form-stack">
+              <input type="hidden" name="clubId" value={clubId} />
+              <Field label="顯示名稱">
+                <Input
+                  name="displayName"
+                  required
+                  defaultValue={oa.account?.display_name ?? "本社 LINE OA"}
+                />
+              </Field>
+              <Field label="Basic ID">
+                <Input
+                  name="basicId"
+                  placeholder="@rotary"
+                  defaultValue={oa.account?.basic_id ?? ""}
+                />
+              </Field>
+              <Field label="Channel ID（非 secret）">
+                <Input
+                  name="channelId"
+                  defaultValue={oa.account?.channel_id ?? ""}
+                />
+              </Field>
+              <Notice>
+                Channel secret 與 access token 只由各社專屬的 server environment
+                key 讀取，不儲存在瀏覽器或資料表。
+              </Notice>
+              {oa.account && (
+                <div className="form-stack">
+                  <p className="subtle">
+                    Render／server 要設定的環境變數名稱（只顯示名稱，不顯示
+                    secret）：
+                  </p>
+                  <div className="token-value">
+                    {oa.account.access_token_env_key}（channel access token）
+                  </div>
+                  <div className="token-value">
+                    {oa.account.webhook_secret_env_key}（webhook／channel
+                    secret）
+                  </div>
+                </div>
+              )}
+              <Button type="submit">儲存 OA 設定</Button>
+            </form>
             {oa.account && (
-              <div className="form-stack">
-                <p className="subtle">
-                  Render／server 要設定的環境變數名稱（只顯示名稱，不顯示 secret）：
-                </p>
-                <div className="token-value">
-                  {oa.account.access_token_env_key}（channel access token）
-                </div>
-                <div className="token-value">
-                  {oa.account.webhook_secret_env_key}（webhook／channel secret）
-                </div>
-              </div>
-            )}
-            <Button type="submit">儲存 OA 設定</Button>
-          </form>
-          {oa.account && (
               <form action={verifyLineOaAction} className="form-stack">
                 <input type="hidden" name="clubId" value={clubId} />
                 <p className="subtle">
@@ -264,8 +300,8 @@ export default async function LineOaPage({
                   驗證 LINE OA
                 </Button>
               </form>
-          )}
-          {oa.account && (
+            )}
+            {oa.account && (
               <form action={disableLineOaAction} className="form-stack">
                 <input type="hidden" name="clubId" value={clubId} />
                 <input
@@ -291,276 +327,353 @@ export default async function LineOaPage({
                   停用這個 OA 帳號
                 </Button>
               </form>
+            )}
+          </Card>
+          <Card>
+            <h2>Webhook</h2>
+            <p>
+              設定以下 URL；server 會用該社專屬 secret 對原始 request body 驗證
+              HMAC-SHA256 signature，再處理事件。
+            </p>
+            <div className="token-value">{`${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/api/line-oa/webhook/${clubId}`}</div>
+            <div className="status-pair">
+              <Badge
+                tone={oa.webhooks[0]?.signature_valid ? "success" : "neutral"}
+              >
+                {oa.webhooks[0]?.signature_valid
+                  ? "最近簽章有效"
+                  : "尚無有效事件"}
+              </Badge>
+              <Badge
+                tone={
+                  process.env.LINE_OA_MODE === "line" ? "success" : "warning"
+                }
+              >
+                {process.env.LINE_OA_MODE === "line"
+                  ? "LINE Messaging API"
+                  : "Local Mock"}
+              </Badge>
+            </div>
+          </Card>
+          {oa.account && richMenuFlag.enabled && (
+            <Card>
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">社員入口</p>
+                  <h2>LINE Rich Menu</h2>
+                </div>
+                <Badge tone={oa.account.rich_menu_id ? "success" : "neutral"}>
+                  {oa.account.rich_menu_id ? "已發布" : "尚未發布"}
+                </Badge>
+              </div>
+              <p>
+                這是本社所有 LINE
+                好友共用的社員選單，只放社員入口：社團首頁、活動報名、生日祝福與我的資料。
+                不會放入幹部管理網址；網址會固定帶入本社社別。
+              </p>
+              <form
+                action={publishLineRichMenuAction}
+                className="form-stack"
+                encType="multipart/form-data"
+              >
+                <input type="hidden" name="clubId" value={clubId} />
+                <Field
+                  label="選單圖片"
+                  hint="只接受 2500×1686 的 PNG 或 JPEG，檔案上限 1 MB。"
+                >
+                  <Input
+                    name="image"
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    required
+                  />
+                </Field>
+                <Button type="submit">發布社員 Rich Menu</Button>
+              </form>
+              {oa.account.rich_menu_id && (
+                <form action={disableLineRichMenuAction} className="form-stack">
+                  <input type="hidden" name="clubId" value={clubId} />
+                  <p className="subtle">
+                    停用會清除平台發布的預設選單；如果 LINE
+                    目前使用其他選單，會保留原有選單。
+                  </p>
+                  <Button type="submit" className="button-secondary">
+                    停用社員 Rich Menu
+                  </Button>
+                </form>
+              )}
+            </Card>
           )}
-        </Card>
-        <Card>
-          <h2>Webhook</h2>
-          <p>
-            設定以下 URL；server 會用該社專屬 secret 對原始 request body 驗證
-            HMAC-SHA256 signature，再處理事件。
-          </p>
-          <div className="token-value">{`${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/api/line-oa/webhook/${clubId}`}</div>
-          <div className="status-pair">
-            <Badge
-              tone={oa.webhooks[0]?.signature_valid ? "success" : "neutral"}
-            >
-              {oa.webhooks[0]?.signature_valid
-                ? "最近簽章有效"
-                : "尚無有效事件"}
-            </Badge>
-            <Badge
-              tone={process.env.LINE_OA_MODE === "line" ? "success" : "warning"}
-            >
-              {process.env.LINE_OA_MODE === "line"
-                ? "LINE Messaging API"
-                : "Local Mock"}
-            </Badge>
+        </div>
+      </details>
+      <section
+        id="line-oa-operations"
+        className={styles.operations}
+        aria-labelledby="line-oa-operations-title"
+        tabIndex={-1}
+      >
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">常用功能</p>
+            <h2 id="line-oa-operations-title">日常操作</h2>
           </div>
-        </Card>
-        {oa.account && richMenuFlag.enabled && (
+          <p className="subtle">發送訊息、處理好友配對，以及查看送達紀錄。</p>
+        </div>
+        {oa.account && (
           <Card>
             <div className="section-heading">
               <div>
-                <p className="eyebrow">社員入口</p>
-                <h2>LINE Rich Menu</h2>
+                <p className="eyebrow">推播</p>
+                <h2>發送訊息</h2>
               </div>
-              <Badge tone={oa.account.rich_menu_id ? "success" : "neutral"}>
-                {oa.account.rich_menu_id ? "已發布" : "尚未發布"}
-              </Badge>
             </div>
-            <p>
-              這是本社所有 LINE 好友共用的社員選單，只放社員入口：社團首頁、活動報名、生日祝福與我的資料。
-              不會放入幹部管理網址；網址會固定帶入本社社別。
-            </p>
-            <form action={publishLineRichMenuAction} className="form-stack" encType="multipart/form-data">
+            <form action={sendLineOaAction} className="form-stack">
               <input type="hidden" name="clubId" value={clubId} />
-              <Field label="選單圖片" hint="只接受 2500×1686 的 PNG 或 JPEG，檔案上限 1 MB。">
-                <Input name="image" type="file" accept="image/png,image/jpeg" required />
-              </Field>
-              <Button type="submit">發布社員 Rich Menu</Button>
+              {canTarget ? (
+                <fieldset className="field">
+                  <legend className="label">發送對象</legend>
+                  <AudiencePicker
+                    clubId={clubId}
+                    tags={audienceTags}
+                    members={audienceMembers}
+                    showReach
+                  />
+                </fieldset>
+              ) : (
+                <Field label="模式">
+                  <Select name="kind">
+                    <option value="broadcast">Broadcast 全體好友</option>
+                    <option value="multicast">Multicast 已配對社員</option>
+                  </Select>
+                </Field>
+              )}
+              <LineOaMessageComposer
+                senderName={oa.account.display_name}
+                templatesEnabled={flexFlag.enabled}
+              />
+              <div className="form-actions">
+                <Button type="submit">送出訊息</Button>
+              </div>
             </form>
-            {oa.account.rich_menu_id && (
-              <form action={disableLineRichMenuAction} className="form-stack">
-                <input type="hidden" name="clubId" value={clubId} />
-                <p className="subtle">停用會清除平台發布的預設選單；如果 LINE 目前使用其他選單，會保留原有選單。</p>
-                <Button type="submit" className="button-secondary">停用社員 Rich Menu</Button>
-              </form>
-            )}
+            <p className="subtle">
+              未指定對象時為全體好友
+              broadcast；指定對象時只會送給該對象中已加入官方帳號的社員。
+            </p>
           </Card>
         )}
-      </div>
-      {oa.account && (
-        <Card>
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">推播</p>
-              <h2>發送訊息</h2>
-            </div>
-          </div>
-          <form action={sendLineOaAction} className="form-stack">
-            <input type="hidden" name="clubId" value={clubId} />
-            {canTarget ? (
-              <fieldset className="field">
-                <legend className="label">發送對象</legend>
-                <AudiencePicker
-                  clubId={clubId}
-                  tags={audienceTags}
-                  members={audienceMembers}
-                  showReach
-                />
-              </fieldset>
-            ) : (
-              <Field label="模式">
-                <Select name="kind">
-                  <option value="broadcast">Broadcast 全體好友</option>
-                  <option value="multicast">Multicast 已配對社員</option>
+        <section
+          id="line-oa-followers"
+          className={styles.anchorTarget}
+          aria-label="好友配對"
+          tabIndex={-1}
+        >
+          <Card>
+            <h2>手動配對 OA follower</h2>
+            <form action={pairLineOaAction} className="inline-form">
+              <input type="hidden" name="clubId" value={clubId} />
+              <Field label="社員">
+                <Select name="personId" required>
+                  <option value="">選擇社員</option>
+                  {members.map((member) => (
+                    <option key={member.person_id} value={member.person_id}>
+                      {member.display_name}
+                    </option>
+                  ))}
                 </Select>
               </Field>
-            )}
-            <LineOaMessageComposer senderName={oa.account.display_name} templatesEnabled={flexFlag.enabled} />
-            <div className="form-actions">
-              <Button type="submit">送出訊息</Button>
+              <Field label="OA userId">
+                <Input name="oaUserId" required placeholder="U..." />
+              </Field>
+              <Button type="submit">建立配對</Button>
+            </form>
+          </Card>
+          <section>
+            <div className="section-heading">
+              <h2>Follower 配對</h2>
+              <span>
+                平台已知{" "}
+                {
+                  oa.followers.filter((item) => item.status === "following")
+                    .length
+                }{" "}
+                位
+              </span>
             </div>
-          </form>
-          <p className="subtle">
-            未指定對象時為全體好友
-            broadcast；指定對象時只會送給該對象中已加入官方帳號的社員。
-          </p>
-        </Card>
-      )}
-      <Card>
-        <h2>手動配對 OA follower</h2>
-        <form action={pairLineOaAction} className="inline-form">
-          <input type="hidden" name="clubId" value={clubId} />
-          <Field label="社員">
-            <Select name="personId" required>
-              <option value="">選擇社員</option>
-              {members.map((member) => (
-                <option key={member.person_id} value={member.person_id}>
-                  {member.display_name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="OA userId">
-            <Input name="oaUserId" required placeholder="U..." />
-          </Field>
-          <Button type="submit">建立配對</Button>
-        </form>
-      </Card>
-      <section>
-        <div className="section-heading">
-          <h2>Follower 配對</h2>
-          <span>
-            平台已知 {oa.followers.filter((item) => item.status === "following").length} 位
-          </span>
-        </div>
-        {/* The old copy said a follower "會自動出現在這裡（需先設定 webhook）",
+            {/* The old copy said a follower "會自動出現在這裡（需先設定 webhook）",
             which reads as a setup note rather than what it is: this list is
             built from follow events, so it only knows about people who joined
             while the webhook was already receiving them. LINE does not resend.
             Leo spent a while looking for two members here who had simply never
             finished joining, and the page gave him no way to tell that from a
             follow it had missed. */}
-        <p className="subtle">
-          這份清單是由 webhook 收到的 follow 事件建立的，所以它只知道
-          <strong>在 webhook 生效之後</strong>加入的人。LINE 不會補送先前的事件，
-          所以在那之前加入的人不會出現，也不會自動補上——請對照 LINE 官方帳號後台
-          「分析 → 好友」的人數，兩邊不一致就是這個原因。
-        </p>
-        <p className="subtle">
-          未配對的列可以直接選社員完成配對，不需要另外查 OA userId。
-        </p>
-        {/* Auto-pairing runs on the follow event, so everyone who added the OA
+            <p className="subtle">
+              這份清單是由 webhook 收到的 follow 事件建立的，所以它只知道
+              <strong>在 webhook 生效之後</strong>加入的人。LINE
+              不會補送先前的事件，
+              所以在那之前加入的人不會出現，也不會自動補上——請對照 LINE
+              官方帳號後台 「分析 → 好友」的人數，兩邊不一致就是這個原因。
+            </p>
+            <p className="subtle">
+              未配對的列可以直接選社員完成配對，不需要另外查 OA userId。
+            </p>
+            {/* Auto-pairing runs on the follow event, so everyone who added the OA
             before it was switched on stays unpaired. This is that backlog,
             cleared with the same match rather than a second one. */}
-        <form action={repairLineOaFollowersAction} className="form-actions">
-          <input type="hidden" name="clubId" value={clubId} />
-          <Button className="button-secondary" type="submit">一次配對所有未配對的 follower</Button>
-          <span className="hint">
-            用的是自動配對同一條規則：社員 LINE Login 的使用者 ID 對上 follower 的
-            ID。對不上的人不會被猜測，會留在清單裡。
-          </span>
-        </form>
-        <div className="table-wrap" data-mobile-cards>
-          <table>
-            <thead>
-              <tr>
-                <th>OA user</th>
-                <th>社員</th>
-                <th>狀態</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {oa.followers.map((follower) => (
-                <tr key={follower.id}>
-                  <td data-label="OA user">
-                    <code>{follower.oa_user_id.slice(0, 10)}…</code>
-                  </td>
-                  <td data-label="社員">{follower.display_name ?? "未配對"}</td>
-                  <td data-label="狀態">
-                    <Badge
-                      tone={
-                        follower.status === "following" ? "success" : "neutral"
-                      }
-                    >
-                      {follower.status}
-                    </Badge>
-                  </td>
-                  <td data-label="操作">
-                    {follower.status === "following" &&
-                      (follower.person_id ? (
-                        <form action={unpairLineOaAction}>
-                          <input type="hidden" name="clubId" value={clubId} />
-                          <input
-                            type="hidden"
-                            name="followerId"
-                            value={follower.id}
-                          />
-                          <input
-                            type="hidden"
-                            name="reason"
-                            value="後台解除 OA 配對"
-                          />
-                          <Button type="submit" className="button-secondary">
-                            解除 OA 配對
-                          </Button>
-                        </form>
-                      ) : (
-                        <form action={pairLineOaAction} className="inline-form">
-                          <input type="hidden" name="clubId" value={clubId} />
-                          <input
-                            type="hidden"
-                            name="oaUserId"
-                            value={follower.oa_user_id}
-                          />
-                          <Select
-                            name="personId"
-                            required
-                            aria-label={`為 ${follower.oa_user_id.slice(0, 10)}… 選擇社員`}
-                          >
-                            <option value="">選擇社員</option>
-                            {members.map((member) => (
-                              <option
-                                key={member.person_id}
-                                value={member.person_id}
+            <form action={repairLineOaFollowersAction} className="form-actions">
+              <input type="hidden" name="clubId" value={clubId} />
+              <Button className="button-secondary" type="submit">
+                一次配對所有未配對的 follower
+              </Button>
+              <span className="hint">
+                用的是自動配對同一條規則：社員 LINE Login 的使用者 ID 對上
+                follower 的 ID。對不上的人不會被猜測，會留在清單裡。
+              </span>
+            </form>
+            <div className="table-wrap" data-mobile-cards>
+              <table>
+                <thead>
+                  <tr>
+                    <th>OA user</th>
+                    <th>社員</th>
+                    <th>狀態</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {oa.followers.map((follower) => (
+                    <tr key={follower.id}>
+                      <td data-label="OA user">
+                        <code>{follower.oa_user_id.slice(0, 10)}…</code>
+                      </td>
+                      <td data-label="社員">
+                        {follower.display_name ?? "未配對"}
+                      </td>
+                      <td data-label="狀態">
+                        <Badge
+                          tone={
+                            follower.status === "following"
+                              ? "success"
+                              : "neutral"
+                          }
+                        >
+                          {follower.status}
+                        </Badge>
+                      </td>
+                      <td data-label="操作">
+                        {follower.status === "following" &&
+                          (follower.person_id ? (
+                            <form action={unpairLineOaAction}>
+                              <input
+                                type="hidden"
+                                name="clubId"
+                                value={clubId}
+                              />
+                              <input
+                                type="hidden"
+                                name="followerId"
+                                value={follower.id}
+                              />
+                              <input
+                                type="hidden"
+                                name="reason"
+                                value="後台解除 OA 配對"
+                              />
+                              <Button
+                                type="submit"
+                                className="button-secondary"
                               >
-                                {member.display_name}
-                              </option>
-                            ))}
-                          </Select>
-                          <Button type="submit">配對</Button>
-                        </form>
-                      ))}
-                  </td>
+                                解除 OA 配對
+                              </Button>
+                            </form>
+                          ) : (
+                            <form
+                              action={pairLineOaAction}
+                              className="inline-form"
+                            >
+                              <input
+                                type="hidden"
+                                name="clubId"
+                                value={clubId}
+                              />
+                              <input
+                                type="hidden"
+                                name="oaUserId"
+                                value={follower.oa_user_id}
+                              />
+                              <Select
+                                name="personId"
+                                required
+                                aria-label={`為 ${follower.oa_user_id.slice(0, 10)}… 選擇社員`}
+                              >
+                                <option value="">選擇社員</option>
+                                {members.map((member) => (
+                                  <option
+                                    key={member.person_id}
+                                    value={member.person_id}
+                                  >
+                                    {member.display_name}
+                                  </option>
+                                ))}
+                              </Select>
+                              <Button type="submit">配對</Button>
+                            </form>
+                          ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+        <section
+          id="line-oa-push-history"
+          className={styles.anchorTarget}
+          aria-labelledby="line-oa-push-history-title"
+          tabIndex={-1}
+        >
+          <div className="section-heading">
+            <h2 id="line-oa-push-history-title">推播紀錄</h2>
+          </div>
+          <div className="table-wrap" data-mobile-cards>
+            <table>
+              <thead>
+                <tr>
+                  <th>時間</th>
+                  <th>類型</th>
+                  <th>收件數</th>
+                  <th>狀態</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      <section>
-        <div className="section-heading">
-          <h2>推播紀錄</h2>
-        </div>
-        <div className="table-wrap" data-mobile-cards>
-          <table>
-            <thead>
-              <tr>
-                <th>時間</th>
-                <th>類型</th>
-                <th>收件數</th>
-                <th>狀態</th>
-              </tr>
-            </thead>
-            <tbody>
-              {oa.push_logs.map((log) => (
-                <tr key={log.id}>
-                  <td data-label="時間">
-                    {new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE,
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    }).format(new Date(log.created_at))}
-                  </td>
-                  <td data-label="類型">{log.kind}</td>
-                  <td data-label="收件數">{log.recipient_count}</td>
-                  <td data-label="狀態">
-                    <Badge
-                      tone={
-                        log.status === "sent" || log.status === "mocked"
-                          ? "success"
-                          : "danger"
-                      }
-                    >
-                      {log.status}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {oa.push_logs.map((log) => (
+                  <tr key={log.id}>
+                    <td data-label="時間">
+                      {new Intl.DateTimeFormat("zh-TW", {
+                        timeZone: APP_TIME_ZONE,
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      }).format(new Date(log.created_at))}
+                    </td>
+                    <td data-label="類型">{log.kind}</td>
+                    <td data-label="收件數">{log.recipient_count}</td>
+                    <td data-label="狀態">
+                      <Badge
+                        tone={
+                          log.status === "sent" || log.status === "mocked"
+                            ? "success"
+                            : "danger"
+                        }
+                      >
+                        {log.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </section>
     </div>
   );

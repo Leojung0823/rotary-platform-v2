@@ -164,11 +164,13 @@ export default defineConfig({
       testMatch: boardAudienceTestMatch,
       use: { viewport: { width: 1440, height: 900 } },
     },
-    {
-      name: "line-oa-audience-1440",
+    ...[1440, 375].map((width) => ({
+      name: `line-oa-audience-${width}`,
       testMatch: lineOaAudienceTestMatch,
-      use: { viewport: { width: 1440, height: 900 } },
-    },
+      use: width <= 412
+        ? { viewport: { width, height: 812 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
+        : { viewport: { width, height: 900 } },
+    })),
     {
       name: "pwa-1440",
       testMatch: pwaTestMatch,

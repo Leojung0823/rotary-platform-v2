@@ -38,9 +38,11 @@ async function openManagedLineOa(page) {
 
 test("OA verification is available and fails closed in local mock mode", async ({ page }) => {
   await openLineOa(page);
+  await page.locator("#line-oa-advanced-settings").locator("summary").click();
   await page.getByRole("button", { name: "驗證 LINE OA", exact: true }).click();
   await expect(page.getByText("目前環境未開啟 LINE 真實模式，不能完成 OA 驗證。")).toBeVisible();
   await expect(page).toHaveURL(/error=oa_live_mode_required/u);
+  await expect(page.locator("#line-oa-advanced-settings")).toHaveAttribute("open", "");
 });
 
 test("the send form reports how many of the audience LINE can actually reach", async ({ page }) => {
@@ -52,6 +54,26 @@ test("the send form reports how many of the audience LINE can actually reach", a
   // The two numbers are reported separately: a push reaches only members who
   // have paired their account, and that gap is invisible everywhere else.
   await expect(send.getByText(/\d+ 位社員，其中 \d+ 位已完成 LINE OA 配對、可收到推播/u)).toBeVisible();
+});
+
+test("LINE OA management separates daily actions from advanced settings", async ({ page }) => {
+  await openLineOa(page);
+
+  const sectionNav = page.getByRole("navigation", { name: "LINE OA 管理區段" });
+  await expect(sectionNav.getByRole("link", { name: "日常操作" })).toHaveAttribute("href", "#line-oa-operations");
+  await expect(sectionNav.getByRole("link", { name: "好友配對" })).toHaveAttribute("href", "#line-oa-followers");
+  await expect(sectionNav.getByRole("link", { name: "推播紀錄" })).toHaveAttribute("href", "#line-oa-push-history");
+  await expect(sectionNav.getByRole("link", { name: "進階設定" })).toHaveAttribute("href", "#line-oa-advanced-settings");
+
+  const advancedSettings = page.locator("#line-oa-advanced-settings");
+  await expect(advancedSettings).not.toHaveAttribute("open", "");
+  await expect(advancedSettings.getByRole("button", { name: "儲存 OA 設定" })).toBeHidden();
+  await advancedSettings.locator("summary").click();
+  await expect(advancedSettings.getByRole("button", { name: "儲存 OA 設定" })).toBeVisible();
+
+  await sectionNav.getByRole("link", { name: "日常操作" }).click();
+  await expect(page).toHaveURL(/#line-oa-operations$/u);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test("an enabled Flex template shows a safe card preview", async ({ page }) => {

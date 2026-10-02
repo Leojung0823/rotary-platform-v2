@@ -20,6 +20,29 @@
 3. GitHub 尚無 `message-center-scheduler` environment，也沒有 repository variable `MESSAGE_CENTER_SCHEDULER_ENABLED`；排程目前 fail closed。部署並完成 staging 手動驗收後，才按 `docs/deployment/STAGING_RUNBOOK.md` 建立 scheduler environment、設定 URL／獨立 secret，最後由管理者明確啟用排程。
 4. 部署後確認 staging `/api/health` revision 與 issues，並驗收草稿、排程送達、取消、置頂及社員資料隔離；確認手動 scheduler 與週期 workflow。`announcements_v09` hosted flag 狀態尚未重新確認，不能推定已開啟。production 未修改。
 
+## 2026-10-02 主線進度與其他未結案驗收
+
+### 完整社員待辦中心：程式已合併 main，尚未部署 staging
+
+- 功能 commit `faddd5fac813e00f324a2b42878b210a34de7d8e` 已包含在目前 `origin/main`。新增 `/tasks` 分頁清單，依有效社員社籍選社，保留 `member_home_v2`／`line_oa_onboarding_v1` 旗標與社員模式權限檢查；資料透過 RPC 讀取並有分頁與跨社安全測試。
+- Migration `20261002000200_member_task_center.sql` 尚未部署至目前 staging。Staging health revision `b6a184bb4c445a8d06dde919ce171f85a36ec66e` 早於此功能；不要把主線程式或 Browser Smoke 當成 hosted 驗收。
+- 主線後續文件提交 `306be32` 的自動 CI `36950442930` 與 Browser Smoke `36950442873` 均成功；它們證明測試通過，不代表部署。
+
+### 仍需外部／真人驗收的開啟中 Issue
+
+- Issue #44：防止信箱掃描器消耗一次性密碼恢復連結的程式修正 `ad661023` 已在 main，也包含於目前 staging；修正後的 Auth 設定同步 workflow `33400262734` 曾成功。但尚無修正後「收到新恢復信 → 本人確認 → 成功更新密碼」的真人端到端證據，因此 Issue 仍開啟。
+- Issue #36：出席管理程式已在 main；staging 的 `attendance_ui_v2` 旗標現況尚未重新確認，社員／幹部角色與社團隔離 hosted 驗收仍待完成。
+- Issue #25、#55：自動化核心流程已有交付；真實 iPhone Safari、Android Chrome，以及五位社員／幹部的 M1 可用性測試仍待真人與實機，不能用 Chromium 測試代替。
+- E-03、E-11：LINE OA follow 配對的正確社員身份與負向案例、各社 OA／Rich Menu 外部設定及手機驗收，仍待真人／外部平台操作。
+- E-08：production 是否發布及相關正式環境設定仍待產品決策；production 未修改。E-09 recovery email／custom SMTP 維持暫緩。
+- E-12：本機加密備份仍需在 `.env.staging` 安全補齊三項憑證後進行，細節見上方發布前清單；不得把秘密貼入聊天。
+
+### LINE OA 管理頁 UX：已完成本機實作，尚未部署
+
+- 管理頁已拆成「日常操作、好友配對、推播紀錄、進階設定」區段導覽；OA／Webhook／Rich Menu 這類低頻設定預設收合，操作成功或錯誤返回時會自動展開，方便直接看到結果。
+- 本機 Chromium 桌機與 375px 手機測試共 10 項通過、2 項依既有規則略過；完整單元測試、typecheck、lint、build 亦已通過。手機版另檢查整頁不會超出視窗寬度。
+- 僅調整管理頁呈現與瀏覽器測試；沒有改資料庫、feature flag、登入、角色、授權或社團隔離。本機測試不代表已部署；staging 發布另受 E-12 備份與既有 Go-Live 核准流程限制，production 未修改。
+
 ## 2026-09-22 非人工工作收尾（掃描基準 `cbfff9f`）
 
 > 本輪先把不需要真人、手機或 production 決策的工作全部重新核對；沒有新增產品程式、migration、權限變更或部署。

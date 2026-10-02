@@ -13,7 +13,16 @@
 - E2E 訊息中心：桌機 3/3 通過；Android 412px 與 320px 各跑社員唯讀頁與橫向溢位斷言通過，資料變更測試依規則略過；合計 5 passed／4 skipped。
 - GitHub CI `36916823618` 與 Browser Smoke `36916823523` 均已成功，驗證的是功能 commit `3a1d855...`。Staging Release plan `36920967197`（`e388933`）仍在人工核准中，尚未套用；現場 `/api/health` revision 為 `b6a184bb4c44`，status ok、issues 空，並非此功能的部署證據。Logical backup run `36917733396`（`3a1d855`）於 2026-10-02 取消，因舊 workflow 會把加密檔上傳 GitHub artifact，違反「只存本機」要求；此 run 沒有產生備份。GitHub 尚無 `message-center-scheduler` environment，也沒有 repository variable `MESSAGE_CENTER_SCHEDULER_ENABLED`；排程目前 fail closed，未部署驗收前不要手動觸發或啟用。完整前置條件見 `docs/deployment/STAGING_RUNBOOK.md`。在本機備份／還原演練、以當前 exact SHA 建立新 Staging Release、Go-Live 人工核准及 health／staging 驗收前，不要宣稱已部署；production 未修改。
 - E-12 安全修正已推 main `363e7cf0b56c69af65c05b9a38bf677c913bd04f`：退役會上傳 GitHub artifact 的舊 workflow；本機 exporter 與測試已合併，CI `36948071991`、Browser Smoke `36948072084` 均成功。實際匯出在本機憑證預檢時停止，因 `.env.staging` 缺少三個 Supabase project/ref、access token、database password 變數；尚未連 staging、沒有產生新備份或測試 restore。不得核准已取消的 `36917733396`，也不得重派舊 workflow。Staging scheduler environment 尚未建立／設定；production 未修改。
+- 完整社員待辦中心已由 `faddd5fac813e00f324a2b42878b210a34de7d8e` 合併 main，包含 `/tasks` 分頁頁面、`20261002000200_member_task_center.sql`、社員社籍／feature flag 邊界與測試；目前 staging revision `b6a184bb4c445a8d06dde919ce171f85a36ec66e` 尚未包含。最新 main `306be32` 的自動 CI `36950442930` 與 Browser Smoke `36950442873` 成功，但不等於 hosted 驗收。
+- 開啟中的外部驗收：Issue #44 的防預取程式修正 `ad661023` 已包含於目前 staging，Auth 設定同步 workflow `33400262734` 曾成功，仍需修正後真人完成一封新恢復信的更新密碼流程；Issue #36 仍需確認 staging `attendance_ui_v2` 旗標並做社員／幹部隔離驗收；Issue #25／#55 的 iPhone、Android 與五位使用者測試未完成。E-03、E-11、E-08、E-12 依待辦清單等待真人、外部設定、產品決策或本機憑證；E-09 維持暫緩。
 - DB reset 後已按正確順序恢復本機 superadmin → 啟用本機 role-shell/member-home scenario → fixtures；沒有輸出憑證。
+
+## 2026-10-02 LINE OA 管理頁 UX（本機驗收完成）
+
+- `src/app/(authenticated)/clubs/[clubId]/line-oa/page.tsx` 已將後台分為日常操作、好友配對、推播紀錄、進階設定；低頻 OA／Webhook／Rich Menu 設定預設收合，設定成功或失敗返回時自動展開。
+- `line-oa-admin.module.css` 提供清楚的收合提示、鍵盤焦點與手機間距；錨點導覽讓管理者可直達操作區。既有 server actions、權限與 feature flags 不變，沒有新增 migration。
+- 本機 Chromium 桌機及 375px：10 passed／2 skipped；完整 Vitest 210 files／1533 tests、typecheck、lint、build 通過。第一次 E2E 指令未載入正確 config、第二次因 E2E 依賴未安裝而未執行，依 `e2e/package-lock.json` 安裝後正式重跑；成功結果以上述 10／2 為準。
+- 本機測試不代表 staging 已部署。Staging 發布前仍要先處理 E-12 加密備份及正確 exact-SHA Release／Go-Live 核准；production 未修改。
 
 ## 2026-09-22 UX 優化第一批（開發基準 `00f7418`）
 
@@ -26,7 +35,7 @@
 - 本機 Chromium 針對性測試 11 passed／4 按既有 viewport 規則 skipped：桌機、375px、320px 首頁與 LINE 狀態；桌機／375px 捐款明細；管理員發布服務計劃及社員展開。LINE 狀態回應使用 mock，只驗證 UI 行為，不能替代真人好友驗收。
 - 本機獨立測試埠 3107，build 與 runtime 的 `NEXT_PUBLIC_SITE_URL` 必須一致，否則換社 redirect 會離開測試站。DB reset 後已依 superadmin → 啟用旗標 → fixtures 恢復本機測試資料。
 - 沒有 migration、登入／權限／RLS／跨社隔離變更。既有外部發布企劃與 `src/lib/publication/` 未追蹤工作保留，不納入本批。
-- 待辦：LINE 管理後台的日常操作／進階設定分區、完整待辦中心、真實手機與社員可用性驗收。發布狀態須另查 GitHub workflow 與 health；本節測試不是部署證據。
+- 待辦：LINE 管理後台的日常操作／進階設定分區、真實手機與社員可用性驗收。完整社員待辦中心已由 main commit `faddd5f` 完成，但當時 staging 尚未部署；發布狀態須另查 GitHub workflow 與 health，本節測試不是部署證據。
 
 ## 2026-09-22 非人工工作盤點（掃描基準 `cbfff9f`；以下為歷史結論，已由上方 UX 檢查補正）
 

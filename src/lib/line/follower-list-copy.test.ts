@@ -7,7 +7,9 @@ const page = readFileSync("src/app/(authenticated)/clubs/[clubId]/line-oa/page.t
 function followerSection(): string {
   const start = page.indexOf("<h2>Follower 配對</h2>");
   expect(start, "the follower section is gone").toBeGreaterThan(-1);
-  return page.slice(start, page.indexOf("<h2>推播紀錄</h2>", start));
+  return page
+    .slice(start, page.indexOf("<h2>推播紀錄</h2>", start))
+    .replace(/\s+/gu, " ");
 }
 
 describe("the follower list says what it does not know", () => {

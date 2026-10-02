@@ -19,6 +19,25 @@
 - `message-center-scheduler` environment 尚未設定。排程 workflow 現在有 fail-closed 開關：repository variable `MESSAGE_CENTER_SCHEDULER_ENABLED` 未設為 `true` 時，定時觸發會略過；設定方式與啟用前提見 `docs/deployment/STAGING_RUNBOOK.md`。部署前仍需對最新 exact SHA 走 Staging Release → Go-Live、核實備份、健康檢查與 staging 排程驗收。這些都尚未發生；production 未修改。
 - 根目錄 checkout 另有使用者與平行工作修改；本輪在獨立 worktree 作業，沒有改動或納入那些檔案。
 
+## 2026-10-02 完整社員待辦中心（main 已完成，staging 尚未部署）
+
+- `faddd5fac813e00f324a2b42878b210a34de7d8e` 新增社員 `/tasks` 待辦中心，支援分頁、社別限定、社員模式與既有 feature flag；讀取經 RPC，並有頁面解析、分頁及安全邊界測試。
+- 新 migration `20261002000200_member_task_center.sql` 尚未套用至 staging。Staging `/api/health` revision `b6a184bb4c445a8d06dde919ce171f85a36ec66e` 不包含待辦中心與訊息中心後續提交；須等備份、exact-SHA Release 與人工核准後，再做 hosted 驗收。
+- 最新主線 `306be32` 的自動 CI `36950442930`、Browser Smoke `36950442873` 均成功；僅為程式測試證據，不代表 staging 已部署。
+
+## 2026-10-02 仍開啟的外部驗收與決策
+
+- Issue #44：密碼恢復的可信公開網址與防信箱掃描器預取程式修正 `ad661023` 已合併並存在目前 staging；staging Auth 設定同步 workflow `33400262734` 曾成功。尚缺修正後真人收到新信、確認並成功更新密碼的端到端證據。
+- Issue #36：出席管理程式已在 main；staging `attendance_ui_v2` 旗標需重新確認，並完成社員／幹部流程與社團隔離驗收。
+- Issue #25、#55：真實 iPhone Safari、Android Chrome 與五位目標使用者測試仍未完成。
+- E-03、E-11 仍需 LINE OA／真人身份／手機驗收；E-08 需產品決定是否進入 production；E-09 維持暫緩；E-12 等待本機憑證後完成加密備份與 restore 演練。production 未修改。
+
+## 2026-10-02 LINE OA 管理頁 UX（本機完成，尚未部署）
+
+- 將管理頁導覽為日常操作、好友配對、推播紀錄與進階設定；低頻的 OA、Webhook、Rich Menu 設定預設收合，動作成功或失敗返回時自動展開。
+- 本機桌機／375px 瀏覽器驗收 10 passed／2 skipped，包含窄版不水平溢位；不涉及 migration、feature flag、登入、權限或跨社隔離。
+- 本機測試不代表 staging 已部署。Staging 仍須先完成 E-12 本機加密備份及正確 exact-SHA Release／Go-Live 核准，production 未修改。
+
 ## 2026-09-22 非人工工作已收尾（掃描基準 `cbfff9f`）
 
 - 本輪重新核對 roadmap、handoff、待辦、原始碼與驗收工具；沒有新的產品 `TODO`／`FIXME`，也沒有可以在不碰真人帳號、手機或 production 的前提下安全完成的工程項目。

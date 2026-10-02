@@ -61,7 +61,7 @@ describe("LINE OA account retirement", () => {
   it("shows environment variable names without credential values", () => {
     expect(page).toContain("access_token_env_key");
     expect(page).toContain("webhook_secret_env_key");
-    expect(page).toContain("只顯示名稱，不顯示 secret");
+    expect(page.replace(/\s+/gu, " ")).toContain("只顯示名稱，不顯示 secret");
     expect(page).not.toContain("channel_access_token");
     expect(page).not.toContain("channel_secret");
   });
