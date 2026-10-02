@@ -3,6 +3,13 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-10-03 歡喜牆題庫與批次派發續作
+
+- 功能 commit `0aad68cdef512dec78ef56dd610efe0a2fdcc17d`：migration `20261003000200_joy_question_bank_batch_dispatch.sql`；新管理頁、API、題庫 CRUD、批次派題不同題目及桌機 Playwright 流程。本次同步 main 後以 `git rev-parse origin/main` 核對最新 SHA。
+- 伺服器與 DB RPC 都要求 `joy.moderate`、有效社員、正確社別及 `joy_wall_v1` 啟用；flag 預設關閉。本批沒有改 RLS 或繞過 RPC。平台題目唯讀、社團題目可管理；每批限 250 人，每人不同題目，冪等防重、每小時最多 5 批；答案內容不進管理歷史。
+- 驗證完成：Vitest 215 檔／1,570 項、typecheck、lint、build、migration guard、verification manifest 81 檔、isolated Supabase 乾淨重播與 81 份 SQL verification、DB lint、diff check；Joy Wall 桌機 E2E 4/4 passed。DB lint 有 3 項既有警告。瀏覽器與 DB fixtures 都在隔離環境；沒有重置原本本機資料。
+- staging／production 未連線或修改；`joy_wall_v1` 未開；沒有部署。Issue #4 仍有其他未完成範圍：職務／活動／生日／扶輪年度目標、截止日、草稿與排程、匿名建議箱、封鎖、回覆動作、素材整合與保存政策，以及 E-12 和其他 hosted／真人驗收。
+
 ## 2026-10-03 非金錢 IOU 到期提醒續作
 
 - 功能 commit `c0d6e446ac38552767f0d680a4fb8024fc2943b6` 已直接推到 `main`（起點 `57d5fc78b19afc900301dfcb4aa618b082cabe29`）；來源分支 `codex/joy-iou-deadline-reminders`，GitHub open PR 為 0。沒有改另一個 worktree 裡的 Rich Menu UX 工作。

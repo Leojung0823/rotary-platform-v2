@@ -2,6 +2,14 @@
 
 更新日期：2026-10-03（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-03 歡喜牆題庫與批次派題（程式已同步 main；尚未部署）
+
+- 實作 commit `0aad68cdef512dec78ef56dd610efe0a2fdcc17d` 新增幹部專用題庫管理頁、題目新增／編輯／停用、社員選取搜尋與不同題目批次派發；社員模式直接造訪管理網址仍由伺服器拒絕。
+- 每批最多 250 位本社有效社員；每人得到不同的私密提問任務，使用既有 Joy 回答待辦與完成流程。題目快照避免後續編輯影響已派任務；冪等識別與每小時限額防止網路重試或大量誤派。歷史只顯示收件人、題目與回答狀態，不回傳回答文字。
+- 新 migration `20261003000200_joy_question_bank_batch_dispatch.sql` 與 verification 已併入 main，沿用預設關閉的 `joy_wall_v1`，沒有增加旗標或改動 hosted。尚未部署或開放社員使用。
+- 本機驗證：215 檔／1,570 項 Vitest、typecheck、lint、build、migration guard、81 份 SQL verification、DB lint、diff check 通過；Joy Wall 桌機 Playwright 4/4 通過。DB lint 的 3 項 warning 均為既有項目。所有 DB reset／fixtures 僅使用隔離 Supabase 專案。
+- Issue #4 仍開啟。後續尚有職務／活動／生日／扶輪年度目標、截止日、草稿／排程／置頂／收藏、匿名建議箱、封鎖、回覆動作、生日／回憶素材整合與保存政策；staging、LINE 真人和其他外部驗收也仍是獨立閘門。
+
 ## 2026-10-03 歡喜牆 V1 與 IOU 提醒（main `c0d6e44`；尚未部署；Issue #4 仍開啟）
 
 - 歡喜牆 V1 已合併在 `main@57d5fc7`，功能包含社內／指定社員／私人閱讀範圍、貼文與留言互動、檢舉審核及稽核紀錄。另含非金錢 IOU：私密提出、接受／婉拒、開始、雙方確認完成、附理由取消，以及按台灣日期判定逾期；不同於捐款祝福 IOU，不記錄金額。跨社資料、停權帳號、私密內容和管理權限有資料庫驗證 SQL。頁面與 API 皆 fail closed；資料庫另限制貼文、留言及檢舉頻率，超量回 429。
@@ -19,7 +27,7 @@
 - staging `/api/health` 回報 revision `b6a184bb4c44`、status `ok`、issues 與 warnings 皆空；此 runtime 較 main 舊，不含 Joy Wall／IOU 提醒的未部署 migration。
 - 功能 commit `c0d6e44` 的 CI `37047451791` 成功；後續文件提交 `10de5bd` 的 CI `37048232877` 與 Browser Smoke `37048232868` 均成功，後者包含相同提醒程式碼。早期 base `57d5fc7` 的 Smoke `37039603756` 曾在 GPS、Rich Menu、祝福金額驗證三類失敗，已由較新成功 Smoke 覆蓋；Rich Menu 另有平行 worktree 工作，本輪沒有覆寫。Staging Release plan `37039951580` 仍待人工核准且只對應舊 SHA `57d5fc7`，不含提醒 migration。GitHub 尚無 `message-center-scheduler` environment 或 scheduler repository variable。
 - 尚待外部／真人：#25 實機與 hosted 社員驗收、#36 staging 出席旗標及角色隔離驗收、#44 recovery email 真人閉環、#55 五位 M1 測試、E-03 LINE follow 真人身份與負向案例、E-11 各社 LINE OA／Rich Menu 設定、E-12 加密備份及 restore 演練。Issue #4 仍有未開發模組與其餘驗收，歡喜牆 V1 只是其中一個垂直切片。
-- 這不是 Issue #4 的完成宣告。非金錢 IOU LINE 到期／逾期提醒已在 main，尚待 E-12 備份閘門、staging 部署及真人收訊；站內通知未新增。歡喜牆仍待可管理題庫與批次派題、職務／活動／生日／扶輪年度等目標、草稿排程、匿名建議箱、封鎖與媒體整合；明細列於 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的「歡喜牆 V1」段落。Issue #4 其餘模組與外部驗收也仍要逐項核對。
+- 這不是 Issue #4 的完成宣告。非金錢 IOU LINE 到期／逾期提醒已在 main，尚待 E-12 備份閘門、staging 部署及真人收訊；站內通知未新增。歡喜牆可管理題庫與批次派題已完成程式並同步 main，仍待 staging 發布；職務／活動／生日／扶輪年度目標、截止日、草稿排程、匿名建議箱、封鎖與媒體整合尚未完成。細節列於 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的「歡喜牆 V1」段落。Issue #4 其餘模組與外部驗收也仍要逐項核對。
 
 ## 2026-10-02 本機備份安全修正（main `363e7cf`；尚未完成匯出）
 
