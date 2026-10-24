@@ -26,6 +26,30 @@ export function detectInstallPlatform(
   return "other";
 }
 
+export type IosBrowser = "safari" | "chrome" | "other";
+
+/**
+ * Which iPhone browser is showing the page. The share button sits in a
+ * different place in each, so an older member following the wrong
+ * description gets stuck on the first step.
+ */
+export function detectIosBrowser(userAgent: string): IosBrowser {
+  if (/CriOS\//u.test(userAgent)) return "chrome";
+  if (/FxiOS|EdgiOS|OPiOS|OPT\/|GSA\/|DuckDuckGo|YaBrowser/u.test(userAgent)) return "other";
+  if (/Version\/\d+[\d.]*.*Safari\//u.test(userAgent)) return "safari";
+  return "other";
+}
+
+/**
+ * Safari 26 moved the share button behind the "≡" page menu in the bottom
+ * address bar. iOS 26 freezes the OS version in the user agent, so the
+ * Safari `Version/` token is the reliable signal.
+ */
+export function iosSafariUsesPageMenu(userAgent: string): boolean {
+  const major = Number(/Version\/(\d+)/u.exec(userAgent)?.[1] ?? 0);
+  return major >= 26;
+}
+
 export function detectEmbeddedBrowser(userAgent: string): "line" | "facebook" | "other" | null {
   if (/\bLine\//iu.test(userAgent) || /LIFF/iu.test(userAgent)) return "line";
   if (/FBAN|FBAV|Instagram/iu.test(userAgent)) return "facebook";

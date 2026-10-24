@@ -1,16 +1,20 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   detectEmbeddedBrowser,
   detectInstallPlatform,
+  detectIosBrowser,
   externalInstallUrl,
   INSTALL_DISMISSAL_KEY,
   INSTALL_PAGE_HREF,
   installCardDismissalExpiresAt,
+  iosSafariUsesPageMenu,
   isInstallCardDismissed,
   type InstallPlatform,
+  type IosBrowser,
 } from "@/lib/pwa/install";
 import styles from "./install-experience.module.css";
 
@@ -50,6 +54,8 @@ function useInstallEnvironment() {
     ? detectInstallPlatform(navigator.userAgent, navigator.platform, navigator.maxTouchPoints)
     : "other";
   const embeddedBrowser = ready ? detectEmbeddedBrowser(navigator.userAgent) : null;
+  const iosBrowser: IosBrowser = ready ? detectIosBrowser(navigator.userAgent) : "safari";
+  const safariPageMenu = ready && iosSafariUsesPageMenu(navigator.userAgent);
 
   useEffect(() => {
     const onBeforeInstallPrompt = (event: Event) => {
@@ -78,7 +84,7 @@ function useInstallEnvironment() {
     return choice.outcome === "accepted";
   }
 
-  return { ready, platform, embeddedBrowser, installed, installPrompt, promptInstall };
+  return { ready, platform, embeddedBrowser, iosBrowser, safariPageMenu, installed, installPrompt, promptInstall };
 }
 
 function dismissedForAWeek() {
@@ -139,17 +145,109 @@ function EmbeddedBrowserNotice({ browser }: { browser: NonNullable<ReturnType<ty
   </aside>;
 }
 
-function InstallSteps({ platform }: { platform: InstallPlatform }) {
-  if (platform === "ios") {
+type GuideStep = {
+  title: string;
+  hint?: string;
+  warning?: string;
+  image?: { src: string; width: number; height: number; alt: string };
+};
+
+const confirmStep: GuideStep = {
+  title: "直接點右上角藍色的「加入」",
+  hint: "這時會跳出鍵盤，不用打字，也不用改名字。「打開為網頁 App」保持綠色就好。",
+  image: { src: "/install-guide/common-confirm.webp", width: 720, height: 514, alt: "加入主畫面畫面，右上角的「加入」按鈕被紅圈標出" },
+};
+
+const moreStep = (src: string, height: number): GuideStep => ({
+  title: "點右下角圓形的「檢視較多」",
+  warning: "一開始看不到「加入主畫面」是正常的，要先按「檢視較多」。如果已經看到「加入主畫面」，直接點它。",
+  image: { src, width: 720, height, alt: "分享選單，右下角向下箭頭的「檢視較多」被紅圈標出" },
+});
+
+function iosGuide(browser: IosBrowser, safariPageMenu: boolean): GuideStep[] {
+  if (browser === "chrome") {
+    return [
+      {
+        title: "點畫面最上面，網址右邊的「分享」",
+        hint: "樣子是一個方框，上面有往上的箭頭。",
+        image: { src: "/install-guide/chrome-1-share.webp", width: 720, height: 102, alt: "Chrome 上方網址列，右邊的分享按鈕被紅圈標出" },
+      },
+      moreStep("/install-guide/chrome-2-more.webp", 196),
+      {
+        title: "往下滑，點「加入主畫面」",
+        hint: "在「列印」下面那一組，圖示是方框裡有一個＋號。",
+        image: { src: "/install-guide/chrome-3-add.webp", width: 720, height: 634, alt: "展開的分享選單，「加入主畫面」被紅框標出" },
+      },
+      confirmStep,
+    ];
+  }
+
+  if (safariPageMenu) {
+    return [
+      {
+        title: "點畫面最下面，網址左邊的「≡」",
+        hint: "三條橫線的按鈕。如果您看到的是方框上箭頭的「分享」，直接點它，跳到第 3 步。",
+        image: { src: "/install-guide/safari-1-menu.webp", width: 720, height: 138, alt: "Safari 下方網址列，左邊的三條線按鈕被紅圈標出" },
+      },
+      {
+        title: "在跳出的選單中點「分享」",
+        image: { src: "/install-guide/safari-2-share.webp", width: 720, height: 621, alt: "Safari 選單，「分享」被紅框標出" },
+      },
+      moreStep("/install-guide/safari-3-more.webp", 205),
+      {
+        title: "往下滑，點「加入主畫面」",
+        hint: "圖示是方框裡有一個＋號。",
+        image: { src: "/install-guide/safari-4-add.webp", width: 720, height: 452, alt: "展開的分享選單，「加入主畫面」被紅框標出" },
+      },
+      confirmStep,
+    ];
+  }
+
+  return [
+    { title: "點「分享」", hint: "Safari 畫面下方中間，一個方框上面有往上箭頭的按鈕。" },
+    { title: "往下滑，點「加入主畫面」", hint: "圖示是方框裡有一個＋號。如果沒看到，先點「檢視較多」或把選單往上推。" },
+    { title: "直接點右上角的「加入」", hint: "名字已經幫您填好「我是扶輪人」，不用改。" },
+  ];
+}
+
+function InstallSteps({ platform, iosBrowser, safariPageMenu }: {
+  platform: InstallPlatform;
+  iosBrowser: IosBrowser;
+  safariPageMenu: boolean;
+}) {
+  if (platform === "ios" && iosBrowser === "other") {
     return <section className={styles.steps} aria-labelledby="ios-install-heading">
       <h2 id="ios-install-heading">iPhone：加入主畫面</h2>
-      <ol className={styles.visualSteps}>
-        <li><span className={styles.stepNumber} aria-hidden="true">1</span><span><strong>點「分享」</strong><small>Safari 畫面下方的方框上箭頭</small></span><span className={styles.shareSymbol} aria-hidden="true">□↑</span></li>
-        <li><span className={styles.stepNumber} aria-hidden="true">2</span><span><strong>選「加入主畫面」</strong><small>在分享選單中往下找</small></span><span className={styles.homeSymbol} aria-hidden="true">＋</span></li>
-        <li><span className={styles.stepNumber} aria-hidden="true">3</span><span><strong>點右上角「加入」</strong><small>確認名稱是「我是扶輪人」</small></span><span className={styles.addSymbol} aria-hidden="true">加入</span></li>
+      <p className={styles.browserSwitch}>請改用 iPhone 內建的 <strong>Safari</strong>（藍色指南針圖示）打開這個網頁，再照畫面上的步驟做。</p>
+      <p>可以先按下方「複製安裝連結」，再到 Safari 上方網址列貼上。</p>
+    </section>;
+  }
+
+  if (platform === "ios") {
+    const guide = iosGuide(iosBrowser, safariPageMenu);
+    return <section className={styles.steps} aria-labelledby="ios-install-heading">
+      <h2 id="ios-install-heading">iPhone：加入主畫面</h2>
+      <p className={styles.browserBadge}>您正在使用 {iosBrowser === "chrome" ? "Chrome" : "Safari"}，請照下面 {guide.length} 步做</p>
+      <ol className={styles.guideSteps}>
+        {guide.map((step, index) => <li key={step.title}>
+          <div className={styles.guideStepHeader}>
+            <span className={styles.stepNumber} aria-hidden="true">{index + 1}</span>
+            <strong>{step.title}</strong>
+          </div>
+          {step.hint && <p className={styles.guideHint}>{step.hint}</p>}
+          {step.warning && <p className={styles.guideWarning}>{step.warning}</p>}
+          {step.image && <Image
+            className={styles.guideImage}
+            src={step.image.src}
+            alt={step.image.alt}
+            width={step.image.width}
+            height={step.image.height}
+            sizes="(max-width: 720px) 100vw, 640px"
+          />}
+        </li>)}
       </ol>
-      <p className={styles.versionNote}>不同 iPhone 版本的按鈕位置可能略有不同。</p>
-      <p className={styles.loginHint}>第一次從桌面開啟時，如果尚未登入，請用 LINE 登入一次。</p>
+      <p className={styles.versionNote}>不同 iPhone 版本的畫面可能略有不同。</p>
+      <p className={styles.loginHint}>完成後，回到手機桌面點藍色 R 的「我是扶輪人」圖示。第一次從桌面開啟時，需要再用 LINE 登入一次，這是正常的，之後就不用了。</p>
     </section>;
   }
 
@@ -173,7 +271,7 @@ function InstallSteps({ platform }: { platform: InstallPlatform }) {
 }
 
 export function PwaInstallInstructions() {
-  const { ready, platform, embeddedBrowser, installed, installPrompt, promptInstall } = useInstallEnvironment();
+  const { ready, platform, embeddedBrowser, iosBrowser, safariPageMenu, installed, installPrompt, promptInstall } = useInstallEnvironment();
   const [copyMessage, setCopyMessage] = useState("");
 
   async function copyInstallLink() {
@@ -196,9 +294,13 @@ export function PwaInstallInstructions() {
         type="button"
         onClick={() => void promptInstall()}
       >安裝到手機</button>}
-      {ready && <InstallSteps platform={platform} />}
+      {ready && <InstallSteps platform={platform} iosBrowser={iosBrowser} safariPageMenu={safariPageMenu} />}
     </>}
     <div className={styles.shareRow}>
+      <a
+        className={styles.helpLink}
+        href={ready ? `https://line.me/R/share?text=${encodeURIComponent(`可以幫我把「我是扶輪人」加到手機桌面嗎？ ${externalInstallUrl(window.location.origin)}`)}` : "https://line.me/R/share"}
+      >做不到？用 LINE 請家人幫忙</a>
       <button className={styles.copyButton} type="button" onClick={() => void copyInstallLink()}>複製安裝連結</button>
       {copyMessage && <p role="status">{copyMessage}</p>}
     </div>
