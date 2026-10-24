@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   detectEmbeddedBrowser,
+  detectIosBrowser,
+  iosSafariUsesPageMenu,
   detectInstallPlatform,
   externalInstallUrl,
   installCardDismissalExpiresAt,
@@ -15,6 +17,19 @@ describe("mobile installation guidance", () => {
     expect(detectInstallPlatform("Mozilla/5.0 (Macintosh; Intel Mac OS X)", "MacIntel", 5)).toBe("ios");
     expect(detectInstallPlatform("Mozilla/5.0 (Linux; Android 15; Pixel)")).toBe("android");
     expect(detectInstallPlatform("Mozilla/5.0 (X11; Linux x86_64)")).toBe("other");
+  });
+
+  it("tells iPhone Safari, Chrome, and other browsers apart", () => {
+    const safari17 = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+    const safari26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
+    const chrome = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/141.0.0.0 Mobile/15E148 Safari/604.1";
+    const firefox = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/140.0 Mobile/15E148 Safari/605.1.15";
+    expect(detectIosBrowser(safari17)).toBe("safari");
+    expect(detectIosBrowser(safari26)).toBe("safari");
+    expect(detectIosBrowser(chrome)).toBe("chrome");
+    expect(detectIosBrowser(firefox)).toBe("other");
+    expect(iosSafariUsesPageMenu(safari17)).toBe(false);
+    expect(iosSafariUsesPageMenu(safari26)).toBe(true);
   });
 
   it("detects common embedded browsers so the page can show external-open instructions", () => {

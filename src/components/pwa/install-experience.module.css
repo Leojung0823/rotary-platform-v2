@@ -45,15 +45,7 @@
 .steps p { margin: 0 0 10px; }
 .steps ol { display: grid; gap: 8px; margin: 0 0 16px; padding-left: 24px; }
 .steps li { padding-left: 4px; }
-.steps ol.visualSteps { gap: 9px; padding: 0; list-style: none; }
-.visualSteps li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 70px; padding: 10px 12px; border: 1px solid #e3e9f0; border-radius: 14px; background: #fbfcfe; }
 .stepNumber { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; color: #fff; background: #0d6eaa; font-size: 16px; font-weight: 700; }
-.visualSteps li > span:nth-child(2) { display: grid; gap: 2px; min-width: 0; }
-.visualSteps strong { color: #10233d; font-size: 16px; line-height: 1.4; }
-.visualSteps small { color: #626f7e; font-size: 14px; line-height: 1.45; }
-.shareSymbol { color: #0d6eaa; font-size: 28px; font-weight: 700; line-height: 1; }
-.homeSymbol { display: grid; width: 34px; height: 34px; place-items: center; border: 2px solid #0d6eaa; border-radius: 9px; color: #0d6eaa; font-size: 26px; line-height: 1; }
-.addSymbol { padding: 6px 10px; border-radius: 9px; color: #fff; background: #0d6eaa; font-size: 14px; font-weight: 700; }
 .steps p.versionNote { color: #626f7e; font-size: 14px; }
 .loginHint { padding: 12px 14px; border-radius: 12px; background: #f1f6fc; }
 .androidMenuExample { display: grid; grid-template-columns: 34px minmax(180px, 270px); align-items: start; gap: 8px; width: fit-content; margin: 12px 0 16px auto; padding: 9px; border: 1px solid #d7dfe8; border-radius: 14px; background: #f9fafc; box-shadow: 0 6px 18px rgb(16 35 61 / 8%); }
@@ -63,14 +55,26 @@
 .promptButton { justify-self: start; min-width: 180px; }
 .shareRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; border-top: 1px solid #e8edf3; padding-top: 14px; }
 .shareRow p { flex: 1 0 100%; margin: 0; color: #14532d; font-size: 14px; line-height: 1.5; }
-.loginLink { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; margin-top: 22px; color: #0a5fc4; font-size: 16px; font-weight: 700; }
+.loginLink { display: flex; width: 100%; min-height: 56px; align-items: center; justify-content: center; margin-top: 22px; border: 2px solid #0a5fc4; border-radius: 14px; color: #0a5fc4; background: #fff; font-size: 18px; font-weight: 700; }
+.browserBadge { display: inline-block; padding: 6px 12px; border-radius: 999px; color: #0a4f86; background: #e6f1fb; font-size: 16px; font-weight: 700; }
+.browserSwitch { padding: 14px 16px; border-radius: 12px; background: #fff6dd; color: #563c0c; }
+.steps ol.guideSteps { display: grid; gap: 14px; margin: 14px 0 16px; padding: 0; list-style: none; }
+.guideSteps li { display: grid; gap: 10px; min-width: 0; padding: 16px; border: 1px solid #dbe5ef; border-radius: 16px; background: #fbfcfe; }
+.guideStepHeader { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 12px; }
+.guideStepHeader .stepNumber { width: 36px; height: 36px; font-size: 18px; }
+.guideStepHeader strong { color: #10233d; font-size: 20px; line-height: 1.45; }
+.steps p.guideHint { margin: 0; color: #334b63; font-size: 17px; line-height: 1.65; }
+.steps p.guideWarning { margin: 0; padding: 10px 12px; border-left: 4px solid #c81e1e; border-radius: 8px; color: #8f1414; background: #fdeeee; font-size: 17px; font-weight: 700; line-height: 1.6; }
+.guideImage { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid #d7dfe8; border-radius: 12px; }
+.helpLink { display: inline-flex; min-height: 48px; align-items: center; padding: 8px 14px; border-radius: 12px; color: #fff; background: #047a37; font-size: 16px; font-weight: 700; text-decoration: none; }
 
 @media (max-width: 620px) {
   .installCard { display: grid; gap: 12px; padding: 18px; }
   .installCard h2 { font-size: 18px; }
   .installCardActions { justify-content: space-between; }
   .installCardActions > :first-child { flex: 1 1 auto; justify-content: center; }
-  .installPage { padding-right: 12px; padding-left: 12px; }
+  .installPage { padding-right: 12px; padding-bottom: calc(env(safe-area-inset-bottom) + 120px); padding-left: 12px; }
+  .guideSteps li { padding: 14px 12px; }
   .installPageHeader { margin-bottom: 18px; }
   .installPanel { border-radius: 18px; }
   .steps p, .steps li { font-size: 15px; }
