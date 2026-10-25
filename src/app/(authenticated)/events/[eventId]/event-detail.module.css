@@ -9,7 +9,9 @@
   box-shadow: var(--shadow);
 }
 
-.cover { display: block; width: 100%; max-height: 320px; object-fit: cover; }
+/* A cover may be a designed poster with text, so the detail view must show
+   the complete artwork. The list can keep its compact banner crop. */
+.cover { display: block; width: 100%; max-height: 480px; object-fit: contain; background: #06366a; }
 
 .header { display: grid; gap: 10px; padding: 20px 20px 0; }
 .header h1 { margin: 0; font-size: 28px; line-height: 1.25; }

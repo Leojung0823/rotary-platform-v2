@@ -184,6 +184,7 @@ export type MemberPortalContentProps = {
   /** Request-scoped private cover signing; absent when the event has no cover. */
   featuredEventCoverUrl?: Promise<string | undefined>;
   upcomingEvents: readonly PortalUpcomingEvent[];
+  eventsHref: string;
   tasks: readonly PortalTask[];
   announcements: readonly PortalAnnouncement[];
   /** Where the notices card's "查看全部" goes; the message centre. */
@@ -217,6 +218,7 @@ export function MemberPortalBody({
   featuredEvent,
   featuredEventCoverUrl,
   upcomingEvents,
+  eventsHref,
   tasks,
   announcements,
   messagesHref,
@@ -231,7 +233,7 @@ export function MemberPortalBody({
         ? <section className={styles.heroEmpty}>
           <span className={styles.heroSparkle} aria-hidden="true"><PortalIcon name="sparkle" size={18} /></span>
           <p>目前沒有需要處理的活動</p>
-          <Link className={styles.heroEmptyLink} href="/events" prefetch={false}>查看活動 <PortalIcon name="chevronRight" size={16} /></Link>
+          <Link className={styles.heroEmptyLink} href={eventsHref} prefetch={false}>查看活動 <PortalIcon name="chevronRight" size={16} /></Link>
         </section>
         : featuredEventCoverUrl
           ? <Suspense fallback={<HeroCard event={featuredEvent} />}>
@@ -240,8 +242,8 @@ export function MemberPortalBody({
           : <HeroCard event={featuredEvent} />}
 
       <div className={styles.dashboard}>
-        <DashboardCard icon="calendar" title="近期活動" tone="blue" href="/events" empty={upcomingEvents.length === 0 ? "近期沒有活動" : null}>
-          {upcomingEvents.map((event) => <div className={styles.eventRow} key={event.title}>
+        <DashboardCard icon="calendar" title="近期活動" tone="blue" href={eventsHref} empty={upcomingEvents.length === 0 ? "近期沒有活動" : null}>
+          {upcomingEvents.map((event) => <Link className={styles.eventRow} key={event.id} href={event.href} prefetch={false}>
             <span className={styles.dateCard}>
               <small>{event.month}</small>
               <strong>{event.day}</strong>
@@ -253,7 +255,7 @@ export function MemberPortalBody({
             <span className={`${styles.rowPill} ${event.state === "open" ? styles.rowPillOpen : ""}`}>
               {registrationLabels[event.state]}
             </span>
-          </div>)}
+          </Link>)}
         </DashboardCard>
 
         <DashboardCard icon="checkSquare" title="待辦提醒" tone="green" href={taskCenterHref} empty={tasks.length === 0 ? "目前沒有優先待辦提醒" : null}>

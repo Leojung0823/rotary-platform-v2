@@ -24,6 +24,43 @@ async function expectNoHorizontalOverflow(page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
+test("each upcoming event row opens that exact event in member mode", async ({ page }, testInfo) => {
+  test.setTimeout(60_000);
+  await login(page, "e2e-shell-ordinary@example.test");
+  const dashboard = page.url();
+  const upcoming = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "近期活動", exact: true }),
+  });
+  const links = upcoming.getByRole("link").filter({ has: page.locator("strong") });
+  await expect(links.first()).toBeVisible();
+  const destinations = await links.evaluateAll((rows) => rows.map((row) => ({
+    href: row.getAttribute("href"),
+    title: row.querySelector("span:nth-child(2) > strong")?.textContent,
+  })));
+  expect(destinations.length).toBeGreaterThan(0);
+  const clubs = new Set();
+  for (const { href, title } of destinations) {
+    expect(title).toBeTruthy();
+    const destination = new URL(href, baseURL);
+    expect(destination.pathname).toMatch(/^\/events\/[0-9a-f-]{36}$/u);
+    expect(destination.searchParams.get("mode")).toBe("member");
+    expect(destination.searchParams.get("clubId")).toMatch(/^[0-9a-f-]{36}$/u);
+    clubs.add(destination.searchParams.get("clubId"));
+    const link = upcoming.locator(`a[href="${href}"]`);
+    await link.focus();
+    await link.press("Enter");
+    await expect(page).toHaveURL(destination.toString());
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    await expect(page.getByText("地點", { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page.goto(dashboard);
+  }
+  expect(clubs.size).toBe(1);
+  await expect(upcoming.getByRole("link", { name: /查看全部/u }))
+    .toHaveAttribute("href", `/events?clubId=${[...clubs][0]}&mode=member`);
+  await page.screenshot({ path: testInfo.outputPath("upcoming-event-links.png"), fullPage: true });
+});
+
 test("already-friend checks pairing in place and distinguishes lookup failures", async ({ page, context }, testInfo) => {
   await login(page, "e2e-shell-line-oa-unpaired@example.test");
   const taskCard = page.locator("section").filter({ has: page.getByRole("heading", { name: "待辦提醒", exact: true }) });

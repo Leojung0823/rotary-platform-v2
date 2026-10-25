@@ -93,10 +93,13 @@ export function featuredEventFrom(
 
 export function upcomingEventsFrom(
   events: readonly MemberHomeUpcomingEvent[],
+  clubId: string,
 ): readonly PortalUpcomingEvent[] {
   return events.map((event) => {
     const at = new Date(event.startsAt);
     return {
+      id: event.eventId,
+      href: `/events/${encodeURIComponent(event.eventId)}?clubId=${encodeURIComponent(clubId)}&mode=member`,
       month: monthOnly.format(at),
       day: dayOnly.format(at),
       title: event.title,
