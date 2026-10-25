@@ -3,7 +3,27 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-10-25 活動時間未定支援（已部署、旗標已可見；四場完成，四場待續）
+## 2026-10-25 最終驗收：八場活動與八張封面完成（staging）
+
+- 使用者重新登入後，先查完整管理清單，確認第708次原先未建立，才重新送出；沒有重複建立。第708、710、714、715次均已建立、上傳對應圖片及發布，與先前709、711、712、713次合計八場。重新載入頁面後八場皆維持已發布、圖片存在；四場日期未定皆正確顯示日期／時間未定／暫停社員QR與GPS，沒有偽造時段。
+- 管理頁「板橋群英扶輪社」共11場有效活動，包含本輪八場及原本三場。八張封面逐一展開並等 lazy loading 完成，實際 naturalWidth=1600、naturalHeight=900、complete=true，且皆為私有 Storage signed URL。新四場每場報名名單為全社30位待回覆；沒有替社員報名或修改既有報名狀態。
+
+| 次數 | 2026日期／時段 | event_id |
+| --- | --- | --- |
+| 708 | 10/27，時間未定 | 8cb1f1a7-4407-429c-b877-38106c5473bf |
+| 709 | 10/29 13:30–17:00 | 0ee15b38-b184-4fb8-8e07-19783e004a7c |
+| 710 | 11/3，時間未定 | 33ae2d9c-a3b1-4690-b99b-98e85ef30a45 |
+| 711 | 11/17 19:00–21:00 | a8299aa3-fbe2-4470-a2dc-6a40bcfb2741 |
+| 712 | 11/29 08:30–14:30 | e48bfafb-e5f9-4eac-a57b-140438f04b22 |
+| 713 | 12/8 19:00–21:00，全體社員 | ea37c480-dac7-4772-bdfb-b61af276b817 |
+| 714 | 12/15，時間未定 | 972d8cda-02b3-4a23-b26a-ddf2b38a2a76 |
+| 715 | 12/20，時間未定，CP Ali’s Place | 19f0abbf-608a-4f7c-abd0-2f306cd925b7 |
+
+- 完整活動清單、文案與IDs已更新 worktree 和主工作目錄兩份 outputs/event-covers/2026-q4/EVENTS.json；八張原圖及 PROMPTS.md 同存。實際已發布的聖誕趴完整卡片截圖為主工作目錄 outputs/event-covers/2026-q4/staging-published-card-715.jpg，含圖片、已發布、時間未定、地點與30位對象。這些產物依既有outputs規則不進Git，需保留主工作目錄副本。
+- 程式部署仍為300097b，Plan40196606775／Go-Live40196686806／CI40196596420／完整Smoke40196596375都成功。此次只新增使用者指定的staging活動資料，沒有production修改、沒有新migration，也沒有重複觸發發布或改LINE channel。首頁近期活動直達詳情、封面contain、本機217檔1593tests／84SQL與手機桌機回歸均已完成；詳細證據見下方過程。
+- 已用一般性介紹補齊活動說明，不把未知資料寫成事實。後續由幹部維護的資訊：三場E-Meeting連結與時段、711分享主題、參訪集合與流程、登山集合路線、選舉議程及聖誕趴時段安排。這些保留待公布，不是本輪程式或建檔失敗。
+
+## 2026-10-25 開發與驗收過程（歷史紀錄；以最上方最終驗收為準）
 
 - 最終自動瀏覽器驗證：產品 SHA `300097b` 的 Browser Smoke `40196596375` 已成功（233 passed／99 skipped／3 flaky，另含五項 rollback 各自通過）。三項重試後通過為既有訊息排程、GPS 冪等簽到及歡喜牆私人收藏，這輪首頁連結與 Rich Menu 回歸沒有重試。下方「仍執行中」為先前同步當時狀態，以本段最終結果為準。文件提交 `68f8b0c` 的 CI／Smoke 僅跑文件 scope gate，不能拿它取代產品 SHA 的完整測試證據。
 - 後續前端修正 commit `300097b1a0f3e642224381e355939bbcd4e33707` 已同步 main 並成功部署 staging：Release plan `40196606775`、Go-Live `40196686806`（含 HTTPS smoke／受保護 hosted 社員驗收）成功；2026-10-25T13:20:48Z health revision `300097b1a0f3`、status ok、configuration/database true、issues/warnings 空。CI `40196596420` 成功；自動 Browser Smoke `40196596375` 仍在執行，不能先算通過。沒有新 migration、沒有修改 production 或開旗標。已有可用的前版程式 `fcda4f4` 作為本次純前端發布的 rollback point，沒有聲稱新建 NAS／資料庫備份。
