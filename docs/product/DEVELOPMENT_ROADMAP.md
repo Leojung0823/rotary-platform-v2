@@ -1,6 +1,12 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-10-03（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-25（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-10-25 活動只填日期（已實作，發布驗收中）
+
+- 新增時間未定模式：顯示台北日期與「時間未定」，報名開放至當日日末，QR／GPS 本人簽到暫不開放，幹部可人工補登；缺席及出席率最早在活動日期結束後結算。確定時段後可編輯回一般模式，舊 QR 憑證不會復活。
+- event_date_only_v1 預設關閉；新增 20261015000100、20261015000200 兩支 migration。一般社員、外社、停權帳號與關旗標時的拒絕，均以真實本機 Postgres 驗證。完整 84 份 SQL、216 檔／1,590 項 Vitest、typecheck、lint、build 及 Playwright 1440／375px（4 passed／2 skipped）已通過；staging 發布尚在完成中。
+- 板橋群英扶輪社第 708–715 次例會尚待新增；每場另製作一張主題封面，完成後逐一核對日期、時間、地點、全社可見及私有圖片權限。最新發布／資料建立狀態見 CURRENT_SESSION_HANDOFF.md；下方各日期段落保留當時的歷史狀態。
 
 ## 2026-10-03 歡喜牆私人收藏（程式與本機驗收完成；尚未部署）
 

@@ -7,6 +7,7 @@ import {
   parseGuestCount,
   parseOptionalCapacity,
   parseTaipeiDateTime,
+  parseTaipeiDateBoundaries,
   validateEventCreateForm,
 } from "./validation";
 
@@ -40,6 +41,31 @@ describe("event validation", () => {
     expect(() => parseTaipeiDateTime("2026/08/01 18:30")).toThrow("invalid_event_time");
     expect(() => parseTaipeiDateTime("2026-02-30T18:30")).toThrow("invalid_event_time");
     expect(() => parseTaipeiDateTime("2026-08-01T24:00")).toThrow("invalid_event_time");
+  });
+
+  it("stores a date-only event as the full Taipei calendar day", () => {
+    expect(parseTaipeiDateBoundaries("2026-10-27")).toEqual({
+      date: "2026-10-27",
+      startsAt: "2026-10-26T16:00:00.000Z",
+      endsAt: "2026-10-27T16:00:00.000Z",
+    });
+    expect(() => parseTaipeiDateBoundaries("2026-02-30")).toThrow("invalid_event_date");
+  });
+
+  it("date-only registration remains open through the end of the selected day", () => {
+    const validation = validateEventCreateForm(createValues({
+      timeUnspecified: true,
+      eventDate: "2026-10-27",
+      registrationDeadline: "2026-10-26T18:30",
+    }));
+    expect(validation).toMatchObject({
+      ok: true,
+      input: {
+        startsAt: "2026-10-26T16:00:00.000Z",
+        endsAt: "2026-10-27T16:00:00.000Z",
+        registrationDeadline: null,
+      },
+    });
   });
 
   it("validates optional capacity", () => {

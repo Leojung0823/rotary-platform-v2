@@ -23,6 +23,7 @@ export type MemberHomeEvent = Readonly<{
   location: string;
   startsAt: string;
   endsAt: string;
+  timeUnspecified: boolean;
   registrationState: MemberHomeRegistrationState;
   /**
    * Whether registration is still open, which registrationState stops saying
@@ -58,6 +59,7 @@ export type MemberHomeUpcomingEvent = Readonly<{
   eventId: string;
   title: string;
   startsAt: string;
+  timeUnspecified: boolean;
   registrationState: "registered" | "open" | "closed";
 }>;
 
@@ -141,7 +143,7 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
   if (!isRecord(value)
     || !hasExactKeys(value, [
       "event_type", "title", "location", "cover_image_path",
-      "starts_at", "ends_at", "registration_state", "registration_open", "checkin_state",
+      "starts_at", "ends_at", "time_unspecified", "registration_state", "registration_open", "checkin_state",
     ])
     || typeof value.event_type !== "string"
     || typeof value.title !== "string"
@@ -161,6 +163,7 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
         && !/^[a-z][a-z0-9+.-]*:/iu.test(value.cover_image_path)))
     || !isIsoDateTime(value.starts_at)
     || !isIsoDateTime(value.ends_at)
+    || typeof value.time_unspecified !== "boolean"
     || !includes(memberHomeRegistrationStates, value.registration_state)
     || typeof value.registration_open !== "boolean"
     || !includes(memberHomeCheckinStates, value.checkin_state)) return null;
@@ -172,6 +175,7 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
     coverImagePath: (value.cover_image_path as string | null) ?? null,
     startsAt: value.starts_at,
     endsAt: value.ends_at,
+    timeUnspecified: value.time_unspecified,
     registrationState: value.registration_state,
     registrationOpen: value.registration_open,
     checkinState: value.checkin_state,
@@ -233,7 +237,7 @@ const upcomingRegistrationStates = ["registered", "open", "closed"] as const;
 
 function parseUpcomingEvent(value: unknown): MemberHomeUpcomingEvent | null {
   if (!isRecord(value)
-    || !hasExactKeys(value, ["event_id", "title", "starts_at", "registration_state"])
+    || !hasExactKeys(value, ["event_id", "title", "starts_at", "time_unspecified", "registration_state"])
     || typeof value.event_id !== "string"
     || value.event_id.length === 0
     || typeof value.title !== "string"
@@ -241,6 +245,7 @@ function parseUpcomingEvent(value: unknown): MemberHomeUpcomingEvent | null {
     || value.title.length > maximumEventTextLength
     || typeof value.starts_at !== "string"
     || value.starts_at.length === 0
+    || typeof value.time_unspecified !== "boolean"
     || typeof value.registration_state !== "string"
     || !(upcomingRegistrationStates as readonly string[]).includes(value.registration_state)) return null;
 
@@ -248,6 +253,7 @@ function parseUpcomingEvent(value: unknown): MemberHomeUpcomingEvent | null {
     eventId: value.event_id,
     title: value.title,
     startsAt: value.starts_at,
+    timeUnspecified: value.time_unspecified,
     registrationState: value.registration_state as MemberHomeUpcomingEvent["registrationState"],
   };
 }

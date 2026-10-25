@@ -8,6 +8,8 @@ const migration = readFileSync("supabase/migrations/20260916000500_optional_regi
 const form: EventCreateFormValues = {
   eventType: "regular_meeting",
   title: "每週例會",
+  eventDate: "",
+  timeUnspecified: false,
   startsAt: "2026-09-17T18:30",
   endsAt: "2026-09-17T20:30",
   registrationDeadline: "",

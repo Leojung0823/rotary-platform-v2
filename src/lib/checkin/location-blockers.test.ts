@@ -11,6 +11,7 @@ function event(overrides: Partial<ClubEvent> & { id: string }): ClubEvent {
     event_type: "regular_meeting", title: `活動 ${overrides.id}`, description: "", location: "",
     starts_at: new Date(now.getTime() + HOUR).toISOString(),
     ends_at: new Date(now.getTime() + 3 * HOUR).toISOString(),
+    time_unspecified: false,
     registration_deadline: null, capacity: null, counts_for_attendance: true,
     status: "published", version: 1, attending_members: 0, attending_spots: 0,
     remaining_spots: null, my_response: null, my_guest_count: 0, my_note: "",
@@ -47,6 +48,10 @@ describe("簽到頁要說出這裡為什麼是空的", () => {
       starts_at: new Date(now.getTime() + 61 * 60_000).toISOString(),
       ends_at: new Date(now.getTime() + 3 * HOUR).toISOString(),
     })).toBe("too_early");
+  });
+
+  it("does not offer location check-in when an event has no exact time", () => {
+    expect(reasonFor({ id: "date-only", time_unspecified: true })).toBe("time_unspecified");
   });
 
   it("says too late from an hour after the end", () => {
@@ -117,7 +122,7 @@ describe("只在真的空的時候才解釋", () => {
 
   it("names every reason it can produce", () => {
     const component = readFileSync("src/components/events/location-checkin-diagnosis.tsx", "utf8");
-    for (const reason of ["no_venue", "too_early", "too_late", "should_be_open"]) {
+    for (const reason of ["time_unspecified", "no_venue", "too_early", "too_late", "should_be_open"]) {
       expect(component, `${reason} has no sentence`).toContain(`${reason}:`);
     }
   });

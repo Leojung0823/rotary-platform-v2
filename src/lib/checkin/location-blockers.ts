@@ -9,7 +9,7 @@ import type { ClubEvent } from "@/lib/events/page-contract";
 export type LocationCheckinBlocker = Readonly<{
   eventId: string;
   title: string;
-  reason: "no_venue" | "too_early" | "too_late" | "should_be_open";
+  reason: "time_unspecified" | "no_venue" | "too_early" | "too_late" | "should_be_open";
 }>;
 
 const HOUR = 60 * 60 * 1000;
@@ -45,6 +45,9 @@ export function locationCheckinBlockers(
     .map((event) => {
       const starts = new Date(event.starts_at).getTime();
       const ends = new Date(event.ends_at).getTime();
+      if (event.time_unspecified) {
+        return { eventId: event.id, title: event.title, reason: "time_unspecified" as const };
+      }
       // The venue first: without coordinates the window never matters, and
       // telling someone to wait for a window that will never open is worse than
       // telling them nothing.
@@ -62,7 +65,7 @@ export function locationCheckinBlockers(
     .sort((left, right) => {
       // What is actionable now first: a session someone can open, then the
       // clock, then the events that will never offer it.
-      const rank = { should_be_open: 0, too_early: 1, no_venue: 2, too_late: 3 };
+      const rank = { should_be_open: 0, too_early: 1, time_unspecified: 2, no_venue: 3, too_late: 4 };
       return rank[left.reason] - rank[right.reason];
     })
     .slice(0, 6);

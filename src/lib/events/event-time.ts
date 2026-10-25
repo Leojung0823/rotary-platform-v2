@@ -6,6 +6,11 @@ const dateAndTime = new Intl.DateTimeFormat("zh-TW", {
   hour: "2-digit", minute: "2-digit", hour12: false,
 });
 
+const dateOnly = new Intl.DateTimeFormat("zh-TW", {
+  timeZone: APP_TIME_ZONE,
+  year: "numeric", month: "2-digit", day: "2-digit", weekday: "short",
+});
+
 const timeOnly = new Intl.DateTimeFormat("zh-TW", {
   timeZone: APP_TIME_ZONE,
   hour: "2-digit", minute: "2-digit", hour12: false,
@@ -33,7 +38,12 @@ export function isSameTaipeiDay(startsAt: string, endsAt: string): boolean {
  * look like it ran overnight, and buried the one case where the second date is
  * the thing a member needs to see.
  */
-export function formatEventTimeRange(startsAt: string, endsAt: string): string {
+export function formatEventTimeRange(
+  startsAt: string,
+  endsAt: string,
+  timeUnspecified = false,
+): string {
+  if (timeUnspecified) return `${dateOnly.format(new Date(startsAt))} · 時間未定`;
   const start = dateAndTime.format(new Date(startsAt));
   return isSameTaipeiDay(startsAt, endsAt)
     ? `${start}－${timeOnly.format(new Date(endsAt))}`
@@ -41,7 +51,12 @@ export function formatEventTimeRange(startsAt: string, endsAt: string): string {
 }
 
 /** The time half alone, for a layout that already shows the date beside it. */
-export function formatEventClockRange(startsAt: string, endsAt: string): string {
+export function formatEventClockRange(
+  startsAt: string,
+  endsAt: string,
+  timeUnspecified = false,
+): string {
+  if (timeUnspecified) return "時間未定";
   const range = `${timeOnly.format(new Date(startsAt))}－${timeOnly.format(new Date(endsAt))}`;
   // A cross-midnight event needs the second date or the range reads backwards
   // ("18:30－02:00"), which is the one case a bare clock cannot express.

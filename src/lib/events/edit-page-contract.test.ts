@@ -7,13 +7,19 @@ import { latestDefinition } from "@/lib/attendance/latest-definition";
 // went red the next time the row gained a field rather than when the page and
 // the row actually disagreed.
 const migration = latestDefinition("list_club_events");
+const dateOnlyMigration = readFileSync("supabase/migrations/20261015000100_event_date_only_v1.sql", "utf8");
 const pagePath = "src/app/(authenticated)/clubs/[clubId]/events/[eventId]/edit/page.tsx";
 const page = readFileSync(pagePath, "utf8");
 
 /** Every key a row of list_club_events actually carries. */
 function emittedKeys(): Set<string> {
   const build = migration.slice(migration.indexOf("jsonb_agg(jsonb_build_object("));
-  return new Set([...build.matchAll(/'([a-z_]+)',\s/gu)].map((match) => match[1]));
+  const keys = new Set([...build.matchAll(/'([a-z_]+)',\s/gu)].map((match) => match[1]));
+  const start = dateOnlyMigration.indexOf("definition := pg_get_functiondef('public.list_club_events(uuid,boolean)'");
+  const end = dateOnlyMigration.indexOf("execute definition;", start);
+  const dateOnlyProjection = start >= 0 && end >= 0 ? dateOnlyMigration.slice(start, end) : "";
+  if (dateOnlyProjection.includes("'time_unspecified', event.time_unspecified")) keys.add("time_unspecified");
+  return keys;
 }
 
 /** The field names the page declares for a row. */

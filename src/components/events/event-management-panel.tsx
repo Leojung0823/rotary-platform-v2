@@ -6,6 +6,7 @@ import { EventRegistrationRoster } from "@/components/events/event-registration-
 import type { RegistrationRosterEntry } from "@/lib/events/registration-roster";
 import { EventCreateForm } from "@/components/events/event-create-form";
 import { eventTypeLabels, formatDateTime, responseLabels, statusBadge, statusLabels, type ClubEvent, type EventClub } from "@/lib/events/page-contract";
+import { formatEventTimeRange } from "@/lib/events/event-time";
 
 export type EventManagementAudienceTag = { tag_id: string; tag_name: string; member_count: number };
 export type EventManagementAudienceMember = { membership_id: string; display_name: string };
@@ -17,6 +18,7 @@ export function EventManagementPanel({
   audienceTags,
   audienceMembers,
   rosters,
+  timeUnspecifiedEnabled,
 }: {
   selectedClub: EventClub;
   events: readonly ClubEvent[];
@@ -26,6 +28,7 @@ export function EventManagementPanel({
   /** Per published event: who was asked and what they said. null means the
       read failed, which the card reports rather than drawing as "nobody". */
   rosters: ReadonlyMap<string, readonly RegistrationRosterEntry[] | null>;
+  timeUnspecifiedEnabled: boolean;
 }) {
   const live = events.filter((event) => event.status !== "cancelled");
   const cancelled = events.filter((event) => event.status === "cancelled");
@@ -62,7 +65,7 @@ export function EventManagementPanel({
               and a boxed metric in a side column: a card that said very little
               was 480px tall, and a dozen of them made the list unreadable. */}
           <dl className="event-facts">
-            <div><dt>時間</dt><dd>{formatDateTime(event.starts_at)}－{formatDateTime(event.ends_at)}</dd></div>
+            <div><dt>時間</dt><dd>{formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)}</dd></div>
             <div><dt>地點</dt><dd>{event.location || "尚未填寫"}</dd></div>
             <div><dt>報名截止</dt><dd>{event.registration_deadline === null
               ? "不設截止，活動結束前都可報名"
@@ -73,7 +76,9 @@ export function EventManagementPanel({
                 條件都湊齊之後才看得到 —— 對還在設定活動的人來說太晚了。 */}
             <div>
               <dt>定位簽到</dt>
-              <dd>{event.venue_location_set
+              <dd>{event.time_unspecified
+                ? "時間尚未確定，目前不開放社員 QR／定位本人簽到"
+                : event.venue_location_set
                 ? "已設座標，社員到現場可直接簽到"
                 : <>未設座標，社員只能掃 QR{(event.status === "draft" || event.status === "published") && <>（<Link href={`/clubs/${selectedClub.club_id}/events/${event.id}/edit`}>補上座標</Link>）</>}</>}</dd>
             </div>
@@ -149,6 +154,7 @@ export function EventManagementPanel({
       </div>
       <EventCreateForm
         clubId={selectedClub.club_id}
+        timeUnspecifiedEnabled={timeUnspecifiedEnabled}
         eventTypeLabels={eventTypeLabels}
         tags={audienceTags}
         members={audienceMembers}

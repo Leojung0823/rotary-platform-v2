@@ -1,6 +1,18 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-10-03（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-25（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-10-25 優先完成：時間未定活動與板橋群英活動建檔
+
+- [x] 日期未定的建立／編輯、顯示、報名、簽到及出席結算實作。
+- [x] 完整本機 Postgres 重播與 84 份 SQL 安全驗證；typecheck、lint、1,590 項測試與 build。
+- [x] 活動 Playwright 1440／375px 實際流程通過（4 passed／2 skipped）。
+- [ ] 功能同步 main。
+- [ ] exact SHA 的 staging Plan→Go-Live、health 及旗標開啟驗收。
+- [ ] 板橋群英第 708–715 次共八場活動建立與發布；713 為全體社員參加，711 分享主題尚待幹部補充。
+- [ ] 八場各一張主題封面，保存本機並上傳對應活動，再核對社員可見及其他社不可讀。
+
+以上項目的即時證據與發生過的問題見 CURRENT_SESSION_HANDOFF.md；下方段落為歷史進度，不以舊的「尚未部署」推定目前狀態。
 
 ## 2026-10-03 歡喜牆私人收藏（已完成程式與本機驗收；尚未部署）
 

@@ -23,6 +23,14 @@ describe("an event that ends the evening it started", () => {
   });
 });
 
+describe("an event whose exact time is not known yet", () => {
+  it("shows its date without presenting the storage boundary as midnight", () => {
+    expect(formatEventTimeRange(eveningStart, eveningEnd, true)).toContain("時間未定");
+    expect(formatEventTimeRange(eveningStart, eveningEnd, true)).not.toContain("00:00");
+    expect(formatEventClockRange(eveningStart, eveningEnd, true)).toBe("時間未定");
+  });
+});
+
 describe("an event that crosses midnight", () => {
   // The second date is the one thing a bare clock range cannot express:
   // "22:00－01:00" reads backwards.

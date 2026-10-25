@@ -38,6 +38,7 @@ const TOGGLEABLE = [
   "line_rich_menu_v1",
   "dues_finance_v1",
   "joy_wall_v1",
+  "event_date_only_v1",
 ];
 
 // What `--all-implemented` turns on. Deliberately narrower than TOGGLEABLE:

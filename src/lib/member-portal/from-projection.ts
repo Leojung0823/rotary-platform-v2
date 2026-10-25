@@ -21,10 +21,17 @@ const dateTime = new Intl.DateTimeFormat("zh-TW", {
   month: "long", day: "numeric", weekday: "short",
   hour: "2-digit", minute: "2-digit", hour12: false,
 });
+const dateOnly = new Intl.DateTimeFormat("zh-TW", {
+  timeZone: APP_TIME_ZONE,
+  year: "numeric", month: "2-digit", day: "2-digit", weekday: "short",
+});
 const dayOnly = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, day: "numeric" });
 const monthOnly = new Intl.DateTimeFormat("zh-TW", { timeZone: APP_TIME_ZONE, month: "long" });
 const weekdayTime = new Intl.DateTimeFormat("zh-TW", {
   timeZone: APP_TIME_ZONE, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+});
+const weekdayOnly = new Intl.DateTimeFormat("zh-TW", {
+  timeZone: APP_TIME_ZONE, weekday: "short",
 });
 const isoDay = new Intl.DateTimeFormat("en-CA", {
   timeZone: APP_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit",
@@ -46,9 +53,16 @@ function heroRegistration(event: MemberHomeEvent): PortalFeaturedEvent["registra
  * there would never be any -- and once an event outside the attendance rate
  * can take check-ins too, "not_available" stops being the common case.
  */
-function checkinNoteFor(state: MemberHomeEvent["checkinState"]): string {
-  if (state === "available") return "開放簽到";
+function checkinNoteFor(
+  state: MemberHomeEvent["checkinState"],
+  timeUnspecified: boolean,
+): string {
+  // A manual officer check-in is still a completed check-in. Otherwise, do not
+  // describe a date-only meeting as "no check-in needed": it can still count
+  // for attendance, but members cannot use QR/GPS until its time is known.
   if (state === "checked_in") return "已完成簽到";
+  if (timeUnspecified) return "活動時間未定，暫不開放本人 QR／定位簽到";
+  if (state === "available") return "開放簽到";
   if (state === "not_open") return "簽到尚未開始";
   if (state === "closed") return "簽到已結束";
   return "本活動不需簽到";
@@ -63,10 +77,12 @@ export function featuredEventFrom(
     // The projection carries no separate summary, and inventing one would put
     // words in an organiser's mouth. The card simply omits it.
     summary: "",
-    startsAt: dateTime.format(new Date(event.startsAt)),
+    startsAt: event.timeUnspecified
+      ? `${dateOnly.format(new Date(event.startsAt))}（時間未定）`
+      : dateTime.format(new Date(event.startsAt)),
     venue: event.location || "地點待確認",
     venueAddress: "",
-    checkinNote: checkinNoteFor(event.checkinState),
+    checkinNote: checkinNoteFor(event.checkinState, event.timeUnspecified),
     coverUrl: coverUrl ?? null,
     registration: heroRegistration(event),
     // The projection's own rule, which knows about check-in as well as
@@ -84,7 +100,7 @@ export function upcomingEventsFrom(
       month: monthOnly.format(at),
       day: dayOnly.format(at),
       title: event.title,
-      when: weekdayTime.format(at),
+      when: event.timeUnspecified ? `${weekdayOnly.format(at)} · 時間未定` : weekdayTime.format(at),
       state: event.registrationState === "registered"
         ? "registered"
         : event.registrationState === "open" ? "open" : "closed",

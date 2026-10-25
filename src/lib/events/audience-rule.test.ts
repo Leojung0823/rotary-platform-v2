@@ -74,6 +74,7 @@ const notAMemberEventList = new Set([
   "prevent_event_attendance_hard_delete", "protect_event_checkin_qr_credential_update",
   "cleanup_expired_dynamic_checkin_credentials",
   "set_club_event_cover",
+  "prevent_checkin_session_for_date_only_event",
 ]);
 
 /** The rule, applied directly or through a function that applies it. */

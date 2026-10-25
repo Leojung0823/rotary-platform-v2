@@ -29,6 +29,7 @@ type ClubEvent = {
   location: string;
   starts_at: string;
   ends_at: string;
+  time_unspecified: boolean;
   registration_deadline: string | null;
   capacity: number | null;
   counts_for_attendance: boolean;
@@ -106,6 +107,7 @@ function isClubEvent(value: unknown): value is ClubEvent {
     && typeof event.location === "string"
     && typeof event.starts_at === "string"
     && typeof event.ends_at === "string"
+    && typeof event.time_unspecified === "boolean"
     && (typeof event.registration_deadline === "string" || event.registration_deadline === null)
     && (typeof event.capacity === "number" || event.capacity === null)
     && (typeof event.cover_image_path === "string" || event.cover_image_path === null || event.cover_image_path === undefined)
@@ -289,7 +291,7 @@ export default async function EventsPage({
               </div>
               <h2>{event.title}</h2>
               <p className="event-when">
-                {formatEventTimeRange(event.starts_at, event.ends_at)}
+                {formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)}
                 {"　"}
                 <span className="event-fold-hint event-fold-hint-open">▸ 展開詳情</span>
                 <span className="event-fold-hint event-fold-hint-close">▾ 收合詳情</span>
@@ -305,7 +307,7 @@ export default async function EventsPage({
 
           <div className="two-column">
             <div>
-              <p><strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at)}</p>
+              <p><strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)}</p>
               <p><strong>地點：</strong>{event.location || "尚未填寫"}</p>
               <p><strong>報名截止：</strong>{event.registration_deadline === null
                 ? "不設截止，活動結束前都可報名"
@@ -361,10 +363,13 @@ export default async function EventsPage({
               agrees -- check_in_to_event_by_location never asks. Only this
               button still did, so a 不計入出席 event showed no way to check in
               and the officer who made one could not find one. */}
-          {event.status === "published" && selectedClub.can_register
+          {event.status === "published" && selectedClub.can_register && !event.time_unspecified
             && <div className="form-actions">
               <Link className="button button-secondary" href="/events/checkin">本人簽到</Link>
             </div>}
+          {event.status === "published" && event.time_unspecified && <p className="hint">
+            活動時間未定，暫不開放本人 QR／定位簽到。
+          </p>}
           </details>
         </article>)}
       </div>

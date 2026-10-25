@@ -10,6 +10,7 @@ const baseEvent = {
   cover_image_path: null,
   starts_at: "2026-09-17T10:30:00.000Z",
   ends_at: "2026-09-17T12:30:00.000Z",
+  time_unspecified: false,
   registration_state: "declined",
   registration_open: true,
   checkin_state: "not_open",

@@ -1,7 +1,18 @@
-# 交接筆記（持續更新；最新核對 2026-10-03；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-10-25；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-10-25 活動時間未定支援（本機驗收完成，待 staging 發布）
+
+- 功能工作樹：`/Users/leoj/.codex/worktrees/rotary-event-date-only`，分支 `codex/event-date-only-20261015`；開發基準為 `origin/main@9d2b499`。功能提交與遠端 main 的最新 SHA 請現場核對；本節階段尚未開 staging 旗標或部署本功能。
+- 新增 `time_unspecified` 活動模式：只填台北日期、社員端標示「時間未定」、當天仍可報名；本人 QR／GPS 不開放；幹部仍可人工簽到；缺席與出席率到台北當日結束後才結算。功能旗標 `event_date_only_v1` 預設關閉。相關 migrations：`20261015000100_event_date_only_v1.sql`、`20261015000200_date_only_attendance_settlement.sql`；SQL 驗證：`supabase/verification/event_date_only_security.sql`。
+- Docker 已恢復（Server 29.6.1），磁碟約 20GB 可用。本機 typecheck、lint、Vitest 216 檔／1,590 項、build、migration guard、84 份 DB verification manifest、diff check 通過。完整 verify:db 已成功重播所有 migrations 並通過 84 份 SQL；DB lint 只有 3 項既有 warning。日期未定的雙向編輯、舊 QR 憑證撤銷、一般社員／外社／停權拒絕、當日不結算／隔日結算及詳情頁不誤報可簽到均已驗證。
+- 本機 DB reset 後，已按 superadmin → configure-local-e2e-role-shells enabled → browser fixtures 的順序重建測試資料，僅使用臨時隨機的合成本機測試密碼。Playwright 1440／375px 為 4 passed／2 skipped，涵蓋表單錯誤保留、未設截止發布、日期未定建立與社員報名重載後保存，以及補上確切時間；非桌機寫入案例依既有規則略過。使用社員兼管理者驗證報名，純管理帳號仍不能占用社員名額。報名驗收以成功的 action 回應與重新讀取的已保存狀態為準，不依賴尚未結束的外殼串流。
+- `origin/main@9d2b499` 的 Staging Go-Live workflow `40100305734` 已成功；本次即時查詢 staging `/api/health` 回報 `revision=9d2b4992f863`、`status=ok`、`configuration=true`、`database=true`、`issues=[]`（2026-10-25T05:44:18Z）。但此 SHA 不包含日期未定功能；不可當成本功能已部署或已驗收的證據。production 未修改。
+- 待辦順序：完成針對性活動 E2E、同步 main、執行 staging Plan→Go-Live，再透過受保護的旗標 RPC 明確開啟 staging 的 event_date_only_v1 並驗收八場活動。此次僅新增預設 false 欄位、約束與函式／grant 定義，沒有刪除欄位或改寫既有業務資料；staging 可採關旗標與 forward-fix 恢復既有定義。這不是新的備份完成宣告。
+- 使用者追加每場活動各一張主題封面：內建 imagegen 已完成 8 張藍金系列橫幅，例會編號、活動文字與社名均已目視核對，不把未定的日期時間或虛構議程放進圖中。圖片及完整提示詞保存至工作樹 outputs/event-covers/2026-q4（已由既有 outputs 忽略規則排除 Git）。尚待上傳同社私有 event-covers Storage；生成不等於已上傳，仍須逐一核對。
+- 待新增至「板橋群英扶輪社」的 8 場活動，全部尚未建立：708 E-Meeting（10/27，時間未定）；709 職業參訪（10/29 13:30–17:00，台北板橋馥華艾美酒店）；710 E-Meeting（11/3，時間未定）；711 Fellow Sharing（11/17 19:00–21:00，彭園板橋店，Cool & Mandy；主題未知，不補造）；712 二分區聯合登山暨趣味競賽（11/29 08:30–14:30，中和烘爐地）；713 社務會議—2027–28 年度理事選舉（12/8 19:00–21:00，彭園板橋店，全體社員）；714 E-Meeting（12/15，時間未定）；715 社員活動—聖誕趴（12/20，CP Ali’s Place，時間待定）。已知資訊以外的議程、連結、分享題目不自行編造。
 
 ## 2026-10-03 歡喜牆私人收藏續作
 

@@ -15,6 +15,7 @@ import {
 const fieldLabels: Record<EventCreateField, string> = {
   eventType: "活動類型",
   title: "活動名稱",
+  eventDate: "活動日期",
   startsAt: "開始時間",
   endsAt: "結束時間",
   registrationDeadline: "報名截止",
@@ -27,6 +28,7 @@ const fieldLabels: Record<EventCreateField, string> = {
 
 type EventCreateFormProps = {
   clubId: string;
+  timeUnspecifiedEnabled: boolean;
   eventTypeLabels: Record<string, string>;
   tags: readonly AudienceTag[];
   members: readonly AudienceMember[];
@@ -41,7 +43,7 @@ type EventCreateFormProps = {
   };
 };
 
-export function EventCreateForm({ clubId, eventTypeLabels, tags, members, editing }: EventCreateFormProps) {
+export function EventCreateForm({ clubId, timeUnspecifiedEnabled, eventTypeLabels, tags, members, editing }: EventCreateFormProps) {
   // Creating starts on the whole club; editing starts on whatever the event
   // already addresses. Opening the picker empty for a targeted event would
   // have made "save" mean "send this to everyone".
@@ -58,6 +60,10 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members, editin
   );
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const values = state.values;
+  const [timeUnspecified, setTimeUnspecified] = useState(values.timeUnspecified);
+  const initiallyDateOnly = useRef(values.timeUnspecified);
+  const [startsAt, setStartsAt] = useState(values.startsAt);
+  const [endsAt, setEndsAt] = useState(values.endsAt);
 
   // The lookup writes into the coordinate field the manager can also type into
   // by hand, so an address is a convenience rather than a second source of
@@ -123,19 +129,61 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members, editin
         <input className="input" id="event-create-title" name="title" maxLength={160} required defaultValue={values.title} aria-invalid={Boolean(errorFor("title"))} aria-describedby={describedBy("title")} />
         {errorFor("title") && <span className="field-error" id="event-create-title-error">{errorFor("title")}</span>}
       </label>
-      <label className="field" htmlFor="event-create-startsAt"><span className="label">開始時間（台北）</span>
-        <input className="input" id="event-create-startsAt" type="datetime-local" name="startsAt" required defaultValue={values.startsAt} aria-invalid={Boolean(errorFor("startsAt"))} aria-describedby={describedBy("startsAt")} />
-        {errorFor("startsAt") && <span className="field-error" id="event-create-startsAt-error">{errorFor("startsAt")}</span>}
-      </label>
-      <label className="field" htmlFor="event-create-endsAt"><span className="label">結束時間（台北）</span>
-        <input className="input" id="event-create-endsAt" type="datetime-local" name="endsAt" required defaultValue={values.endsAt} aria-invalid={Boolean(errorFor("endsAt"))} aria-describedby={describedBy("endsAt")} />
-        {errorFor("endsAt") && <span className="field-error" id="event-create-endsAt-error">{errorFor("endsAt")}</span>}
-      </label>
-      <label className="field" htmlFor="event-create-registrationDeadline"><span className="label">報名截止（台北，選填）</span>
+      {timeUnspecifiedEnabled && <label className="checkbox-row" htmlFor="event-create-timeUnspecified">
+        <input
+          id="event-create-timeUnspecified"
+          type="checkbox"
+          name="timeUnspecified"
+          checked={timeUnspecified}
+          onChange={(event) => {
+            const checked = event.currentTarget.checked;
+            if (!checked && initiallyDateOnly.current) {
+              // The stored midnight boundaries are not meaningful event times.
+              // If an officer later learns the time, ask them to enter it.
+              setStartsAt("");
+              setEndsAt("");
+            }
+            setTimeUnspecified(checked);
+          }}
+        />
+          <span><strong>活動時間尚未確定</strong><br /><span className="hint">只知道日期時勾選，社員會看到「時間未定」。當天報名到日末；本人 QR／定位簽到暫不開放，缺席也要等日期結束後才結算，幹部仍可人工補登。</span></span>
+      </label>}
+      {!timeUnspecifiedEnabled && values.timeUnspecified && <>
+        <input type="hidden" name="timeUnspecified" value="on" />
+        <div className="notice notice-info">這場活動的時間尚未確定。功能目前未開放變更時間模式；其他活動資料仍可編輯。</div>
+      </>}
+      {timeUnspecified && <label className="field" htmlFor="event-create-eventDate">
+        <span className="label">活動日期（台北）</span>
+        <input
+          className="input"
+          id="event-create-eventDate"
+          type="date"
+          name="eventDate"
+          required
+          disabled={!timeUnspecifiedEnabled && !values.timeUnspecified}
+          defaultValue={values.eventDate}
+          aria-invalid={Boolean(errorFor("eventDate"))}
+          aria-describedby={errorFor("eventDate") ? "event-create-eventDate-error" : "event-create-eventDate-hint"}
+        />
+        {errorFor("eventDate")
+          ? <span className="field-error" id="event-create-eventDate-error">{errorFor("eventDate")}</span>
+          : <span className="hint" id="event-create-eventDate-hint">目前只知道活動日期，還沒有確定幾點開始或結束。</span>}
+      </label>}
+      {!timeUnspecified && <>
+        <label className="field" htmlFor="event-create-startsAt"><span className="label">開始時間（台北）</span>
+          <input className="input" id="event-create-startsAt" type="datetime-local" name="startsAt" required value={startsAt} onChange={(event) => setStartsAt(event.currentTarget.value)} aria-invalid={Boolean(errorFor("startsAt"))} aria-describedby={describedBy("startsAt")} />
+          {errorFor("startsAt") && <span className="field-error" id="event-create-startsAt-error">{errorFor("startsAt")}</span>}
+        </label>
+        <label className="field" htmlFor="event-create-endsAt"><span className="label">結束時間（台北）</span>
+          <input className="input" id="event-create-endsAt" type="datetime-local" name="endsAt" required value={endsAt} onChange={(event) => setEndsAt(event.currentTarget.value)} aria-invalid={Boolean(errorFor("endsAt"))} aria-describedby={describedBy("endsAt")} />
+          {errorFor("endsAt") && <span className="field-error" id="event-create-endsAt-error">{errorFor("endsAt")}</span>}
+        </label>
+      </>}
+      {!timeUnspecified && <label className="field" htmlFor="event-create-registrationDeadline"><span className="label">報名截止（台北，選填）</span>
         <input className="input" id="event-create-registrationDeadline" type="datetime-local" name="registrationDeadline" defaultValue={values.registrationDeadline} aria-invalid={Boolean(errorFor("registrationDeadline"))} aria-describedby={describedBy("registrationDeadline")} />
         <span className="hint">留空表示不設截止時間，活動結束前都可以報名。</span>
         {errorFor("registrationDeadline") && <span className="field-error" id="event-create-registrationDeadline-error">{errorFor("registrationDeadline")}</span>}
-      </label>
+      </label>}
       <label className="field" htmlFor="event-create-capacity"><span className="label">名額（留空表示不限）</span>
         <input className="input" id="event-create-capacity" type="number" name="capacity" min={1} max={10000} inputMode="numeric" defaultValue={values.capacity} aria-invalid={Boolean(errorFor("capacity"))} aria-describedby={describedBy("capacity")} />
         {errorFor("capacity") && <span className="field-error" id="event-create-capacity-error">{errorFor("capacity")}</span>}
@@ -146,7 +194,9 @@ export function EventCreateForm({ clubId, eventTypeLabels, tags, members, editin
       </label>
       <label className="field" htmlFor="event-create-venueLocation"><span className="label">定位簽到座標（選填）</span>
         <input className="input" id="event-create-venueLocation" name="venueLocation" maxLength={2048} inputMode="text" placeholder="貼上地圖連結，或 25.033964, 121.564468" defaultValue={values.venueLocation} aria-invalid={Boolean(errorFor("venueLocation"))} aria-describedby={errorFor("venueLocation") ? "event-create-venueLocation-error" : "event-create-venueLocation-hint"} />
-        <span className="hint" id="event-create-venueLocation-hint">填了之後，社員到現場可以直接用手機定位簽到（{"場地 200 公尺內，活動開始前一小時到結束後一小時"}），不必掃 QR。留空則此活動只能用 QR 簽到。</span>
+        <span className="hint" id="event-create-venueLocation-hint">{timeUnspecified
+          ? "時間未定時不開放定位或 QR 簽到；可先保留座標，等確定活動時間後再使用。"
+          : <>填了之後，社員到現場可以直接用手機定位簽到（{"場地 200 公尺內，活動開始前一小時到結束後一小時"}），不必掃 QR。留空則此活動只能用 QR 簽到。</>}</span>
         {errorFor("venueLocation") && <span className="field-error" id="event-create-venueLocation-error">{errorFor("venueLocation")}</span>}
       </label>
       <VenueAddressLookup clubId={clubId} onFound={applyVenueCoordinates} />

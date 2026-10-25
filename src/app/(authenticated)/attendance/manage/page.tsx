@@ -59,7 +59,7 @@ type RosterMember = {
 };
 
 type Roster = {
-  event: { title: string; starts_at: string; status: string; counts_for_attendance: boolean };
+  event: { title: string; starts_at: string; time_unspecified: boolean; status: string; counts_for_attendance: boolean };
   members: RosterMember[];
   adjustment_history: {
     adjustment_id: string;
@@ -324,7 +324,9 @@ export default async function AttendanceManagePage({
           href={`/api/v1/clubs/${encodeURIComponent(selectedClub.club_id)}/attendance/export?eventId=${encodeURIComponent(selectedEventId)}`}
         >匯出 CSV</a>
       </div>
-      <p className="hint">{formatAttendanceDateTime(roster.event.starts_at)} · {roster.members.length} 位社員</p>
+      <p className="hint">{roster.event.time_unspecified
+        ? `${formatAttendanceDate(roster.event.starts_at)} · 時間未定`
+        : formatAttendanceDateTime(roster.event.starts_at)} · {roster.members.length} 位社員</p>
 
       <div className="form-stack">
         {roster.members.map((member) => <article className="card" key={member.membership_id}>
@@ -341,7 +343,9 @@ export default async function AttendanceManagePage({
               </div>
               <h3>{member.display_name}</h3>
             </div>
-            <span>{member.raw_checked_in_at
+            <span>{member.final_status === "pending"
+              ? "活動日期尚未結束，不會記為缺席"
+              : member.raw_checked_in_at
               ? `${checkinMethodLabels[member.raw_checkin_method ?? ""] ?? "已簽到"} · ${formatAttendanceDateTime(member.raw_checked_in_at)}`
               : "未簽到"}</span>
           </div>

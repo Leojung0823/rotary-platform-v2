@@ -8,6 +8,7 @@ const valid = {
     title: "9月份理事會",
     location: "大拙匠人食品有限公司",
     starts_at: "2026-09-17T10:30:00.000Z",
+    time_unspecified: false,
   }],
   members: [{
     membership_id: "6c000000-0000-4000-8000-000000000002",

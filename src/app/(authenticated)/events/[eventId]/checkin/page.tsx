@@ -21,6 +21,7 @@ type CheckinEvent = {
   title: string;
   starts_at: string;
   ends_at: string;
+  time_unspecified: boolean;
   status: "draft" | "published" | "cancelled" | "completed";
   counts_for_attendance: boolean;
   checkin_window_open: boolean;
@@ -90,6 +91,7 @@ function isCheckinEvent(value: unknown): value is CheckinEvent {
     && typeof value.title === "string"
     && typeof value.starts_at === "string"
     && typeof value.ends_at === "string"
+    && typeof value.time_unspecified === "boolean"
     && (value.status === "draft" || value.status === "published" || value.status === "cancelled" || value.status === "completed")
     && typeof value.counts_for_attendance === "boolean"
     && typeof value.checkin_window_open === "boolean";
@@ -199,7 +201,9 @@ export default async function EventCheckinManagementPage({
       <div>
         <p className="eyebrow">活動簽到管理</p>
         <h1>{overview.event.title}</h1>
-        <p>{formatDateTime(overview.event.starts_at)}－{formatDateTime(overview.event.ends_at)}</p>
+        <p>{overview.event.time_unspecified
+          ? `${new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", weekday: "short" }).format(new Date(overview.event.starts_at))} · 時間未定`
+          : `${formatDateTime(overview.event.starts_at)}－${formatDateTime(overview.event.ends_at)}`}</p>
       </div>
       <div className="form-actions">
         <Link className="button button-secondary" href={`/events?clubId=${encodeURIComponent(clubId)}`}>返回活動</Link>
@@ -221,9 +225,10 @@ export default async function EventCheckinManagementPage({
         officer who read it went away believing a door was locked while it stood
         open. A notice that says a thing cannot be done has to be a thing that
         cannot be done. */}
-    {!overview.event.counts_for_attendance && <div className="notice notice-info">此活動不計入出席，簽到仍然可以開啟；簽到紀錄不會計入出席率。</div>}
+    {!overview.event.counts_for_attendance && !overview.event.time_unspecified && <div className="notice notice-info">此活動不計入出席，簽到仍然可以開啟；簽到紀錄不會計入出席率。</div>}
+    {overview.event.time_unspecified && <div className="notice notice-info">活動時間尚未確定，QR／定位本人簽到暫不開放。幹部仍可使用下方「人工簽到」補登，確切時間確定後可編輯活動。</div>}
     {overview.event.status !== "published" && <div className="notice notice-info">活動狀態不是已發布，目前不能新增簽到。</div>}
-    {!overview.event.checkin_window_open && <div className="notice notice-info">簽到管理僅允許在活動開始前 24 小時至結束後 24 小時內開啟。</div>}
+    {!overview.event.checkin_window_open && !overview.event.time_unspecified && <div className="notice notice-info">簽到管理僅允許在活動開始前 24 小時至結束後 24 小時內開啟。</div>}
 
     <section className="card">
       <div className="section-heading">
@@ -233,10 +238,10 @@ export default async function EventCheckinManagementPage({
           : <span className="badge badge-neutral">目前未開啟</span>}
       </div>
       {overview.active_session?.expired && <div className="notice notice-info">前一個 token 已到期；重新開啟時資料庫會先關閉舊場次。</div>}
-      {checkinV2.enabled
+      {!overview.event.time_unspecified && (checkinV2.enabled
         ? <DynamicCheckinControls clubId={clubId} eventId={eventId} hasActiveSession={Boolean(usableSession)} />
-        : <CheckinTokenControls clubId={clubId} eventId={eventId} hasActiveSession={Boolean(usableSession)} />}
-      {usableSession && (checkinV2.enabled
+        : <CheckinTokenControls clubId={clubId} eventId={eventId} hasActiveSession={Boolean(usableSession)} />)}
+      {!overview.event.time_unspecified && usableSession && (checkinV2.enabled
         ? <DynamicCloseCheckinForm clubId={clubId} eventId={eventId} />
         : <form action={closeCheckinAction} className="inline-form">
           <input type="hidden" name="clubId" value={clubId} />

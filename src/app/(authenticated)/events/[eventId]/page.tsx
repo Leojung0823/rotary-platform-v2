@@ -20,6 +20,7 @@ type ClubEvent = {
   location: string;
   starts_at: string;
   ends_at: string;
+  time_unspecified: boolean;
   registration_deadline: string | null;
   capacity: number | null;
   counts_for_attendance: boolean;
@@ -127,7 +128,7 @@ export default async function EventDetailPage({
         </div>
         <div className={styles.fact}>
           <span className={styles.factIcon}><ShellIcon name="chart" /></span>
-          <div><strong>時間</strong><span>{formatEventClockRange(event.starts_at, event.ends_at)}</span></div>
+          <div><strong>時間</strong><span>{formatEventClockRange(event.starts_at, event.ends_at, event.time_unspecified)}</span></div>
         </div>
         <div className={`${styles.fact} ${styles.factWide}`}>
           <span className={styles.factIcon}><ShellIcon name="home" /></span>

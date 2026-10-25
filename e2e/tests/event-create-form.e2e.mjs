@@ -7,10 +7,10 @@ function requireCredentials() {
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for event-create browser smoke tests.");
 }
 
-async function login(page) {
+async function login(page, loginEmail = email) {
   requireCredentials();
   await page.goto("/login");
-  await page.getByLabel("電子郵件").fill(email);
+  await page.getByLabel("電子郵件").fill(loginEmail);
   await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(/\/dashboard$/u);
@@ -105,4 +105,70 @@ test("報名截止留空，真的存得進去", async ({ page }, testInfo) => {
   await expect(
     page.locator("article.card").filter({ hasText: title }).first().getByText("已發布", { exact: true }),
   ).toBeVisible();
+});
+
+test("時間未定活動只收日期，社員畫面不會顯示假造的午夜時間", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "event-create-1440", "One creation per run is enough.");
+  test.setTimeout(60_000);
+  await login(page, "e2e-shell-member-manager@example.test");
+  const futureDate = new Date(Date.now() + 45 * 24 * 60 * 60_000);
+  const date = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(futureDate);
+  const title = `本機時間未定活動 ${Date.now()}`;
+
+  await page.getByLabel("活動類型").selectOption("service");
+  await page.getByLabel("活動名稱").fill(title);
+  await page.getByLabel("活動時間尚未確定").check();
+  await page.getByLabel("活動日期（台北）").fill(date);
+  await expect(page.getByLabel("報名截止（台北，選填）")).toHaveCount(0);
+  await page.getByLabel("地點").fill("本機測試場地");
+  await page.getByRole("button", { name: "建立草稿" }).click();
+
+  await expect(page).toHaveURL(/success=event_created/u, { timeout: 30_000 });
+  const card = page.locator("article.card").filter({ hasText: title }).first();
+  await expect(card).toBeVisible();
+  await expect(card).toContainText("時間未定");
+  await expect(card).not.toContainText("00:00");
+  const editUrl = await card.getByRole("link", { name: "編輯活動" }).getAttribute("href");
+
+  await card.getByRole("button", { name: "發布活動" }).click();
+  await expect(page).toHaveURL(/success=event_published/u, { timeout: 30_000 });
+
+  await page.goto("/events?mode=member");
+  const memberCard = page.locator("article.card").filter({ hasText: title }).first();
+  await expect(memberCard).toContainText("時間未定");
+  await expect(memberCard).not.toContainText("00:00");
+  await memberCard.locator("summary").click();
+  await expect(memberCard.getByRole("link", { name: "本人簽到" })).toHaveCount(0);
+  await expect(memberCard).toContainText("活動時間未定，暫不開放本人 QR／定位簽到");
+  await memberCard.getByLabel("我的回覆").selectOption("attending");
+  expect(await memberCard.locator("form").evaluate((form) => Array.from(form.elements)
+    .filter((element) => !element.checkValidity())
+    .map((element) => ({ name: element.name, error: element.validationMessage })))).toEqual([]);
+  const registrationResponse = page.waitForResponse((response) => response.request().method() === "POST"
+    && new URL(response.url()).pathname === "/events");
+  await memberCard.getByRole("button", { name: "儲存報名狀態" }).click();
+  const savedResponse = await registrationResponse;
+  expect(savedResponse.headers()["x-action-redirect"] ?? savedResponse.headers().location)
+    .toContain("success=registration_saved");
+  // The action is committed before its streamed shell finishes. Read a fresh
+  // page to verify persistence rather than waiting for unrelated Suspense.
+  await page.reload();
+  await expect(page.locator("article.card").filter({ hasText: title }).first()).toContainText("我的狀態：參加");
+
+  // An officer learning the time later must enter real clock times; the
+  // stored midnight boundaries must never become prefilled event times.
+  await page.goto(`${editUrl}?mode=management`);
+  await expect(page.getByLabel("活動時間尚未確定")).toBeChecked();
+  await page.getByLabel("活動時間尚未確定").uncheck();
+  await expect(page.getByLabel("開始時間（台北）")).toHaveValue("");
+  await expect(page.getByLabel("結束時間（台北）")).toHaveValue("");
+  await page.getByLabel("開始時間（台北）").fill(`${date}T18:30`);
+  await page.getByLabel("結束時間（台北）").fill(`${date}T20:30`);
+  await page.getByRole("button", { name: "建立草稿" }).click();
+  await expect(page).toHaveURL(/success=event_updated/u);
+  const updatedCard = page.locator("article.card").filter({ hasText: title }).first();
+  await expect(updatedCard).toContainText("18:30");
+  await expect(updatedCard.locator(".event-facts")).not.toContainText("時間未定");
 });

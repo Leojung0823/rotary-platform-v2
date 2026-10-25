@@ -13,6 +13,7 @@ export type EventResponse = "pending" | "attending" | "declined";
 export const EVENT_CREATE_FIELDS = [
   "eventType",
   "title",
+  "eventDate",
   "startsAt",
   "endsAt",
   "registrationDeadline",
@@ -29,6 +30,8 @@ export type EventCreateFieldErrors = Partial<Record<EventCreateField, string>>;
 export type EventCreateFormValues = {
   eventType: string;
   title: string;
+  eventDate: string;
+  timeUnspecified: boolean;
   startsAt: string;
   endsAt: string;
   registrationDeadline: string;
@@ -52,6 +55,8 @@ export type EventCreateActionState = {
 type ValidEventCreateInput = {
   eventType: EventType;
   title: string;
+  eventDate: string;
+  timeUnspecified: boolean;
   startsAt: string;
   endsAt: string;
   /** null when the officer left it blank: open until the event ends. */
@@ -70,6 +75,8 @@ export type EventCreateValidation =
 export const initialEventCreateFormValues: EventCreateFormValues = {
   eventType: "regular_meeting",
   title: "",
+  eventDate: "",
+  timeUnspecified: false,
   startsAt: "",
   endsAt: "",
   registrationDeadline: "",
@@ -95,6 +102,8 @@ export function readEventCreateFormValues(formData: FormData): EventCreateFormVa
   return {
     eventType: boundedFormString(formData.get("eventType"), 64),
     title: boundedFormString(formData.get("title"), 161),
+    eventDate: boundedFormString(formData.get("eventDate"), 16),
+    timeUnspecified: formData.get("timeUnspecified") === "on",
     startsAt: boundedFormString(formData.get("startsAt"), 32),
     endsAt: boundedFormString(formData.get("endsAt"), 32),
     registrationDeadline: boundedFormString(formData.get("registrationDeadline"), 32),
@@ -114,6 +123,8 @@ export function validateEventCreateForm(values: EventCreateFormValues): EventCre
   const fieldErrors: EventCreateFieldErrors = {};
   let eventType: EventType | undefined;
   let title: string | undefined;
+  let eventDate: string | undefined;
+  const timeUnspecified = values.timeUnspecified;
   let startsAt: string | undefined;
   let endsAt: string | undefined;
   let registrationDeadline: string | null | undefined;
@@ -134,19 +145,30 @@ export function validateEventCreateForm(values: EventCreateFormValues): EventCre
       ? "活動名稱不可超過 160 字。"
       : "請輸入活動名稱。";
   }
-  try {
-    startsAt = parseTaipeiDateTime(values.startsAt);
-  } catch {
-    fieldErrors.startsAt = "請輸入有效的開始日期與時間。";
-  }
-  try {
-    endsAt = parseTaipeiDateTime(values.endsAt);
-  } catch {
-    fieldErrors.endsAt = "請輸入有效的結束日期與時間。";
+  if (timeUnspecified) {
+    try {
+      const parsed = parseTaipeiDateBoundaries(values.eventDate);
+      eventDate = parsed.date;
+      startsAt = parsed.startsAt;
+      endsAt = parsed.endsAt;
+    } catch {
+      fieldErrors.eventDate = "請輸入有效的活動日期。";
+    }
+  } else {
+    try {
+      startsAt = parseTaipeiDateTime(values.startsAt);
+    } catch {
+      fieldErrors.startsAt = "請輸入有效的開始日期與時間。";
+    }
+    try {
+      endsAt = parseTaipeiDateTime(values.endsAt);
+    } catch {
+      fieldErrors.endsAt = "請輸入有效的結束日期與時間。";
+    }
   }
   // Optional. A club that meets every week does not set a deadline for its own
   // regular meeting; blank means registration stays open until the event ends.
-  if (values.registrationDeadline.trim() === "") {
+  if (timeUnspecified || values.registrationDeadline.trim() === "") {
     registrationDeadline = null;
   } else {
     try {
@@ -190,6 +212,8 @@ export function validateEventCreateForm(values: EventCreateFormValues): EventCre
     input: {
       eventType: eventType!,
       title: title!,
+      eventDate: eventDate ?? "",
+      timeUnspecified,
       startsAt: startsAt!,
       endsAt: endsAt!,
       registrationDeadline: registrationDeadline ?? null,
@@ -248,6 +272,47 @@ export function parseTaipeiDateTime(value: FormDataEntryValue | null) {
   }
 
   return new Date(local.getTime() - 8 * 60 * 60 * 1000).toISOString();
+}
+
+/**
+ * Convert a date with no known time into a Taipei-local, half-open day. The
+ * hidden timestamps preserve existing database ordering and end-of-day rules;
+ * consumers must use `time_unspecified` instead of displaying their clock
+ * portions or offering clock-based self check-in.
+ */
+export function parseTaipeiDateBoundaries(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") throw new Error("invalid_event_date");
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value);
+  if (!match) throw new Error("invalid_event_date");
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const calendarDay = new Date(0);
+  calendarDay.setUTCFullYear(year, month - 1, day);
+  calendarDay.setUTCHours(0, 0, 0, 0);
+  if (
+    calendarDay.getUTCFullYear() !== year
+    || calendarDay.getUTCMonth() !== month - 1
+    || calendarDay.getUTCDate() !== day
+  ) {
+    throw new Error("invalid_event_date");
+  }
+
+  const nextDay = new Date(calendarDay);
+  nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+  const nextDate = [
+    String(nextDay.getUTCFullYear()).padStart(4, "0"),
+    String(nextDay.getUTCMonth() + 1).padStart(2, "0"),
+    String(nextDay.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+
+  return {
+    date: value,
+    startsAt: parseTaipeiDateTime(`${value}T00:00`),
+    endsAt: parseTaipeiDateTime(`${nextDate}T00:00`),
+  };
 }
 
 // Secretaries get venue coordinates by looking the place up on a map and

@@ -5,11 +5,15 @@ const mocks = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
   redirect: vi.fn((path: string) => { throw new Error(`redirect:${path}`); }),
   rpc: vi.fn(),
+  requireIdentity: vi.fn(),
+  evaluateCurrentFeatureFlag: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("@/lib/auth", () => ({ requireIdentity: mocks.requireIdentity }));
+vi.mock("@/lib/product/feature-flag-adapter.server", () => ({ evaluateCurrentFeatureFlag: mocks.evaluateCurrentFeatureFlag }));
 
 import { cancelEventAction, createEventAction } from "./event-actions";
 import { initialEventCreateActionState } from "@/lib/events/validation";
@@ -33,6 +37,10 @@ function formData(overrides: Record<string, string | boolean> = {}) {
   form.set("clubId", clubId);
   for (const [key, value] of Object.entries(values)) {
     if (key === "countsForAttendance") {
+      if (value) form.set(key, "on");
+      continue;
+    }
+    if (key === "timeUnspecified") {
       if (value) form.set(key, "on");
       continue;
     }
@@ -60,6 +68,8 @@ describe("createEventAction", () => {
     vi.clearAllMocks();
     mocks.createClient.mockResolvedValue({ rpc: mocks.rpc });
     mocks.rpc.mockResolvedValue({ error: null });
+    mocks.requireIdentity.mockResolvedValue({ id: "a3000000-0000-4000-8000-000000000001" });
+    mocks.evaluateCurrentFeatureFlag.mockResolvedValue({ enabled: false });
   });
 
   it("keeps all submitted values when title validation fails", async () => {
@@ -157,6 +167,34 @@ describe("createEventAction", () => {
     }));
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/events");
     expect(mocks.redirect).toHaveBeenCalledWith(`/events?clubId=${clubId}&success=event_created`);
+  });
+
+  it("uses the protected time-mode RPC only for a feature-enabled date-only event", async () => {
+    mocks.evaluateCurrentFeatureFlag.mockResolvedValue({ enabled: true });
+    const form = formData({
+      eventDate: "2026-12-08",
+      timeUnspecified: true,
+      startsAt: "",
+      endsAt: "",
+      registrationDeadline: "",
+    });
+
+    await expect(createEventAction(initialEventCreateActionState, form))
+      .rejects.toThrow(`redirect:/events?clubId=${clubId}&success=event_created`);
+    expect(mocks.evaluateCurrentFeatureFlag).toHaveBeenCalledWith({
+      key: "event_date_only_v1",
+      subjectUuid: "a3000000-0000-4000-8000-000000000001",
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith("create_club_event_with_time_mode", expect.objectContaining({
+      p_time_unspecified: true,
+      p_registration_deadline: null,
+    }));
+  });
+
+  it("does not consult the new feature flag for an ordinary timed event", async () => {
+    await expect(submit()).rejects.toThrow(`redirect:/events?clubId=${clubId}&success=event_created`);
+    expect(mocks.evaluateCurrentFeatureFlag).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith("create_club_event", expect.any(Object));
   });
 });
 

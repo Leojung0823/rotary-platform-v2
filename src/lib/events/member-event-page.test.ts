@@ -144,8 +144,8 @@ describe("the answer and the guest count are one row", () => {
 
 describe("the time range and the links come from one place", () => {
   it("formats every event time through the shared formatter", () => {
-    expect(list).toContain("formatEventTimeRange(event.starts_at, event.ends_at)");
-    expect(detail).toContain("formatEventClockRange(event.starts_at, event.ends_at)");
+    expect(list).toContain("formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)");
+    expect(detail).toContain("formatEventClockRange(event.starts_at, event.ends_at, event.time_unspecified)");
     // A second, hand-rolled range is how the two pages drift apart.
     expect(detail).not.toContain("function formatTimeRange");
   });
@@ -166,9 +166,9 @@ describe("the time range and the links come from one place", () => {
     // Guarding against "no hand-rolled range" being satisfied by printing no
     // time at all.
     const summary = list.slice(list.indexOf("<summary>"), list.indexOf("</summary>"));
-    expect(summary).toContain("formatEventTimeRange(event.starts_at, event.ends_at)");
+    expect(summary).toContain("formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)");
     const body = list.slice(list.indexOf("</summary>"));
-    expect(body).toContain("<strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at)}");
+    expect(body).toContain("<strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)}");
   });
 
   it("renders a description through the component that linkifies it", () => {
