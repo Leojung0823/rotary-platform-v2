@@ -3,13 +3,15 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-10-26 活動單擊報名與首頁活動定位（本機完成；staging 發布待續）
+## 2026-10-26 活動單擊報名與首頁活動定位（staging 已發布並驗收）
 
 - 社員在活動清單或詳情頁選「我要參加／不克參加／待確認」時，按鈕當下就儲存，不再使用下拉選單及第二個送出按鈕。原有備註、同行人數、伺服器權限檢查與 `set_my_event_registration` RPC 保持；取消或不參加會清除同行人數，失敗不顯示假成功。
 - 首頁主要「前往報名／確認報名／改為報名／查看活動」連到正確社別、社員模式及首頁主活動的錨點；活動清單收到錨點後會展開對應活動卡並定位。首頁近期活動每列原本直達個別詳情的行為不變。
 - 新增 `20261025000100_member_home_event_identity.sql`，以相容 wrapper 為首頁既有主／下一活動補上活動 ID；原本 RPC 的排序、資料範圍與授權不改。資料庫驗證涵蓋一般社員、跨社、停權、權限與顯示欄位相同的重複活動。沒有改登入、RLS、社籍或管理權限。
-- 本機已通過 `verify:db`（84 份 SQL verification）、217 個 Vitest 檔／1,607 tests、typecheck、lint、build、migration guard、verification manifest、diff check；Production build 的本機 E2E 75 passed／43 skipped，涵蓋單擊報名、首頁錨點、詳情／清單、桌機／手機與幹部／社員模式。此處 E2E 是本機驗收，不等於 staging 真人驗收。
-- 開發工作樹 `/Users/leoj/.codex/worktrees/rotary-event-date-only`，分支 `codex/event-date-only-20261015`；基準 `origin/main@38dab450c06c13fcf8f9475d9b47542ee8bfb810`。目前尚未 commit、push 或部署。下一步：再次檢查 diff，提交並同步 main；依 `docs/deployment/STAGING_RUNBOOK.md` 對同一個完整 SHA 執行 Release plan → Go-Live，migration 僅新增函式與權限，可採 runbook 定義的 forward-fix 核准依據；最後確認 staging health revision。不要對 production 操作。
+- 本機已通過 `verify:db`（84 份 SQL verification）、217 個 Vitest 檔／1,607 tests、typecheck、lint、build、migration guard、verification manifest、diff check；production build 的本機 E2E 為 75 passed／43 skipped。GitHub CI `40223023035` 成功；自動 Browser Smoke `40223023068` 成功（240 passed、102 skipped、1 flaky；非本次功能的祝福金額隱私案例重試後通過）。
+- 功能 commit `00f4d07a964a6640359359be6034266ef711543e` 已推送至 `main`。Staging Release plan `40224119074` 與 Staging Go-Live `40224287354` 均成功，使用同一 exact SHA；Go-Live 完成 migration、staging 部署、HTTPS smoke 與受保護 hosted 社員驗收。`/api/health` 回報 `status=ok`、`environment=staging`、revision `00f4d07a964a`、configuration/database `true`、`issues=[]`、`warnings=[]`。
+- Staging Free 方案沒有資料庫備份；本次 Go-Live 的 `BACKUP-READY` 依據是 runbook 的 forward-fix 條件：唯一待套用 migration `20261025000100_member_home_event_identity.sql` 只新增函式與權限，沒有刪除／改寫資料或破壞性 schema 變更，舊 projection 定義仍在 Git。沒有宣稱建立資料庫備份。未修改 production，也未調整 feature flags。
+- 開發工作樹 `/Users/leoj/.codex/worktrees/rotary-event-date-only`，分支 `codex/event-date-only-20261015`；基準 `origin/main@38dab450c06c13fcf8f9475d9b47542ee8bfb810`。接下來只需同步本段與 roadmap 的文件狀態；程式 runtime 仍是已驗收的 `00f4d07a`，文件提交本身不代表需要再次部署。
 
 ## 2026-10-25 最終驗收：八場活動與八張封面完成（staging）
 

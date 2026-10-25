@@ -2,13 +2,14 @@
 
 更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-26 活動單擊報名與首頁活動定位（本機完成；staging 發布待續）
+## 2026-10-26 活動單擊報名與首頁活動定位（已部署 staging 並驗收）
 
 - 社員在活動清單／詳情頁點「我要參加、不克參加、待確認」即送出，移除下拉選單與額外送出步驟；失敗回饋、備註、同行人數仍保留，並由既有 RPC 判斷權限及報名期限。
 - 首頁主要活動按鈕帶正確社團、社員模式與 event ID 錨點；活動頁會展開並定位到該活動。近期活動各列的既有詳情連結不變。
 - 新增只讀相容 RPC wrapper 與 SQL 驗證，沒有新增資料表或改 RLS／登入／權限；細節及檔案見 `CURRENT_SESSION_HANDOFF.md` 本節。
-- 驗證：217 檔／1,607 tests、typecheck、lint、build、完整 84 SQL verification、migration guard、manifest、diff check 通過；本機 production build E2E 75 passed／43 skipped。
-- 尚未 commit、push 或部署；後續依 staging runbook 對精確 SHA 先做 Release plan、再做 Go-Live。這不代表 production 上線。
+- 驗證：217 檔／1,607 tests、typecheck、lint、build、完整 84 SQL verification、migration guard、manifest、diff check 通過；本機 production build E2E 75 passed／43 skipped。GitHub CI `40223023035`、自動 Browser Smoke `40223023068` 均成功（240 passed、102 skipped、1 flaky 重試後通過）。
+- 功能 commit `00f4d07a964a6640359359be6034266ef711543e` 已推 main 並部署 staging；Staging Release plan `40224119074`、Go-Live `40224287354` 成功，含 migration、HTTPS smoke 與受保護 hosted 社員驗收。Health revision `00f4d07a964a`、`status=ok`、configuration/database 正常、`issues=[]`、`warnings=[]`。唯一 migration 僅新增函式與權限，沒有改寫資料；因 staging Free 無資料庫備份，本次依 runbook 的 forward-fix 條件作為 rollback 依據，並未聲稱有備份。沒有 production 變更。
+- 目前部署邊界：staging 已完成；production 不在本次範圍。文件同步提交若造成 main SHA 前進，不會改變已驗收的 staging runtime `00f4d07a`，也不代表需要重新部署。
 
 ## 2026-10-25 活動只填日期與活動建檔：staging完成
 
