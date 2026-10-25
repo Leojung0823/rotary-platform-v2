@@ -4,6 +4,7 @@
 
 ## 2026-10-25 活動只填日期（已部署、管理表單旗標已生效）
 
+- 最終驗證更新：300097b 的完整 Browser Smoke 40196596375 已成功，233 passed／99 skipped／3 flaky（既有訊息排程、GPS、私人收藏重試後通過）。CI、Staging Release／Go-Live 與 health 也都通過；下方「仍執行中」是先前同步時點，以本段最終結果為準。剩餘四場建檔／圖片仍需恢復瀏覽器登入，第708次必須先確認未知寫入結果，不能直接重送。
 - 首頁近期活動整列直達詳情已修正，攜帶社別與社員模式、同名活動以 ID 區分；217 檔／1,593 tests、typecheck／lint／build、完整 84 SQL、手機／桌機真實導覽及 Rich Menu 回歸通過。封面完整顯示的 1440／375px 圖片上傳與解碼驗收亦通過、橫向溢位 0。兩項前端修正已以 300097b 同步 main 並部署 staging（Plan 40196606775／Go-Live 40196686806 成功；health issues 空）；CI 40196596420 成功，自動 Browser Smoke 40196596375 仍執行中。日期未定旗標已對管理員生效；第708次送出後登入過期，須本人重新登入，先查建立結果再續作。
 - 新增時間未定模式：顯示台北日期與「時間未定」，報名開放至當日日末，QR／GPS 本人簽到暫不開放，幹部可人工補登；缺席及出席率最早在活動日期結束後結算。確定時段後可編輯回一般模式，舊 QR 憑證不會復活。
 - event_date_only_v1 預設關閉；新增 20261015000100、20261015000200 兩支 migration。一般社員、外社、停權帳號與關旗標時的拒絕，均以真實本機 Postgres 驗證。完整 84 份 SQL、216 檔／1,590 項 Vitest、typecheck、lint、build 及 Playwright 1440／375px（4 passed／2 skipped）已通過。核心 fcda4f4 已推 main；Staging Release 40170135001、Go-Live 40170461557 成功，health revision fcda4f4b5958、issues 空。
