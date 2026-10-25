@@ -1,7 +1,15 @@
-# 交接筆記（持續更新；最新核對 2026-10-25；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-10-26；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-10-26 活動單擊報名與首頁活動定位（本機完成；staging 發布待續）
+
+- 社員在活動清單或詳情頁選「我要參加／不克參加／待確認」時，按鈕當下就儲存，不再使用下拉選單及第二個送出按鈕。原有備註、同行人數、伺服器權限檢查與 `set_my_event_registration` RPC 保持；取消或不參加會清除同行人數，失敗不顯示假成功。
+- 首頁主要「前往報名／確認報名／改為報名／查看活動」連到正確社別、社員模式及首頁主活動的錨點；活動清單收到錨點後會展開對應活動卡並定位。首頁近期活動每列原本直達個別詳情的行為不變。
+- 新增 `20261025000100_member_home_event_identity.sql`，以相容 wrapper 為首頁既有主／下一活動補上活動 ID；原本 RPC 的排序、資料範圍與授權不改。資料庫驗證涵蓋一般社員、跨社、停權、權限與顯示欄位相同的重複活動。沒有改登入、RLS、社籍或管理權限。
+- 本機已通過 `verify:db`（84 份 SQL verification）、217 個 Vitest 檔／1,607 tests、typecheck、lint、build、migration guard、verification manifest、diff check；Production build 的本機 E2E 75 passed／43 skipped，涵蓋單擊報名、首頁錨點、詳情／清單、桌機／手機與幹部／社員模式。此處 E2E 是本機驗收，不等於 staging 真人驗收。
+- 開發工作樹 `/Users/leoj/.codex/worktrees/rotary-event-date-only`，分支 `codex/event-date-only-20261015`；基準 `origin/main@38dab450c06c13fcf8f9475d9b47542ee8bfb810`。目前尚未 commit、push 或部署。下一步：再次檢查 diff，提交並同步 main；依 `docs/deployment/STAGING_RUNBOOK.md` 對同一個完整 SHA 執行 Release plan → Go-Live，migration 僅新增函式與權限，可採 runbook 定義的 forward-fix 核准依據；最後確認 staging health revision。不要對 production 操作。
 
 ## 2026-10-25 最終驗收：八場活動與八張封面完成（staging）
 

@@ -1,7 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { registerEventAction } from "@/app/event-actions";
+import { EventRegistrationForm } from "@/components/events/event-registration-form";
+import { EventAnchorFocus } from "@/components/events/event-anchor-focus";
 import { ShellIcon } from "@/components/shell-icons";
 import { Badge, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
@@ -105,7 +106,7 @@ export default async function EventDetailPage({
     {query.success === "registration_saved" && <Notice tone="success">報名狀態已更新。</Notice>}
     {query.error && <Notice tone="error">目前無法完成操作，請稍後再試。</Notice>}
 
-    <article className={styles.detail}>
+    <article className={`${styles.detail} event-anchor`} id={`event-${event.id}`}>
       {coverUrl && <img className={styles.cover} src={coverUrl} alt="" />}
 
       <header className={styles.header}>
@@ -153,26 +154,8 @@ export default async function EventDetailPage({
         <Link className="button" href="/events/checkin">前往簽到</Link>
       </div>}
 
-      {event.status === "published" && event.registration_open && <form action={registerEventAction} className="form-stack">
-        <input type="hidden" name="clubId" value={payload.club_id} />
-        <input type="hidden" name="eventId" value={event.id} />
-        <div className="response-grid">
-          <label className="field"><span className="label">我的回覆</span>
-            <select className="input" name="response" defaultValue={event.my_response ?? "pending"}>
-              <option value="pending">待確認</option>
-              <option value="attending">參加</option>
-              <option value="declined">不參加</option>
-            </select>
-          </label>
-          <label className="field"><span className="label">攜伴人數</span>
-            <input className="input" type="number" name="guestCount" min={0} max={20} defaultValue={event.my_guest_count} inputMode="numeric" />
-          </label>
-        </div>
-        <label className="field"><span className="label">備註</span>
-          <input className="input" name="note" maxLength={500} defaultValue={event.my_note} />
-        </label>
-        <div className="form-actions"><button className="button" type="submit">儲存報名狀態</button></div>
-      </form>}
+      <EventAnchorFocus eventIds={[event.id]} />
+      {event.status === "published" && event.registration_open && <EventRegistrationForm clubId={payload.club_id} eventId={event.id} response={event.my_response} guestCount={event.my_guest_count} note={event.my_note} />}
 
       {event.status === "published" && !event.registration_open && !isPast && <Notice>
         報名已截止，或活動已經開始。

@@ -129,7 +129,21 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     await expect(multiPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
     await multiPage.getByLabel("切換目前所在的社或委員會").click();
     await multiPage.getByRole("button", { name: /^本機 Shell 第二社 E2E-SHELL-SECOND/u }).click();
+    await expect(multiPage).toHaveURL(/\/dashboard\?mode=member$/u);
     await expect(multiPage.getByLabel("切換目前所在的社或委員會")).toContainText("本機 Shell 第二社");
+    const heroRsvp = multiPage.getByRole("link", { name: "前往報名" });
+    await expect(heroRsvp).toBeVisible();
+    const expectedAnchor = "a1000000-0000-4000-8000-000000000108";
+    const heroDestination = new URL(await heroRsvp.getAttribute("href"), baseURL);
+    expect(heroDestination.pathname).toBe("/events");
+    expect(heroDestination.searchParams.get("clubId")).toBe("a1000000-0000-4000-8000-000000000002");
+    expect(heroDestination.searchParams.get("mode")).toBe("member");
+    expect(heroDestination.hash).toBe(`#event-${expectedAnchor}`);
+    await heroRsvp.click();
+    const targetEvent = multiPage.locator(`#event-${expectedAnchor}`);
+    await expect(targetEvent.locator("details")).toHaveAttribute("open", "");
+    await expect(targetEvent.getByRole("heading", { name: "本機首頁按鈕定位驗收活動" })).toBeInViewport();
+    await multiPage.goto("/dashboard?mode=member");
     // The shell and the member pages must use the same active-club choice.
     // Without this assertion, /club-affairs silently fell back to the first
     // club even though the shell still said the second club was active.

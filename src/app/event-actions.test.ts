@@ -15,10 +15,45 @@ vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/lib/auth", () => ({ requireIdentity: mocks.requireIdentity }));
 vi.mock("@/lib/product/feature-flag-adapter.server", () => ({ evaluateCurrentFeatureFlag: mocks.evaluateCurrentFeatureFlag }));
 
-import { cancelEventAction, createEventAction } from "./event-actions";
+import { cancelEventAction, createEventAction, registerEventAction } from "./event-actions";
 import { initialEventCreateActionState } from "@/lib/events/validation";
 
 const clubId = "a1000000-0000-4000-8000-000000000001";
+
+describe("one-click registration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.createClient.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.rpc.mockResolvedValue({ error: null });
+  });
+  const registration = (overrides: Record<string, string> = {}) => {
+    const data = new FormData();
+    for (const [key, value] of Object.entries({ clubId, eventId: "a2000000-0000-4000-8000-000000000001", response: "attending", guestCount: "2", note: "攜伴", ...overrides })) data.set(key, value);
+    return registerEventAction({ status: "idle" }, data);
+  };
+  it("acknowledges the protected write without redirecting or waiting on a page refresh", async () => {
+    expect(await registration()).toEqual({ status: "success", response: "attending", guestCount: 2 });
+    expect(mocks.rpc).toHaveBeenCalledWith("set_my_event_registration", expect.objectContaining({ p_club_id: clubId, p_guest_count: 2, p_response: "attending", p_note: "攜伴" }));
+    expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+  it.each(["declined", "pending"])("clears saved guests when choosing %s", async (response) => {
+    expect(await registration({ response })).toEqual({ status: "success", response, guestCount: 0 });
+    expect(mocks.rpc).toHaveBeenCalledWith("set_my_event_registration", expect.objectContaining({ p_guest_count: 0, p_response: response }));
+  });
+  it("rejects malformed inputs without calling the database", async () => {
+    expect(await registration({ guestCount: "21" })).toEqual({ status: "error", errorCode: "invalid_input" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it.each([["event_capacity_full", "capacity_full"], ["event_registration_closed", "registration_closed"], ["active_event_membership_required", "forbidden"]])("never reports success for %s", async (message, errorCode) => {
+    mocks.rpc.mockResolvedValue({ error: { message } });
+    expect(await registration()).toEqual({ status: "error", errorCode });
+  });
+  it("keeps network errors private and does not pretend the result is saved", async () => {
+    mocks.rpc.mockRejectedValue(new Error("private network information"));
+    expect(await registration()).toEqual({ status: "error", errorCode: "unexpected" });
+  });
+});
 
 function formData(overrides: Record<string, string | boolean> = {}) {
   const values: Record<string, string | boolean> = {

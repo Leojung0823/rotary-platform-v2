@@ -207,6 +207,19 @@ describe("member-home projection contract", () => {
 });
 
 describe("member-home state presentation", () => {
+  it.each(["not_registered", "pending", "declined", "registered"])("targets the exact event and club for %s", (state) => {
+    const eventId = "a1000000-0000-4000-8000-000000000102";
+    const clubId = "a1000000-0000-4000-8000-000000000001";
+    const parsed = parseMemberHomeProjection(projection({ primary_event: { ...event, event_id: eventId, registration_state: state } }));
+    expect(parsed?.primaryEvent?.eventId).toBe(eventId);
+    expect(memberHomePrimaryAction(parsed!.primaryEvent!, clubId).href)
+      .toBe(`/events?clubId=${clubId}&mode=member#event-${eventId}`);
+  });
+
+  it("rejects an invalid event identity instead of guessing by title", () => {
+    expect(parseMemberHomeProjection(projection({ primary_event: { ...event, event_id: "not-an-id" } }))).toBeNull();
+  });
+
   it.each(memberHomeRegistrationStates)("accepts the canonical registration state %s", (registrationState) => {
     expect(parseMemberHomeProjection(projection({ primary_event: { ...event, registration_state: registrationState } }))?.primaryEvent?.registrationState)
       .toBe(registrationState);

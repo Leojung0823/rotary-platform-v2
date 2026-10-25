@@ -17,6 +17,7 @@ export const memberHomeCheckinStates = [
 export type MemberHomeCheckinState = (typeof memberHomeCheckinStates)[number];
 
 export type MemberHomeEvent = Readonly<{
+  eventId?: string;
   eventType: string;
   coverImagePath: string | null;
   title: string;
@@ -144,7 +145,9 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
     || !hasExactKeys(value, [
       "event_type", "title", "location", "cover_image_path",
       "starts_at", "ends_at", "time_unspecified", "registration_state", "registration_open", "checkin_state",
+      ...("event_id" in value ? ["event_id"] : []),
     ])
+    || ("event_id" in value && (typeof value.event_id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value.event_id)))
     || typeof value.event_type !== "string"
     || typeof value.title !== "string"
     || typeof value.location !== "string"
@@ -169,6 +172,7 @@ function parseEvent(value: unknown): MemberHomeEvent | null {
     || !includes(memberHomeCheckinStates, value.checkin_state)) return null;
 
   return {
+    ...(typeof value.event_id === "string" ? { eventId: value.event_id } : {}),
     eventType: value.event_type,
     title: value.title,
     location: value.location,
@@ -433,15 +437,16 @@ export function parseMemberHomeProjection(value: unknown): MemberHomeProjection 
   };
 }
 
-export function memberHomePrimaryAction(event: MemberHomeEvent): Readonly<{ href: string; label: string }> {
+export function memberHomePrimaryAction(event: MemberHomeEvent, clubId?: string): Readonly<{ href: string; label: string }> {
+  const href = event.eventId ? `/events?${clubId ? `clubId=${encodeURIComponent(clubId)}&` : ""}mode=member#event-${encodeURIComponent(event.eventId)}` : "/events";
   if (event.checkinState === "available") return { href: "/events/checkin", label: "前往簽到" };
-  if (event.registrationState === "not_registered") return { href: "/events", label: "前往報名" };
-  if (event.registrationState === "pending") return { href: "/events", label: "確認報名" };
+  if (event.registrationState === "not_registered") return { href, label: "前往報名" };
+  if (event.registrationState === "pending") return { href, label: "確認報名" };
   // Declining is an answer, not a door closing behind you -- while the deadline
   // has not passed, the card offers the way back. It is gated on
   // registrationOpen because offering it after the deadline would be a lie.
   if (event.registrationState === "declined" && event.registrationOpen) {
-    return { href: "/events", label: "改為報名" };
+    return { href, label: "改為報名" };
   }
-  return { href: "/events", label: "查看活動" };
+  return { href, label: "查看活動" };
 }

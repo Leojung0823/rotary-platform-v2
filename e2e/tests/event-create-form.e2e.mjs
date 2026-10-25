@@ -142,16 +142,15 @@ test("時間未定活動只收日期，社員畫面不會顯示假造的午夜�
   await memberCard.locator("summary").click();
   await expect(memberCard.getByRole("link", { name: "本人簽到" })).toHaveCount(0);
   await expect(memberCard).toContainText("活動時間未定，暫不開放本人 QR／定位簽到");
-  await memberCard.getByLabel("我的回覆").selectOption("attending");
   expect(await memberCard.locator("form").evaluate((form) => Array.from(form.elements)
     .filter((element) => !element.checkValidity())
     .map((element) => ({ name: element.name, error: element.validationMessage })))).toEqual([]);
   const registrationResponse = page.waitForResponse((response) => response.request().method() === "POST"
     && new URL(response.url()).pathname === "/events");
-  await memberCard.getByRole("button", { name: "儲存報名狀態" }).click();
+  await memberCard.getByRole("button", { name: "我要參加", exact: true }).click();
   const savedResponse = await registrationResponse;
-  expect(savedResponse.headers()["x-action-redirect"] ?? savedResponse.headers().location)
-    .toContain("success=registration_saved");
+  expect(savedResponse.ok()).toBe(true);
+  await expect(memberCard.getByRole("status")).toContainText("報名狀態已更新");
   // The action is committed before its streamed shell finishes. Read a fresh
   // page to verify persistence rather than waiting for unrelated Suspense.
   await page.reload();

@@ -295,6 +295,27 @@ async function addMemberHomeEvents({ clubId, account }) {
   }
 }
 
+async function addMemberHomeAnchorEvent({ clubId, account }) {
+  const now = Date.now();
+  const eventId = "a1000000-0000-4000-8000-000000000108";
+  const result = await admin.from("club_events").upsert({
+    id: eventId,
+    club_id: clubId,
+    event_type: "service",
+    title: "本機首頁按鈕定位驗收活動",
+    location: "本機第二社會館",
+    starts_at: new Date(now + 2 * 24 * 60 * 60_000).toISOString(),
+    ends_at: new Date(now + (2 * 24 + 2) * 60 * 60_000).toISOString(),
+    registration_deadline: new Date(now + 24 * 60 * 60_000).toISOString(),
+    counts_for_attendance: false,
+    event_status: "published",
+    created_by_app_account_id: account.id,
+    updated_by_app_account_id: account.id,
+    published_at: new Date(now - 24 * 60 * 60_000).toISOString(),
+  }, { onConflict: "id" });
+  if (result.error) fail("could not create local member-home anchor event");
+}
+
 async function addDynamicCheckinBrowserFixtures({ clubId, managerAccount }) {
   const managementEventId = "a1000000-0000-4000-8000-000000000104";
   const scanEventId = "a1000000-0000-4000-8000-000000000105";
@@ -754,6 +775,7 @@ await addEndedMembership({ clubId: memberClub.id, account: fixtures.ended, creat
 await addMembership({ clubId: birthdayV2Club.id, account: fixtures.multi, createdBy });
 await addMembership({ clubId: birthdayV2Club.id, account: birthdayV2Recipient, createdBy });
 await addMemberHomeEvents({ clubId: memberClub.id, account: fixtures.ordinary });
+await addMemberHomeAnchorEvent({ clubId: secondMemberClub.id, account: fixtures.multi });
 await addDynamicCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 await addLocationCheckinBrowserFixtures({ clubId: memberClub.id, managerAccount: fixtures.memberManager });
 await allowPublicBlessingAmounts({

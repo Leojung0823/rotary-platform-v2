@@ -343,9 +343,14 @@ export async function cancelEventAction(formData: FormData) {
   redirect(eventPath(clubId, "success", "event_cancelled", mode));
 }
 
-export async function registerEventAction(formData: FormData) {
-  let clubId: string;
-  let eventId: string;
+export type EventRegistrationState =
+  | { status: "idle" }
+  | { status: "error"; errorCode: string }
+  | { status: "success"; response: "pending" | "attending" | "declined"; guestCount: number };
+
+export async function registerEventAction(_previous: EventRegistrationState, formData: FormData): Promise<EventRegistrationState> {
+  let clubId = "";
+  let eventId = "";
   let response: ReturnType<typeof parseEventResponse>;
   let guestCount: number;
   let note: string;
@@ -353,23 +358,29 @@ export async function registerEventAction(formData: FormData) {
     clubId = parseUuid(formData.get("clubId"));
     eventId = parseUuid(formData.get("eventId"));
     response = parseEventResponse(formData.get("response"));
-    guestCount = parseGuestCount(formData.get("guestCount"), response);
+    // Declining (or clearing a response) also clears previously saved guests.
+    guestCount = parseGuestCount(response === "attending" ? formData.get("guestCount") : "0", response);
     note = parseEventText(formData.get("note"), 500);
   } catch {
-    redirect("/events?error=invalid_input");
+    return { status: "error", errorCode: "invalid_input" };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("set_my_event_registration", {
-    p_club_id: clubId,
-    p_event_id: eventId,
-    p_response: response,
-    p_guest_count: guestCount,
-    p_note: note,
-  });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
-  revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "registration_saved"));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("set_my_event_registration", {
+      p_club_id: clubId,
+      p_event_id: eventId,
+      p_response: response,
+      p_guest_count: guestCount,
+      p_note: note,
+    });
+    if (error) return { status: "error", errorCode: mapEventError(error.message) };
+    // Do not redirect/revalidate the entire streamed shell before acknowledging
+    // this write. The client refreshes the dynamic page in the background.
+    return { status: "success", response, guestCount };
+  } catch {
+    return { status: "error", errorCode: "unexpected" };
+  }
 }
 
 export type VenueGeocodeState =

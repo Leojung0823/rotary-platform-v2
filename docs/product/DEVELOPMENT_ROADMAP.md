@@ -1,6 +1,14 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-10-25（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-10-26 活動單擊報名與首頁活動定位（本機完成；staging 發布待續）
+
+- 社員在活動清單／詳情頁點「我要參加、不克參加、待確認」即送出，移除下拉選單與額外送出步驟；失敗回饋、備註、同行人數仍保留，並由既有 RPC 判斷權限及報名期限。
+- 首頁主要活動按鈕帶正確社團、社員模式與 event ID 錨點；活動頁會展開並定位到該活動。近期活動各列的既有詳情連結不變。
+- 新增只讀相容 RPC wrapper 與 SQL 驗證，沒有新增資料表或改 RLS／登入／權限；細節及檔案見 `CURRENT_SESSION_HANDOFF.md` 本節。
+- 驗證：217 檔／1,607 tests、typecheck、lint、build、完整 84 SQL verification、migration guard、manifest、diff check 通過；本機 production build E2E 75 passed／43 skipped。
+- 尚未 commit、push 或部署；後續依 staging runbook 對精確 SHA 先做 Release plan、再做 Go-Live。這不代表 production 上線。
 
 ## 2026-10-25 活動只填日期與活動建檔：staging完成
 

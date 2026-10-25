@@ -71,6 +71,7 @@ function checkinNoteFor(
 export function featuredEventFrom(
   event: MemberHomeEvent,
   coverUrl: string | undefined,
+  clubId?: string,
 ): PortalFeaturedEvent {
   return {
     title: event.title,
@@ -87,7 +88,7 @@ export function featuredEventFrom(
     registration: heroRegistration(event),
     // The projection's own rule, which knows about check-in as well as
     // registration. The card must not work this out a second way.
-    action: memberHomePrimaryAction(event),
+    action: memberHomePrimaryAction(event, clubId),
   };
 }
 
