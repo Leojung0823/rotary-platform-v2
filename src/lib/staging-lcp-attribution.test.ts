@@ -7,6 +7,7 @@ describe("staging LCP attribution privacy filter", () => {
       currentOrigin: "https://rotary.example",
       lcp: {
         elementTag: "IMG",
+        moduleClass: "member-portal-module__wpzd3a__backdropImage",
         isImage: true,
         startTime: 812.34,
         renderTime: 812.34,
@@ -25,6 +26,7 @@ describe("staging LCP attribution privacy filter", () => {
       },
     })).toEqual({
       elementTag: "img",
+      moduleClass: "member-portal-module__wpzd3a__backdropImage",
       isImage: true,
       lcpTimeMs: 812.3,
       renderTimeMs: 812.3,
@@ -79,11 +81,17 @@ describe("staging LCP attribution privacy filter", () => {
   it("does not expose dynamic same-origin routes or malformed tags", () => {
     const output = sanitizeStagingLcpAttribution({
       currentOrigin: "https://rotary.example",
-      lcp: { elementTag: "DIV#member-123", startTime: 700, url: "/api/members/123?secret=value" },
+      lcp: {
+        elementTag: "DIV#member-123",
+        moduleClass: "member-123-secret-class",
+        startTime: 700,
+        url: "/api/members/123?secret=value",
+      },
       resource: { initiatorType: "private-type", startTime: -1, responseEnd: 400, duration: 500 },
     });
 
     expect(output.elementTag).toBeNull();
+    expect(output.moduleClass).toBeNull();
     expect(output.resourceOrigin).toBe("same-origin");
     expect(output.resourcePath).toBeNull();
     expect(output.initiatorType).toBeNull();
@@ -94,6 +102,7 @@ describe("staging LCP attribution privacy filter", () => {
   it("returns explicit unavailable values when LCP attribution is absent", () => {
     expect(sanitizeStagingLcpAttribution()).toMatchObject({
       elementTag: null,
+      moduleClass: null,
       isImage: false,
       resourceOrigin: "unavailable",
       resourcePath: null,

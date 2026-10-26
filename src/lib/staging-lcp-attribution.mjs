@@ -1,4 +1,5 @@
 const SAFE_STATIC_PATH = /^\/(?:_next\/static|assets|images)\/[A-Za-z0-9._/-]+$|^\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:avif|gif|jpe?g|png|svg|webp)$/iu;
+const SAFE_MODULE_CLASS = /^[A-Za-z][A-Za-z0-9_-]{0,64}__[A-Za-z0-9_-]{2,24}__[A-Za-z][A-Za-z0-9_-]{0,64}$/u;
 const SAFE_INITIATOR_TYPES = new Set([
   "audio",
   "css",
@@ -47,13 +48,17 @@ function resolveResource(rawUrl, currentOrigin) {
 
 /**
  * Reduce browser LCP and Resource Timing entries to a privacy-safe diagnostic.
- * Never return page text, selectors, query strings, hostnames, or arbitrary paths.
+ * Never return page text, full selectors, query strings, hostnames, or arbitrary paths.
+ * A CSS-module class is retained only when it matches the static build-generated shape.
  * @param {{currentOrigin?: unknown, lcp?: Record<string, unknown> | null, resource?: Record<string, unknown> | null}} input
  */
 export function sanitizeStagingLcpAttribution({ currentOrigin, lcp, resource } = {}) {
   const elementTag = typeof lcp?.elementTag === "string"
     && /^[a-z][a-z0-9-]{0,30}$/iu.test(lcp.elementTag)
     ? lcp.elementTag.toLowerCase()
+    : null;
+  const moduleClass = typeof lcp?.moduleClass === "string" && SAFE_MODULE_CLASS.test(lcp.moduleClass)
+    ? lcp.moduleClass
     : null;
   const resolvedResource = resolveResource(lcp?.url, currentOrigin);
   const initiatorType = typeof resource?.initiatorType === "string"
@@ -68,6 +73,7 @@ export function sanitizeStagingLcpAttribution({ currentOrigin, lcp, resource } =
 
   return {
     elementTag,
+    moduleClass,
     isImage: lcp?.isImage === true,
     lcpTimeMs,
     renderTimeMs: round(lcp?.renderTime),

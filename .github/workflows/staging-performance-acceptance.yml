@@ -138,11 +138,11 @@ jobs:
               lines.push(`| ${route.label} | ${sample.sample} | ${sample.lcpMs} | ${sample.fcpMs} | ${sample.ttfbMs} | ${sample.inpMs ?? "unmeasured"} |`);
             }
           }
-          lines.push("", "| Page | Sample | LCP element | Safe resource path | Resource duration (ms) | Post-resource render delay (ms) | Transfer size (bytes) |", "| --- | ---: | --- | --- | ---: | ---: | ---: |");
+          lines.push("", "| Page | Sample | LCP element | CSS module target | Safe resource path | Resource duration (ms) | Post-resource render delay (ms) | Transfer size (bytes) |", "| --- | ---: | --- | --- | --- | ---: | ---: | ---: |");
           for (const route of results.routes) {
             for (const sample of route.samples) {
               const attribution = sample.lcpAttribution;
-              lines.push(`| ${route.label} | ${sample.sample} | ${attribution.elementTag ?? "unavailable"} | ${attribution.resourcePath ?? attribution.resourceOrigin} | ${attribution.resourceDurationMs ?? "unmeasured"} | ${attribution.afterResourceRenderDelayMs ?? "unmeasured"} | ${attribution.transferSizeBytes ?? "unmeasured"} |`);
+              lines.push(`| ${route.label} | ${sample.sample} | ${attribution.elementTag ?? "unavailable"} | ${attribution.moduleClass ?? "unavailable"} | ${attribution.resourcePath ?? attribution.resourceOrigin} | ${attribution.resourceDurationMs ?? "unmeasured"} | ${attribution.afterResourceRenderDelayMs ?? "unmeasured"} | ${attribution.transferSizeBytes ?? "unmeasured"} |`);
             }
           }
           lines.push("", "| Page | Trace events | Long tasks (>=50 ms) | Longest long task (ms) | Raw trace retained |", "| --- | ---: | ---: | ---: | ---: |");

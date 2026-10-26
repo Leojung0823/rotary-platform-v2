@@ -66,12 +66,18 @@ async function installPerformanceObservers(page) {
           if (!current || entry.startTime >= current.startTime) {
             const element = entry.element;
             const isImage = element instanceof HTMLImageElement;
+            let moduleClass = null;
+            for (let cursor = element, depth = 0; cursor && depth < 5 && !moduleClass; cursor = cursor.parentElement, depth += 1) {
+              moduleClass = Array.from(cursor.classList ?? []).find((token) =>
+                /^[A-Za-z][A-Za-z0-9_-]{0,64}__[A-Za-z0-9_-]{2,24}__[A-Za-z][A-Za-z0-9_-]{0,64}$/u.test(token)) ?? null;
+            }
             window.__rotaryStagingPerformance.lcp = {
               startTime: entry.startTime,
               renderTime: entry.renderTime,
               loadTime: entry.loadTime,
               size: entry.size,
               elementTag: element?.tagName ?? null,
+              moduleClass,
               isImage,
               url: (isImage ? element.currentSrc : entry.url) || null,
             };
