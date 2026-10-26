@@ -9,6 +9,15 @@
 - 既有 opt-in 功能維持原決定，不因新規則批次打開。Joy Wall 正在首次部署，因此此次加入 `20261027000100_joy_wall_deployment_default.sql`，讓它在 migration 部署後自動可用；若資料庫已有明確停用 row，migration 保留該決定。
 - 根目錄 `AGENTS.md`、`docs/product/ROLLOUT_CONTROLS.md`、`docs/deployment/STAGING_RUNBOOK.md` 與 feature-flag contract test 已同步此規則。
 
+## 2026-10-27 最新接力狀態（本節優先於下方歷史紀錄）
+
+- 權威 repo 是 `Leojung0823/rotary-platform-v2` 的 `main@0dbe0e86a96b0c14fa4ddae71264c08afa1490e2`。CI `40393717019` 與 Browser Smoke `40393717025` 成功；Staging Release plan `40395551148` 核准後成功完成 migration dry-run，預覽 8 支 migration，未套用或部署。
+- 目前唯一對應 staging 的 Render 服務是 `srv-da2td2dg1s2s73de3qvg`（`rotary-platform-v2-mrha.onrender.com`），部署 runtime `00f4d07a964a6640359359be6034266ef711543e`。`/api/health` 為 `status=ok`、environment `staging`、configuration/database `true`、`issues=[]`、`warnings=[]`。Joy Wall 新 migrations 尚未部署。
+- E-12 備份仍是 Go-Live 閘門：本機 `.env.staging` 所需欄位已存在，但 exporter 無法通過 staging 專案身份驗證；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403；直接 DB 連線也未成功。沒有備份產物、沒有向 hosted 寫入或上傳，也沒有對 staging／production 資料庫做變更。不可標記 `BACKUP-READY`。
+- E-06 staging warm baseline run `40398701762` 已成功，每頁 3 次；社員首頁中位數 LCP／FCP／TTFB／INP 為 `728／408／377.4／16 ms`，管理首頁為 `636／332／260.6／16 ms`。這是已部署 `00f4d07a` 的基線，不是 `main@0dbe0e8` 的修改後比較；原始 trace 未保存。完整樣本與 CDP 摘要見 `docs/product/PERFORMANCE_IMPROVEMENT_LOG.md`。
+- Message Center scheduler environment 尚未建立。此排程開關是獨立的營運控制，不是產品 feature flag；完成 staging 部署與確認送達對象前不要啟動，以免造成意外 LINE 訊息。新功能部署即自動可用的規則不等於自動啟動外部訊息排程。
+- 仍有真人／外部依賴：E-03 LINE follow 身份配對與負向驗收、E-07 iOS／Android 與五位使用者測試、E-11 各社 OA／Rich Menu 手機驗收。E-08 涉及 production，未獲明確授權不操作；E-09 custom SMTP 依既定決策暫緩。
+
 ## 2026-10-27 Joy Wall 草稿與一般貼文截止日整合（已同步 main；staging 待本機備份與 Go-Live）
 
 - 使用者決定新功能成功部署後自動可用，不要求人工開旗標；緊急停用仍保留，既有 opt-in 功能不批次開啟。Joy Wall 以 migration 自動建立啟用 row 並記錄 `system` audit。

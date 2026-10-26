@@ -2,6 +2,14 @@
 
 更新日期：2026-10-27（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-27 staging／待辦即時核對（優先於下方歷史紀錄）
+
+- 最新 main 為 `0dbe0e86a96b0c14fa4ddae71264c08afa1490e2`；CI `40393717019`、Browser Smoke `40393717025` 均成功。Staging Release plan `40395551148` 已核准並成功，只預覽 8 個 migrations，沒有套用 migration 或部署。Render staging 服務目前仍是 runtime `00f4d07a964a6640359359be6034266ef711543e`；`/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。Joy Wall 置頂及其他未部署 migrations 尚未上 staging。
+- E-12 備份實測未完成：本機 `.env.staging` 已有必要變數名稱，但 exporter 的 staging 專案身份驗證失敗；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403，直接資料庫連線亦未成功。沒有建立備份、沒有上傳資料、沒有修改 hosted database。完成前不可送出 `BACKUP-READY`，也不可啟動 Go-Live。
+- E-06 已取得目前 staging warm 基線（run `40398701762`，每頁 3 次），數字及測量條件見 `PERFORMANCE_IMPROVEMENT_LOG.md`。這不是新版本前後比較；main `0dbe0e8` 尚未部署，因此 E-06 仍未結案。
+- Message Center scheduler 專用環境仍未建立。排程開關是伺服器排程的營運控制，不是產品功能旗標；未完成 staging 發布與送達驗收前不啟動排程，避免意外發送訊息。
+- E-03、E-07、E-11 仍需要真人 LINE／手機或外部平台操作；E-08 是 production 決策／發布，未獲明確範圍前不碰 production；E-09 custom SMTP 維持暫緩。其餘可獨立完成的本機工程待辦須逐項依最新 Issue／roadmap 核對，不能用這些外部驗收代替。
+
 ## 2026-10-27 歡喜牆公開分享置頂（程式與本機驗收完成；尚未部署）
 
 - [x] 幹部可置頂／取消置頂全社公開、已發布的非 IOU 分享；最多 5 則。置頂後社員可見並排在一般動態前，普通社員只能閱讀，不能管理。
