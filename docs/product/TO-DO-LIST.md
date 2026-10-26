@@ -12,6 +12,14 @@
 - GitHub PR #204 的 Browser Smoke run `40301166962` 曾在訊息中心草稿流程失敗；原因是把「公告到期時間（選填）」留白時，前端仍將空值判成格式錯誤。本次修正允許空白到期時間、仍拒絕無效日期，排程意圖仍要求有效排程時間；沒有改資料庫或權限。typecheck、lint、1,625 tests、Webpack production build、完整隔離 `verify:db`（91 份 SQL verification）、migration／manifest check、訊息中心 E2E 3/3 均通過，已同步 main；尚未部署 staging。PR #204 仍開啟，登入恢復密碼的 hosted 真人閉環未驗收，不自動合併。
 - E-07、E-11 仍需要真人手機或外部平台操作；E-08 是 production 決策／發布，未獲明確範圍前不碰 production；E-09 custom SMTP 維持暫緩。其餘可獨立完成的本機工程待辦須逐項依最新 Issue／roadmap 核對，不能用這些外部驗收代替。
 
+## 2026-10-27 歡喜牆互動封鎖（本機工程與驗收完成；staging 待 E-12）
+
+- [x] 社員可封鎖本社其他社員；封鎖是雙向的，只阻止雙方對彼此新貼文留言、回覆、送表情、建立指定分享或新 IOU，不隱藏舊貼文，也不刪除歷史。
+- [x] 既有 IOU 履行、指定分享收件確認、幹部派題／指定回答和檢舉流程不受影響；封鎖名單只供本人讀取，雙方都能封鎖／解除，每人最多 250 位。
+- [x] Migration 20261027000300_joy_interaction_blocks.sql、RPC/API、社員頁管理區、權限／跨社／停權與回歸驗證已完成；使用既有 joy_wall_v1，沒有新增人工旗標或放寬任何角色權限。
+- [x] 本機驗證：typecheck、lint、218 檔／1,628 tests、Webpack production build、完整隔離 DB migration replay 與 92 份 SQL verification、migration／manifest checks、diff check；封鎖→雙向阻擋→解除→恢復互動的桌機 E2E 1/1 通過。測試只使用 /tmp/rotary-joy-block-db.* 隔離專案，沒有重置共用本機 DB。
+- 尚未同步 main；待提交後由 GitHub 自動執行 CI／Browser Smoke。沒有修改 hosted staging／production。部署仍受 E-12 本機加密備份與受保護 Go-Live 閘門限制。
+
 ## 2026-10-27 收件人感謝作者（已同步 main；staging 待本機備份與 Go-Live）
 
 - [x] 指定／私人分享的收件人看到明確的「感謝作者」按鈕；沿用既有 `thanks` 表情反應 API／RPC，不新增資料庫結構、通知推播或產品旗標。作者只看到匿名累計數，無法辨認是哪位收件人操作。
@@ -60,7 +68,7 @@
 - [x] 功能已同步 main（commit `cea0050`）；main CI、isolated DB 全套驗證及 targeted E2E 通過。
 - [x] 後續 main CI `40295780260` 與 Browser Smoke `40295780270` 均成功，涵蓋此功能的後續主線版本。
 - [ ] Go-Live 前建立本機加密 staging backup；目前本機 `.env.staging` 缺少 project ref、access token、DB password，因此未備份、未部署，也未修改 hosted／production。
-- Issue #4 的一般貼文截止日、草稿／排程／置頂、目標關聯、收件人動作與匿名建議箱程式均已同步 main；仍待封鎖互動、本人同意後的生日／回憶素材整合與保留政策。新功能 staging 發布／社員驗收仍受 E-12 限制。
+- Issue #4 的一般貼文截止日、草稿／排程／置頂、目標關聯、收件人動作與匿名建議箱程式均已同步 main；封鎖互動已完成本機開發與 E2E，尚未同步 main。另有本人同意後的生日／回憶素材整合與保留政策待處理；新功能 staging 發布／社員驗收仍受 E-12 限制。
 
 ## 2026-10-26 歡喜牆收件人動作（已同步 main；staging 待發布／驗收）
 
@@ -137,7 +145,7 @@
 ### 歡喜牆依 Issue #4 尚未完成的範圍
 
 - 非金錢 IOU 核心、社員待辦及主動 LINE 到期／逾期提醒都已進 main；提醒仍未部署 staging，站內提醒未新增。仍待 E-12 備份閘門、staging 部署及真人收訊驗收。
-- 職務／活動／生日／扶輪年度等目標、匿名建議箱、一般貼文截止日、草稿／排程與置頂都已同步 main；草稿留白選填到期日的錯誤也已由 `6f17fc2` 修正。仍待封鎖互動；staging 部署與社員驗收受 E-12 閘門限制。
+- 職務／活動／生日／扶輪年度等目標、匿名建議箱、一般貼文截止日、草稿／排程、置頂與封鎖互動都已有程式及本機驗收；草稿留白選填到期日的錯誤也已由 6f17fc2 修正。封鎖互動目前尚未同步 main；以上功能的 staging 部署與社員驗收仍受 E-12 閘門限制。
 - 收件人「確認已收到」、「要求幹部隱藏」與「感謝作者」均已同步 main；感謝沿用匿名計數反應，不新增個人可見回條或資料庫結構。仍待社員 hosted 驗收、本人同意後的生日／回憶素材整合，以及該素材的保留／刪除政策。
 - 以上屬於 Issue #4 的後續獨立開發，不能由本次本機測試或新頁面存在推定完成；真人、staging、LINE provider／Rich Menu 與 production 待辦仍依本文件後續清單處理。
 

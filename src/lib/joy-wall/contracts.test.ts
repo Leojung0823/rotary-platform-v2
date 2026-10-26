@@ -8,6 +8,8 @@ import {
   parseJoyQuestionRecipients,
   parseJoySuggestions,
   parseJoyTargetOptions,
+  parseJoyMemberBlocks,
+  parseJoyMemberBlockResult,
 } from "./contracts";
 
 const basePost = {
@@ -34,6 +36,24 @@ const basePost = {
 };
 
 describe("Joy Wall response contracts", () => {
+  it("validates the caller-owned member block projection and mutation result", () => {
+    const member = {
+      membership_id: "64000000-0000-4000-8000-000000000001",
+      display_name: "社員甲",
+      avatar_url: null,
+    };
+    expect(parseJoyMemberBlocks({ blocked_members: [member] })).toEqual([member]);
+    expect(parseJoyMemberBlockResult({ membership_id: member.membership_id, blocked: true }))
+      .toEqual({ membership_id: member.membership_id, blocked: true });
+    expect(() => parseJoyMemberBlocks({ blocked_members: [member, member] })).toThrow("invalid_joy_member_blocks_projection");
+    expect(() => parseJoyMemberBlocks({ blocked_members: [{ ...member, private_email: "hidden@example.test" }] }))
+      .toThrow("invalid_joy_member_blocks_projection");
+    expect(() => parseJoyMemberBlocks({ blocked_members: Array(251).fill(member) }))
+      .toThrow("invalid_joy_member_blocks_projection");
+    expect(() => parseJoyMemberBlockResult({ membership_id: "invalid", blocked: true }))
+      .toThrow("invalid_joy_member_block_result");
+  });
+
   it("accepts private, incomplete drafts but rejects IOUs, oversized fields, and unknown identity data", () => {
     const draft = {
       id: "64000000-0000-4000-8000-000000000009",

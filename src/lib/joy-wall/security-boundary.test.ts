@@ -26,6 +26,9 @@ describe("Joy Wall security and UX boundaries", () => {
   const draftPublishRoute = source("app/api/v1/joy/drafts/[draftId]/publish/route.ts");
   const pinRoute = source("app/api/v1/joy/posts/[postId]/pin/route.ts");
   const pinMigration = source("../supabase/migrations/20261027000200_joy_wall_pinning.sql");
+  const blockRoute = source("app/api/v1/joy/blocks/route.ts");
+  const blockMigration = source("../supabase/migrations/20261027000300_joy_interaction_blocks.sql");
+  const blockVerification = source("../supabase/verification/joy_interaction_blocks_security.sql");
   const draftsMigration = source("../supabase/migrations/20261026000400_joy_post_drafts.sql");
   const draftDeadlineMigration = source("../supabase/migrations/20261026000600_joy_post_draft_interaction_deadlines.sql");
   const suggestionItemRoute = source("app/api/v1/joy/suggestions/[suggestionId]/route.ts");
@@ -54,6 +57,7 @@ describe("Joy Wall security and UX boundaries", () => {
     draftsRoute,
     draftItemRoute,
     draftPublishRoute,
+    blockRoute,
   ];
 
   it("fails closed before loading data when the feature flag is off", () => {
@@ -79,6 +83,20 @@ describe("Joy Wall security and UX boundaries", () => {
       expect(route).toContain("featureEnabled");
       expect(route).toContain("joyFailure(404)");
     }
+    expect(blockRoute).toContain("authenticatedJoyClient");
+    expect(blockRoute).toContain('client.rpc("list_my_joy_member_blocks"');
+    expect(blockRoute).toContain('client.rpc("set_my_joy_member_block"');
+    expect(blockRoute).toContain("joyMutationAllowed(request)");
+  });
+
+  it("uses the auto-enabled Joy rollout without adding a manual activation flag for interaction blocks", () => {
+    expect(blockMigration).toContain("joy_wall_v1");
+    expect(blockMigration).not.toContain("insert into public.platform_feature_flags");
+    expect(blockMigration).toContain("create table public.joy_member_blocks");
+    expect(blockMigration).toContain("joy_member_block_limit_reached");
+    expect(blockVerification).toContain("automatically enabled by deployment migration");
+    expect(blockMigration).toContain("joy_interaction_blocked");
+    expect(blockVerification).toContain("acknowledge_joy_post_receipt");
   });
 
   it("shows bounded public pins to members but keeps pin controls in management mode", () => {

@@ -19,6 +19,10 @@
 .draftActions button { min-height: 2.75rem; border: 1px solid #cedbe4; border-radius: 999px; padding: .45rem .8rem; background: #fff; color: #176789; font: inherit; font-size: .82rem; font-weight: 650; cursor: pointer; }
 .draftActions .draftDelete { color: #875252; }
 .draftActions button:disabled { opacity: .55; cursor: wait; }
+.blockAction { flex: 0 0 auto; min-height: 2.75rem; border: 1px solid #cedbe4; border-radius: 999px; padding: .45rem .8rem; background: #fff; color: #176789; font: inherit; font-size: .82rem; font-weight: 650; cursor: pointer; }
+.blockAction:disabled { opacity: .55; cursor: wait; }
+.blockAction:focus-visible, .drafts summary:focus-visible { outline: 3px solid #54a9db; outline-offset: 2px; }
+.drafts summary { min-height: 2.75rem; color: #086b9b; font-weight: 650; cursor: pointer; }
 .sectionIntro, .feedHeader { display: flex; align-items: center; gap: .9rem; }
 .sectionIntro { margin-bottom: 1.2rem; }
 .sectionIntro h2, .feedHeader h2 { margin: 0; }
@@ -165,6 +169,7 @@
   .composerFooter button { width: 100%; }
   .draftItem { align-items: stretch; flex-direction: column; }
   .draftActions button { flex: 1; }
+  .blockAction { align-self: flex-start; }
   .reportForm { align-items: stretch; flex-direction: column; }
   .reportForm > button { width: 100%; }
   .visibility { gap: .45rem; }

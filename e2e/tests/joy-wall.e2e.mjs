@@ -664,3 +664,113 @@ test("selected recipients can acknowledge receipt and request officer review wit
     await bystanderContext.close();
   }
 });
+
+test("a member can block and unblock peer interactions without hiding existing posts", async ({ browser, page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  test.setTimeout(60_000);
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const clubId = "a1000000-0000-4000-8000-000000000001";
+  const blockedMemberName = "社員管理者";
+  const ordinaryTitle = `封鎖前一般分享 ${Date.now()}`;
+  const managerTitle = `封鎖後管理者分享 ${Date.now()}`;
+  let managerContext = null;
+  let blockWasSet = false;
+
+  async function createPublicShare(targetPage, title) {
+    await targetPage.getByLabel("一句標題（選填）").fill(title);
+    await targetPage.getByLabel("分享內容").fill("這則全社分享在封鎖後仍可閱讀。");
+    const responsePromise = targetPage.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/posts?") && response.request().method() === "POST",
+    );
+    await targetPage.getByRole("button", { name: "分享", exact: true }).click();
+    const response = await responsePromise;
+    expect(response.status()).toBe(201);
+    const card = targetPage.getByRole("article").filter({ hasText: title }).first();
+    await expect(card).toBeVisible();
+    return card;
+  }
+
+  async function interact(targetPage, kind, postId) {
+    return targetPage.evaluate(async ({ clubId: selectedClubId, kind: interactionKind, postId: selectedPostId }) => {
+      const suffix = interactionKind === "comment" ? "/comments" : "/reaction";
+      const payload = interactionKind === "comment"
+        ? { parentCommentId: null, commentType: "comment", content: "互動封鎖真人瀏覽驗收" }
+        : { reactionType: "heart" };
+      const response = await fetch(`/api/v1/joy/posts/${encodeURIComponent(selectedPostId)}${suffix}?club_id=${encodeURIComponent(selectedClubId)}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+      });
+      return { status: response.status, body: await response.json() };
+    }, { clubId, kind, postId });
+  }
+
+  try {
+    await signIn(page, memberEmail);
+    await openJoyWall(page);
+    await createPublicShare(page, ordinaryTitle);
+
+    const blockPanel = page.locator("details").filter({ has: page.getByLabel("搜尋本社社員") });
+    await blockPanel.getByText("管理名單", { exact: true }).click();
+    await page.getByLabel("搜尋本社社員").fill(blockedMemberName);
+    const blockResponsePromise = page.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/blocks?") && response.request().method() === "POST",
+    );
+    await blockPanel.getByRole("button", { name: "封鎖", exact: true }).click();
+    expect((await blockResponsePromise).status()).toBe(200);
+    blockWasSet = true;
+    await expect(page.getByRole("status")).toContainText("已封鎖");
+
+    managerContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const managerPage = await managerContext.newPage();
+    await signIn(managerPage, "e2e-shell-member-manager@example.test");
+    await managerPage.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
+    const ordinaryCard = managerPage.getByRole("article").filter({ hasText: ordinaryTitle }).first();
+    await expect(ordinaryCard).toBeVisible();
+    const ordinaryPostId = (await ordinaryCard.getAttribute("id")).replace("joy-post-", "");
+
+    const managerToOrdinaryReaction = await interact(managerPage, "reaction", ordinaryPostId);
+    expect(managerToOrdinaryReaction).toMatchObject({ status: 403, body: { error: "interaction_blocked" } });
+    const managerToOrdinaryComment = await interact(managerPage, "comment", ordinaryPostId);
+    expect(managerToOrdinaryComment).toMatchObject({ status: 403, body: { error: "interaction_blocked" } });
+
+    const managerCard = await createPublicShare(managerPage, managerTitle);
+    const managerPostId = (await managerCard.getAttribute("id")).replace("joy-post-", "");
+    await page.reload();
+    const visibleManagerCard = page.getByRole("article").filter({ hasText: managerTitle }).first();
+    await expect(visibleManagerCard).toBeVisible();
+    const ordinaryToManagerReaction = await interact(page, "reaction", managerPostId);
+    expect(ordinaryToManagerReaction).toMatchObject({ status: 403, body: { error: "interaction_blocked" } });
+    const ordinaryToManagerComment = await interact(page, "comment", managerPostId);
+    expect(ordinaryToManagerComment).toMatchObject({ status: 403, body: { error: "interaction_blocked" } });
+
+    const unblockPromise = page.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/blocks?") && response.request().method() === "POST",
+    );
+    const refreshedBlockPanel = page.locator("details").filter({ has: page.getByLabel("搜尋本社社員") });
+    await refreshedBlockPanel.getByText("管理名單", { exact: true }).click();
+    await page.getByLabel("搜尋本社社員").fill(blockedMemberName);
+    await refreshedBlockPanel.getByRole("button", { name: "解除封鎖", exact: true }).first().click();
+    expect((await unblockPromise).status()).toBe(200);
+    blockWasSet = false;
+
+    const afterUnblock = await interact(page, "reaction", managerPostId);
+    expect(afterUnblock.status).toBe(200);
+    const managerAfterUnblock = await interact(managerPage, "comment", ordinaryPostId);
+    expect(managerAfterUnblock.status).toBe(201);
+  } finally {
+    if (blockWasSet) {
+      await page.evaluate(async ({ clubId: selectedClubId, displayName }) => {
+        const params = new URLSearchParams({ club_id: selectedClubId });
+        const current = await fetch(`/api/v1/joy/blocks?${params}`, { cache: "no-store" }).then((response) => response.json());
+        const target = current?.data?.blocked_members?.find((member) => member.display_name === displayName);
+        if (target) {
+          await fetch(`/api/v1/joy/blocks?${params}`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ membershipId: target.membership_id, blocked: false }),
+          });
+        }
+      }, { clubId, displayName: blockedMemberName }).catch(() => {});
+    }
+    await managerContext?.close();
+  }
+});

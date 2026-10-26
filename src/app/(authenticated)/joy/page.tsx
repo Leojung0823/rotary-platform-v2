@@ -9,6 +9,7 @@ import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience
 import { readClubPermissions } from "@/lib/club-permissions.server";
 import {
   parseJoyAudienceMembers,
+  parseJoyMemberBlocks,
   parseJoyPost,
   parseJoyPosts,
   parseJoyPostDrafts,
@@ -88,7 +89,7 @@ async function renderSelectedWall(
     : focusPostId
       ? supabase.rpc("get_my_joy_question_post_with_interaction_deadline", { p_club_id: selectedClub.club_id, p_post_id: focusPostId })
       : Promise.resolve({ data: null, error: null });
-  const [postsResult, pinnedResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult, draftsResult] = await Promise.all([
+  const [postsResult, pinnedResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult, draftsResult, blocksResult] = await Promise.all([
     supabase.rpc("list_joy_posts_with_interaction_deadlines", {
       p_club_id: selectedClub.club_id,
       p_cursor_created_at: null,
@@ -102,6 +103,7 @@ async function renderSelectedWall(
     readClubPermissions(selectedClub.club_id),
     focusedPostPromise,
     supabase.rpc("list_my_joy_post_drafts", { p_club_id: selectedClub.club_id }),
+    supabase.rpc("list_my_joy_member_blocks", { p_club_id: selectedClub.club_id }),
   ]);
   if (postsResult.error) {
     return <Notice tone="error">歡喜牆內容目前無法載入，請稍後再試。</Notice>;
@@ -119,6 +121,12 @@ async function renderSelectedWall(
       } catch { pinnedPostsUnavailable = true; initialPinnedPosts = []; }
     }
     const audienceMembers = audienceResult.error ? [] : parseJoyAudienceMembers(audienceResult.data);
+    let initialBlockedMembers = [] as ReturnType<typeof parseJoyMemberBlocks>;
+    let blocksUnavailable = Boolean(blocksResult.error);
+    if (!blocksUnavailable) {
+      try { initialBlockedMembers = parseJoyMemberBlocks(blocksResult.data); }
+      catch { blocksUnavailable = true; }
+    }
     let initialDrafts: JoyPostDraft[] = [];
     let draftsUnavailable = Boolean(draftsResult.error);
     if (!draftsUnavailable) {
@@ -167,6 +175,8 @@ async function renderSelectedWall(
       <JoyWall
         clubId={selectedClub.club_id}
         audienceMembers={audienceMembers}
+        initialBlockedMembers={initialBlockedMembers}
+        blocksUnavailable={blocksUnavailable}
         targetOptions={targetOptions}
         targetOptionsUnavailable={targetOptionsUnavailable}
         initialDrafts={initialDrafts}

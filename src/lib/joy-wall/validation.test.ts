@@ -18,6 +18,7 @@ import {
   parseJoySuggestionReviewBody,
   parseJoySuggestionId,
   parseJoyPostDraftBody,
+  parseJoyMemberBlockBody,
 } from "./validation";
 
 const memberOne = "64000000-0000-4000-8000-000000000001";
@@ -97,6 +98,16 @@ describe("Joy Wall input validation", () => {
     expect(parseJoyLimit(null)).toBe(20);
     expect(parseJoyLimit("50")).toBe(50);
     expect(() => parseJoyLimit("51")).toThrow();
+  });
+
+  it("accepts only an exact same-club member block toggle", () => {
+    expect(parseJoyMemberBlockBody({ membershipId: memberOne, blocked: true }))
+      .toEqual({ membershipId: memberOne, blocked: true });
+    expect(parseJoyMemberBlockBody({ membershipId: memberOne, blocked: false }))
+      .toEqual({ membershipId: memberOne, blocked: false });
+    expect(() => parseJoyMemberBlockBody({ membershipId: memberOne, blocked: "true" })).toThrow();
+    expect(() => parseJoyMemberBlockBody({ membershipId: memberOne, blocked: true, clubId: "spoofed" })).toThrow();
+    expect(() => parseJoyMemberBlockBody({ membershipId: "not-a-uuid", blocked: true })).toThrow();
   });
 
   it("requires a same-club recipient payload and a valid date for non-cash IOUs", () => {

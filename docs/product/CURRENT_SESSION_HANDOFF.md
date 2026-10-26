@@ -18,6 +18,9 @@
 - Message Center scheduler environment 尚未建立。此排程開關是獨立的營運控制，不是產品 feature flag；完成 staging 部署與確認送達對象前不要啟動，以免造成意外 LINE 訊息。新功能部署即自動可用的規則不等於自動啟動外部訊息排程。
 - E-03 LINE OA follow 自動配對真人測試已由產品負責人確認驗收完成、可使用；僅限目前已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。較早文件中的 E-03 待驗收文字屬歷史紀錄，詳見 `TO-DO-LIST.md`。
 - 修復 PR #204 Browser Smoke run `40301166962` 觸發的訊息中心草稿問題：選填的公告到期時間留白時，前端原先仍拒絕儲存。現在留白可存、無效日期仍拒絕、排程意圖仍要求排程時間。typecheck、lint、218 檔／1,625 tests、Webpack build、migration／manifest checks、隔離資料庫完整 reset／lint／91 SQL verifications 及訊息中心 E2E 3/3 通過；修正已同步 main，尚未部署 staging。
+- 歡喜牆互動封鎖已在目前分支完成：新增 20261027000300_joy_interaction_blocks.sql、RPC/API、社員端封鎖名單與完整安全驗證。規則為雙向禁止新留言／回覆／表情／指定分享／新 IOU；保留舊貼文與歷史，既有 IOU、收件確認、幹部派題與檢舉不受影響；每人上限 250 位。功能沿用 joy_wall_v1，沒有新增人工開啟旗標或修改權限角色。
+- 封鎖互動本機驗證：typecheck、lint、218 檔／1,628 tests、Webpack production build、完整隔離 DB replay 與 92 份 SQL verification、migration／verification manifest checks、diff check 全通過；桌機 E2E 1/1 通過（封鎖後雙方仍能看舊貼文、不能互相新增互動，解除後恢復）。第一次 E2E 的 403 是本機 production-build 測試來源未設定；加上 APP_ENV=local 與同一 NEXT_PUBLIC_SITE_URL 後通過，未放寬同源防護。
+- 封鎖互動目前只在 codex/joy-interaction-blocking 本機工作樹，尚未 commit／同步 main；後續要由 main 自動 CI／Browser Smoke 驗證。沒有對 staging／production 寫入。
 - PR #204 仍未合併。它要求 staging 上以專用測試帳號完整驗收 recovery email 至重新登入流程；本機草稿修正不能代替該 hosted 真人驗收，也不會自動合併該 PR。
 - 仍有真人／外部依賴：E-07 iOS／Android 與五位使用者測試、E-11 各社 OA／Rich Menu 手機驗收。E-08 涉及 production，未獲明確授權不操作；E-09 custom SMTP 依既定決策暫緩。
 

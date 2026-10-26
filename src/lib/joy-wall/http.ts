@@ -35,6 +35,8 @@ export async function joyDeleteHasNoBody(request: NextRequest) {
   return hasEmptyBody(request, JOY_REQUEST_MAX_BYTES);
 }
 export function joyRpcFailure(error: { code?: string | null; message?: string | null } | null) {
+  if (error?.message === "joy_interaction_blocked") return joyFailure(403, "interaction_blocked");
+  if (error?.message === "joy_member_block_limit_reached") return joyFailure(409, "member_block_limit_reached");
   if (error?.message === "joy_post_interactions_closed") return joyFailure(409, "interactions_closed");
   if (error?.message === "joy_pin_limit_reached") return joyFailure(409, "pin_limit_reached");
   if (error?.message === "joy_post_not_pin_eligible") return joyFailure(400, "pin_not_eligible");

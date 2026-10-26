@@ -36,6 +36,12 @@ export function parseJoyClubId(value: string | null) { return uuid(value, "inval
 export function parseJoyPostId(value: string) { return uuid(value, "invalid_post_id"); }
 export function parseJoyDraftId(value: string) { return uuid(value, "invalid_draft_id"); }
 export function parseJoySuggestionId(value: string) { return uuid(value, "invalid_suggestion_id"); }
+export function parseJoyMemberBlockBody(value: unknown) {
+  if (!isRecord(value) || !exactKeys(value, ["membershipId", "blocked"]) || typeof value.blocked !== "boolean") {
+    throw new Error("invalid_body");
+  }
+  return { membershipId: uuid(value.membershipId, "invalid_body"), blocked: value.blocked };
+}
 export function parseJoyLimit(value: string | null) {
   if (value === null || value === "") return 20;
   if (!/^\d+$/u.test(value)) throw new Error("invalid_limit");

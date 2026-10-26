@@ -10,6 +10,12 @@
 - E-06 已完成目前 staging 的 warm baseline run `40398701762`（desktop Chromium、受保護登入、每頁 3 次）：社員首頁中位數 LCP／FCP／TTFB／INP `728／408／377.4／16 ms`，管理首頁 `636／332／260.6／16 ms`。這不是修改前後比較；main 功能 commit `110cb8a` 未部署前不能據此判定新功能性能。
 - 可完成主線工程的新功能在成功部署後自動可用，不要求人工開產品旗標；只保留受保護的緊急停用／回滾控制，歷史 opt-in 功能不批次開啟。Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對已由產品負責人確認真人驗收完成、可用（只使用 PANCHIAO-ELITE；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。細節與待辦依 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
 
+## 2026-10-27 歡喜牆互動封鎖（本機完成；待同步 main）
+
+- 新增 migration 20261027000300_joy_interaction_blocks.sql、RPC/API、社員封鎖管理 UI 及安全驗證；規則為雙向阻擋彼此新留言／回覆／表情／指定分享／新 IOU，但保留既有貼文與歷史。既有 IOU、收件確認、幹部派題和檢舉不受影響；每人最多 250 位。
+- 沿用 joy_wall_v1，不新增 rollout flag；本機 typecheck、lint、1,628 tests、Webpack build、隔離 DB 92 份 SQL verification、migration／manifest checks 與桌機 E2E 1/1 通過。沒有重置共用 DB 或修改 hosted staging／production。
+- 目前只在 codex/joy-interaction-blocking 工作樹，尚未 commit／同步 main；部署 staging 仍受 E-12 備份閘門限制。
+
 ## 2026-10-27 訊息中心選填到期時間修正（已同步 main；staging 待 E-12 備份與 Go-Live）
 
 - PR #204 的 Browser Smoke run `40301166962` 曾在草稿流程失敗：留白的選填到期時間被前端錯誤拒絕。現在空白到期時間可正常儲存；無效非空值仍會拒絕，排程草稿仍必須提供有效排程時間。沒有改資料庫、權限或 hosted 設定。

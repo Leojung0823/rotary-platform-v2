@@ -25,6 +25,7 @@ import {
   parseJoyComments,
   parseJoyPost,
   parseJoyPostDraft,
+  parseJoyMemberBlockResult,
 } from "@/lib/joy-wall/contracts";
 import type { JoyComment } from "@/lib/joy-wall/contracts";
 import { JOY_COMMENT_MAX_CODE_POINTS, JOY_POST_MAX_CODE_POINTS } from "@/lib/joy-wall/validation";
@@ -34,6 +35,8 @@ import styles from "./joy-wall.module.css";
 type JoyWallProps = {
   clubId: string;
   audienceMembers: readonly JoyAudienceMember[];
+  initialBlockedMembers: readonly JoyAudienceMember[];
+  blocksUnavailable: boolean;
   targetOptions: JoyTargetOptions;
   targetOptionsUnavailable: boolean;
   initialDrafts: readonly JoyPostDraft[];
@@ -103,6 +106,8 @@ function requestFailureMessage(error: unknown, fallback: string) {
   if (error.message === "interactions_closed") return "這則分享已截止留言／回答；原有內容仍可閱讀。";
   if (error.message === "pin_limit_reached") return "最多可置頂 5 則分享；請先取消一則置頂，再試一次。";
   if (error.message === "pin_not_eligible") return "只能置頂已發布的全社分享；指定對象、私人分享與 IOU 不適用。";
+  if (error.message === "interaction_blocked") return "依目前的互動封鎖設定，這項互動無法完成。您可在「封鎖互動」調整名單。";
+  if (error.message === "member_block_limit_reached") return "封鎖名單已達 250 位上限；請先解除不再需要的封鎖。";
   return fallback;
 }
 
@@ -163,7 +168,7 @@ function defaultCommentType(post: JoyPost): JoyCommentType {
 }
 
 export function JoyWall({
-  clubId, audienceMembers, targetOptions, targetOptionsUnavailable, initialDrafts, draftsUnavailable,
+  clubId, audienceMembers, initialBlockedMembers, blocksUnavailable, targetOptions, targetOptionsUnavailable, initialDrafts, draftsUnavailable,
   initialPosts, initialPinnedPosts, pinnedPostsUnavailable, canManagePublicPosts, initialCursor, focusedPostId,
 }: JoyWallProps) {
   const [posts, setPosts] = useState([...initialPosts]);
@@ -188,6 +193,8 @@ export function JoyWall({
   const [iouNotes, setIouNotes] = useState<Record<string, string>>({});
   const [publishing, setPublishing] = useState(false);
   const [drafts, setDrafts] = useState([...initialDrafts]);
+  const [blockedMembers, setBlockedMembers] = useState([...initialBlockedMembers]);
+  const [blockSearch, setBlockSearch] = useState("");
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -218,6 +225,10 @@ export function JoyWall({
     return [...pinnedPosts, ...visiblePosts.filter((post) => !pinnedIds.has(post.id))];
   }, [filter, pinnedPosts, showFavorites, visiblePosts]);
   const audienceCount = audienceIds.length;
+  const blockedMembershipIds = new Set(blockedMembers.map((member) => member.membership_id));
+  const blockCandidates = audienceMembers.filter((member) =>
+    member.display_name.toLocaleLowerCase("zh-TW").includes(blockSearch.trim().toLocaleLowerCase("zh-TW")),
+  ).slice(0, 50);
   const contentLength = Array.from(content).length;
   const focusedQuestionId = initialPosts.find((post) =>
     post.id === focusedPostId && post.post_type === "question" && post.can_answer,
@@ -373,6 +384,30 @@ export function JoyWall({
       setStateMessage("草稿已刪除。");
     } catch (error) { setStateMessage(requestFailureMessage(error, "草稿沒有刪除，請稍後再試。")); }
     finally { setPendingId(null); }
+  }
+
+  async function setMemberBlocked(member: JoyAudienceMember, blocked: boolean) {
+    if (blocksUnavailable) return;
+    setPendingId(`block:${member.membership_id}`);
+    setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, "/blocks"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ membershipId: member.membership_id, blocked }),
+      });
+      const result = parseJoyMemberBlockResult(await readData<unknown>(response));
+      if (result.membership_id !== member.membership_id || result.blocked !== blocked) {
+        throw new Error("invalid_joy_member_block_result");
+      }
+      setBlockedMembers((current) => blocked
+        ? current.some((item) => item.membership_id === member.membership_id) ? current : [...current, member]
+        : current.filter((item) => item.membership_id !== member.membership_id));
+      setStateMessage(blocked
+        ? `已封鎖與「${member.display_name}」的新互動；既有內容仍保留。`
+        : `已解除與「${member.display_name}」的互動封鎖。`);
+    } catch (error) {
+      setStateMessage(requestFailureMessage(error, "封鎖設定沒有更新，請稍後再試。"));
+    } finally { setPendingId(null); }
   }
 
   async function loadMore() {
@@ -807,6 +842,44 @@ export function JoyWall({
                   onClick={() => void deleteDraft(draft.id)}>{pendingId === `draft:${draft.id}` ? "刪除中…" : "刪除"}</button>
               </div>
             </li>)}</ul>}
+      </section>
+      <section className={styles.drafts} aria-labelledby="joy-blocks-title">
+        <div className={styles.draftsHeader}><h3 id="joy-blocks-title">封鎖互動</h3><span>{blockedMembers.length} 位</span></div>
+        <p className={styles.muted}>封鎖後，雙方不能對彼此的新貼文留言、回覆或送表情，也不能互相指定新分享或新 IOU。原本看得到的貼文與歷史會保留；既有 IOU、指定分享的收件確認、幹部派題和檢舉不受影響。每人最多封鎖 250 位社員；對方不會收到封鎖通知。</p>
+        {blocksUnavailable
+          ? <p className={styles.muted} role="status">封鎖名單暫時無法載入，為避免誤操作，目前不能變更。</p>
+          : <details>
+            <summary>管理名單</summary>
+            <label className={styles.field}><span>搜尋本社社員</span>
+              <input type="search" value={blockSearch} onChange={(event) => setBlockSearch(event.target.value)} placeholder="輸入社員姓名" />
+            </label>
+            {audienceMembers.length === 0
+              ? <p className={styles.muted}>目前無法載入社員名單，請稍後再試。</p>
+              : <ul className={styles.draftList}>
+                {blockCandidates.map((member) => {
+                  const blocked = blockedMembershipIds.has(member.membership_id);
+                  const actionId = `block:${member.membership_id}`;
+                  return <li key={member.membership_id} className={styles.draftItem}>
+                    <strong>{member.display_name}</strong>
+                    <button type="button" className={styles.blockAction} disabled={pendingId !== null}
+                      onClick={() => void setMemberBlocked(member, !blocked)}>
+                      {pendingId === actionId ? "更新中…" : blocked ? "解除封鎖" : "封鎖"}
+                    </button>
+                  </li>;
+                })}
+                {blockCandidates.length === 0 && <li className={styles.muted}>沒有符合姓名的社員。</li>}
+              </ul>}
+            {blockedMembers.length > 0 && <div>
+              <h4>目前已封鎖</h4>
+              <ul className={styles.draftList}>{blockedMembers.map((member) => <li key={member.membership_id} className={styles.draftItem}>
+                <strong>{member.display_name}</strong>
+                <button type="button" className={styles.blockAction} disabled={pendingId !== null}
+                  onClick={() => void setMemberBlocked(member, false)}>
+                  {pendingId === `block:${member.membership_id}` ? "更新中…" : "解除封鎖"}
+                </button>
+              </li>)}</ul>
+            </div>}
+          </details>}
       </section>
     </section>
 

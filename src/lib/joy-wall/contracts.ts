@@ -104,6 +104,33 @@ export type JoyComment = {
 };
 
 export type JoyAudienceMember = { membership_id: string; display_name: string; avatar_url: string | null };
+export function parseJoyMemberBlocks(value: unknown): JoyAudienceMember[] {
+  if (!isRecord(value) || !Array.isArray(value.blocked_members) || value.blocked_members.length > 250) {
+    throw new Error("invalid_joy_member_blocks_projection");
+  }
+  const members = value.blocked_members.map((member) => {
+    if (!isRecord(member) || typeof member.membership_id !== "string" || !uuidPattern.test(member.membership_id)
+      || typeof member.display_name !== "string" || member.display_name.trim().length === 0
+      || Array.from(member.display_name).length > 120 || !safeHttpUrl(member.avatar_url)
+      || Object.keys(member).some((key) => !["membership_id", "display_name", "avatar_url"].includes(key))) {
+      throw new Error("invalid_joy_member_blocks_projection");
+    }
+    return {
+      membership_id: member.membership_id.toLowerCase(),
+      display_name: member.display_name,
+      avatar_url: member.avatar_url as string | null,
+    };
+  });
+  if (new Set(members.map((member) => member.membership_id)).size !== members.length) {
+    throw new Error("invalid_joy_member_blocks_projection");
+  }
+  return members;
+}
+export function parseJoyMemberBlockResult(value: unknown): { membership_id: string; blocked: boolean } {
+  if (!isRecord(value) || typeof value.membership_id !== "string" || !uuidPattern.test(value.membership_id)
+    || typeof value.blocked !== "boolean") throw new Error("invalid_joy_member_block_result");
+  return { membership_id: value.membership_id, blocked: value.blocked };
+}
 export type JoyReport = {
   report_id: string;
   post_id: string;
