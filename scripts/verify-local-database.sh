@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-database_url="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+config_file="supabase/config.toml"
+project_id="$(sed -nE 's/^project_id = "([^"]+)"$/\1/p' "$config_file" | head -n 1)"
+db_port="$(awk '
+  /^\[db\]$/ { in_db = 1; next }
+  /^\[/ { in_db = 0 }
+  in_db && $1 == "port" && $2 == "=" { print $3; exit }
+' "$config_file")"
+if [[ -z "$project_id" || -z "$db_port" ]]; then
+  echo "Could not read Supabase project_id or db.port from $config_file."
+  exit 1
+fi
+
+database_url="postgresql://postgres:postgres@127.0.0.1:${db_port}/postgres"
 if command -v supabase >/dev/null 2>&1; then
   supabase db reset --local
   supabase db lint --local
@@ -16,7 +28,7 @@ run_sql() {
     psql "$database_url" -v ON_ERROR_STOP=1 -f "$file"
   else
     local db_container
-    db_container="$(docker ps --format '{{.Names}}' | grep '^supabase_db_rotary-platform-v2$' | head -n 1)"
+    db_container="$(docker ps --format '{{.Names}}' | grep -F -x "supabase_db_${project_id}" || true)"
     if [[ -z "$db_container" ]]; then
       echo "Local psql is unavailable and the Supabase database container was not found."
       exit 1

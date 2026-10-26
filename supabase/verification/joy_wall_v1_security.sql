@@ -171,7 +171,6 @@ declare
   iou_decline jsonb;
   iou_cancel jsonb;
   iou_overdue jsonb;
-  closed_tasks jsonb;
 begin
   if jsonb_array_length(to_jsonb((select array_agg(club_id::text) from public.list_my_joy_clubs()))) <> 1 then
     raise exception 'Joy club list did not restrict results to active membership';
@@ -250,15 +249,6 @@ begin
     or iou_post ? 'recipient_membership_id' or iou_post->'iou'->>'viewer_role' <> 'promisor' then
     raise exception 'IOU creation did not return a participant-only projection';
   end if;
-  closed_tasks := public.list_my_member_pending_tasks_with_joy_tasks(
-    '95000000-0000-4000-8000-000000000001', 50, 0, true, true
-  );
-  if exists (select 1 from jsonb_array_elements(closed_tasks->'tasks') as task where task->>'kind' = 'joy_iou')
-    or exists (select 1 from jsonb_array_elements(closed_tasks->'tasks') as task where task->>'kind' = 'joy_question')
-    or public.get_my_joy_iou_post('95000000-0000-4000-8000-000000000001', (iou_post->>'id')::uuid) is not null
-    or public.get_my_joy_question_post('95000000-0000-4000-8000-000000000001', (question_post->>'id')::uuid) is not null then
-    raise exception 'Joy IOU task or direct projection was visible before its flag was enabled';
-  end if;
   begin
     perform public.act_joy_iou(
       '95000000-0000-4000-8000-000000000001', (iou_post->>'id')::uuid, 'accept', null
@@ -292,7 +282,37 @@ begin
 end $$;
 reset role;
 
--- Enable only inside this rolled-back local verification transaction.
+-- Verify the emergency disable path with existing authored content. The
+-- deployment migration intentionally seeds this flag enabled, so first turn
+-- it off as the local database owner, then exercise the member RPCs.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000000', true);
+update public.platform_feature_flags
+set enabled = false
+where feature_key = 'joy_wall_v1';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000001', true);
+do $$
+declare
+  closed_tasks jsonb;
+begin
+  closed_tasks := public.list_my_member_pending_tasks_with_joy_tasks(
+    '95000000-0000-4000-8000-000000000001', 50, 0, true, true
+  );
+  if exists (select 1 from jsonb_array_elements(closed_tasks->'tasks') as task where task->>'kind' = 'joy_iou')
+    or exists (select 1 from jsonb_array_elements(closed_tasks->'tasks') as task where task->>'kind' = 'joy_question')
+    or public.get_my_joy_iou_post(
+      '95000000-0000-4000-8000-000000000001', current_setting('joy.iou_post')::uuid
+    ) is not null
+    or public.get_my_joy_question_post(
+      '95000000-0000-4000-8000-000000000001', current_setting('joy.question_post')::uuid
+    ) is not null then
+    raise exception 'Joy IOU task or direct projection was visible while its emergency flag was disabled';
+  end if;
+end $$;
+reset role;
+
+-- Restore the enabled state only inside this rolled-back local verification transaction.
 select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000001', true);
 insert into public.platform_feature_flags (
   feature_key, enabled, enabled_environments, rollout_percentage, updated_by
