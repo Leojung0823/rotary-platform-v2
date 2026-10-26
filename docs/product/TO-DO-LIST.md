@@ -12,7 +12,7 @@
 - [x] 功能 commit `b547ec7fc7e9e30f8f8cd0a0da4b35d49c57f94a` 已快轉同步至 GitHub `main`；沒有開 PR。
 - [x] GitHub CI run `40295780260`（validate、build、database）成功。
 - [x] Browser Smoke run `40295780270` 成功（243 passed、111 skipped）；Message Center 排程編輯流程有 1 次 flaky retry 後通過，該測試與本功能無關。
-- [ ] Go-Live 前完成本機加密 staging 備份，再以最新 main SHA 走受保護發布及真人社員驗收。已知 `.env.staging` 缺少 staging project ref、access token、DB password，須由管理者安全補齊；舊 waiting plan `40286231972` 對應舊 SHA `6bc9433`，不可用於本功能。
+- [ ] Go-Live 前完成本機加密 staging 備份，再以最新 main SHA 走受保護發布及真人社員驗收。已知 `.env.staging` 缺少 staging project ref、access token、DB password，須由管理者安全補齊。Release plan run `40297992217` 正等待 staging environment 核准，對應 exact SHA `931dd23` 且只做 dry-run；main 前進後不可沿用，須重開最新 SHA plan。更舊 run `40286231972` 對應 `6bc9433`，也不可用。
 - 本輪沒有 hosted／production 變更或開啟 hosted flag；Issue #4 其他待辦仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 尚未交付）
@@ -22,17 +22,18 @@
 - [x] 沿用 `joy_wall_v1`、`joy.moderate`、server RPC、同源 API、每小時五則限流；全新隔離 stack 重播 160 migrations，86 份 SQL verification 全通過；217 檔／1,612 tests、typecheck、lint、migration／manifest guard、webpack production build 及匿名提交→幹部處理 targeted E2E 通過。
 - [x] 修正新 migration 的稽核物件類型約束，保留既有 `question_prompt`、`question_batch`；資料庫 lint exit 0，只有三項既有 warning。沒有對預設本機資料執行會 reset 的 `npm run verify:db`。
 - [x] 功能已同步 main（commit `cea0050`）；main CI、isolated DB 全套驗證及 targeted E2E 通過。
-- [ ] 等待 Browser Smoke run `40285033200` 完成，再用最新 main SHA 執行 Staging Release plan。
+- Browser Smoke run `40285033200` 已取消，不列為通過；須以最新 main SHA 重跑 Release plan。
 - [ ] Go-Live 前建立本機加密 staging backup；目前本機 `.env.staging` 缺少 project ref、access token、DB password，因此未備份、未部署，也未修改 hosted／production。
-- Issue #4 仍有其他待開發：一般貼文截止日、草稿／排程／置頂、封鎖互動、生日／回憶素材整合與保存政策；目標關聯、收件人動作與匿名建議箱仍是各自分支的完成切片，尚未全部同步／發布。
+- Issue #4 仍有其他待開發：一般貼文截止日、草稿／排程／置頂、封鎖互動、其他互動回覆、生日／回憶素材整合與保存政策。目標關聯、收件人動作與匿名建議箱都已在 main，但尚未部署 staging／完成真人驗收。
 
-## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
+## 2026-10-26 歡喜牆收件人動作（已同步 main；staging 待發布）
 
 - [x] 收件人可私下確認已收到；作者只看到匿名總數，無法辨認個別收件人。
 - [x] 收件人可要求幹部隱藏；要求進入既有審核佇列，不會立即隱藏貼文。
 - [x] 新 migration、API/UI、資料庫安全驗證及 manifest 已完成；沿用 `joy_wall_v1`，未新增旗標或改 hosted 設定。
-- [x] 驗證通過：217 檔／1,609 tests、typecheck、lint、build、migration guard、85 份 SQL verification manifest、隔離 Supabase 完整重播與 85 份 SQL verification、指定桌機 E2E 1/1。DB lint 無 error，只有 3 項既有 warning；未跑 CI／Browser Smoke。
-- 本功能目前只在 `codex/joy-recipient-actions` 本機分支，尚未推送／開 PR／部署；沒有 hosted 或 production 變更。整個 Issue #4 仍未完成。
+- [x] 功能 commit `07de2e0` 與 migration `20261026000100_joy_recipient_actions.sql` 已在 GitHub `main`（目前文件基準 `931dd23`）；沒有另開 PR。
+- [x] 原始驗證：217 檔／1,609 tests、typecheck、lint、build、migration guard、85 份 SQL verification manifest、隔離 Supabase 完整重播與 85 份 SQL verification、指定桌機 E2E 1/1。DB lint 無 error，只有 3 項既有 warning；當時未跑 CI／Browser Smoke。
+- 尚未部署 staging、開啟 hosted flag 或完成真人驗收；沒有 hosted／production 變更。整個 Issue #4 仍未完成。
 
 ## 2026-10-25 已完成：時間未定活動與板橋群英活動建檔（staging）
 
@@ -99,8 +100,8 @@
 ### 歡喜牆依 Issue #4 尚未完成的範圍
 
 - 非金錢 IOU 核心、社員待辦及主動 LINE 到期／逾期提醒都已進 main；提醒仍未部署 staging，站內提醒未新增。仍待 E-12 備份閘門、staging 部署及真人收訊驗收。
-- 職務、活動、生日專案、扶輪年度等目標；一般貼文截止日、草稿／排程／置頂；匿名建議箱與封鎖互動。批次提問截止日已另列於上方。
-- 收件人「確認已收到」與「要求幹部隱藏」已於 2026-10-26 在本機分支完成，尚未同步／發布；仍待其他互動回覆（如感謝）、本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
+- 尚待開發：一般貼文截止日、草稿／排程／置頂、封鎖互動、其他互動回覆（如感謝）、本人同意後的生日／回憶素材整合，以及完整歷史保存政策；批次提問截止日已另列於上方。
+- 職務／活動／生日／扶輪年度目標、匿名建議箱與收件人動作都已在 main，仍待 staging 部署及真人驗收；不要把尚未部署誤記成尚未同步。
 - 以上屬於 Issue #4 的後續獨立開發，不能由本次本機測試或新頁面存在推定完成；真人、staging、LINE provider／Rich Menu 與 production 待辦仍依本文件後續清單處理。
 
 ## 2026-10-03 全專案進度掃描
