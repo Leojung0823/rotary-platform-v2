@@ -10,7 +10,7 @@
 - 通過：`npm test`（217 檔／1,616 tests）、typecheck、lint、migration guard、DB verification manifest（87 files）、`git diff --check`；Webpack production build 成功。
 - 完整隔離 DB 驗證已完成：新建專用 Supabase project，重播 160 支 migrations，DB lint exit 0（3 項既有 warning），87 份 SQL verification 全通過；未重置共用 54322 DB。因 repo `verify:db` wrapper 固定使用該共用 port，這次在臨時 project（port 61422）逐步執行相同 reset、lint 及 manifest 全套 SQL。
 - Webpack production build 與 Joy Wall 目標關聯 Playwright 1/1 通過，使用隔離 Supabase 合成帳號／資料。第一次測試因 production mode 未配置本機同源 origin 而回 403；以 `APP_ENV=local` 和明確 localhost origin 重跑後通過，沒有放寬同源檢查。`npm test`（217 檔／1,616 tests）、typecheck、lint、migration guard、87-file manifest、diff check 皆通過。預設 Turbopack build 因共享 `node_modules` symlink 指到另一 worktree而失敗；Webpack build 通過。
-- GitHub CI run `40295780260` 已成功，包含 validate、build 與 database jobs。Browser Smoke run `40295780270` 成功：243 passed、111 skipped；Message Center 排程編輯流程有 1 次 flaky retry 後通過（`tests/message-center.e2e.mjs:107`，與本功能無關）。尚未部署 staging；本輪沒有改 hosted／production，也未開啟任何 hosted flag。Staging Release run `40297992217` 目前等待 staging environment 核准，對應 exact SHA `931dd23`，且只是 dry-run plan，沒有套 migration 或部署；main 前進後必須重開 plan。舊 run `40286231972` 對應 `6bc9433`，不可沿用。
+- GitHub CI run `40295780260` 已成功，包含 validate、build 與 database jobs。Browser Smoke run `40295780270` 成功：243 passed、111 skipped；Message Center 排程編輯流程有 1 次 flaky retry 後通過（`tests/message-center.e2e.mjs:107`，與本功能無關）。尚未部署 staging；本輪沒有改 hosted／production，也未開啟任何 hosted flag。Staging Release run `40297992217` 已於 2026-10-26 經核准並成功完成，對應 exact SHA `931dd23`，只做 migration dry-run，沒有套 migration 或部署；main 前進後必須重開 plan。舊 run `40286231972` 對應 `6bc9433`，不可沿用。
 - 保留既有未追蹤項目 `rotary-joy-wall/`、`supabase/.gitignore`、`supabase/supabase.lock`；不要納入本次 staging。Go-Live 前需要本機加密 staging backup；已知 `.env.staging` 缺少 staging project ref、access token、DB password，須先由管理者安全補齊後按 runbook 建備份，再用最新 main SHA 做受保護發布。Issue #4 其他待辦與真人 staging 驗收仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 尚未發布）
@@ -20,7 +20,7 @@
 - 幹部可標成「已閱讀，完成處理」或「不需處理」，兩種狀態都留稽核事件；稽核不記建議原文／作者。使用既有 `joy_wall_v1`，新 RPC、同源 API、社務管理權限與每小時五則限流都 fail closed。
 - 新增 migration `20261026000200_joy_anonymous_suggestions.sql`、member／manager UI、API、契約／驗證測試、E2E 案例及 `joy_anonymous_suggestions_security.sql`，manifest 共 86 份。新 migration 已在隔離 Supabase DB 手動套用；匿名、跨社、停權、幹部投影不洩漏作者、稽核、旗標及限流驗證均通過。
 - 驗證已補齊：217 Vitest 檔／1,612 tests、typecheck、lint、migration guard、manifest guard、diff check 通過；`npm run build -- --webpack` 成功。全新隔離 Supabase stack 重播 160 支 migration，86 份 SQL verification 全通過；資料庫 lint exit 0，只有三項既有 warning。沒有對預設本機 DB 執行會 reset 的 `npm run verify:db`。
-- 匿名建議「社員匿名送出→幹部看不到作者並完成處理」的 targeted E2E 已通過；main 的 CI run `40285033235` 通過。Browser Smoke run `40285033200` 後續已取消，不能列為通過。Staging Release run `40297992217` 目前等待 staging environment 核准，對應 `931dd23` 且只做 dry-run；若 main 因文件 PR 前進，需對新 SHA 重開 plan。尚未執行 Go-Live。
+- 匿名建議「社員匿名送出→幹部看不到作者並完成處理」的 targeted E2E 已通過；main 的 CI run `40285033235` 通過。Browser Smoke run `40285033200` 後續已取消，不能列為通過；後續 main SHA `931dd23` 的 Browser Smoke `40295780270` 已成功。Staging Release run `40297992217` 已於 2026-10-26 經核准並成功完成，對應 `931dd23` 且只做 dry-run；若 main 因文件 PR 前進，需對新 SHA 重開 plan。尚未執行 Go-Live。
 - 本機加密 staging backup 尚未產生。既有 `/Users/leoj/Documents/GitHub/rotary-platform-v2/.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`，不能從 GitHub secrets 讀回值；須先由管理者在本機安全補齊後，才能依 runbook 備份。Issue #4 其他未完成仍包括目標關聯（職務／活動／生日／扶輪年度）、一般貼文截止日、草稿／排程／置頂、封鎖、素材整合與保存政策，以及外部 staging／真人驗收。
 - 下一步：用最新 main SHA 重開 Staging Release plan；Go-Live 前先建立並確認本機加密 backup／可接受 rollback point。完成後才部署 staging。Issue #4 其餘開發與外部驗收仍未完成。
 

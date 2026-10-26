@@ -12,7 +12,7 @@
 - [x] 功能 commit `b547ec7fc7e9e30f8f8cd0a0da4b35d49c57f94a` 已快轉同步至 GitHub `main`；沒有開 PR。
 - [x] GitHub CI run `40295780260`（validate、build、database）成功。
 - [x] Browser Smoke run `40295780270` 成功（243 passed、111 skipped）；Message Center 排程編輯流程有 1 次 flaky retry 後通過，該測試與本功能無關。
-- [ ] Go-Live 前完成本機加密 staging 備份，再以最新 main SHA 走受保護發布及真人社員驗收。已知 `.env.staging` 缺少 staging project ref、access token、DB password，須由管理者安全補齊。Release plan run `40297992217` 正等待 staging environment 核准，對應 exact SHA `931dd23` 且只做 dry-run；main 前進後不可沿用，須重開最新 SHA plan。更舊 run `40286231972` 對應 `6bc9433`，也不可用。
+- [ ] Go-Live 前完成本機加密 staging 備份，再以最新 main SHA 走受保護發布及真人社員驗收。已知 `.env.staging` 缺少 staging project ref、access token、DB password，須由管理者安全補齊。Release plan run `40297992217` 已於 2026-10-26 經核准並成功完成，對應 exact SHA `931dd23`，只做 migration dry-run，沒有套用 migration 或部署；main 前進後不可沿用，須重開最新 SHA plan。更舊 run `40286231972` 對應 `6bc9433`，也不可用。
 - 本輪沒有 hosted／production 變更或開啟 hosted flag；Issue #4 其他待辦仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 尚未交付）
@@ -22,7 +22,7 @@
 - [x] 沿用 `joy_wall_v1`、`joy.moderate`、server RPC、同源 API、每小時五則限流；全新隔離 stack 重播 160 migrations，86 份 SQL verification 全通過；217 檔／1,612 tests、typecheck、lint、migration／manifest guard、webpack production build 及匿名提交→幹部處理 targeted E2E 通過。
 - [x] 修正新 migration 的稽核物件類型約束，保留既有 `question_prompt`、`question_batch`；資料庫 lint exit 0，只有三項既有 warning。沒有對預設本機資料執行會 reset 的 `npm run verify:db`。
 - [x] 功能已同步 main（commit `cea0050`）；main CI、isolated DB 全套驗證及 targeted E2E 通過。
-- Browser Smoke run `40285033200` 已取消，不列為通過；須以最新 main SHA 重跑 Release plan。
+- Browser Smoke run `40285033200` 已取消，不列為通過；後續 main SHA `931dd23` 的 Browser Smoke `40295780270` 已成功。若 main 再前進，仍須依發布流程檢查最新 SHA 的驗證狀態。
 - [ ] Go-Live 前建立本機加密 staging backup；目前本機 `.env.staging` 缺少 project ref、access token、DB password，因此未備份、未部署，也未修改 hosted／production。
 - Issue #4 仍有其他待開發：一般貼文截止日、草稿／排程／置頂、封鎖互動、其他互動回覆、生日／回憶素材整合與保存政策。目標關聯、收件人動作與匿名建議箱都已在 main，但尚未部署 staging／完成真人驗收。
 

@@ -8,14 +8,14 @@
 - 資料庫會檢查同社、活動可見權限、有效職務及生日徵集功能旗標；讀取貼文時再依當前讀者權限過濾目標。生日旗標關閉或讀者失去生日清單權限時，選項與既有貼文上的生日關聯都不顯示。沿用 `joy_wall_v1`，沒有新增旗標或改 hosted／production。
 - 新增 `20261026000300_joy_target_associations.sql`、`joy_target_associations_security.sql` 與 API／頁面／驗證測試。乾淨隔離 Supabase stack 已重播 160 支 migration；DB lint exit 0，只有 3 項既有 warning；87 份 SQL verification 全通過。沒有重置共用本機資料庫。`npm run verify:db` wrapper 固定指向共用 54322，因此同樣的 reset／lint／SQL 驗證改在唯一 project ID、61422 port 的臨時 stack 執行。
 - 驗證：217 Vitest 檔／1,616 tests、typecheck、lint、migration guard、verification manifest（87 files）、`git diff --check` 通過；Webpack production build 與 Joy 目標關聯 Playwright 桌機流程 1/1 通過（本機合成資料）。GitHub CI `40295780260` 成功（validate、build、database）；Browser Smoke `40295780270` 成功（243 passed、111 skipped），其中 Message Center 排程編輯流程有 1 次 flaky retry 後通過。預設 Turbopack build 因 worktree `node_modules` symlink 指向另一個 worktree而失敗，Webpack build 成功。
-- 尚未部署 staging；本輪沒有更動 hosted／production，也沒有開啟任何 hosted flag。Staging Release run `40297992217` 目前等待 staging environment 核准，對應 exact SHA `931dd23`，且只是 dry-run plan，沒有套 migration 或部署；main 前進後必須重開最新 SHA 的 plan。舊 run `40286231972` 對應 `6bc9433`，不可沿用。Go-Live 前仍須完成本機加密 staging 備份；已知 `.env.staging` 缺少 project ref、access token、DB password，需先安全補齊。Issue #4 其他待辦仍未完成。
+- 尚未部署 staging；本輪沒有更動 hosted／production，也沒有開啟任何 hosted flag。Staging Release run `40297992217` 已於 2026-10-26 經核准並成功完成，對應 exact SHA `931dd23`，只做 migration dry-run，沒有套 migration 或部署；main 前進後必須重開最新 SHA 的 plan。舊 run `40286231972` 對應 `6bc9433`，不可沿用。Go-Live 前仍須完成本機加密 staging 備份；已知 `.env.staging` 缺少 project ref、access token、DB password，需先安全補齊。Issue #4 其他待辦仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 驗收／發布待續）
 
 - 社員可送出最多 1,000 字匿名建議；社長／秘書等有 `joy.moderate` 的幹部可檢視本社待處理內容，並標記已讀或不需處理。幹部畫面與 RPC 投影不帶作者欄位。
 - 原始帳號與社籍對應分開保存在 `joy_private.joy_suggestion_identities`，schema 不暴露於 PostgREST，authenticated、anon、service_role 沒有直接讀取權；保留給受限平台安全稽核，不提供社內身份揭露功能。內容不寫入稽核事件。使用既有 `joy_wall_v1`，預設仍關閉。
 - Migration `20261026000200_joy_anonymous_suggestions.sql`、API、社員表單、幹部管理頁與權限／稽核／限流驗證已透過功能 commit `cea0050` 同步 main；尚未部署 staging，`joy_wall_v1` 仍未由本輪開啟。
-- 驗證：217 Vitest 檔／1,612 tests、typecheck、lint、migration／manifest guard、webpack production build 通過；新建隔離 Supabase stack 重播 160 migrations，86 份 SQL verification 全通過。資料庫 lint exit 0，僅三項既有 warning。沒有對預設本機資料執行會 reset 的 `npm run verify:db`。匿名提交→幹部處理 targeted E2E 與 main CI 通過；Browser Smoke run `40285033200` 後續已取消，不列為通過。
+- 驗證：217 Vitest 檔／1,612 tests、typecheck、lint、migration／manifest guard、webpack production build 通過；新建隔離 Supabase stack 重播 160 migrations，86 份 SQL verification 全通過。資料庫 lint exit 0，僅三項既有 warning。沒有對預設本機資料執行會 reset 的 `npm run verify:db`。匿名提交→幹部處理 targeted E2E 與 main CI 通過；Browser Smoke run `40285033200` 後續已取消，不列為通過；後續 main SHA `931dd23` 的 Browser Smoke `40295780270` 已成功。
 - Go-Live 前需完成本機加密 staging backup。既有 `.env.staging` 缺少 staging project ref、access token、DB password，現在不能安全匯出；不可以把 `BACKUP-READY` 當成已有備份。完成 backup 後再以最新 main SHA 跑 Staging Release plan／Go-Live。Issue #4 其餘開發及外部／真人驗收仍未完成。
 
 ## 2026-10-26 歡喜牆收件人動作（已同步 main；staging 待發布）
