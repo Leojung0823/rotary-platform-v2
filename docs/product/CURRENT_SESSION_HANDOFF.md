@@ -3,15 +3,15 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
-## 2026-10-26 Joy Wall 目標關聯（程式完成；完整驗證／發布待續）
+## 2026-10-26 Joy Wall 目標關聯（已同步 main；CI 通過；staging 待發布）
 
-- 工作分支 `codex/joy-target-associations`，以 `origin/main@6bc9433` 為基準。社員建立貼文時可選活動、扶輪年度、職務角色及生日專案，每類最多五個；不擴大原貼文讀者範圍。角色不回傳任職者；生日只採用已公開且允許祝福的清單投影，不回傳生日日期、祝福內文、作者或參與者資料。生日徵集旗標關閉時，選項與現存貼文上的生日關聯均不顯示。沒有新增旗標或變更 hosted／production。
+- 工作分支 `codex/joy-target-associations`，功能 commit `b547ec7fc7e9e30f8f8cd0a0da4b35d49c57f94a` 已快轉同步至 GitHub `main`（沒有開 PR）。社員建立貼文時可選活動、扶輪年度、職務角色及生日專案，每類最多五個；不擴大原貼文讀者範圍。角色不回傳任職者；生日只採用已公開且允許祝福的清單投影，不回傳生日日期、祝福內文、作者或參與者資料。生日徵集旗標關閉時，選項與現存貼文上的生日關聯均不顯示。沒有新增旗標或變更 hosted／production。
 - 修改包含 `20261026000300_joy_target_associations.sql`、`joy_target_associations_security.sql`、Joy Wall API／頁面／元件／contract／validation、單元與 E2E 測試、verification manifest，以及 roadmap／handoff／待辦文件。Migration 已在專用隔離 worktree DB 套用；Joy target SQL verifier 通過，測試資料交易後回滾。
 - 通過：`npm test`（217 檔／1,616 tests）、typecheck、lint、migration guard、DB verification manifest（87 files）、`git diff --check`；Webpack production build 成功。
 - 完整隔離 DB 驗證已完成：新建專用 Supabase project，重播 160 支 migrations，DB lint exit 0（3 項既有 warning），87 份 SQL verification 全通過；未重置共用 54322 DB。因 repo `verify:db` wrapper 固定使用該共用 port，這次在臨時 project（port 61422）逐步執行相同 reset、lint 及 manifest 全套 SQL。
-- Webpack production build 與 Joy Wall 目標關聯 Playwright 1/1 通過，使用隔離 Supabase 合成帳號／資料。第一次測試因 production mode 未配置本機同源 origin 而回 403；以 `APP_ENV=local` 和明確 localhost origin 重跑後通過，沒有放寬同源檢查。`npm test`（217 檔／1,616 tests）、typecheck、lint、migration guard、87-file manifest、diff check 皆通過。預設 Turbopack build 仍因共享 `node_modules` symlink 指到另一 worktree 而失敗；Webpack build 通過。
-- 尚未同步 main／開 PR／部署，也未跑 GitHub CI／Browser Smoke。`joy_wall_v1`、staging／production 均未變更。下一步先核對 open PR 與 main 最新狀態，再依 repo 交付節奏提交／同步；staging 仍需外部備份設定與發布前置條件。
-- 保留既有未追蹤項目 `rotary-joy-wall/`、`supabase/.gitignore`、`supabase/supabase.lock`；不要納入本次 staging。下一步是用可信且不覆蓋共用安裝的 CLI，在乾淨隔離 stack 完成 DB 重播與全套 verification，準備隔離 E2E 設定跑 Joy Wall 流程，之後再 commit／同步及依 runbook 處理 staging backup 和發布。
+- Webpack production build 與 Joy Wall 目標關聯 Playwright 1/1 通過，使用隔離 Supabase 合成帳號／資料。第一次測試因 production mode 未配置本機同源 origin 而回 403；以 `APP_ENV=local` 和明確 localhost origin 重跑後通過，沒有放寬同源檢查。`npm test`（217 檔／1,616 tests）、typecheck、lint、migration guard、87-file manifest、diff check 皆通過。預設 Turbopack build 因共享 `node_modules` symlink 指到另一 worktree而失敗；Webpack build 通過。
+- GitHub CI run `40295780260` 已成功，包含 validate、build 與 database jobs。Browser Smoke run `40295780270` 成功：243 passed、111 skipped；Message Center 排程編輯流程有 1 次 flaky retry 後通過（`tests/message-center.e2e.mjs:107`，與本功能無關）。尚未部署 staging；本輪沒有改 hosted／production，也未開啟任何 hosted flag。舊 Staging Release waiting run `40286231972` 是舊 SHA `6bc9433`，不適用於此 commit。
+- 保留既有未追蹤項目 `rotary-joy-wall/`、`supabase/.gitignore`、`supabase/supabase.lock`；不要納入本次 staging。Go-Live 前需要本機加密 staging backup；已知 `.env.staging` 缺少 staging project ref、access token、DB password，須先由管理者安全補齊後按 runbook 建備份，再用最新 main SHA 做受保護發布。Issue #4 其他待辦與真人 staging 驗收仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 尚未發布）
 

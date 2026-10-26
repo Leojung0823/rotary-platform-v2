@@ -2,13 +2,13 @@
 
 更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-26 Joy Wall 目標關聯（程式完成；完整驗證／發布待續）
+## 2026-10-26 Joy Wall 目標關聯（已同步 main；CI 通過；staging 待發布）
 
-- 分支 `codex/joy-target-associations`，基於 `origin/main@6bc9433`。社員建立貼文時可各選最多五個可見活動、扶輪年度、職務角色及已公開且允許祝福的生日專案；目標只是補充背景，不會擴大貼文讀者範圍。角色只顯示職稱、不顯示任職者；生日只顯示既有公開投影允許的壽星姓名及年度，不暴露生日日期、祝福內文或作者。
+- 功能 commit `b547ec7fc7e9e30f8f8cd0a0da4b35d49c57f94a` 已快轉同步至 GitHub `main`，沒有開 PR。社員建立貼文時可各選最多五個可見活動、扶輪年度、職務角色及已公開且允許祝福的生日專案；目標只補充背景，不會擴大貼文讀者範圍。角色只顯示職稱、不顯示任職者；生日只顯示既有公開投影允許的壽星姓名及年度，不暴露生日日期、祝福內文或作者。
 - 資料庫會檢查同社、活動可見權限、有效職務及生日徵集功能旗標；讀取貼文時再依當前讀者權限過濾目標。生日旗標關閉或讀者失去生日清單權限時，選項與既有貼文上的生日關聯都不顯示。沿用 `joy_wall_v1`，沒有新增旗標或改 hosted／production。
 - 新增 `20261026000300_joy_target_associations.sql`、`joy_target_associations_security.sql` 與 API／頁面／驗證測試。乾淨隔離 Supabase stack 已重播 160 支 migration；DB lint exit 0，只有 3 項既有 warning；87 份 SQL verification 全通過。沒有重置共用本機資料庫。`npm run verify:db` wrapper 固定指向共用 54322，因此同樣的 reset／lint／SQL 驗證改在唯一 project ID、61422 port 的臨時 stack 執行。
-- 驗證：217 Vitest 檔／1,616 tests、typecheck、lint、migration guard、verification manifest（87 files）、`git diff --check` 通過。Webpack production build 成功；Joy Wall 目標關聯 Playwright 桌機流程 1/1 通過（本機合成資料）。預設 `npm run build` 的 Turbopack 因 worktree `node_modules` symlink 指向另一個 worktree而失敗，Webpack build 成功。
-- 尚未同步 main／開 PR／部署；尚未跑 GitHub CI／Browser Smoke。`joy_wall_v1` 與 hosted／production 均未變更。下一步是核對 open PR 與最新 main 後，按 repo 交付規則提交／同步；staging 發布仍需先完成本機加密備份等前置條件。Issue #4 其他待辦仍未完成。
+- 驗證：217 Vitest 檔／1,616 tests、typecheck、lint、migration guard、verification manifest（87 files）、`git diff --check` 通過；Webpack production build 與 Joy 目標關聯 Playwright 桌機流程 1/1 通過（本機合成資料）。GitHub CI `40295780260` 成功（validate、build、database）；Browser Smoke `40295780270` 成功（243 passed、111 skipped），其中 Message Center 排程編輯流程有 1 次 flaky retry 後通過。預設 Turbopack build 因 worktree `node_modules` symlink 指向另一個 worktree而失敗，Webpack build 成功。
+- 尚未部署 staging；本輪沒有更動 hosted／production，也沒有開啟任何 hosted flag。舊的 Staging Release waiting run `40286231972` 對應舊 SHA `6bc9433`，不能拿來發布本 commit。Go-Live 前仍須完成本機加密 staging 備份並依 runbook 執行最新 SHA 的受保護發布；已知 `.env.staging` 缺少備份所需的 staging project ref、access token、DB password，需先安全補齊。Issue #4 其他待辦仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 驗收／發布待續）
 

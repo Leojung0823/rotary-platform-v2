@@ -2,15 +2,18 @@
 
 更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-26 Joy Wall 目標關聯（本機程式完成；完整驗證／發布待續）
+## 2026-10-26 Joy Wall 目標關聯（已同步 main；CI 通過；staging 待發布）
 
 - [x] 新貼文支援關聯活動、扶輪年度、職務角色及生日專案；每類最多五個，關聯不能擴大原貼文讀者範圍。
 - [x] 職務只顯示符合條件的職稱，不公開任職者；生日只從已公開且允許祝福的清單選取，不回傳生日日期、祝福內文、作者或參與者資料。生日徵集旗標關閉時，生日選項及貼文上的生日關聯均隱藏。
 - [x] Migration、API／UI、資料庫安全驗證與 manifest 已新增；沿用 `joy_wall_v1`，未開啟任何 hosted flag，也未修改 staging／production。
 - [x] 本機已通過 217 檔／1,616 Vitest、typecheck、lint、migration guard、87-file verification manifest、Webpack production build、Joy target 專屬 Playwright 1/1。
 - [x] 專用隔離 Supabase stack 重播 160 支 migration；DB lint exit 0（3 項既有 warning），87 份 SQL verification 全通過。未重置共用 54322 本機 DB。
-- [ ] 核對 open PR 與最新 main 後同步 main；目前 main 尚未更新、沒有 open PR，也未跑 GitHub CI／Browser Smoke。
-- [ ] 完成 staging 所需的本機加密備份設定後，再走受保護發布與真人社員驗收；目前沒有 hosted／production 變更，Issue #4 其他待辦仍未完成。
+- [x] 功能 commit `b547ec7fc7e9e30f8f8cd0a0da4b35d49c57f94a` 已快轉同步至 GitHub `main`；沒有開 PR。
+- [x] GitHub CI run `40295780260`（validate、build、database）成功。
+- [x] Browser Smoke run `40295780270` 成功（243 passed、111 skipped）；Message Center 排程編輯流程有 1 次 flaky retry 後通過，該測試與本功能無關。
+- [ ] Go-Live 前完成本機加密 staging 備份，再以最新 main SHA 走受保護發布及真人社員驗收。已知 `.env.staging` 缺少 staging project ref、access token、DB password，須由管理者安全補齊；舊 waiting plan `40286231972` 對應舊 SHA `6bc9433`，不可用於本功能。
+- 本輪沒有 hosted／production 變更或開啟 hosted flag；Issue #4 其他待辦仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 尚未交付）
 
