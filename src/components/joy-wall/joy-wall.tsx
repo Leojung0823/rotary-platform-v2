@@ -850,6 +850,10 @@ export function JoyWall({
           const topLevelComments = postComments.filter((comment) => !comment.parent_comment_id);
           const replies = postComments.filter((comment) => comment.parent_comment_id);
           const draft = editingId === post.id ? editingDraft : null;
+          const isAddressedRecipient = post.can_acknowledge_receipt
+            || post.receipt_acknowledged_at !== null
+            || post.can_request_hide
+            || post.hide_request_submitted;
           return <article id={`joy-post-${post.id}`} key={post.id}
             className={`${styles.post} ${post.is_hidden ? styles.hiddenPost : ""} ${focusedPostId === post.id ? styles.focusedPost : ""}`}>
             <header className={styles.postHeader}>
@@ -925,7 +929,7 @@ export function JoyWall({
             </section>}
             <div className={styles.actions}>
               {!post.is_hidden && !post.iou && <div className={styles.reactions}>
-                {joyReactionTypes.map((reaction) => <button type="button" key={reaction}
+                {joyReactionTypes.filter((reaction) => !(isAddressedRecipient && reaction === "thanks")).map((reaction) => <button type="button" key={reaction}
                   className={post.my_reaction === reaction ? styles.reactionSelected : styles.reaction}
                   aria-pressed={post.my_reaction === reaction} disabled={pendingId === `reaction:${post.id}`}
                   onClick={() => void react(post, reaction)}>
@@ -933,6 +937,13 @@ export function JoyWall({
                 </button>)}
               </div>}
               <div className={styles.actionLinks}>
+                {isAddressedRecipient && !post.is_hidden && <button type="button"
+                  aria-pressed={post.my_reaction === "thanks"}
+                  className={post.my_reaction === "thanks" ? styles.favoriteSelected : undefined}
+                  disabled={pendingId === `reaction:${post.id}`}
+                  onClick={() => void react(post, "thanks")}>
+                  {pendingId === `reaction:${post.id}` ? "送出中…" : post.my_reaction === "thanks" ? "已感謝作者（再點取消）" : "🙏 感謝作者"}
+                </button>}
                 {post.receipt_ack_count !== null && post.recipient_count !== null
                   && post.recipient_count > 0
                   && <span className={styles.recipientActionStatus}>已確認收到 {post.receipt_ack_count}/{post.recipient_count} 位</span>}

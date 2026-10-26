@@ -624,6 +624,15 @@ test("selected recipients can acknowledge receipt and request officer review wit
     expect((await receiptResponsePromise).status()).toBe(200);
     await expect(receivedCard.getByText("你已確認收到")).toBeVisible();
 
+    const thankAuthorButton = receivedCard.getByRole("button", { name: /感謝作者/u });
+    await expect(thankAuthorButton).toBeVisible();
+    const thanksResponsePromise = recipient.waitForResponse((response) =>
+      response.url().includes("/reaction?") && response.request().method() === "POST",
+    );
+    await thankAuthorButton.click();
+    expect((await thanksResponsePromise).status()).toBe(200);
+    await expect(thankAuthorButton).toHaveAttribute("aria-pressed", "true");
+
     const bystander = await bystanderContext.newPage();
     await signIn(bystander, memberEmail);
     await bystander.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
@@ -642,6 +651,8 @@ test("selected recipients can acknowledge receipt and request officer review wit
     const authorCard = page.getByRole("article").filter({ hasText: title }).first();
     await expect(authorCard.getByText("已確認收到 1/1 位")).toBeVisible();
     await expect(authorCard.getByText("你已確認收到")).toHaveCount(0);
+    await expect(authorCard.getByRole("button", { name: /感謝作者/u })).toHaveCount(0);
+    await expect(authorCard.getByRole("button", { name: /🙏 感謝/u })).toContainText("1");
 
     await page.goto(new URL(`/clubs/${clubId}/joy/moderation?mode=management`, baseURL).toString());
     const moderationCard = page.getByRole("article").filter({ hasText: title }).first();
