@@ -2,6 +2,14 @@
 
 更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-26 Joy Wall 匿名建議箱（程式本機完成；驗收／發布待續）
+
+- 社員可送出最多 1,000 字匿名建議；社長／秘書等有 `joy.moderate` 的幹部可檢視本社待處理內容，並標記已讀或不需處理。幹部畫面與 RPC 投影不帶作者欄位。
+- 原始帳號與社籍對應分開保存在 `joy_private.joy_suggestion_identities`，schema 不暴露於 PostgREST，authenticated、anon、service_role 沒有直接讀取權；保留給受限平台安全稽核，不提供社內身份揭露功能。內容不寫入稽核事件。使用既有 `joy_wall_v1`，預設仍關閉。
+- Migration `20261026000200_joy_anonymous_suggestions.sql`、API、社員表單、幹部管理頁與權限／稽核／限流驗證已加入本機分支 `codex/joy-anonymous-suggestions`，尚未 commit／同步 main／部署。
+- 驗證：217 Vitest 檔／1,612 tests、typecheck、lint、migration／manifest guard、webpack production build 通過；新建隔離 Supabase stack 重播 160 migrations，86 份 SQL verification 全通過。資料庫 lint exit 0，僅三項既有 warning。沒有對預設本機資料執行會 reset 的 `npm run verify:db`。匿名提交→幹部處理 targeted E2E 通過；未跑完整 Browser Smoke／CI。
+- 下一步是完成切片檢查與 commit、同步 main，再按流程發布 staging。Issue #4 其餘開發及外部／真人驗收仍未完成。
+
 ## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
 
 - 分支 `codex/joy-recipient-actions` 已合入 `origin/main@1bc35b6` 的本機分支（merge `1179b0e`），包含功能 commit `07de2e0`；目前未推送、未開 PR、未部署。

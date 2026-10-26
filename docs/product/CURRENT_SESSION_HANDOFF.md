@@ -3,6 +3,16 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-10-26 Joy Wall 匿名建議箱（本機完成；尚未提交／發布）
+
+- 目前分支 `codex/joy-anonymous-suggestions` 疊在收件人動作本機分支上；基準仍是 `origin/main@1bc35b6`。本輪新增尚未 commit，沒有 push、PR、部署、開啟旗標或修改 hosted／production。
+- 新增匿名建議箱：社員可送出最多 1,000 字建議；幹部只能看本社待處理文字與時間，不能在管理頁或 API 取得提交者。提交者帳號與本社 membership 另存於未暴露給 PostgREST 的 `joy_private` schema，authenticated、anon、service_role 無直接 schema／table 權限；保留平台側受限資料以供後續安全稽核，沒有新增身份揭露介面。
+- 幹部可標成「已閱讀，完成處理」或「不需處理」，兩種狀態都留稽核事件；稽核不記建議原文／作者。使用既有 `joy_wall_v1`，新 RPC、同源 API、社務管理權限與每小時五則限流都 fail closed。
+- 新增 migration `20261026000200_joy_anonymous_suggestions.sql`、member／manager UI、API、契約／驗證測試、E2E 案例及 `joy_anonymous_suggestions_security.sql`，manifest 共 86 份。新 migration 已在隔離 Supabase DB 手動套用；匿名、跨社、停權、幹部投影不洩漏作者、稽核、旗標及限流驗證均通過。
+- 驗證已補齊：217 Vitest 檔／1,612 tests、typecheck、lint、migration guard、manifest guard、diff check 通過；`npm run build -- --webpack` 成功。另以全新隔離 Supabase stack 重播 160 支 migration，86 份已登錄 SQL verification 全通過；資料庫 lint exit 0，只有三項既有 warning（兩支函式的 STABLE／VOLATILE 標記及一個未使用變數）。沒有對預設本機 DB 執行會 reset 的 `npm run verify:db`。
+- 匿名建議「社員匿名送出→幹部看不到作者並完成處理」的 targeted E2E 已通過；沒有跑完整 Browser Smoke／CI。測試期間曾發現新 migration 漏保留既有 `question_prompt`、`question_batch` 稽核物件類型，已修正；乾淨重播與 86 份 SQL 全通過證明修正生效。
+- 下一步：檢查並提交這一切片、同步 main，再依 `AGENTS.md` 執行 Staging Release／Go-Live。Issue #4 其他未完成仍包括目標關聯（職務／活動／生日／扶輪年度）、一般貼文截止日、草稿／排程／置頂、封鎖、素材整合與保存政策，以及外部 staging／真人驗收。
+
 ## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
 
 - 分支 `codex/joy-recipient-actions` 已包含 `origin/main@1bc35b6`（本機 merge commit `1179b0e`）；功能 commit 為 `07de2e0`。本次尚未推送、開 PR 或部署。

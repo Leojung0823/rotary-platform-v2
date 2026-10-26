@@ -10,6 +10,7 @@ describe("Joy Wall security and UX boundaries", () => {
   const taskMigration = source("../supabase/migrations/20261002000400_joy_iou_member_tasks.sql");
   const moderationPage = source("app/(authenticated)/clubs/[clubId]/joy/moderation/page.tsx");
   const questionManagerPage = source("app/(authenticated)/clubs/[clubId]/joy/questions/page.tsx");
+  const suggestionManagerPage = source("app/(authenticated)/clubs/[clubId]/joy/suggestions/page.tsx");
   const questionManagerComponent = source("components/joy-wall/joy-question-manager.tsx");
   const questionMigration = source("../supabase/migrations/20261003000200_joy_question_bank_batch_dispatch.sql");
   const component = source("components/joy-wall/joy-wall.tsx");
@@ -19,6 +20,9 @@ describe("Joy Wall security and UX boundaries", () => {
   const reportRoute = source("app/api/v1/joy/reports/route.ts");
   const createIouRoute = source("app/api/v1/joy/ious/route.ts");
   const iouActionRoute = source("app/api/v1/joy/ious/[postId]/route.ts");
+  const suggestionsRoute = source("app/api/v1/joy/suggestions/route.ts");
+  const suggestionItemRoute = source("app/api/v1/joy/suggestions/[suggestionId]/route.ts");
+  const suggestionMigration = source("../supabase/migrations/20261026000200_joy_anonymous_suggestions.sql");
   const joyPage = source("app/(authenticated)/joy/page.tsx");
   const favoriteMigration = source("../supabase/migrations/20261003000300_joy_post_favorites.sql");
   const recipientActionsMigrationFile = migrationDefining("acknowledge_joy_post_receipt");
@@ -36,6 +40,8 @@ describe("Joy Wall security and UX boundaries", () => {
     reportRoute,
     createIouRoute,
     iouActionRoute,
+    suggestionsRoute,
+    suggestionItemRoute,
   ];
 
   it("fails closed before loading data when the feature flag is off", () => {
@@ -121,6 +127,24 @@ describe("Joy Wall security and UX boundaries", () => {
     expect(questionManagerComponent).toContain("crypto.randomUUID()");
     expect(questionManagerComponent).toContain("每位被選社員會收到一則待回答提問");
     expect(questionManagerComponent).toContain("不會公開給其他社員");
+  });
+
+  it("keeps anonymous suggestions club-scoped, officer-reviewed, and author-free in the club projection", () => {
+    expect(suggestionManagerPage).toContain('requireClubPermission(clubId, "joy.moderate")');
+    expect(suggestionManagerPage).toContain('query.mode !== "management"');
+    expect(page).toContain("<JoySuggestionBox clubId={selectedClub.club_id} />");
+    expect(page).toContain("/joy/suggestions?mode=management");
+    expect(suggestionsRoute).toContain('client.rpc("create_joy_suggestion"');
+    expect(suggestionsRoute).toContain('client.rpc("list_joy_suggestions"');
+    expect(suggestionItemRoute).toContain('client.rpc("review_joy_suggestion"');
+    expect(suggestionMigration).toContain("joy_private.joy_suggestion_identities");
+    expect(suggestionMigration).toContain("revoke all on schema joy_private from public, anon, authenticated, service_role");
+    expect(suggestionMigration).toContain("create or replace function public.list_joy_suggestions");
+    expect(suggestionMigration).toContain("'suggestion_created'");
+    expect(suggestionMigration).toContain("'suggestion_reviewed'");
+    const projection = suggestionMigration.split("create or replace function public.list_joy_suggestions")[1]?.split("create or replace function public.review_joy_suggestion")[0] ?? "";
+    expect(projection).not.toContain("author_app_account_id");
+    expect(projection).not.toContain("author_membership_id");
   });
 
   it("keeps question-bank mutations server-authorized, idempotent, and answer-private", () => {

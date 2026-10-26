@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseJoyPost, parseJoyQuestionBatchDetail, parseJoyQuestionManagerPage, parseJoyQuestionRecipients } from "./contracts";
+import { parseJoyPost, parseJoyQuestionBatchDetail, parseJoyQuestionManagerPage, parseJoyQuestionRecipients, parseJoySuggestions } from "./contracts";
 
 const basePost = {
   id: "64000000-0000-4000-8000-000000000001",
@@ -101,5 +101,19 @@ describe("Joy Wall response contracts", () => {
       .toThrow("invalid_joy_question_batch_detail");
     expect(() => parseJoyQuestionBatchDetail({ id: "batch-1", title: "本月提問", created_at: "2026-10-02T00:00:00.000Z",
       due_on: "2026-02-30", assignments: [] })).toThrow("invalid_joy_question_batch_detail");
+  });
+
+  it("accepts only the anonymous suggestion projection and rejects leaked identity fields", () => {
+    const suggestion = {
+      suggestion_id: "64000000-0000-4000-8000-000000000011",
+      content: "希望增加服務活動回顧。",
+      status: "open",
+      created_at: "2026-10-26T00:00:00.000Z",
+    };
+    expect(parseJoySuggestions({ suggestions: [suggestion] })).toEqual([suggestion]);
+    expect(() => parseJoySuggestions({ suggestions: [{ ...suggestion, author_display_name: "社員甲" }] }))
+      .toThrow("invalid_joy_suggestions_projection");
+    expect(() => parseJoySuggestions({ suggestions: [{ ...suggestion, content: "" }] }))
+      .toThrow("invalid_joy_suggestions_projection");
   });
 });

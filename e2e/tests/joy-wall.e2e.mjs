@@ -54,6 +54,43 @@ test("a member can open Joy Wall, use accessible filters, and choose who may see
   await expect(page.getByRole("radio", { name: /全社社員可見/u })).toHaveCount(0);
 });
 
+test("a member can submit an anonymous suggestion and a club officer can review it without seeing its author", async ({ browser, page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const suggestion = `匿名建議驗收 ${Date.now()}`;
+  await signIn(page, memberEmail);
+  await openJoyWall(page);
+  const clubId = "a1000000-0000-4000-8000-000000000001";
+  await expect(page.getByRole("heading", { name: "本機 Shell 社員社" })).toBeVisible();
+  await page.getByLabel("你的建議").fill(suggestion);
+  await page.getByRole("checkbox", { name: /我了解/u }).check();
+  const submitPromise = page.waitForResponse((response) =>
+    response.url().includes("/api/v1/joy/suggestions?") && response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "匿名送出" }).click();
+  expect((await submitPromise).status()).toBe(201);
+  await expect(page.getByRole("status")).toContainText("建議已匿名送出");
+
+  const managerContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  try {
+    const managerPage = await managerContext.newPage();
+    await signIn(managerPage, "e2e-shell-member-manager@example.test");
+    await managerPage.goto(new URL(`/clubs/${clubId}/joy/suggestions?mode=management`, baseURL).toString());
+    const suggestionCard = managerPage.getByRole("article").filter({ hasText: suggestion });
+    await expect(suggestionCard).toBeVisible();
+    await expect(suggestionCard.getByText("匿名建議", { exact: true })).toBeVisible();
+    const reviewPromise = managerPage.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/suggestions/") && response.request().method() === "PATCH",
+    );
+    await suggestionCard.getByRole("button", { name: "已閱讀，完成處理" }).click();
+    expect((await reviewPromise).status()).toBe(200);
+    await expect(managerPage.getByText("目前沒有待處理建議")).toBeVisible();
+  } finally {
+    await managerContext.close();
+  }
+});
+
 test("a member can privately save a post and find it again in My Favorites", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");

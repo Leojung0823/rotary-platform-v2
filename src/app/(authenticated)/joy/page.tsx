@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { JoyWall } from "@/components/joy-wall/joy-wall";
+import { JoySuggestionBox } from "@/components/joy-wall/joy-suggestion-box";
 import { EmptyState, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
 import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
@@ -120,11 +121,15 @@ async function renderSelectedWall(
           <Link className="button button-secondary" href={`/clubs/${encodeURIComponent(selectedClub.club_id)}/joy/moderation?mode=management`}>
             管理檢舉
           </Link>
+          <Link className="button button-secondary" href={`/clubs/${encodeURIComponent(selectedClub.club_id)}/joy/suggestions?mode=management`}>
+            管理匿名建議
+          </Link>
         </div>}
       </section>
       {(focusIouId || focusPostId) && !focusedPost && <Notice tone="info">
         這則內容已更新或目前無法查看；您仍可在下方瀏覽歡喜牆。
       </Notice>}
+      <JoySuggestionBox clubId={selectedClub.club_id} />
       <JoyWall
         clubId={selectedClub.club_id}
         audienceMembers={audienceMembers}

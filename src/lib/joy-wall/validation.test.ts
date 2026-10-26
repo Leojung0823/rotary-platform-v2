@@ -13,6 +13,9 @@ import {
   parseCreateJoyQuestionPromptBody,
   parseUpdateJoyQuestionPromptBody,
   parseJoyQuestionBatchBody,
+  parseCreateJoySuggestionBody,
+  parseJoySuggestionReviewBody,
+  parseJoySuggestionId,
 } from "./validation";
 
 const memberOne = "64000000-0000-4000-8000-000000000001";
@@ -84,6 +87,18 @@ describe("Joy Wall input validation", () => {
     expect(parseJoyFavoriteBody({ isFavorite: true })).toBe(true);
     expect(parseJoyFavoriteBody({ isFavorite: false })).toBe(false);
     expect(() => parseJoyFavoriteBody({ isFavorite: true, actorId: memberOne })).toThrow();
+  });
+
+  it("accepts only bounded anonymous suggestion text and review actions", () => {
+    expect(parseCreateJoySuggestionBody({ content: "  希望增加服務活動回顧。  " }))
+      .toEqual({ content: "希望增加服務活動回顧。" });
+    expect(() => parseCreateJoySuggestionBody({ content: "x".repeat(1001) })).toThrow();
+    expect(() => parseCreateJoySuggestionBody({ content: "內容", authorId: memberOne })).toThrow();
+    expect(parseJoySuggestionReviewBody({ action: "reviewed" })).toEqual({ action: "reviewed" });
+    expect(parseJoySuggestionReviewBody({ action: "dismissed" })).toEqual({ action: "dismissed" });
+    expect(() => parseJoySuggestionReviewBody({ action: "delete" })).toThrow();
+    expect(parseJoySuggestionId("64000000-0000-4000-8000-000000000009"))
+      .toBe("64000000-0000-4000-8000-000000000009");
   });
 
   it("validates club prompt edits and distinct, bounded batch recipients", () => {

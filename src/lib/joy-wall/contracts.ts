@@ -82,6 +82,26 @@ export type JoyReport = {
   author_display_name: string;
 };
 
+export type JoySuggestion = {
+  suggestion_id: string;
+  content: string;
+  status: "open";
+  created_at: string;
+};
+
+export function parseJoySuggestions(value: unknown): JoySuggestion[] {
+  if (!isRecord(value) || !Array.isArray(value.suggestions)) throw new Error("invalid_joy_suggestions_projection");
+  return value.suggestions.map((row): JoySuggestion => {
+    if (!isRecord(row) || typeof row.suggestion_id !== "string" || typeof row.content !== "string"
+      || row.status !== "open" || !isTimestamp(row.created_at)
+      || row.content.trim().length === 0 || Array.from(row.content).length > 1000
+      || Object.keys(row).some((key) => !["suggestion_id", "content", "status", "created_at"].includes(key))) {
+      throw new Error("invalid_joy_suggestions_projection");
+    }
+    return row as JoySuggestion;
+  });
+}
+
 export type JoyQuestionPrompt = {
   id: string;
   prompt_text: string;

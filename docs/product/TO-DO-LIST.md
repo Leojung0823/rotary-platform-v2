@@ -2,6 +2,15 @@
 
 更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-26 Joy Wall 匿名建議箱（程式本機完成；尚未交付）
+
+- [x] 社員可送出 1,000 字內匿名建議；幹部可看本社待處理內容並完成「已閱讀」或「不需處理」標記。
+- [x] 作者身份放在未暴露給 PostgREST 的私有 schema；一般社員、幹部、anon 與 service_role 均無直接查詢權；管理頁／RPC 不洩漏身份，內容與身份不寫入稽核事件。
+- [x] 沿用 `joy_wall_v1`、`joy.moderate`、server RPC、同源 API、每小時五則限流；全新隔離 stack 重播 160 migrations，86 份 SQL verification 全通過；217 檔／1,612 tests、typecheck、lint、migration／manifest guard、webpack production build 及匿名提交→幹部處理 targeted E2E 通過。
+- [x] 修正新 migration 的稽核物件類型約束，保留既有 `question_prompt`、`question_batch`；資料庫 lint exit 0，只有三項既有 warning。沒有對預設本機資料執行會 reset 的 `npm run verify:db`。
+- [ ] 檢查並 commit／同步 main／Staging Release／Go-Live。未跑完整 Browser Smoke／CI，也未修改 hosted／production。
+- Issue #4 仍有其他待開發：歡喜牆目標關聯（職務／活動／生日／扶輪年度）、一般貼文截止日、草稿／排程／置頂、封鎖互動、生日／回憶素材整合與保存政策；收件人動作與匿名建議箱目前都只是本機分支上的完成切片。
+
 ## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
 
 - [x] 收件人可私下確認已收到；作者只看到匿名總數，無法辨認個別收件人。

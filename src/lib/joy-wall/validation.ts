@@ -10,6 +10,7 @@ import {
 export const JOY_REQUEST_MAX_BYTES = 12_000;
 export const JOY_POST_MAX_CODE_POINTS = 2_000;
 export const JOY_COMMENT_MAX_CODE_POINTS = 1_000;
+export const JOY_SUGGESTION_MAX_CODE_POINTS = 1_000;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -32,6 +33,7 @@ function uuid(value: unknown, code: string) {
 
 export function parseJoyClubId(value: string | null) { return uuid(value, "invalid_club_id"); }
 export function parseJoyPostId(value: string) { return uuid(value, "invalid_post_id"); }
+export function parseJoySuggestionId(value: string) { return uuid(value, "invalid_suggestion_id"); }
 export function parseJoyLimit(value: string | null) {
   if (value === null || value === "") return 20;
   if (!/^\d+$/u.test(value)) throw new Error("invalid_limit");
@@ -204,4 +206,15 @@ export function parseJoyModerationBody(value: unknown) {
     reviewerNote: value.reviewerNote === null || value.reviewerNote === undefined
       ? null : normalizedText(value.reviewerNote, 500),
   };
+}
+
+export function parseCreateJoySuggestionBody(value: unknown) {
+  if (!isRecord(value) || !exactKeys(value, ["content"])) throw new Error("invalid_body");
+  return { content: normalizedText(value.content, JOY_SUGGESTION_MAX_CODE_POINTS) };
+}
+
+export function parseJoySuggestionReviewBody(value: unknown) {
+  if (!isRecord(value) || !exactKeys(value, ["action"])
+    || (value.action !== "reviewed" && value.action !== "dismissed")) throw new Error("invalid_body");
+  return { action: value.action } as { action: "reviewed" | "dismissed" };
 }
