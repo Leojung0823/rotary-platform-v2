@@ -38,11 +38,11 @@
 
 ## 2026-10-03 全專案狀態對齊
 
-- Joy Wall IOU 提醒 commit `c0d6e446ac38552767f0d680a4fb8024fc2943b6` 已在 main；其後有文件同步提交，最新主線 SHA 請以 `git rev-parse origin/main` 現場核對。目前核對 open PR 為 0，main 已包含提醒功能。
-- staging `/api/health` 回報 revision `b6a184bb4c44`、status `ok`、issues 與 warnings 皆空；此 runtime 較 main 舊，不含 Joy Wall／IOU 提醒的未部署 migration。
-- 功能 commit `c0d6e44` 的 CI `37047451791` 成功；後續文件提交 `10de5bd` 的 CI `37048232877` 與 Browser Smoke `37048232868` 均成功，後者包含相同提醒程式碼。早期 base `57d5fc7` 的 Smoke `37039603756` 曾在 GPS、Rich Menu、祝福金額驗證三類失敗，已由較新成功 Smoke 覆蓋；Rich Menu 另有平行 worktree 工作，本輪沒有覆寫。Staging Release plan `37039951580` 仍待人工核准且只對應舊 SHA `57d5fc7`，不含提醒 migration。GitHub 尚無 `message-center-scheduler` environment 或 scheduler repository variable。
-- 尚待外部／真人：#25 實機與 hosted 社員驗收、#36 staging 出席旗標及角色隔離驗收、#44 recovery email 真人閉環、#55 五位 M1 測試、E-03 LINE follow 真人身份與負向案例、E-11 各社 LINE OA／Rich Menu 設定、E-12 加密備份及 restore 演練。Issue #4 仍有未開發模組與其餘驗收，歡喜牆 V1 只是其中一個垂直切片。
-- 這不是 Issue #4 的完成宣告。非金錢 IOU LINE 到期／逾期提醒已在 main，尚待 E-12 備份閘門、staging 部署及真人收訊；站內通知未新增。歡喜牆可管理題庫與批次派題已完成程式並同步 main，仍待 staging 發布；職務／活動／生日／扶輪年度目標、一般貼文截止日、草稿排程、匿名建議箱、封鎖與媒體整合尚未完成。批次提問截止日另見上方紀錄；細節列於 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的「歡喜牆 V1」段落。Issue #4 其餘模組與外部驗收也仍要逐項核對。
+- 最新主線現場核對為 `origin/main@c2cc773a3f3d18e0c952473a603899e42acc1238`；GitHub open PR 為 0，open issues 為 #4、#25、#36、#44、#55。main 的 CI `37070195215`、Browser Smoke `37070194916` 成功；Message Center Scheduler run `37078114585` skipped，不代表排程已啟用或成功送達。
+- staging health 為 `revision=b6a184bb4c44`、status `ok`、issues／warnings 空，但仍早於目前 main；目前 main 尚未部署。最新成功 Go-Live `36831610118` 只對應 b6a184；waiting Release `36920967197` 是舊 SHA `e388933`，較新的 Release `37063069490` 已取消，皆不能沿用到目前 main。production 未修改。
+- 尚待外部／真人：#25 iPhone／Android 實機與 staging 社員流程、#36 staging 出席旗標及角色隔離、#44 新 recovery email 真人重設閉環、#55 五位 M1、E-03 LINE follow 身份與負向案例、E-11 各社 OA／Rich Menu 手機驗收、E-12 本機加密備份及 restore。E-12 現場檢查發現主 checkout `.env.staging` 缺少三項所需輸入：`SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`；GitHub secret 值未讀取。Issue #4 另有職務／活動／生日／扶輪年度目標、一般貼文截止日、草稿／排程／置頂、匿名建議箱、封鎖和生日／回憶素材未完成。
+- 本機工作分支 `codex/joy-recipient-actions` 基於上述 main，新增收件人確認收到與要求幹部隱藏；typecheck、lint、Vitest 215 檔／1,576 項、migration guard、84 個 verification manifest 檢查通過。但本機 Docker socket 逾時、剩餘磁碟約 310 MiB，`verify:db` 與 Playwright 未跑；此分支未 commit／push／部署，不能當成 main 或 hosted 完成。
+- 這不是 Issue #4 的完成宣告。IOU 提醒與題庫／批次派題程式已在 main，但 staging 尚未部署、旗標仍按既有 fail-closed 流程管理；站內提醒未新增。未開發模組及外部驗收須分別結案，詳見 [`TO-DO-LIST.md`](./TO-DO-LIST.md)。
 
 ## 2026-10-02 本機備份安全修正（main `363e7cf`；尚未完成匯出）
 

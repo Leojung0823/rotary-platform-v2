@@ -7,7 +7,7 @@ import styles from "./joy-moderation-queue.module.css";
 
 const reasonLabels: Record<JoyReport["reason"], string> = {
   spam: "垃圾內容", harassment: "騷擾或攻擊", privacy: "涉及隱私",
-  inappropriate: "不適當內容", other: "其他原因",
+  inappropriate: "不適當內容", other: "其他原因", recipient_hide_request: "收件人要求隱藏",
 };
 const typeLabels: Record<JoyReport["post_type"], string> = {
   blessing: "祝福", gratitude: "感謝", welcome: "迎新", encouragement: "加油打氣",

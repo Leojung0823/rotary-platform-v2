@@ -69,6 +69,7 @@ const reportLabels: Record<JoyReportReason, string> = {
   privacy: "涉及隱私",
   inappropriate: "不適當內容",
   other: "其他原因",
+  recipient_hide_request: "收件人要求隱藏",
 };
 const scopeLabels: Record<JoyVisibilityScope, string> = {
   club: "全社社員可見",
@@ -182,6 +183,7 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
   const [reportingId, setReportingId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState<JoyReportReason>("inappropriate");
   const [reportedIds, setReportedIds] = useState<string[]>([]);
+  const [hideRequestingId, setHideRequestingId] = useState<string | null>(null);
 
   const activePosts = showFavorites ? favoritePosts : posts;
   const activeCursor = showFavorites ? favoriteCursor : cursor;
@@ -392,6 +394,43 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
       setReportedIds((current) => [...current, postId]); setReportingId(null);
       setStateMessage("已送出檢舉，社務管理幹部會依流程處理。");
     } catch (error) { setStateMessage(requestFailureMessage(error, "檢舉沒有送出，請稍後再試。")); }
+    finally { setPendingId(null); }
+  }
+
+  async function acknowledgeReceipt(postId: string) {
+    setPendingId(`receipt:${postId}`); setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, `/posts/${encodeURIComponent(postId)}/receipt`), {
+        method: "POST",
+      });
+      const result = await readData<{ acknowledged_at: string }>(response);
+      setPosts((current) => current.map((post) => post.id === postId
+        ? { ...post, can_acknowledge_receipt: false, receipt_acknowledged_at: result.acknowledged_at }
+        : post));
+      setFavoritePosts((current) => current.map((post) => post.id === postId
+        ? { ...post, can_acknowledge_receipt: false, receipt_acknowledged_at: result.acknowledged_at }
+        : post));
+      setStateMessage("已確認收到這份分享。");
+    } catch (error) { setStateMessage(requestFailureMessage(error, "確認沒有完成，請稍後再試。")); }
+    finally { setPendingId(null); }
+  }
+
+  async function requestHide(postId: string) {
+    setPendingId(`hide:${postId}`); setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, `/posts/${encodeURIComponent(postId)}/report`), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "recipient_hide_request" }),
+      });
+      await readData<{ reported: true }>(response);
+      const updated = (post: JoyPost) => post.id === postId
+        ? { ...post, can_request_hide: false, hide_request_submitted: true }
+        : post;
+      setPosts((current) => current.map(updated));
+      setFavoritePosts((current) => current.map(updated));
+      setHideRequestingId(null);
+      setStateMessage("已送出隱藏請求，幹部會在管理清單中處理；貼文不會因此立即消失。");
+    } catch (error) { setStateMessage(requestFailureMessage(error, "隱藏請求沒有送出，請稍後再試。")); }
     finally { setPendingId(null); }
   }
 
@@ -631,6 +670,20 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
                 </button>)}
               </div>}
               <div className={styles.actionLinks}>
+                {post.receipt_ack_count !== null && post.recipient_count !== null
+                  && post.recipient_count > 0
+                  && <span className={styles.recipientActionStatus}>已確認收到 {post.receipt_ack_count}/{post.recipient_count} 位</span>}
+                {post.receipt_acknowledged_at && <span className={styles.recipientActionStatus}>你已確認收到</span>}
+                {post.can_acknowledge_receipt && <button type="button"
+                  disabled={pendingId === `receipt:${post.id}`}
+                  onClick={() => void acknowledgeReceipt(post.id)}>
+                  {pendingId === `receipt:${post.id}` ? "確認中…" : "確認已收到"}
+                </button>}
+                {post.hide_request_submitted && <span className={styles.recipientActionStatus}>隱藏請求已送出，等待幹部處理</span>}
+                {post.can_request_hide && <button type="button"
+                  onClick={() => { setHideRequestingId(hideRequestingId === post.id ? null : post.id); setStateMessage(null); }}>
+                  {hideRequestingId === post.id ? "取消隱藏請求" : "要求幹部隱藏"}
+                </button>}
                 {!post.is_hidden && <button type="button" aria-pressed={post.is_favorited}
                   aria-label={post.is_favorited ? "從我的收藏移除" : "加入我的收藏"}
                   className={post.is_favorited ? styles.favoriteSelected : undefined}
@@ -642,15 +695,23 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
                 </button>}
                 {post.can_edit && !draft && !post.is_hidden && <button type="button" onClick={() => beginEdit(post)}>編輯</button>}
                 {post.can_archive && !post.is_hidden && <button type="button" onClick={() => void archive(post.id)} disabled={pendingId === `archive:${post.id}`}>收起分享</button>}
-                {!post.can_edit && !post.is_hidden && !reportedIds.includes(post.id) && <button type="button" onClick={() => { setReportingId(reportingId === post.id ? null : post.id); setStateMessage(null); }}>檢舉</button>}
+                {!post.can_edit && !post.is_hidden && !post.hide_request_submitted && !reportedIds.includes(post.id)
+                  && <button type="button" onClick={() => { setReportingId(reportingId === post.id ? null : post.id); setStateMessage(null); }}>檢舉</button>}
                 {reportedIds.includes(post.id) && <span className={styles.reported}>已檢舉</span>}
               </div>
             </div>
             {reportingId === post.id && <div className={styles.reportForm}>
               <label className={styles.field}><span>檢舉原因</span><select value={reportReason} onChange={(event) => setReportReason(event.target.value as JoyReportReason)}>
-                {joyReportReasons.map((reason) => <option key={reason} value={reason}>{reportLabels[reason]}</option>)}
+                {joyReportReasons.filter((reason) => reason !== "recipient_hide_request")
+                  .map((reason) => <option key={reason} value={reason}>{reportLabels[reason]}</option>)}
               </select></label>
               <button type="button" disabled={pendingId === `report:${post.id}`} onClick={() => void report(post.id)}>{pendingId === `report:${post.id}` ? "送出中…" : "送出檢舉"}</button>
+            </div>}
+            {hideRequestingId === post.id && post.can_request_hide && <div className={styles.reportForm} role="region" aria-label="要求幹部隱藏分享">
+              <p className={styles.hideRequestNote}>送出後會列入社務管理的檢舉清單，由幹部審核；分享不會立即消失。</p>
+              <button type="button" disabled={pendingId === `hide:${post.id}`} onClick={() => void requestHide(post.id)}>
+                {pendingId === `hide:${post.id}` ? "送出中…" : "送出隱藏請求"}
+              </button>
             </div>}
             {commentsOpen[post.id] && !post.iou && <section className={styles.comments} aria-label="留言與回應">
               <h4>留言與回應</h4>

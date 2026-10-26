@@ -7,7 +7,7 @@ export const joyCommentTypes = ["comment", "blessing", "encouragement", "questio
 export type JoyCommentType = (typeof joyCommentTypes)[number];
 export const joyReactionTypes = ["heart", "thanks", "celebrate", "support", "laugh"] as const;
 export type JoyReactionType = (typeof joyReactionTypes)[number];
-export const joyReportReasons = ["spam", "harassment", "privacy", "inappropriate", "other"] as const;
+export const joyReportReasons = ["spam", "harassment", "privacy", "inappropriate", "other", "recipient_hide_request"] as const;
 export type JoyReportReason = (typeof joyReportReasons)[number];
 
 export type JoyIouStatus = "proposed" | "accepted" | "declined" | "in_progress" | "completed" | "cancelled";
@@ -46,6 +46,12 @@ export type JoyPost = {
   can_answer: boolean;
   is_hidden: boolean;
   is_favorited: boolean;
+  can_acknowledge_receipt: boolean;
+  receipt_acknowledged_at: string | null;
+  receipt_ack_count: number | null;
+  recipient_count: number | null;
+  can_request_hide: boolean;
+  hide_request_submitted: boolean;
   comment_count: number;
   reaction_counts: Partial<Record<JoyReactionType, number>>;
   my_reaction: JoyReactionType | null;
@@ -193,9 +199,21 @@ export function parseJoyPost(value: unknown): JoyPost {
     || typeof value.can_answer !== "boolean"
     || typeof value.is_hidden !== "boolean"
     || (value.is_favorited !== undefined && typeof value.is_favorited !== "boolean")
+    || (value.can_acknowledge_receipt !== undefined && typeof value.can_acknowledge_receipt !== "boolean")
+    || (value.receipt_acknowledged_at !== undefined && value.receipt_acknowledged_at !== null && !isTimestamp(value.receipt_acknowledged_at))
+    || (value.receipt_ack_count !== undefined && value.receipt_ack_count !== null
+      && (!Number.isInteger(value.receipt_ack_count) || Number(value.receipt_ack_count) < 0))
+    || (value.recipient_count !== undefined && value.recipient_count !== null
+      && (!Number.isInteger(value.recipient_count) || Number(value.recipient_count) < 0))
+    || (value.can_request_hide !== undefined && typeof value.can_request_hide !== "boolean")
+    || (value.hide_request_submitted !== undefined && typeof value.hide_request_submitted !== "boolean")
     || !Number.isInteger(value.comment_count) || Number(value.comment_count) < 0
     || !isRecord(value.reaction_counts)
     || (value.my_reaction !== null && !isOneOf(joyReactionTypes, value.my_reaction))
+    || (value.can_acknowledge_receipt === true && value.receipt_acknowledged_at != null)
+    || (value.can_request_hide === true && value.hide_request_submitted === true)
+    || (value.receipt_ack_count != null && value.recipient_count != null
+      && Number(value.receipt_ack_count) > Number(value.recipient_count))
     || (value.post_type === "iou" ? value.iou === null : value.iou !== null)) {
     throw new Error("invalid_joy_post_projection");
   }
@@ -222,6 +240,12 @@ export function parseJoyPost(value: unknown): JoyPost {
     can_answer: value.can_answer,
     is_hidden: value.is_hidden,
     is_favorited: value.is_favorited === true,
+    can_acknowledge_receipt: value.can_acknowledge_receipt === true,
+    receipt_acknowledged_at: value.receipt_acknowledged_at as string | null ?? null,
+    receipt_ack_count: value.receipt_ack_count as number | null ?? null,
+    recipient_count: value.recipient_count as number | null ?? null,
+    can_request_hide: value.can_request_hide === true,
+    hide_request_submitted: value.hide_request_submitted === true,
     comment_count: Number(value.comment_count),
     reaction_counts: reactions,
     my_reaction: value.my_reaction as JoyReactionType | null,

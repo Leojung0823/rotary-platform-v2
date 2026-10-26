@@ -8,7 +8,7 @@
 .field input, .field textarea, .search input, .order input { width: 100%; min-width: 0; min-height: 2.75rem; padding: .65rem .75rem; border: 1px solid #cbd7e1; border-radius: .65rem; background: #fff; color: #172b3e; font: inherit; font-weight: 400; }
 .field textarea { resize: vertical; line-height: 1.55; }
 .field textarea[readonly] { background: #f5f7f9; color: #51677a; }
-.field :focus-visible, .search input:focus-visible, .order input:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #54a9db; outline-offset: 2px; }
+.field :focus-visible, .search input:focus-visible, .order input:focus-visible, .newPrompt button:focus-visible, .newPrompt input:focus-visible, .promptControls button:focus-visible, .promptControls input:focus-visible, .dispatchForm button:focus-visible, .dispatchForm input:focus-visible, .selectionTools button:focus-visible, .batchSummary button:focus-visible, .check input:focus-visible, .recipient input:focus-visible { outline: 3px solid #54a9db; outline-offset: 2px; }
 .newPrompt, .dispatchForm { display: grid; gap: .8rem; padding: .9rem; border: 1px solid #e3eaf0; border-radius: .85rem; background: #f9fbfc; }
 .formFooter, .promptControls, .dispatchFooter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .65rem; }
 .formFooter > span { color: #708293; font-size: .8rem; }

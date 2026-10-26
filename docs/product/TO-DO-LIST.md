@@ -55,10 +55,10 @@
 
 ## 2026-10-03 全專案進度掃描
 
-- 提醒功能 commit `c0d6e446ac38552767f0d680a4fb8024fc2943b6` 已在 main；其後有文件同步提交，最新主線 SHA 請以 `git rev-parse origin/main` 現場核對。GitHub 當時核對 open PR 為 0；open issues 為 #4、#25、#36、#44、#55。
-- 本輪 staging `/api/health` 回報 `revision=b6a184bb4c44`、`status=ok`、`issues=[]`、`warnings=[]`；該 revision 早於目前 main，故 main 最新程式尚未部署。production 未修改。
-- 功能 commit `c0d6e44` 的 CI `37047451791` 成功；後續文件提交 `10de5bd` 的 CI `37048232877` 與 Browser Smoke `37048232868` 均成功，該 Smoke 包含同一功能程式碼。更早的 base Smoke `37039603756` 曾有 GPS、Rich Menu、祝福金額表單三類失敗，較新的 Smoke 已成功。Staging Release `37039951580` 仍待核准但只對應舊 SHA，不包含提醒 migration，也不是已部署證據。
-- 尚待真人／外部閘門：#25 iPhone／Android 實機及 staging 社員流程；#36 開啟 staging attendance flag 並驗收；#44 真人完成收到新 recovery email 到重設密碼；#55 五位社員／幹部 M1 測試；E-03 LINE OA follow 真人身份負向案例、E-11 各社 OA／Rich Menu 外部設定、E-12 本機加密備份與 restore 演練。#4 仍有其他獨立功能未開發，不能因歡喜牆 V1 完成就關閉。
+- 最新現場主線為 `origin/main@c2cc773a3f3d18e0c952473a603899e42acc1238`；GitHub open PR 0，open issues 為 #4、#25、#36、#44、#55。main 的 CI `37070195215` 與 Browser Smoke `37070194916` 成功；Message Center Scheduler run `37078114585` 為 skipped，不能當成排程已運作的證據。
+- Staging `/api/health` 現場為 `revision=b6a184bb4c44`、`status=ok`、`issues=[]`、`warnings=[]`，但 revision 早於 main；目前 main 尚未部署。最新成功 Go-Live `36831610118` 只對應 b6a184；waiting Release `36920967197` 對應舊 SHA `e388933`，較新的 Release `37063069490` 已取消，皆不可當成本次部署計畫。production 未修改。
+- 外部／真人閘門仍有：#25 iPhone／Android 實機及 staging 社員流程；#36 staging `attendance_ui_v2` 旗標與角色隔離驗收；#44 新 recovery email 真人重設閉環；#55 五位社員／幹部 M1；E-03 LINE OA follow 身份與負向案例、E-11 各社 OA／Rich Menu 手機驗收、E-12 本機加密備份與 restore 演練。E-12 現場確認主 checkout `.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`；GitHub secret 值未讀取。#4 仍有職務／活動／生日／扶輪年度目標、一般貼文截止日、草稿／排程／置頂、匿名建議箱、封鎖及生日／回憶素材等未開發項目。
+- 本機分支 `codex/joy-recipient-actions` 正在實作指定收件社員確認收到及要求幹部隱藏；typecheck、lint、215 檔／1,576 tests、migration guard、84 個 verification manifest 檢查通過。Docker socket 逾時且磁碟僅約 310 MiB，故 DB verification 與 Playwright 尚未執行；程式仍未 commit／push／部署，不能算 main 完成。
 
 ## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39）
 

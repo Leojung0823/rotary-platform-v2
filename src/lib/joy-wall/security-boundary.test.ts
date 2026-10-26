@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { migrationDefining } from "@/lib/attendance/latest-definition";
 
 function source(path: string) { return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"); }
 
@@ -20,12 +21,17 @@ describe("Joy Wall security and UX boundaries", () => {
   const iouActionRoute = source("app/api/v1/joy/ious/[postId]/route.ts");
   const joyPage = source("app/(authenticated)/joy/page.tsx");
   const favoriteMigration = source("../supabase/migrations/20261003000300_joy_post_favorites.sql");
+  const recipientActionsMigrationFile = migrationDefining("acknowledge_joy_post_receipt");
+  const recipientActionsMigration = recipientActionsMigrationFile
+    ? source(`../supabase/migrations/${recipientActionsMigrationFile}`)
+    : "";
   const mutationRoutes = [
     postsRoute,
     itemRoute,
     commentRoute,
     source("app/api/v1/joy/posts/[postId]/reaction/route.ts"),
     source("app/api/v1/joy/posts/[postId]/favorite/route.ts"),
+    source("app/api/v1/joy/posts/[postId]/receipt/route.ts"),
     source("app/api/v1/joy/posts/[postId]/report/route.ts"),
     reportRoute,
     createIouRoute,
@@ -86,9 +92,24 @@ describe("Joy Wall security and UX boundaries", () => {
 
   it("projects only the caller's favorite state in the initial and focused feed", () => {
     expect(joyPage).toContain("p_favorites_only: false");
-    expect(joyPage).toContain('supabase.rpc("get_my_joy_question_post_with_favorite"');
+    expect(joyPage).toContain('supabase.rpc("get_my_joy_question_post_with_recipient_actions"');
+    expect(joyPage).toContain('supabase.rpc("list_joy_posts_with_recipient_actions"');
     expect(favoriteMigration).toContain("public.get_my_joy_question_post(p_club_id, p_post_id)");
     expect(favoriteMigration).toContain("favorite.app_account_id = actor_id");
+  });
+
+  it("limits receipt acknowledgement and hide requests to selected recipients", () => {
+    const receiptRoute = source("app/api/v1/joy/posts/[postId]/receipt/route.ts");
+    expect(receiptRoute).toContain('client.rpc("acknowledge_joy_post_receipt"');
+    expect(receiptRoute).toContain("joyMutationAllowed(request)");
+    expect(component).toContain('"recipient_hide_request"');
+    expect(component).toContain("post.can_acknowledge_receipt");
+    expect(component).toContain("post.can_request_hide");
+    expect(component).toContain("貼文不會因此立即消失");
+    expect(recipientActionsMigration).toContain("public.current_can_read_joy_post");
+    expect(recipientActionsMigration).toContain("audience.membership_id = actor_membership_id");
+    expect(recipientActionsMigration).toContain("public.joy_post_acknowledgements");
+    expect(recipientActionsMigration).toContain("'recipient_hide_requested'");
   });
 
   it("keeps the question bank behind management mode, club permission, and the existing fail-closed flag", () => {

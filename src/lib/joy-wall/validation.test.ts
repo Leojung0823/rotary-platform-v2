@@ -78,6 +78,7 @@ describe("Joy Wall input validation", () => {
     expect(parseJoyReactionBody({ reactionType: "thanks" })).toBe("thanks");
     expect(() => parseJoyReactionBody({ reactionType: "angry" })).toThrow();
     expect(parseJoyReportBody({ reason: "privacy" })).toBe("privacy");
+    expect(parseJoyReportBody({ reason: "recipient_hide_request" })).toBe("recipient_hide_request");
     expect(parseJoyModerationBody({ action: "hide", reviewerNote: "已確認" })).toEqual({ action: "hide", reviewerNote: "已確認" });
     expect(() => parseJoyModerationBody({ action: "delete", reviewerNote: null })).toThrow();
     expect(parseJoyFavoriteBody({ isFavorite: true })).toBe(true);

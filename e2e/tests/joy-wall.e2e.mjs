@@ -315,3 +315,84 @@ test("club officers can batch different private Joy questions while ordinary mem
     await recipientContext.close();
   }
 });
+
+test("selected recipients can acknowledge receipt and request officer review without revealing peer status", async ({
+  browser,
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  test.setTimeout(60_000);
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const title = `指定分享收件確認 ${Date.now()}`;
+  const content = "感謝你參與這次服務，想把一份心意私下送給你。";
+  const recipientContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const bystanderContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  let clubId = null;
+
+  try {
+    page.on("request", (request) => {
+      if (!request.url().includes("/api/v1/joy/posts?")) return;
+      clubId = new URL(request.url()).searchParams.get("club_id");
+    });
+    await signIn(page, "e2e-shell-member-manager@example.test");
+    await openJoyWall(page);
+    await page.locator('section[aria-labelledby="joy-compose-title"] select').first().selectOption("gratitude");
+    await page.getByLabel("一句標題（選填）").fill(title);
+    await page.getByLabel("分享內容").fill(content);
+    await page.getByRole("radio", { name: /只限指定社員/u }).check();
+    await page.getByRole("checkbox", { name: "已綁定但未加入 OA 的社員" }).check();
+
+    const createResponsePromise = page.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/posts?") && response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "分享", exact: true }).click();
+    const createResponse = await createResponsePromise;
+    const createPayload = await createResponse.json().catch(() => null);
+    const createHeaders = await createResponse.request().allHeaders();
+    expect(createResponse.status(), `create share returned ${createResponse.status()} (${createPayload?.error ?? "no error code"}; origin=${createHeaders.origin ?? "missing"}; fetch-site=${createHeaders["sec-fetch-site"] ?? "missing"})`)
+      .toBe(201);
+    expect(clubId).toMatch(/^[0-9a-f-]{36}$/iu);
+
+    const recipient = await recipientContext.newPage();
+    await signIn(recipient, "e2e-shell-line-oa-unpaired@example.test");
+    await recipient.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
+    const receivedCard = recipient.getByRole("article").filter({ hasText: title }).first();
+    await expect(receivedCard.getByText(content)).toBeVisible();
+    await expect(receivedCard.getByRole("button", { name: "確認已收到" })).toBeVisible();
+    const receiptResponsePromise = recipient.waitForResponse((response) =>
+      response.url().includes("/receipt?") && response.request().method() === "POST",
+    );
+    await receivedCard.getByRole("button", { name: "確認已收到" }).click();
+    expect((await receiptResponsePromise).status()).toBe(200);
+    await expect(receivedCard.getByText("你已確認收到")).toBeVisible();
+
+    const bystander = await bystanderContext.newPage();
+    await signIn(bystander, memberEmail);
+    await bystander.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
+    await expect(bystander.getByText(title, { exact: true })).toHaveCount(0);
+
+    await receivedCard.getByRole("button", { name: "要求幹部隱藏" }).click();
+    await expect(receivedCard.getByRole("region", { name: "要求幹部隱藏分享" })).toBeVisible();
+    const hideRequestResponsePromise = recipient.waitForResponse((response) =>
+      response.url().includes("/report?") && response.request().method() === "POST",
+    );
+    await receivedCard.getByRole("button", { name: "送出隱藏請求" }).click();
+    expect((await hideRequestResponsePromise).status()).toBe(201);
+    await expect(receivedCard.getByText("隱藏請求已送出，等待幹部處理")).toBeVisible();
+
+    await page.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
+    const authorCard = page.getByRole("article").filter({ hasText: title }).first();
+    await expect(authorCard.getByText("已確認收到 1/1 位")).toBeVisible();
+    await expect(authorCard.getByText("你已確認收到")).toHaveCount(0);
+
+    await page.goto(new URL(`/clubs/${clubId}/joy/moderation?mode=management`, baseURL).toString());
+    const moderationCard = page.getByRole("article").filter({ hasText: title }).first();
+    await expect(moderationCard.getByText("收件人要求隱藏")).toBeVisible();
+    await moderationCard.getByRole("button", { name: "隱藏分享" }).click();
+    await expect(page.getByText("待處理檢舉已清空")).toBeVisible();
+  } finally {
+    await recipientContext.close();
+    await bystanderContext.close();
+  }
+});

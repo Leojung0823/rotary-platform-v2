@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const cursor = decodeJoyCursor(request.nextUrl.searchParams.get("cursor"));
     const view = request.nextUrl.searchParams.get("view") ?? "all";
     if (view !== "all" && view !== "favorites") return joyFailure(400);
-    const { data, error } = await client.rpc("list_joy_posts", {
+    const { data, error } = await client.rpc("list_joy_posts_with_recipient_actions", {
       p_club_id: clubId,
       p_cursor_created_at: cursor?.createdAt ?? null,
       p_cursor_id: cursor?.id ?? null,

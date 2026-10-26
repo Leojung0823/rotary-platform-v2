@@ -81,3 +81,4 @@ supabase/verification/joy_iou_deadline_reminders_security.sql
 supabase/verification/joy_question_bank_batch_dispatch_security.sql
 supabase/verification/joy_question_batch_deadlines_security.sql
 supabase/verification/joy_post_favorites_security.sql
+supabase/verification/joy_recipient_actions_security.sql

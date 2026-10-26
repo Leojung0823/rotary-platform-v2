@@ -26,12 +26,37 @@ describe("Joy Wall response contracts", () => {
   it("requires a server-projected answer capability", () => {
     expect(parseJoyPost(basePost).can_answer).toBe(false);
     expect(parseJoyPost(basePost).is_favorited).toBe(false);
+    expect(parseJoyPost(basePost).can_acknowledge_receipt).toBe(false);
+    expect(parseJoyPost(basePost).can_request_hide).toBe(false);
     expect(parseJoyPost({ ...basePost, can_answer: true }).can_answer).toBe(true);
     expect(parseJoyPost({ ...basePost, is_favorited: true }).is_favorited).toBe(true);
     const withoutCapability = Object.fromEntries(
       Object.entries(basePost).filter(([key]) => key !== "can_answer"),
     ) as Record<string, unknown>;
     expect(() => parseJoyPost(withoutCapability)).toThrow("invalid_joy_post_projection");
+  });
+
+  it("validates private recipient action state without exposing it to other readers", () => {
+    const recipient = parseJoyPost({
+      ...basePost,
+      can_acknowledge_receipt: true,
+      receipt_acknowledged_at: null,
+      receipt_ack_count: null,
+      recipient_count: null,
+      can_request_hide: true,
+      hide_request_submitted: false,
+    });
+    expect(recipient).toMatchObject({ can_acknowledge_receipt: true, can_request_hide: true });
+    expect(() => parseJoyPost({
+      ...basePost,
+      can_acknowledge_receipt: true,
+      receipt_acknowledged_at: "2026-10-02T00:00:00.000Z",
+    })).toThrow("invalid_joy_post_projection");
+    expect(() => parseJoyPost({
+      ...basePost,
+      receipt_ack_count: 2,
+      recipient_count: 1,
+    })).toThrow("invalid_joy_post_projection");
   });
 
   it("accepts a private IOU projection only with a valid lifecycle state", () => {
