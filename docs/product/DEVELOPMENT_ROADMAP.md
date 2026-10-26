@@ -4,10 +4,11 @@
 
 ## 2026-10-27 最新 staging／部署狀態（本節優先於下方歷史紀錄）
 
-- `main` exact SHA `eba0815a31e22f298f6655a274055831ecc88e49` 已通過 CI `40415448937`、Browser Smoke `40415449015`（245 passed／123 skipped／3 flaky retry 後通過）；Staging Release `40415907270` 與 Go-Live `40417434022` 成功。Render staging revision `eba0815a31e2` 健康，HTTPS smoke 與受保護社員驗收通過；9 支 Joy Wall migration 已套用，production 未修改。
-- Joy Wall 新功能已部署 staging 並自動可用，不需要人工開旗標。E-12 本機加密 logical backup 仍未完成：本機 Management API token 回 HTTP 401，未建立備份檔。這次 staging 發布使用逐支 migration review 後的 additive forward-fix 作回復依據；這不是實體備份，不得如此宣稱。
-- E-06 同條件比較 workflow `40417885104` 已完成（desktop Chromium、受保護登入、warm cache、每頁 5 次）：社員首頁 LCP `1064→1348 ms`（+26.7%），管理首頁 `756→972 ms`（+28.6%）；FCP 分別改善 7.6%／7.5%，管理 TTFB 改善 27.3%、社員 TTFB 幾乎不變，INP 同為 16 ms。LCP 退步，整體改善未證明；staging 已恢復 `eba0815a31e2` 且健康。E-06 仍需診斷 LCP 根因。
-- 可完成主線工程的新功能在成功部署後自動可用，不要求人工開產品旗標；只保留受保護的緊急停用／回滾控制，歷史 opt-in 功能不批次開啟。Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對已由產品負責人確認真人驗收完成、可用（只使用 PANCHIAO-ELITE；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。細節與待辦依 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
+- 發布規則：**未來新功能在成功部署後立即可用，不要求人工開旗標**。一般功能不要新增 rollout flag；若 RPC 確需 rollout row 作緊急回復控制，必須由同次 migration 建立預設啟用設定並留 system audit。只保留受保護的緊急停用／回滾控制；歷史 opt-in 功能維持原狀，不批次開啟。此規則不會自動啟動 LINE 等外部訊息排程，也不取代登入、角色、社籍、RLS 或 RPC 權限檢查。
+- 截至本次文件同步前，GitHub `main` 基準 SHA 為 `dfffeb17886775fe72a01533cd82cf98fc9ebcf2`；同步後的最新 SHA 請以 `git rev-parse origin/main` 核對。產品程式仍是已部署 staging revision `eba0815a31e2`。該產品版 CI `40415448937`、Browser Smoke `40415449015`、Staging Release plan `40415907270`、Go-Live `40417434022` 成功；9 支 migration 已套用，2026-10-27 health 為 `status=ok`、`issues=[]`、`warnings=[]`。只部署 staging，production 未修改。
+- E-12 本機加密 logical backup 尚未產生：主 checkout `.env.staging` 欄位齊全但目前 Management API token 回 HTTP `401`；FileVault 與本機接收憑證／私鑰已就緒，輸出目錄仍空。沒有上傳或修改 hosted 資料；Go-Live 採 migration review 後的 staging-only additive forward-fix，不得稱為已備份。
+- E-06 專項 warm 量測 run `40419925680` 成功，staging revision `eba0815`、受保護登入、desktop Chromium、每頁 5 次：社員首頁中位數 LCP/FCP/TTFB/INP `776/384/357.8/16 ms`，管理首頁 `856/396/352/16 ms`；CDP 摘要兩頁均 0 長任務。與同一 revision 的前次 warm run `40417885104` 數值差距明顯，且現有工具沒有 LCP 元素／資源時間，因此仍無法定位根因或宣稱整體變快。細節見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
+- Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對已由產品負責人確認真人驗收完成、可用（只使用 `PANCHIAO-ELITE`；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。PR #204 的 recovery email 完整重設流程仍待真人 hosted 驗收，不自動合併。細節見 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
 
 ## 2026-10-27 歡喜牆互動封鎖（已同步 main 並部署 staging）
 
