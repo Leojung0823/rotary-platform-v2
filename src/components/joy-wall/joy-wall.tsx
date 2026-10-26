@@ -40,7 +40,7 @@ type JoyWallProps = {
 };
 type Envelope<T> = { data?: T; error?: string };
 type CommentState = { items: JoyComment[]; loaded: boolean };
-type EditingDraft = { postType: JoyPostType; title: string; content: string };
+type EditingDraft = { postType: JoyPostType; title: string; content: string; interactionDeadlineOn: string | null };
 
 const postTypeLabels: Record<JoyPostType, string> = {
   blessing: "祝福",
@@ -91,9 +91,10 @@ async function readData<T>(response: Response): Promise<T> {
 }
 
 function requestFailureMessage(error: unknown, fallback: string) {
-  return error instanceof JoyRequestError && error.message === "rate_limited"
-    ? "操作太頻繁，請稍候再試。"
-    : fallback;
+  if (!(error instanceof JoyRequestError)) return fallback;
+  if (error.message === "rate_limited") return "操作太頻繁，請稍候再試。";
+  if (error.message === "interactions_closed") return "這則分享已截止留言／回答；原有內容仍可閱讀。";
+  return fallback;
 }
 
 function formatTime(value: string) {
@@ -164,6 +165,7 @@ export function JoyWall({
   const [postType, setPostType] = useState<JoyPostType>("blessing");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [interactionDeadlineOn, setInteractionDeadlineOn] = useState("");
   const [visibilityScope, setVisibilityScope] = useState<JoyVisibilityScope>("club");
   const [audienceIds, setAudienceIds] = useState<string[]>([]);
   const [targetEventIds, setTargetEventIds] = useState<string[]>([]);
@@ -255,6 +257,7 @@ export function JoyWall({
             rotaryYearIds: targetRotaryYearIds,
             roleKeys: targetRoleKeys,
             birthdayCampaignIds: targetBirthdayCampaignIds,
+            interactionDeadlineOn: interactionDeadlineOn || null,
           }),
       });
       const post = parseJoyPost(await readData<unknown>(response));
@@ -262,6 +265,7 @@ export function JoyWall({
       setShowFavorites(false);
       setFilter("all");
       setPostType("blessing"); setTitle(""); setContent(""); setVisibilityScope("club"); setAudienceIds([]);
+      setInteractionDeadlineOn("");
       setTargetEventIds([]); setTargetRotaryYearIds([]); setTargetRoleKeys([]); setTargetBirthdayCampaignIds([]);
       setIouRecipientId(""); setIouDueOn("");
       setStateMessage(isIou ? "非現金承諾已送出，只有你和指定社員看得到。" : "已分享。內容只會提供給您選擇的對象。");
@@ -485,7 +489,10 @@ export function JoyWall({
   }
 
   function beginEdit(post: JoyPost) {
-    setEditingId(post.id); setEditingDraft({ postType: post.post_type, title: post.title ?? "", content: post.content });
+    setEditingId(post.id); setEditingDraft({
+      postType: post.post_type, title: post.title ?? "", content: post.content,
+      interactionDeadlineOn: post.interaction_deadline_on,
+    });
     setStateMessage(null);
   }
 
@@ -525,6 +532,12 @@ export function JoyWall({
             placeholder={postType === "iou" ? "例如：我會協助你整理活動照片，或幫忙搬運物資……" : "寫下想跟社友分享的祝福、感謝或回憶……"} disabled={publishing} />
         </label>
         <div className={styles.counter} aria-live="polite">{contentLength} / {JOY_POST_MAX_CODE_POINTS}</div>
+
+        {postType !== "iou" && <label className={styles.field}>
+          <span>留言／回答截止日（選填）</span>
+          <input type="date" value={interactionDeadlineOn} onChange={(event) => setInteractionDeadlineOn(event.target.value)} disabled={publishing} />
+          <small className={styles.deadlineHelp}>依台灣日期計算；截止日當天結束後停止新留言與回答，既有內容仍可閱讀。</small>
+        </label>}
 
         {postType === "iou" ? <fieldset className={styles.audiencePicker}>
           <legend>這份承諾是給哪一位社員？</legend>
@@ -687,6 +700,10 @@ export function JoyWall({
             </header>
             {post.is_hidden && <p className={styles.hiddenNotice}>這則分享已暫時隱藏，只有您和管理幹部可見。</p>}
             <div className={styles.scopeLine}>{scopeLabels[post.visibility_scope]}</div>
+            {post.interaction_deadline_on && <p className={styles.interactionDeadline}>
+              留言／回答截止日：{formatDueDate(post.interaction_deadline_on)}
+              {!post.interactions_open && <strong> · 已截止，歷史內容仍可閱讀</strong>}
+            </p>}
             {post.targets.length > 0 && <ul className={styles.targetChips} aria-label="關聯對象">
               {post.targets.map((target) => <li key={`${target.target_type}:${target.target_id}`}>
                 <strong>{{ event: "活動", rotary_year: "扶輪年度", role: "職務", birthday_campaign: "生日祝福" }[target.target_type]}</strong>
@@ -700,6 +717,11 @@ export function JoyWall({
               </select></label>
               <label className={styles.field}><span>標題</span><input value={draft.title} maxLength={100} onChange={(event) => setEditingDraft({ ...draft, title: event.target.value })} /></label>
               <label className={styles.field}><span>內容</span><textarea value={draft.content} rows={4} maxLength={JOY_POST_MAX_CODE_POINTS} onChange={(event) => setEditingDraft({ ...draft, content: event.target.value })} /></label>
+              <label className={styles.field}><span>留言／回答截止日（選填）</span>
+                <input type="date" value={draft.interactionDeadlineOn ?? ""}
+                  onChange={(event) => setEditingDraft({ ...draft, interactionDeadlineOn: event.target.value || null })} />
+                <small className={styles.deadlineHelp}>截止日當天結束後停止新留言與回答；既有內容仍可閱讀。</small>
+              </label>
               <div className={styles.actionRow}>
                 <button type="button" className={styles.secondaryButton} onClick={() => { setEditingId(null); setEditingDraft(null); }}>取消</button>
                 <button type="button" disabled={pendingId === `edit:${post.id}`} onClick={() => void saveEdit(post.id)}>{pendingId === `edit:${post.id}` ? "儲存中…" : "儲存修改"}</button>
@@ -801,10 +823,10 @@ export function JoyWall({
                 : postComments.length === 0 ? <p className={styles.muted}>還沒有留言，來說第一句鼓勵的話吧。</p>
                   : <div className={styles.commentList}>{topLevelComments.map((comment) => <div key={comment.id}>
                     <CommentItem comment={comment} />
-                    {!post.is_hidden && <button className={styles.replyButton} type="button" onClick={() => setReplyTo({ postId: post.id, commentId: comment.id })}>回覆</button>}
+                    {!post.is_hidden && post.interactions_open && <button className={styles.replyButton} type="button" onClick={() => setReplyTo({ postId: post.id, commentId: comment.id })}>回覆</button>}
                     {replies.filter((reply) => reply.parent_comment_id === comment.id).map((reply) => <CommentItem key={reply.id} comment={reply} reply />)}
                   </div>)}</div>}
-              {!post.is_hidden && <form className={styles.commentForm} onSubmit={(event) => void submitComment(event, post)}>
+              {!post.is_hidden && post.interactions_open && <form className={styles.commentForm} onSubmit={(event) => void submitComment(event, post)}>
                 {replyTo?.postId === post.id && <p className={styles.replying}>正在回覆留言 <button type="button" onClick={() => setReplyTo(null)}>取消回覆</button></p>}
                 <label className={styles.field}><span>留言性質</span><select value={commentTypes[post.id] ?? defaultCommentType(post)}
                   onChange={(event) => setCommentTypes((current) => ({ ...current, [post.id]: event.target.value as JoyCommentType }))}>
@@ -818,6 +840,9 @@ export function JoyWall({
                   {pendingId === `comment:${post.id}` ? "送出中…" : post.post_type === "question" && (commentTypes[post.id] ?? defaultCommentType(post)) === "answer" ? "送出回答" : "送出留言"}
                 </button>
               </form>}
+              {!post.interactions_open && <p className={styles.interactionClosedNote} role="note">
+                這則分享已截止留言／回答；您仍可閱讀過去的內容。
+              </p>}
             </section>}
           </article>;
         })}</div>}

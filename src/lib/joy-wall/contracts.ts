@@ -44,6 +44,8 @@ export type JoyPost = {
   can_edit: boolean;
   can_archive: boolean;
   can_answer: boolean;
+  interaction_deadline_on: string | null;
+  interactions_open: boolean;
   is_hidden: boolean;
   is_favorited: boolean;
   can_acknowledge_receipt: boolean;
@@ -283,6 +285,12 @@ function parseJoyIou(value: unknown): JoyIouProjection {
 }
 
 export function parseJoyPost(value: unknown): JoyPost {
+  const deadline = value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>).interaction_deadline_on
+    : undefined;
+  const interactionsOpen = value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>).interactions_open
+    : undefined;
   if (!isRecord(value)
     || typeof value.id !== "string"
     || !isOneOf(joyPostTypes, value.post_type)
@@ -295,6 +303,8 @@ export function parseJoyPost(value: unknown): JoyPost {
     || !safeHttpUrl(value.author_avatar_url)
     || typeof value.can_edit !== "boolean" || typeof value.can_archive !== "boolean"
     || typeof value.can_answer !== "boolean"
+    || (deadline !== undefined && deadline !== null && !isDateOnly(deadline))
+    || (interactionsOpen !== undefined && typeof interactionsOpen !== "boolean")
     || typeof value.is_hidden !== "boolean"
     || (value.is_favorited !== undefined && typeof value.is_favorited !== "boolean")
     || (value.can_acknowledge_receipt !== undefined && typeof value.can_acknowledge_receipt !== "boolean")
@@ -338,6 +348,8 @@ export function parseJoyPost(value: unknown): JoyPost {
     can_edit: value.can_edit,
     can_archive: value.can_archive,
     can_answer: value.can_answer,
+    interaction_deadline_on: deadline as string | null ?? null,
+    interactions_open: interactionsOpen !== false,
     is_hidden: value.is_hidden,
     is_favorited: value.is_favorited === true,
     can_acknowledge_receipt: value.can_acknowledge_receipt === true,

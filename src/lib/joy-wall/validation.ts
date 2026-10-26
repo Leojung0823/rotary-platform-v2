@@ -51,7 +51,7 @@ export function decodeJoyCursor(value: string | null) {
 export function parseCreateJoyPostBody(value: unknown) {
   if (!isRecord(value) || !exactKeys(value, [
     "postType", "title", "content", "visibilityScope", "audienceMembershipIds", "eventIds", "rotaryYearIds",
-    "roleKeys", "birthdayCampaignIds",
+    "roleKeys", "birthdayCampaignIds", "interactionDeadlineOn",
   ])) {
     throw new Error("invalid_body");
   }
@@ -90,6 +90,8 @@ export function parseCreateJoyPostBody(value: unknown) {
   });
   if (new Set(roleKeys).size !== roleKeys.length) throw new Error("invalid_body");
   const birthdayCampaignIds = parseTargetIds(value.birthdayCampaignIds);
+  if (value.interactionDeadlineOn !== undefined && value.interactionDeadlineOn !== null
+    && !validDateOnly(value.interactionDeadlineOn)) throw new Error("invalid_body");
   return {
     postType: value.postType as (typeof joyCreatablePostTypes)[number],
     title: title || null,
@@ -100,19 +102,22 @@ export function parseCreateJoyPostBody(value: unknown) {
     rotaryYearIds,
     roleKeys,
     birthdayCampaignIds,
+    interactionDeadlineOn: (value.interactionDeadlineOn ?? null) as string | null,
   };
 }
 
 export function parseUpdateJoyPostBody(value: unknown) {
-  if (!isRecord(value) || !exactKeys(value, ["postType", "title", "content"])) throw new Error("invalid_body");
+  if (!isRecord(value) || !exactKeys(value, ["postType", "title", "content", "interactionDeadlineOn"])) throw new Error("invalid_body");
   if (typeof value.postType !== "string" || !joyCreatablePostTypes.includes(value.postType as (typeof joyCreatablePostTypes)[number])) {
     throw new Error("invalid_body");
   }
+  if (value.interactionDeadlineOn !== null && !validDateOnly(value.interactionDeadlineOn)) throw new Error("invalid_body");
   const title = value.title === null || value.title === undefined ? "" : normalizedText(value.title, 100, true);
   return {
     postType: value.postType as (typeof joyCreatablePostTypes)[number],
     title: title || null,
     content: normalizedText(value.content, JOY_POST_MAX_CODE_POINTS),
+    interactionDeadlineOn: value.interactionDeadlineOn as string | null,
   };
 }
 

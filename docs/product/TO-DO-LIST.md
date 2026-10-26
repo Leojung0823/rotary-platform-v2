@@ -2,6 +2,15 @@
 
 更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-26 歡喜牆一般貼文截止日（本機完成；等待 migration 順序與發布）
+
+- [x] 一般貼文可設定台灣日期截止日；期限當日仍可留言／回答，台灣時間隔日 00:00 起停止新增，但舊內容仍可閱讀並保留歷史。
+- [x] API 與資料庫 RPC 都檢查截止狀態；逾期直接呼叫也會拒絕，不只靠前端隱藏操作。表情、收藏、收件確認與 IOU 流程不受影響；沿用 `joy_wall_v1`，沒有新增旗標。
+- [x] 新增 migration `20261026000500_joy_post_interaction_deadlines.sql`、資料庫安全驗證、manifest、UI/API 與針對性 E2E。
+- [x] 本機驗證：217 個 Vitest 檔／1,617 tests、typecheck、lint、Webpack production build、migration guard、88-file verification manifest、diff check；隔離 Supabase 重播全部 migrations 並通過此功能 SQL verifier，Joy 截止日 E2E 1/1 通過。
+- 本功能留在 `codex/joy-post-deadline`，尚未 push／開 PR／部署。Staging Release `40297992217` 是對 `931dd23` 的 dry-run，沒有套用本 migration；沒有修改 hosted／production，也未跑 CI／Browser Smoke。
+- **發布阻擋：**平行草稿功能仍持有較早的 `20261026000400` migration；本功能 `000500` 不可先部署。須先整合 `000400`，確認 migration 順序後再一起規劃發布。未對共用本機資料執行 `npm run verify:db`；已以獨立 Supabase 專案／連接埠執行等效完整 reset、lint 與 manifest 內全部 88 份 SQL 驗證。
+
 ## 2026-10-26 Joy Wall 目標關聯（已同步 main；CI 通過；staging 待發布）
 
 - [x] 新貼文支援關聯活動、扶輪年度、職務角色及生日專案；每類最多五個，關聯不能擴大原貼文讀者範圍。
@@ -22,17 +31,17 @@
 - [x] 沿用 `joy_wall_v1`、`joy.moderate`、server RPC、同源 API、每小時五則限流；全新隔離 stack 重播 160 migrations，86 份 SQL verification 全通過；217 檔／1,612 tests、typecheck、lint、migration／manifest guard、webpack production build 及匿名提交→幹部處理 targeted E2E 通過。
 - [x] 修正新 migration 的稽核物件類型約束，保留既有 `question_prompt`、`question_batch`；資料庫 lint exit 0，只有三項既有 warning。沒有對預設本機資料執行會 reset 的 `npm run verify:db`。
 - [x] 功能已同步 main（commit `cea0050`）；main CI、isolated DB 全套驗證及 targeted E2E 通過。
-- [ ] 等待 Browser Smoke run `40285033200` 完成，再用最新 main SHA 執行 Staging Release plan。
+- [x] 後續 main CI `40295780260` 與 Browser Smoke `40295780270` 均成功，涵蓋此功能的後續主線版本。
 - [ ] Go-Live 前建立本機加密 staging backup；目前本機 `.env.staging` 缺少 project ref、access token、DB password，因此未備份、未部署，也未修改 hosted／production。
-- Issue #4 仍有其他待開發：一般貼文截止日、草稿／排程／置頂、封鎖互動、生日／回憶素材整合與保存政策；目標關聯、收件人動作與匿名建議箱仍是各自分支的完成切片，尚未全部同步／發布。
+- [ ] Issue #4 尚有草稿／排程／置頂、封鎖互動、本人同意後的生日／回憶素材整合與歷史保存政策；目標關聯、收件人動作、匿名建議箱程式已在 main，但 staging 尚未由本輪發布／驗收。
 
-## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
+## 2026-10-26 歡喜牆收件人動作（已同步 main；staging 待發布／驗收）
 
 - [x] 收件人可私下確認已收到；作者只看到匿名總數，無法辨認個別收件人。
 - [x] 收件人可要求幹部隱藏；要求進入既有審核佇列，不會立即隱藏貼文。
 - [x] 新 migration、API/UI、資料庫安全驗證及 manifest 已完成；沿用 `joy_wall_v1`，未新增旗標或改 hosted 設定。
-- [x] 驗證通過：217 檔／1,609 tests、typecheck、lint、build、migration guard、85 份 SQL verification manifest、隔離 Supabase 完整重播與 85 份 SQL verification、指定桌機 E2E 1/1。DB lint 無 error，只有 3 項既有 warning；未跑 CI／Browser Smoke。
-- 本功能目前只在 `codex/joy-recipient-actions` 本機分支，尚未推送／開 PR／部署；沒有 hosted 或 production 變更。整個 Issue #4 仍未完成。
+- [x] 驗證通過：217 檔／1,609 tests、typecheck、lint、build、migration guard、85 份 SQL verification manifest、隔離 Supabase 完整重播與 85 份 SQL verification、指定桌機 E2E 1/1。DB lint 無 error，只有 3 項既有 warning；後續 main CI／Browser Smoke `40295780260`／`40295780270` 也成功。
+- 功能 commit `07de2e0da4754647026fe76d55a5449f961ccbe2` 已是 `origin/main@931dd23` 的祖先；沒有為功能另開 PR。後續 main CI `40295780260` 與 Browser Smoke `40295780270` 成功，Staging Release `40297992217` 只完成 migration dry-run，未套用 migration、未部署。Issue #4 仍未完成。
 
 ## 2026-10-25 已完成：時間未定活動與板橋群英活動建檔（staging）
 
@@ -100,7 +109,7 @@
 
 - 非金錢 IOU 核心、社員待辦及主動 LINE 到期／逾期提醒都已進 main；提醒仍未部署 staging，站內提醒未新增。仍待 E-12 備份閘門、staging 部署及真人收訊驗收。
 - 職務、活動、生日專案、扶輪年度等目標；一般貼文截止日、草稿／排程／置頂；匿名建議箱與封鎖互動。批次提問截止日已另列於上方。
-- 收件人「確認已收到」與「要求幹部隱藏」已於 2026-10-26 在本機分支完成，尚未同步／發布；仍待其他互動回覆（如感謝）、本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
+- 收件人「確認已收到」與「要求幹部隱藏」已同步 main；staging／社員驗收仍待續。仍待其他互動回覆（如感謝）、本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
 - 以上屬於 Issue #4 的後續獨立開發，不能由本次本機測試或新頁面存在推定完成；真人、staging、LINE provider／Rich Menu 與 production 待辦仍依本文件後續清單處理。
 
 ## 2026-10-03 全專案進度掃描
@@ -108,7 +117,7 @@
 - 最新現場主線為 `origin/main@c2cc773a3f3d18e0c952473a603899e42acc1238`；GitHub open PR 0，open issues 為 #4、#25、#36、#44、#55。main 的 CI `37070195215` 與 Browser Smoke `37070194916` 成功；Message Center Scheduler run `37078114585` 為 skipped，不能當成排程已運作的證據。
 - Staging `/api/health` 現場為 `revision=b6a184bb4c44`、`status=ok`、`issues=[]`、`warnings=[]`，但 revision 早於 main；目前 main 尚未部署。最新成功 Go-Live `36831610118` 只對應 b6a184；waiting Release `36920967197` 對應舊 SHA `e388933`，較新的 Release `37063069490` 已取消，皆不可當成本次部署計畫。production 未修改。
 - 外部／真人閘門仍有：#25 iPhone／Android 實機及 staging 社員流程；#36 staging `attendance_ui_v2` 旗標與角色隔離驗收；#44 新 recovery email 真人重設閉環；#55 五位社員／幹部 M1；E-03 LINE OA follow 身份與負向案例、E-11 各社 OA／Rich Menu 手機驗收、E-12 本機加密備份與 restore 演練。E-12 現場確認主 checkout `.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`；GitHub secret 值未讀取。#4 仍有職務／活動／生日／扶輪年度目標、一般貼文截止日、草稿／排程／置頂、匿名建議箱、封鎖及生日／回憶素材等未開發項目。
-- 本機分支 `codex/joy-recipient-actions` 正在實作指定收件社員確認收到及要求幹部隱藏；typecheck、lint、215 檔／1,576 tests、migration guard、84 個 verification manifest 檢查通過。Docker socket 逾時且磁碟僅約 310 MiB，故 DB verification 與 Playwright 尚未執行；程式仍未 commit／push／部署，不能算 main 完成。
+- 當時的掃描紀錄曾將收件人動作列為本機未同步；以目前 Git ancestry 重核後，功能 commit `07de2e0` 已在 `origin/main@931dd23`，後續 CI／Browser Smoke 亦成功。該舊掃描中的分支狀態不可再當成現況；staging 發布與社員驗收仍須另外完成。
 
 ## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39）
 

@@ -85,3 +85,4 @@ supabase/verification/joy_post_favorites_security.sql
 supabase/verification/joy_recipient_actions_security.sql
 supabase/verification/joy_anonymous_suggestions_security.sql
 supabase/verification/joy_target_associations_security.sql
+supabase/verification/joy_post_interaction_deadlines_security.sql
