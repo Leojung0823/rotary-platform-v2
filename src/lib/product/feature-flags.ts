@@ -62,11 +62,9 @@ type ServerEnvironment = Readonly<Record<string, string | undefined>>;
 const appEnvironments: readonly AppEnvironment[] = ["local", "staging", "production"];
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-// Absence means enabled for everything the platform has already shipped (see
-// evaluateFeatureFlag). A feature nobody has ever seen is different: shipping
-// it dark and letting a club turn it on is the whole point of having a flag,
-// and that is impossible if deploying the migration is itself the rollout. A
-// key listed here therefore needs an explicit record before it is on.
+// Legacy opt-in keys only. New features must be available after deployment;
+// if their database RPCs require a flag row, the feature migration seeds an
+// enabled, audited system default. Do not add new keys to this list.
 export const flagsRequiringExplicitEnable: readonly FeatureFlagKey[] = [
   "announcements_v09",
   "birthday_wishes_v2",

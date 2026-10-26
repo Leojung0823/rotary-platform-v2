@@ -1,6 +1,13 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-27（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-10-27 歡喜牆草稿 × 互動截止日整合（本機驗收完成；待發布）
+
+- 使用者已決定新功能部署後自動可用、不要求人工開旗標；既有 opt-in 功能維持原狀。新增 `20261027000100_joy_wall_deployment_default.sql`，Joy Wall 首次部署時自動建立 enabled flag row，system actor 及不可變 audit 同步記錄；受保護的 emergency disable 保留。
+- 已把草稿功能、一般貼文截止日整合在 `codex/joy-wall-deadline-draft-integration`；migration 順序為 `000400`、`000500`、`000600`，草稿中的日期會隨建立、編輯、讀取及發布保留。
+- 驗證通過：typecheck、lint、217 Vitest 檔／1,621 tests、build、migration guard、90-file verification manifest、diff check；獨立 Supabase 完整 reset／migration replay、DB lint exit 0（3 項既有 warning）、90 份 SQL verifier 全通過；Joy Wall 桌機 Playwright 10/10 通過。
+- 尚未 commit／push main、開 PR、跑 GitHub CI／Browser Smoke 或部署；未修改 hosted／production。staging local-only backup 尚未建立，現有記錄中的 Management API PAT 曾回 HTTP 401，Go-Live 仍受此備份前置條件阻擋。
 
 ## 2026-10-26 歡喜牆一般貼文截止日（程式本機完成；等待 migration 順序與發布）
 

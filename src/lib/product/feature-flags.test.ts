@@ -22,6 +22,20 @@ const existingDomainRollbackKeys = [
   "message_board_v1",
   "archive_handover_v1",
 ] as const;
+const legacyExplicitEnableKeys = [
+  "announcements_v09",
+  "birthday_wishes_v2",
+  "birthday_wishes_collection_v1",
+  "line_oa_auto_pairing_v1",
+  "line_oa_event_push_v1",
+  "line_oa_onboarding_v1",
+  "line_oa_flex_templates_v1",
+  "club_join_link_v1",
+  "line_rich_menu_v1",
+  "dues_finance_v1",
+  "joy_wall_v1",
+  "event_date_only_v1",
+] as const;
 
 describe("feature flag evaluation truth table", () => {
   it("lets a kill switch disable an otherwise enabled database record", () => {
@@ -318,6 +332,10 @@ describe("deterministic rollout distribution", () => {
 });
 
 describe("features that must be turned on deliberately", () => {
+  it("keeps the explicit-enable list limited to pre-existing compatibility gates", () => {
+    expect([...flagsRequiringExplicitEnable].sort()).toEqual([...legacyExplicitEnableKeys].sort());
+  });
+
   it("stays off with no record, and honours one that turns it on", () => {
     for (const key of flagsRequiringExplicitEnable) {
       expect(evaluateFeatureFlag({ key, record: null, environment: "staging", pepper }))

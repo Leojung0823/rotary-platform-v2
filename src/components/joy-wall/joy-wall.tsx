@@ -7,6 +7,7 @@ import type {
   JoyCommentType,
   JoyIouProjection,
   JoyPost,
+  JoyPostDraft,
   JoyPostType,
   JoyReactionType,
   JoyReportReason,
@@ -23,6 +24,7 @@ import {
   parseJoyComment,
   parseJoyComments,
   parseJoyPost,
+  parseJoyPostDraft,
 } from "@/lib/joy-wall/contracts";
 import type { JoyComment } from "@/lib/joy-wall/contracts";
 import { JOY_COMMENT_MAX_CODE_POINTS, JOY_POST_MAX_CODE_POINTS } from "@/lib/joy-wall/validation";
@@ -34,6 +36,8 @@ type JoyWallProps = {
   audienceMembers: readonly JoyAudienceMember[];
   targetOptions: JoyTargetOptions;
   targetOptionsUnavailable: boolean;
+  initialDrafts: readonly JoyPostDraft[];
+  draftsUnavailable: boolean;
   initialPosts: readonly JoyPost[];
   initialCursor: string | null;
   focusedPostId: string | null;
@@ -154,7 +158,8 @@ function defaultCommentType(post: JoyPost): JoyCommentType {
 }
 
 export function JoyWall({
-  clubId, audienceMembers, targetOptions, targetOptionsUnavailable, initialPosts, initialCursor, focusedPostId,
+  clubId, audienceMembers, targetOptions, targetOptionsUnavailable, initialDrafts, draftsUnavailable,
+  initialPosts, initialCursor, focusedPostId,
 }: JoyWallProps) {
   const [posts, setPosts] = useState([...initialPosts]);
   const [cursor, setCursor] = useState(initialCursor);
@@ -176,6 +181,8 @@ export function JoyWall({
   const [iouDueOn, setIouDueOn] = useState("");
   const [iouNotes, setIouNotes] = useState<Record<string, string>>({});
   const [publishing, setPublishing] = useState(false);
+  const [drafts, setDrafts] = useState([...initialDrafts]);
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [stateMessage, setStateMessage] = useState<string | null>(null);
@@ -246,22 +253,37 @@ export function JoyWall({
     setStateMessage(null);
     try {
       const isIou = postType === "iou";
-      const response = await fetch(endpoint(clubId, isIou ? "/ious" : "/posts"), {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isIou
-          ? { recipientMembershipId: iouRecipientId, title: title.trim() || null, content, dueOn: iouDueOn || null }
-          : {
-            postType, title: title.trim() || null, content, visibilityScope,
-            audienceMembershipIds: audienceIds,
-            eventIds: targetEventIds,
-            rotaryYearIds: targetRotaryYearIds,
-            roleKeys: targetRoleKeys,
-            birthdayCampaignIds: targetBirthdayCampaignIds,
-            interactionDeadlineOn: interactionDeadlineOn || null,
-          }),
-      });
+      let response: Response;
+      if (activeDraftId && !isIou) {
+        const savedDraftResponse = await fetch(endpoint(clubId, "/drafts"), {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(draftPayload(activeDraftId)),
+        });
+        const savedDraft = parseJoyPostDraft(await readData<unknown>(savedDraftResponse));
+        setDrafts((current) => current.map((draft) => draft.id === savedDraft.id ? savedDraft : draft));
+        response = await fetch(endpoint(clubId, `/drafts/${encodeURIComponent(activeDraftId)}/publish`), { method: "POST" });
+      } else {
+        response = await fetch(endpoint(clubId, isIou ? "/ious" : "/posts"), {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(isIou
+            ? { recipientMembershipId: iouRecipientId, title: title.trim() || null, content, dueOn: iouDueOn || null }
+            : {
+              postType, title: title.trim() || null, content, visibilityScope,
+              audienceMembershipIds: audienceIds,
+              eventIds: targetEventIds,
+              rotaryYearIds: targetRotaryYearIds,
+              roleKeys: targetRoleKeys,
+              birthdayCampaignIds: targetBirthdayCampaignIds,
+              interactionDeadlineOn: interactionDeadlineOn || null,
+            }),
+        });
+      }
       const post = parseJoyPost(await readData<unknown>(response));
       setPosts((current) => [post, ...current]);
+      if (activeDraftId) {
+        setDrafts((current) => current.filter((draft) => draft.id !== activeDraftId));
+        setActiveDraftId(null);
+      }
       setShowFavorites(false);
       setFilter("all");
       setPostType("blessing"); setTitle(""); setContent(""); setVisibilityScope("club"); setAudienceIds([]);
@@ -272,6 +294,74 @@ export function JoyWall({
     } catch (error) {
       setStateMessage(requestFailureMessage(error, "這次沒有送出，請稍後再試；原本內容仍保留在表單裡。"));
     } finally { setPublishing(false); }
+  }
+
+  function draftPayload(draftId: string) {
+    return {
+      draftId, postType, title: title.trim() || null, content, visibilityScope,
+      interactionDeadlineOn: interactionDeadlineOn || null,
+      audienceMembershipIds: audienceIds,
+      eventIds: targetEventIds,
+      rotaryYearIds: targetRotaryYearIds,
+      roleKeys: targetRoleKeys,
+      birthdayCampaignIds: targetBirthdayCampaignIds,
+    };
+  }
+
+  async function saveDraft() {
+    if (postType === "iou" || contentLength > JOY_POST_MAX_CODE_POINTS) return;
+    const draftId = activeDraftId ?? crypto.randomUUID();
+    setPublishing(true);
+    setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, "/drafts"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftPayload(draftId)),
+      });
+      const savedDraft = parseJoyPostDraft(await readData<unknown>(response));
+      setDrafts((current) => current.some((draft) => draft.id === savedDraft.id)
+        ? current.map((draft) => draft.id === savedDraft.id ? savedDraft : draft)
+        : [savedDraft, ...current]);
+      setActiveDraftId(savedDraft.id);
+      setStateMessage("草稿已儲存，只有你看得到；要發布時再按「分享」。");
+    } catch (error) {
+      setStateMessage(requestFailureMessage(error, "草稿沒有儲存，請稍後再試；內容仍留在表單裡。"));
+    } finally { setPublishing(false); }
+  }
+
+  function resumeDraft(draft: JoyPostDraft) {
+    const availableMemberships = new Set(audienceMembers.map((member) => member.membership_id));
+    const availableAudienceIds = draft.audience_membership_ids.filter((id) => availableMemberships.has(id));
+    setActiveDraftId(draft.id);
+    setPostType(draft.post_type);
+    setTitle(draft.title ?? "");
+    setContent(draft.content);
+    setInteractionDeadlineOn(draft.interaction_deadline_on ?? "");
+    setVisibilityScope(draft.visibility_scope);
+    setAudienceIds(availableAudienceIds);
+    setTargetEventIds(draft.event_ids);
+    setTargetRotaryYearIds(draft.rotary_year_ids);
+    setTargetRoleKeys(draft.role_keys);
+    setTargetBirthdayCampaignIds(draft.birthday_campaign_ids);
+    setShowFavorites(false);
+    setStateMessage(availableAudienceIds.length === draft.audience_membership_ids.length
+      ? "已開啟草稿；發布前可再調整閱讀對象與關聯。"
+      : "草稿已開啟；部分原指定社員已不是可選社員，請重新確認閱讀對象後再發布。");
+    document.getElementById("joy-compose-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function deleteDraft(draftId: string) {
+    if (!window.confirm("要刪除這份尚未發布的草稿嗎？")) return;
+    setPendingId(`draft:${draftId}`);
+    setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, `/drafts/${encodeURIComponent(draftId)}`), { method: "DELETE" });
+      await readData<{ deleted: true }>(response);
+      setDrafts((current) => current.filter((draft) => draft.id !== draftId));
+      if (activeDraftId === draftId) setActiveDraftId(null);
+      setStateMessage("草稿已刪除。");
+    } catch (error) { setStateMessage(requestFailureMessage(error, "草稿沒有刪除，請稍後再試。")); }
+    finally { setPendingId(null); }
   }
 
   async function loadMore() {
@@ -519,7 +609,11 @@ export function JoyWall({
       <form onSubmit={(event) => void publish(event)}>
         <div className={styles.formRow}>
           <label className={styles.field}><span>分享類別</span>
-            <select value={postType} onChange={(event) => setPostType(event.target.value as JoyPostType)} disabled={publishing}>
+            <select value={postType} onChange={(event) => {
+              const nextType = event.target.value as JoyPostType;
+              setPostType(nextType);
+              if (nextType === "iou") setActiveDraftId(null);
+            }} disabled={publishing}>
               {joyPostTypes.map((type) => <option key={type} value={type}>{postTypeLabels[type]}</option>)}
             </select>
           </label>
@@ -648,11 +742,34 @@ export function JoyWall({
         {stateMessage && <p className={styles.stateMessage} role="status">{stateMessage}</p>}
         <div className={styles.composerFooter}>
           <span className={styles.privacyNote}>{postType === "iou" ? "🔒 僅雙方可見；狀態變更會保留紀錄" : "🔒 只在本社內依閱讀範圍顯示"}</span>
+          {postType !== "iou" && <button type="button" className={styles.secondaryButton}
+            disabled={publishing || contentLength > JOY_POST_MAX_CODE_POINTS} onClick={() => void saveDraft()}>
+            {publishing ? "儲存中…" : activeDraftId ? "更新草稿" : "存草稿"}
+          </button>}
           <button type="submit" disabled={publishing || contentLength < 1 || contentLength > JOY_POST_MAX_CODE_POINTS || !audienceValid}>
             {publishing ? "送出中…" : postType === "iou" ? "提出承諾" : "分享"}
           </button>
         </div>
       </form>
+      <section className={styles.drafts} aria-labelledby="joy-drafts-title">
+        <div className={styles.draftsHeader}><h3 id="joy-drafts-title">我的草稿</h3><span>{drafts.length} / 20</span></div>
+        {draftsUnavailable
+          ? <p className={styles.muted}>目前無法載入草稿；請稍後重新整理，草稿不會因此公開。</p>
+          : drafts.length === 0
+            ? <p className={styles.muted}>還沒有草稿。未發布的內容只有你看得到。</p>
+            : <ul className={styles.draftList}>{drafts.map((draft) => <li key={draft.id} className={styles.draftItem}>
+              <div><strong>{draft.title || postTypeLabels[draft.post_type]}</strong>
+                <span>{draft.content.trim() ? `${draft.content.slice(0, 90)}${draft.content.length > 90 ? "…" : ""}` : "尚未填寫內容"}</span>
+                {draft.interaction_deadline_on && <small>留言／回答截止日：{formatDueDate(draft.interaction_deadline_on)}</small>}
+                <small>上次儲存：{formatTime(draft.updated_at)}</small>
+              </div>
+              <div className={styles.draftActions}>
+                <button type="button" onClick={() => resumeDraft(draft)}>繼續編輯</button>
+                <button type="button" className={styles.draftDelete} disabled={pendingId === `draft:${draft.id}`}
+                  onClick={() => void deleteDraft(draft.id)}>{pendingId === `draft:${draft.id}` ? "刪除中…" : "刪除"}</button>
+              </div>
+            </li>)}</ul>}
+      </section>
     </section>
 
     <section className={styles.feed} aria-labelledby="joy-feed-title">

@@ -234,6 +234,59 @@ test("a member can privately save a post and find it again in My Favorites", asy
   await expect(page.getByRole("article").filter({ hasText: title }).first()).toBeVisible();
 });
 
+test("a member can keep a Joy draft private, resume it, and publish it", async ({ browser, page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const title = `私人歡喜草稿 ${Date.now()}`;
+  const firstContent = "這段內容還沒有發布，只有草稿作者可以看見。";
+  const finalContent = "草稿完成編輯後才會出現在社員牆面。";
+  const interactionDeadline = "2026-11-30";
+  await signIn(page, "e2e-shell-member-manager@example.test");
+  await openJoyWall(page);
+  await page.getByLabel("一句標題（選填）").fill(title);
+  await page.getByLabel("分享內容").fill(firstContent);
+  await page.getByLabel("留言／回答截止日（選填）").fill(interactionDeadline);
+  const saveResponsePromise = page.waitForResponse((response) =>
+    response.url().includes("/api/v1/joy/drafts?") && response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "存草稿" }).click();
+  const saveResponse = await saveResponsePromise;
+  expect(saveResponse.status()).toBe(200);
+  const clubId = new URL(saveResponse.url()).searchParams.get("club_id");
+  expect(clubId).toMatch(/^[0-9a-f-]{36}$/iu);
+  const ownDraft = page.getByRole("listitem").filter({ hasText: title });
+  await expect(ownDraft).toBeVisible();
+
+  const bystanderContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  try {
+    const bystander = await bystanderContext.newPage();
+    await signIn(bystander, memberEmail);
+    await bystander.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
+    await expect(bystander.getByRole("heading", { name: "分享一份歡喜" })).toBeVisible();
+    await expect(bystander.getByText(title, { exact: true })).toHaveCount(0);
+    await expect(bystander.getByText(firstContent, { exact: true })).toHaveCount(0);
+    await expect(bystander.getByText("還沒有草稿。未發布的內容只有你看得到。")).toBeVisible();
+  } finally {
+    await bystanderContext.close();
+  }
+
+  await ownDraft.getByRole("button", { name: "繼續編輯" }).click();
+  await expect(page.getByLabel("留言／回答截止日（選填）")).toHaveValue(interactionDeadline);
+  await page.getByLabel("分享內容").fill(finalContent);
+  const publishResponsePromise = page.waitForResponse((response) =>
+    response.url().includes("/api/v1/joy/drafts/") && response.url().includes("/publish?")
+      && response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "分享", exact: true }).click();
+  const publishResponse = await publishResponsePromise;
+  expect(publishResponse.status()).toBe(201);
+  const publishedCard = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(publishedCard.getByText(finalContent, { exact: true })).toBeVisible();
+  await expect(publishedCard.getByText(/留言／回答截止日：/u)).toBeVisible();
+  await expect(page.getByText("還沒有草稿。未發布的內容只有你看得到。")).toBeVisible();
+});
+
 test("a private non-cash IOU needs acceptance and two separate completion confirmations", async ({
   browser,
   page,

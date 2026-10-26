@@ -1,11 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 
-// Turning a flag on is what actually exposes a finished feature to members, so
-// it goes through the same protected RPC and audit trail as any other rollout
-// change -- never a direct table write. The RPC is executable by `authenticated`
-// only and rechecks platform-admin authority in its own body, which is why this
-// signs in rather than using a service-role key.
+// This protected CLI remains for legacy explicit-opt-in flags and authorized
+// emergency rollback/re-enable operations. New features must be available as
+// part of deployment and must not require this manual command. Mutations still
+// go through the audited RPC, never a direct table write.
 
 // Every key the platform currently knows about, and whether the feature behind
 // it is actually built. The list is empty of unimplemented keys today; keep the

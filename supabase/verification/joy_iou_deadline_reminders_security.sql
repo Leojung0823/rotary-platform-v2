@@ -123,7 +123,12 @@ insert into public.platform_feature_flags (
   feature_key, enabled, enabled_environments, rollout_percentage, updated_by
 ) values
   ('joy_wall_v1', true, array['staging'], 100, 'a3000000-0000-4000-8000-000000000001'),
-  ('line_oa_event_push_v1', true, array['staging'], 100, 'a3000000-0000-4000-8000-000000000001');
+  ('line_oa_event_push_v1', true, array['staging'], 100, 'a3000000-0000-4000-8000-000000000001')
+on conflict (feature_key) do update
+set enabled = excluded.enabled,
+    enabled_environments = excluded.enabled_environments,
+    rollout_percentage = excluded.rollout_percentage,
+    updated_by = excluded.updated_by;
 
 -- Two current due-day tasks for the author; two due/overdue tasks for the
 -- recipient; a third eligible task without a paired follower must not send.

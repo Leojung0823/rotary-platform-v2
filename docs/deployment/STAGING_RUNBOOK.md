@@ -318,9 +318,9 @@ npm run bootstrap:superadmin
 
 ## 6b. 對 staging 開啟功能
 
-部署完成不等於社員看得到。多數 flag 預設關閉，而列在 `flagsRequiringExplicitEnable`
-（`src/lib/product/feature-flags.ts`）的 key **沒有紀錄時一律視為關閉**，必須明確開啟才會出現。
-目前這類 key 是 `announcements_v09`（訊息中心）、`birthday_wishes_v2` 與 `birthday_wishes_collection_v1`（生日 V2／徵集）。
+既有的 rollout flag 可能仍需明確設定；這些是歷史 opt-in 功能。自 2026-10-27 起，**新功能必須在部署後自動可用，不得要求管理員再執行 `flags:enable`**。若資料庫 RPC 需要旗標列，部署 migration 必須建立預設啟用、帶 system-migration 稽核的設定；權限仍由 RPC、RLS 與伺服器驗證。
+
+`flagsRequiringExplicitEnable`（`src/lib/product/feature-flags.ts`）中的舊 key 在沒有紀錄時仍會關閉，保持既有產品決定不變。這份 runbook 下方的手動啟用指令只供這些既有功能使用；新功能不得新增到該清單。Joy Wall 的部署預設由 `20261027000100_joy_wall_deployment_default.sql` 建立，不需人工開旗標。
 
 把 `.env.staging.example` 複製成 `.env.staging`（已被 git 忽略），填入三個**非機密**值：
 

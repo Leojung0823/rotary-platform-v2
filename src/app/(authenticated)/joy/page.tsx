@@ -11,8 +11,10 @@ import {
   parseJoyAudienceMembers,
   parseJoyPost,
   parseJoyPosts,
+  parseJoyPostDrafts,
   parseJoyTargetOptions,
   type JoyPost,
+  type JoyPostDraft,
   type JoyTargetOptions,
 } from "@/lib/joy-wall/contracts";
 import { encodeJoyCursor, parseJoyPostId } from "@/lib/joy-wall/validation";
@@ -86,7 +88,7 @@ async function renderSelectedWall(
     : focusPostId
       ? supabase.rpc("get_my_joy_question_post_with_interaction_deadline", { p_club_id: selectedClub.club_id, p_post_id: focusPostId })
       : Promise.resolve({ data: null, error: null });
-  const [postsResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult] = await Promise.all([
+  const [postsResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult, draftsResult] = await Promise.all([
     supabase.rpc("list_joy_posts_with_interaction_deadlines", {
       p_club_id: selectedClub.club_id,
       p_cursor_created_at: null,
@@ -98,6 +100,7 @@ async function renderSelectedWall(
     supabase.rpc("list_joy_target_options", { p_club_id: selectedClub.club_id }),
     readClubPermissions(selectedClub.club_id),
     focusedPostPromise,
+    supabase.rpc("list_my_joy_post_drafts", { p_club_id: selectedClub.club_id }),
   ]);
   if (postsResult.error) {
     return <Notice tone="error">歡喜牆內容目前無法載入，請稍後再試。</Notice>;
@@ -105,6 +108,12 @@ async function renderSelectedWall(
   try {
     const page = parseJoyPosts(postsResult.data);
     const audienceMembers = audienceResult.error ? [] : parseJoyAudienceMembers(audienceResult.data);
+    let initialDrafts: JoyPostDraft[] = [];
+    let draftsUnavailable = Boolean(draftsResult.error);
+    if (!draftsUnavailable) {
+      try { initialDrafts = parseJoyPostDrafts(draftsResult.data); }
+      catch { draftsUnavailable = true; }
+    }
     let targetOptions: JoyTargetOptions = { events: [], rotary_years: [], roles: [], birthday_campaigns: [] };
     let targetOptionsUnavailable = Boolean(targetOptionsResult.error);
     if (!targetOptionsUnavailable) {
@@ -149,6 +158,8 @@ async function renderSelectedWall(
         audienceMembers={audienceMembers}
         targetOptions={targetOptions}
         targetOptionsUnavailable={targetOptionsUnavailable}
+        initialDrafts={initialDrafts}
+        draftsUnavailable={draftsUnavailable}
         initialPosts={initialPosts}
         initialCursor={encodeJoyCursor(page.nextCursor)}
         focusedPostId={focusedPost?.id ?? null}

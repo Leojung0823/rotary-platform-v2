@@ -16,6 +16,7 @@ import {
   parseCreateJoySuggestionBody,
   parseJoySuggestionReviewBody,
   parseJoySuggestionId,
+  parseJoyPostDraftBody,
 } from "./validation";
 
 const memberOne = "64000000-0000-4000-8000-000000000001";
@@ -126,6 +127,34 @@ describe("Joy Wall input validation", () => {
     expect(parseJoyFavoriteBody({ isFavorite: true })).toBe(true);
     expect(parseJoyFavoriteBody({ isFavorite: false })).toBe(false);
     expect(() => parseJoyFavoriteBody({ isFavorite: true, actorId: memberOne })).toThrow();
+  });
+
+  it("validates draft inputs while allowing incomplete audience selection and blank content", () => {
+    const draftId = "64000000-0000-4000-8000-000000000011";
+    expect(parseJoyPostDraftBody({
+      draftId, postType: "blessing", title: "", content: "", visibilityScope: "selected",
+      audienceMembershipIds: [], eventIds: [], rotaryYearIds: [], roleKeys: [], birthdayCampaignIds: [],
+      interactionDeadlineOn: "2026-11-30",
+    })).toMatchObject({ draftId, content: "", audienceMembershipIds: [], interactionDeadlineOn: "2026-11-30" });
+    expect(() => parseJoyPostDraftBody({
+      draftId, postType: "blessing", title: "", content: "", visibilityScope: "club",
+      audienceMembershipIds: [], eventIds: [], rotaryYearIds: [], roleKeys: [], birthdayCampaignIds: [],
+      interactionDeadlineOn: "2026-02-30",
+    })).toThrow("invalid_body");
+    expect(() => parseJoyPostDraftBody({
+      draftId, postType: "iou", title: null, content: "承諾", visibilityScope: "private",
+      audienceMembershipIds: [], eventIds: [], rotaryYearIds: [], roleKeys: [], birthdayCampaignIds: [],
+    })).toThrow("invalid_body");
+    expect(() => parseJoyPostDraftBody({
+      draftId, postType: "blessing", title: null, content: "內容", visibilityScope: "club",
+      audienceMembershipIds: ["64000000-0000-4000-8000-000000000012"],
+      eventIds: [], rotaryYearIds: [], roleKeys: [], birthdayCampaignIds: [],
+    })).toThrow("invalid_body");
+    expect(() => parseJoyPostDraftBody({
+      draftId, postType: "blessing", title: null, content: "內容", visibilityScope: "private",
+      audienceMembershipIds: ["64000000-0000-4000-8000-000000000012", "64000000-0000-4000-8000-000000000013"],
+      eventIds: [], rotaryYearIds: [], roleKeys: [], birthdayCampaignIds: [],
+    })).toThrow("invalid_body");
   });
 
   it("accepts only bounded anonymous suggestion text and review actions", () => {

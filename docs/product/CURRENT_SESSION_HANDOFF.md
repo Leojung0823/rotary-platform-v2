@@ -1,7 +1,21 @@
-# 交接筆記（持續更新；最新核對 2026-10-26；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-10-27；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-10-27 已確認的功能上線規則
+
+- 使用者決定：**未來新功能一律在成功部署後自動可用，不要求人工開啟旗標**。若資料庫 RPC 需要 rollout row，功能 migration 要自動建立預設啟用的 row，並以 `actor_kind='system'` 留 append-only 稽核；緊急停用仍走受保護的既有流程。登入、社籍、角色、RLS 和 RPC 權限不可依賴旗標。
+- 既有 opt-in 功能維持原決定，不因新規則批次打開。Joy Wall 正在首次部署，因此此次加入 `20261027000100_joy_wall_deployment_default.sql`，讓它在 migration 部署後自動可用；若資料庫已有明確停用 row，migration 保留該決定。
+- 根目錄 `AGENTS.md`、`docs/product/ROLLOUT_CONTROLS.md`、`docs/deployment/STAGING_RUNBOOK.md` 與 feature-flag contract test 已同步此規則。
+
+## 2026-10-27 Joy Wall 草稿與一般貼文截止日整合（本機驗收完成；待發布）
+
+- 整合分支 `codex/joy-wall-deadline-draft-integration` 從 main `508f16e` 建立，再合併截止日工作與平行草稿工作樹的程式變更；原本的 `joy-wall-drafts` dirty worktree 未被修改。migration 順序核對為 `000400` 草稿、`000500` 截止日核心、`000600` 草稿發布整合。
+- 草稿建立／更新／讀取包含 `interaction_deadline_on`；恢復草稿會還原日期，發布 RPC 改用 `create_joy_post_with_interaction_deadline`，避免草稿發布後遺失期限。新增 `20261026000600_joy_post_draft_interaction_deadlines.sql`，並同步 SQL verifier、API、contracts、validation、UI 與 targeted E2E。
+- 驗證完成：typecheck、lint、217 Vitest 檔／1,621 tests、production build、migration guard、90-file verification manifest 與 diff check 通過。獨立 Supabase stack 完整 reset／migration replay、DB lint exit 0（3 項既有 warning）、90 份 SQL verifier 全過；Joy Wall 桌機 Playwright 10/10 通過。Supabase CLI 2.122.0 可用；Docker Desktop 的 credential helper 需將其內建 `Resources/bin` 加入 PATH。共用 54322 沒有重置。
+- 還沒 commit／push main，未開 PR、未跑 GitHub CI／Browser Smoke，未部署或更動 hosted／production。staging backup 尚未完成：本機 `.env.staging` Management API PAT 曾對 Projects API 回 HTTP 401；尚未建立 backup，且沒有 hosted write。發布前要安全重驗／更新 PAT、完成本機加密 backup，再針對最新 main SHA 執行受保護 staging Go-Live。不要把任何 token 貼在聊天。
+- Event date-only 的 `event_date_only_v1` 不需重開：較早的接力紀錄記載使用者已由受保護 CLI 開啟，且管理表單已實際出現「時間未定」選項；本輪失敗的是落後主目錄的腳本檢查，沒有變更 hosted flag。
 
 ## 2026-10-26 歡喜牆一般貼文截止日（本機驗收完成；尚未整合／發布）
 

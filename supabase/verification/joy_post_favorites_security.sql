@@ -70,8 +70,13 @@ begin
         and 'search_path=pg_catalog, public, auth' = any(proconfig)) then
     raise exception 'Joy favorites RPC search_path is not fixed';
   end if;
-  if exists (select 1 from public.platform_feature_flags where feature_key = 'joy_wall_v1') then
-    raise exception 'Joy Wall rollout was unexpectedly seeded';
+  if not exists (
+    select 1 from public.platform_feature_flags
+    where feature_key = 'joy_wall_v1' and enabled
+      and enabled_environments = array['local', 'staging', 'production']::text[]
+      and rollout_percentage = 100 and updated_by_kind = 'system'
+  ) then
+    raise exception 'Joy Wall deployment default was not automatically enabled';
   end if;
 end $$;
 
@@ -89,7 +94,12 @@ reset role;
 
 select set_config('request.jwt.claim.sub', 'a9100000-0000-4000-8000-000000000001', true);
 insert into public.platform_feature_flags (feature_key, enabled, enabled_environments, rollout_percentage, updated_by)
-values ('joy_wall_v1', true, array['local'], 100, 'a9300000-0000-4000-8000-000000000001');
+values ('joy_wall_v1', true, array['local'], 100, 'a9300000-0000-4000-8000-000000000001')
+on conflict (feature_key) do update
+set enabled = excluded.enabled,
+    enabled_environments = excluded.enabled_environments,
+    rollout_percentage = excluded.rollout_percentage,
+    updated_by = excluded.updated_by;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a9100000-0000-4000-8000-000000000001', true);

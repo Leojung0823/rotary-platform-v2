@@ -1,16 +1,16 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-27（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-26 歡喜牆一般貼文截止日（本機完成；等待 migration 順序與發布）
+## 2026-10-27 歡喜牆草稿與一般貼文截止日整合（本機驗收完成；待發布）
 
-- [x] 一般貼文可設定台灣日期截止日；期限當日仍可留言／回答，台灣時間隔日 00:00 起停止新增，但舊內容仍可閱讀並保留歷史。
-- [x] API 與資料庫 RPC 都檢查截止狀態；逾期直接呼叫也會拒絕，不只靠前端隱藏操作。表情、收藏、收件確認與 IOU 流程不受影響；沿用 `joy_wall_v1`，沒有新增旗標。
-- [x] 新增 migration `20261026000500_joy_post_interaction_deadlines.sql`、資料庫安全驗證、manifest、UI/API 與針對性 E2E。
-- [x] 本機驗證：217 個 Vitest 檔／1,617 tests、typecheck、lint、Webpack production build、migration guard、88-file verification manifest、diff check；隔離 Supabase 重播全部 migrations 並通過此功能 SQL verifier，Joy 截止日 E2E 1/1 通過。
-- 本功能留在 `codex/joy-post-deadline`，尚未 push／開 PR／部署。舊 Staging Release `40297992217` 只對 `931dd23` 執行 dry-run，沒有套用本 migration。最新 main 的 Release plan `40317913782` 已於 SHA `508f16e` 成功完成 migration preview；它不含本地 `000500`，沒有套用 migration 或部署。沒有修改 hosted／production，也未跑本功能 CI／Browser Smoke。
-- **發布阻擋：**平行草稿功能仍持有較早的 `20261026000400` migration；本功能 `000500` 不可先部署。須先整合 `000400`，確認 migration 順序後再一起規劃發布。未對共用本機資料執行 `npm run verify:db`；已以獨立 Supabase 專案／連接埠執行等效完整 reset、lint 與 manifest 內全部 88 份 SQL 驗證。
-- **草稿整合驗收：**目前 `000400` 草稿 schema／API／發布 RPC 未保存截止日；整合時須讓截止日隨草稿保存、編輯與查閱，並在發布時呼叫截止日版本的建立流程，測試確認不會遺失日期。此項尚未實作，不能因草稿或截止日各自可用就視為整合完成。
+- [x] 新增發布規則：未來功能部署後自動可用，不要求人工開旗標。Joy Wall 本次以 `20261027000100_joy_wall_deployment_default.sql` 自動建立預設啟用 row，並記 system 稽核；不會批次開啟其他既有 opt-in 功能。
+- [x] 新增一般貼文留言／回答台灣日期截止日：期限當日仍可互動，隔日 00:00 起停止新增，歷史仍可閱讀；API 與資料庫 RPC 都會拒絕逾期 mutation。表情、收藏、收件確認與 IOU 不受影響，沿用 `joy_wall_v1`。
+- [x] 草稿功能整合進獨立分支 `codex/joy-wall-deadline-draft-integration`；原平行工作樹未修改。草稿的日期會保存、讀回、編輯，發布時透過 `create_joy_post_with_interaction_deadline` 保留至正式貼文。
+- [x] migration 依序為 `20261026000400_joy_post_drafts.sql`、`20261026000500_joy_post_interaction_deadlines.sql`、`20261026000600_joy_post_draft_interaction_deadlines.sql`；draft RPC 權限簽章、security verifier、manifest、輸入驗證、UI 與 E2E 已一併更新。
+- [x] `npm run typecheck`、`npm run lint`、`npm test`（217 檔／1,621 tests）、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `git diff --check` 通過。
+- [x] 專用隔離 Supabase stack 完整 reset／migration replay；DB lint exit 0（3 項既有 warning）；90 份 SQL security verification 全通過。Joy Wall 桌機 Playwright 10/10 通過，包含截止日拒絕逾期互動、草稿儲存／恢復／發布。
+- [ ] 尚未 commit／push main、跑 GitHub CI／Browser Smoke 或部署；未改 hosted／production。Go-Live 前仍須完成本機加密 staging backup；目前記錄的 `.env.staging` Management API token 曾回覆 HTTP 401，需重驗有效性，匯出尚未產生備份或 hosted write。
 
 ## 2026-10-26 Joy Wall 目標關聯（已同步 main；CI 通過；staging 待發布）
 

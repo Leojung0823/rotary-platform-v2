@@ -84,7 +84,7 @@ CI 與 Browser Smoke 會先執行輕量的 change-scope gate。只有文件／RE
 - **`security definer` 函式必須設 `search_path`**。
 - **有些輔助函式刻意從 `authenticated` 撤銷**（例如 `current_has_club_permission`、`current_can_access_club_events`），它們只給 definer 函式內部使用。需要在 RLS policy 或 Storage policy 用到時，**不要解除撤銷**——另外做一個窄接口的 definer wrapper，只回答呼叫者自己的權限。
 - **Storage 上傳若由瀏覽器直接進行**（為了不讓檔案位元組經過伺服器），那 Storage 的 row policy 就是唯一的授權邊界，必須寫得跟對應領域的權限規則一致。
-- 新功能一律加 **feature flag 且預設 fail closed**。
+- **新功能部署完成後必須自動可用，不得要求管理員再手動開旗標。** 一般功能不要新增 rollout flag；若資料庫 RPC 確實需要 flag 作回復控制，必須在同次 migration 自動建立「預設啟用」的設定列，並留下 system-migration 稽核事件，且同一 migration 要有 verification。旗標只用來緊急停用／回復，不得取代登入、角色、社籍、RLS 或 RPC 權限檢查。既有 `flagsRequiringExplicitEnable` 清單是舊功能的相容例外，不得再加入新 key；不得因這條規則而擅自開啟其他既有 opt-in 功能。
 - 新的資料表／RPC 要有對應的 `supabase/verification/*.sql`，並註冊進 `scripts/database-verification-files.txt`。
 
 驗證檔要測「誰不能做什麼」，不只是「誰可以」：一般社員、外社社員、停權帳號都要涵蓋。
