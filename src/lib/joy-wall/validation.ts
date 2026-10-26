@@ -11,6 +11,7 @@ export const JOY_REQUEST_MAX_BYTES = 12_000;
 export const JOY_POST_MAX_CODE_POINTS = 2_000;
 export const JOY_COMMENT_MAX_CODE_POINTS = 1_000;
 export const JOY_SUGGESTION_MAX_CODE_POINTS = 1_000;
+export const JOY_MAX_ASSOCIATED_TARGETS_PER_TYPE = 5;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -48,7 +49,10 @@ export function decodeJoyCursor(value: string | null) {
 }
 
 export function parseCreateJoyPostBody(value: unknown) {
-  if (!isRecord(value) || !exactKeys(value, ["postType", "title", "content", "visibilityScope", "audienceMembershipIds"])) {
+  if (!isRecord(value) || !exactKeys(value, [
+    "postType", "title", "content", "visibilityScope", "audienceMembershipIds", "eventIds", "rotaryYearIds",
+    "roleKeys", "birthdayCampaignIds",
+  ])) {
     throw new Error("invalid_body");
   }
   if (typeof value.postType !== "string" || !joyCreatablePostTypes.includes(value.postType as (typeof joyCreatablePostTypes)[number])
@@ -67,12 +71,35 @@ export function parseCreateJoyPostBody(value: unknown) {
     || (value.visibilityScope === "private" && audienceMembershipIds.length !== 1)) {
     throw new Error("invalid_body");
   }
+  const parseTargetIds = (targetIds: unknown) => {
+    if (targetIds !== undefined && !Array.isArray(targetIds)) throw new Error("invalid_body");
+    const rawIds = (targetIds ?? []) as unknown[];
+    if (rawIds.length > JOY_MAX_ASSOCIATED_TARGETS_PER_TYPE) throw new Error("invalid_body");
+    const ids = rawIds.map((id) => uuid(id, "invalid_body"));
+    if (new Set(ids).size !== ids.length) throw new Error("invalid_body");
+    return ids;
+  };
+  const eventIds = parseTargetIds(value.eventIds);
+  const rotaryYearIds = parseTargetIds(value.rotaryYearIds);
+  if (value.roleKeys !== undefined && !Array.isArray(value.roleKeys)) throw new Error("invalid_body");
+  const rawRoleKeys = (value.roleKeys ?? []) as unknown[];
+  if (rawRoleKeys.length > JOY_MAX_ASSOCIATED_TARGETS_PER_TYPE) throw new Error("invalid_body");
+  const roleKeys = rawRoleKeys.map((key) => {
+    if (typeof key !== "string" || !/^[a-z][a-z0-9_]{0,39}$/u.test(key)) throw new Error("invalid_body");
+    return key;
+  });
+  if (new Set(roleKeys).size !== roleKeys.length) throw new Error("invalid_body");
+  const birthdayCampaignIds = parseTargetIds(value.birthdayCampaignIds);
   return {
     postType: value.postType as (typeof joyCreatablePostTypes)[number],
     title: title || null,
     content: normalizedText(value.content, JOY_POST_MAX_CODE_POINTS),
     visibilityScope: value.visibilityScope as (typeof joyVisibilityScopes)[number],
     audienceMembershipIds,
+    eventIds,
+    rotaryYearIds,
+    roleKeys,
+    birthdayCampaignIds,
   };
 }
 

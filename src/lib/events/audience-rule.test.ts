@@ -19,6 +19,10 @@ const memberFacingEventReaders = [
   // A write, and the more serious half: the lists never offered a targeted
   // event, but nothing refused a registration for one.
   "set_my_event_registration",
+  // Joy links to an event only when the author can see it, and a post reader
+  // gets its linked title only when that reader can see the same event.
+  "create_joy_post_with_targets",
+  "joy_post_targets_projection",
   // Search: a member asking "which events mention this word" is asking which
   // events exist, so it answers only for the ones addressed to them.
   "search_my_club",

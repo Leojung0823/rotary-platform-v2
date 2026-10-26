@@ -56,6 +56,21 @@ export type JoyPost = {
   reaction_counts: Partial<Record<JoyReactionType, number>>;
   my_reaction: JoyReactionType | null;
   iou: JoyIouProjection | null;
+  targets: JoyPostTarget[];
+};
+
+export type JoyPostTarget = {
+  target_type: "event" | "rotary_year" | "role" | "birthday_campaign";
+  target_id: string;
+  label: string;
+  detail: string | null;
+};
+
+export type JoyTargetOptions = {
+  events: Array<{ id: string; title: string; starts_at: string }>;
+  rotary_years: Array<{ id: string; start_year: number; theme: string | null }>;
+  roles: Array<{ role_key: string; label: string }>;
+  birthday_campaigns: Array<{ id: string; recipient_name: string; birthday_year: number }>;
 };
 
 export type JoyComment = {
@@ -178,6 +193,69 @@ function safeHttpUrl(value: unknown): value is string | null {
   } catch { return false; }
 }
 
+function parseJoyPostTarget(value: unknown): JoyPostTarget {
+  if (!isRecord(value)
+    || (value.target_type !== "event" && value.target_type !== "rotary_year"
+      && value.target_type !== "role" && value.target_type !== "birthday_campaign")
+    || typeof value.target_id !== "string"
+    || typeof value.label !== "string" || value.label.trim().length === 0 || Array.from(value.label).length > 180
+    || (value.detail !== null && typeof value.detail !== "string")
+    || (typeof value.detail === "string" && Array.from(value.detail).length > 180)) {
+    throw new Error("invalid_joy_post_target");
+  }
+  return value as JoyPostTarget;
+}
+
+export function parseJoyTargetOptions(value: unknown): JoyTargetOptions {
+  if (!isRecord(value) || !Array.isArray(value.events) || !Array.isArray(value.rotary_years)
+    || !Array.isArray(value.roles) || !Array.isArray(value.birthday_campaigns)
+    || value.events.length > 200 || value.rotary_years.length > 100
+    || value.roles.length > 10 || value.birthday_campaigns.length > 500) {
+    throw new Error("invalid_joy_target_options");
+  }
+  const events = value.events.map((event): JoyTargetOptions["events"][number] => {
+    if (!isRecord(event) || typeof event.id !== "string"
+      || typeof event.title !== "string" || event.title.trim().length === 0 || Array.from(event.title).length > 160
+      || !isTimestamp(event.starts_at)) throw new Error("invalid_joy_target_options");
+    return { id: event.id, title: event.title, starts_at: event.starts_at };
+  });
+  const rotaryYears = value.rotary_years.map((year): JoyTargetOptions["rotary_years"][number] => {
+    if (!isRecord(year) || typeof year.id !== "string" || typeof year.start_year !== "number"
+      || !Number.isSafeInteger(year.start_year)
+      || Number(year.start_year) < 2000 || Number(year.start_year) > 2200
+      || (year.theme !== null && typeof year.theme !== "string")
+      || (typeof year.theme === "string" && Array.from(year.theme).length > 160)) {
+      throw new Error("invalid_joy_target_options");
+    }
+    return { id: year.id, start_year: Number(year.start_year), theme: year.theme as string | null };
+  });
+  const roles = value.roles.map((role): JoyTargetOptions["roles"][number] => {
+    if (!isRecord(role) || typeof role.role_key !== "string"
+      || !/^[a-z][a-z0-9_]{0,39}$/u.test(role.role_key)
+      || typeof role.label !== "string" || role.label.trim().length === 0 || Array.from(role.label).length > 80) {
+      throw new Error("invalid_joy_target_options");
+    }
+    return { role_key: role.role_key, label: role.label };
+  });
+  const birthdayCampaigns = value.birthday_campaigns.map((campaign): JoyTargetOptions["birthday_campaigns"][number] => {
+    if (!isRecord(campaign) || typeof campaign.id !== "string"
+      || typeof campaign.recipient_name !== "string" || campaign.recipient_name.trim().length === 0
+      || Array.from(campaign.recipient_name).length > 120
+      || typeof campaign.birthday_year !== "number" || !Number.isSafeInteger(campaign.birthday_year)
+      || campaign.birthday_year < 2000 || campaign.birthday_year > 2200) {
+      throw new Error("invalid_joy_target_options");
+    }
+    return { id: campaign.id, recipient_name: campaign.recipient_name, birthday_year: campaign.birthday_year };
+  });
+  if (new Set(events.map((event) => event.id)).size !== events.length
+    || new Set(rotaryYears.map((year) => year.id)).size !== rotaryYears.length
+    || new Set(roles.map((role) => role.role_key)).size !== roles.length
+    || new Set(birthdayCampaigns.map((campaign) => campaign.id)).size !== birthdayCampaigns.length) {
+    throw new Error("invalid_joy_target_options");
+  }
+  return { events, rotary_years: rotaryYears, roles, birthday_campaigns: birthdayCampaigns };
+}
+
 function parseJoyIou(value: unknown): JoyIouProjection {
   if (!isRecord(value)) throw new Error("invalid_joy_iou_projection");
   const statuses: readonly JoyIouStatus[] = ["proposed", "accepted", "declined", "in_progress", "completed", "cancelled"];
@@ -227,6 +305,7 @@ export function parseJoyPost(value: unknown): JoyPost {
       && (!Number.isInteger(value.recipient_count) || Number(value.recipient_count) < 0))
     || (value.can_request_hide !== undefined && typeof value.can_request_hide !== "boolean")
     || (value.hide_request_submitted !== undefined && typeof value.hide_request_submitted !== "boolean")
+    || (value.targets !== undefined && (!Array.isArray(value.targets) || value.targets.length > 20))
     || !Number.isInteger(value.comment_count) || Number(value.comment_count) < 0
     || !isRecord(value.reaction_counts)
     || (value.my_reaction !== null && !isOneOf(joyReactionTypes, value.my_reaction))
@@ -244,6 +323,7 @@ export function parseJoyPost(value: unknown): JoyPost {
     }
     reactions[key] = Number(count);
   }
+  const targets = (value.targets ?? []).map(parseJoyPostTarget);
   return {
     id: value.id,
     post_type: value.post_type,
@@ -270,6 +350,7 @@ export function parseJoyPost(value: unknown): JoyPost {
     reaction_counts: reactions,
     my_reaction: value.my_reaction as JoyReactionType | null,
     iou: value.iou === null ? null : parseJoyIou(value.iou),
+    targets,
   };
 }
 

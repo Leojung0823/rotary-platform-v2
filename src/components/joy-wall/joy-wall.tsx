@@ -10,6 +10,7 @@ import type {
   JoyPostType,
   JoyReactionType,
   JoyReportReason,
+  JoyTargetOptions,
   JoyVisibilityScope,
 } from "@/lib/joy-wall/contracts";
 import type { JoyIouAction } from "@/lib/joy-wall/validation";
@@ -31,6 +32,8 @@ import styles from "./joy-wall.module.css";
 type JoyWallProps = {
   clubId: string;
   audienceMembers: readonly JoyAudienceMember[];
+  targetOptions: JoyTargetOptions;
+  targetOptionsUnavailable: boolean;
   initialPosts: readonly JoyPost[];
   initialCursor: string | null;
   focusedPostId: string | null;
@@ -149,7 +152,9 @@ function defaultCommentType(post: JoyPost): JoyCommentType {
   return post.post_type === "question" && post.can_answer ? "answer" : "comment";
 }
 
-export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, focusedPostId }: JoyWallProps) {
+export function JoyWall({
+  clubId, audienceMembers, targetOptions, targetOptionsUnavailable, initialPosts, initialCursor, focusedPostId,
+}: JoyWallProps) {
   const [posts, setPosts] = useState([...initialPosts]);
   const [cursor, setCursor] = useState(initialCursor);
   const [favoritePosts, setFavoritePosts] = useState<JoyPost[]>([]);
@@ -161,6 +166,10 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
   const [content, setContent] = useState("");
   const [visibilityScope, setVisibilityScope] = useState<JoyVisibilityScope>("club");
   const [audienceIds, setAudienceIds] = useState<string[]>([]);
+  const [targetEventIds, setTargetEventIds] = useState<string[]>([]);
+  const [targetRotaryYearIds, setTargetRotaryYearIds] = useState<string[]>([]);
+  const [targetRoleKeys, setTargetRoleKeys] = useState<string[]>([]);
+  const [targetBirthdayCampaignIds, setTargetBirthdayCampaignIds] = useState<string[]>([]);
   const [iouRecipientId, setIouRecipientId] = useState("");
   const [iouDueOn, setIouDueOn] = useState("");
   const [iouNotes, setIouNotes] = useState<Record<string, string>>({});
@@ -239,13 +248,21 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(isIou
           ? { recipientMembershipId: iouRecipientId, title: title.trim() || null, content, dueOn: iouDueOn || null }
-          : { postType, title: title.trim() || null, content, visibilityScope, audienceMembershipIds: audienceIds }),
+          : {
+            postType, title: title.trim() || null, content, visibilityScope,
+            audienceMembershipIds: audienceIds,
+            eventIds: targetEventIds,
+            rotaryYearIds: targetRotaryYearIds,
+            roleKeys: targetRoleKeys,
+            birthdayCampaignIds: targetBirthdayCampaignIds,
+          }),
       });
       const post = parseJoyPost(await readData<unknown>(response));
       setPosts((current) => [post, ...current]);
       setShowFavorites(false);
       setFilter("all");
       setPostType("blessing"); setTitle(""); setContent(""); setVisibilityScope("club"); setAudienceIds([]);
+      setTargetEventIds([]); setTargetRotaryYearIds([]); setTargetRoleKeys([]); setTargetBirthdayCampaignIds([]);
       setIouRecipientId(""); setIouDueOn("");
       setStateMessage(isIou ? "非現金承諾已送出，只有你和指定社員看得到。" : "已分享。內容只會提供給您選擇的對象。");
     } catch (error) {
@@ -556,6 +573,63 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
               })}</div>}
             {visibilityScope === "selected" && <small>最多選 25 位。已選 {audienceCount} 位。</small>}
           </fieldset>}
+          <fieldset className={styles.targetPicker}>
+            <legend>關聯活動、職務、生日祝福或扶輪年度（選填）</legend>
+            <p className={styles.targetHelp}>關聯只補充分享背景，不會改變閱讀範圍。職務只顯示職稱、不顯示任職社員；生日只列已公開的祝福，且不顯示生日日期。</p>
+            {targetOptionsUnavailable && <p className={styles.muted}>目前無法載入關聯選項；仍可先分享不含關聯的內容。</p>}
+            {targetOptions.events.length > 0 && <div className={styles.targetOptions} aria-label="可關聯活動">
+              {targetOptions.events.map((eventOption) => {
+                const checked = targetEventIds.includes(eventOption.id);
+                return <label key={eventOption.id} className={styles.targetOption}>
+                  <input type="checkbox" checked={checked}
+                    disabled={publishing || (targetEventIds.length >= 5 && !checked)}
+                    onChange={() => setTargetEventIds((current) => checked
+                      ? current.filter((id) => id !== eventOption.id) : [...current, eventOption.id])} />
+                  <span><strong>{eventOption.title}</strong><small>{formatTime(eventOption.starts_at)}</small></span>
+                </label>;
+              })}
+            </div>}
+            {targetOptions.rotary_years.length > 0 && <div className={styles.targetOptions} aria-label="可關聯扶輪年度">
+              {targetOptions.rotary_years.map((year) => {
+                const checked = targetRotaryYearIds.includes(year.id);
+                const label = `${year.start_year}-${String(year.start_year + 1).slice(-2)} 扶輪年度`;
+                return <label key={year.id} className={styles.targetOption}>
+                  <input type="checkbox" checked={checked}
+                    disabled={publishing || (targetRotaryYearIds.length >= 5 && !checked)}
+                    onChange={() => setTargetRotaryYearIds((current) => checked
+                      ? current.filter((id) => id !== year.id) : [...current, year.id])} />
+                  <span><strong>{label}</strong>{year.theme && <small>{year.theme}</small>}</span>
+                </label>;
+              })}
+            </div>}
+            {targetOptions.roles.length > 0 && <div className={styles.targetOptions} aria-label="可關聯職務">
+              {targetOptions.roles.map((role) => {
+                const checked = targetRoleKeys.includes(role.role_key);
+                return <label key={role.role_key} className={styles.targetOption}>
+                  <input type="checkbox" checked={checked}
+                    disabled={publishing || (targetRoleKeys.length >= 5 && !checked)}
+                    onChange={() => setTargetRoleKeys((current) => checked
+                      ? current.filter((key) => key !== role.role_key) : [...current, role.role_key])} />
+                  <span><strong>{role.label}</strong><small>只關聯職務，不記錄由誰擔任</small></span>
+                </label>;
+              })}
+            </div>}
+            {targetOptions.birthday_campaigns.length > 0 && <div className={styles.targetOptions} aria-label="可關聯已公開生日祝福">
+              {targetOptions.birthday_campaigns.map((campaign) => {
+                const checked = targetBirthdayCampaignIds.includes(campaign.id);
+                return <label key={campaign.id} className={styles.targetOption}>
+                  <input type="checkbox" checked={checked}
+                    disabled={publishing || (targetBirthdayCampaignIds.length >= 5 && !checked)}
+                    onChange={() => setTargetBirthdayCampaignIds((current) => checked
+                      ? current.filter((id) => id !== campaign.id) : [...current, campaign.id])} />
+                  <span><strong>{campaign.recipient_name}的生日祝福</strong><small>{campaign.birthday_year} 年度</small></span>
+                </label>;
+              })}
+            </div>}
+            {!targetOptionsUnavailable && targetOptions.events.length === 0 && targetOptions.rotary_years.length === 0
+              && targetOptions.roles.length === 0 && targetOptions.birthday_campaigns.length === 0
+              && <p className={styles.muted}>目前沒有可關聯的活動、職務、已公開生日祝福或扶輪年度。</p>}
+          </fieldset>
         </>}
 
         {stateMessage && <p className={styles.stateMessage} role="status">{stateMessage}</p>}
@@ -613,6 +687,13 @@ export function JoyWall({ clubId, audienceMembers, initialPosts, initialCursor, 
             </header>
             {post.is_hidden && <p className={styles.hiddenNotice}>這則分享已暫時隱藏，只有您和管理幹部可見。</p>}
             <div className={styles.scopeLine}>{scopeLabels[post.visibility_scope]}</div>
+            {post.targets.length > 0 && <ul className={styles.targetChips} aria-label="關聯對象">
+              {post.targets.map((target) => <li key={`${target.target_type}:${target.target_id}`}>
+                <strong>{{ event: "活動", rotary_year: "扶輪年度", role: "職務", birthday_campaign: "生日祝福" }[target.target_type]}</strong>
+                <span>{target.label}</span>
+                {target.detail && <small>{target.detail}</small>}
+              </li>)}
+            </ul>}
             {draft ? <div className={styles.editForm}>
               <label className={styles.field}><span>分享類別</span><select value={draft.postType} onChange={(event) => setEditingDraft({ ...draft, postType: event.target.value as JoyPostType })}>
                 {joyCreatablePostTypes.map((type) => <option key={type} value={type}>{postTypeLabels[type]}</option>)}

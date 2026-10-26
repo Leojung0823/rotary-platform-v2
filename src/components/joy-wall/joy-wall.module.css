@@ -37,6 +37,20 @@
 .radioOption span { display: grid; gap: .18rem; }
 .radioOption small, .audiencePicker small { color: #66798b; line-height: 1.45; }
 .audiencePicker { margin: .75rem 0 0; padding: .8rem; border: 1px solid #dce6ee; border-radius: .85rem; }
+.targetPicker { display: grid; gap: .55rem; margin: .75rem 0 0; padding: .8rem; border: 1px solid #dce6ee; border-radius: .85rem; }
+.targetPicker legend { color: #233a4f; font-weight: 700; }
+.targetHelp { margin: 0; color: #66798b; font-size: .84rem; line-height: 1.5; }
+.targetOptions { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .4rem; max-height: 12rem; overflow: auto; padding: .1rem; }
+.targetOption { display: flex; align-items: flex-start; gap: .5rem; min-width: 0; min-height: 2.75rem; padding: .45rem; border-radius: .55rem; cursor: pointer; }
+.targetOption:hover { background: #f3f7fa; }
+.targetOption input { accent-color: #0876a8; margin-top: .22rem; }
+.targetOption > span { display: grid; gap: .15rem; min-width: 0; }
+.targetOption strong { overflow-wrap: anywhere; font-size: .86rem; }
+.targetOption small { color: #66798b; font-size: .78rem; line-height: 1.35; }
+.targetChips { display: flex; flex-wrap: wrap; gap: .4rem; margin: .25rem 0 .75rem; padding: 0; list-style: none; }
+.targetChips li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem; padding: .35rem .55rem; border: 1px solid #d7e5ec; border-radius: .65rem; background: #f5fafc; color: #38566a; font-size: .8rem; }
+.targetChips strong { color: #09658e; }
+.targetChips small { color: #6b7d8a; }
 .memberOptions { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .4rem; max-height: 14rem; overflow: auto; padding: .15rem; }
 .memberOption { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .35rem; min-width: 0; border-radius: .55rem; cursor: pointer; }
 .memberOption:hover { background: #f3f7fa; }

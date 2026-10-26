@@ -7,7 +7,14 @@ import { EmptyState, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
 import { activeClubCookieName, readActiveClubPreference } from "@/lib/experience-context-cookie";
 import { readClubPermissions } from "@/lib/club-permissions.server";
-import { parseJoyAudienceMembers, parseJoyPost, parseJoyPosts, type JoyPost } from "@/lib/joy-wall/contracts";
+import {
+  parseJoyAudienceMembers,
+  parseJoyPost,
+  parseJoyPosts,
+  parseJoyTargetOptions,
+  type JoyPost,
+  type JoyTargetOptions,
+} from "@/lib/joy-wall/contracts";
 import { encodeJoyCursor, parseJoyPostId } from "@/lib/joy-wall/validation";
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { createClient } from "@/lib/supabase/server";
@@ -79,8 +86,8 @@ async function renderSelectedWall(
     : focusPostId
       ? supabase.rpc("get_my_joy_question_post_with_recipient_actions", { p_club_id: selectedClub.club_id, p_post_id: focusPostId })
       : Promise.resolve({ data: null, error: null });
-  const [postsResult, audienceResult, permissionResult, focusedPostResult] = await Promise.all([
-    supabase.rpc("list_joy_posts_with_recipient_actions", {
+  const [postsResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult] = await Promise.all([
+    supabase.rpc("list_joy_posts_with_targets", {
       p_club_id: selectedClub.club_id,
       p_cursor_created_at: null,
       p_cursor_id: null,
@@ -88,6 +95,7 @@ async function renderSelectedWall(
       p_favorites_only: false,
     }),
     supabase.rpc("list_joy_member_options", { p_club_id: selectedClub.club_id }),
+    supabase.rpc("list_joy_target_options", { p_club_id: selectedClub.club_id }),
     readClubPermissions(selectedClub.club_id),
     focusedPostPromise,
   ]);
@@ -97,6 +105,12 @@ async function renderSelectedWall(
   try {
     const page = parseJoyPosts(postsResult.data);
     const audienceMembers = audienceResult.error ? [] : parseJoyAudienceMembers(audienceResult.data);
+    let targetOptions: JoyTargetOptions = { events: [], rotary_years: [], roles: [], birthday_campaigns: [] };
+    let targetOptionsUnavailable = Boolean(targetOptionsResult.error);
+    if (!targetOptionsUnavailable) {
+      try { targetOptions = parseJoyTargetOptions(targetOptionsResult.data); }
+      catch { targetOptionsUnavailable = true; }
+    }
     const canModerate = permissionResult.ok && permissionResult.permissions.includes("joy.moderate");
     let focusedPost: JoyPost | null = null;
     if (!focusedPostResult.error && focusedPostResult.data) {
@@ -133,6 +147,8 @@ async function renderSelectedWall(
       <JoyWall
         clubId={selectedClub.club_id}
         audienceMembers={audienceMembers}
+        targetOptions={targetOptions}
+        targetOptionsUnavailable={targetOptionsUnavailable}
         initialPosts={initialPosts}
         initialCursor={encodeJoyCursor(page.nextCursor)}
         focusedPostId={focusedPost?.id ?? null}

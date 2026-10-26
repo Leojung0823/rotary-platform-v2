@@ -26,6 +26,38 @@ describe("Joy Wall input validation", () => {
       postType: "blessing", title: "你好", content: "祝你順心", visibilityScope: "private",
       audienceMembershipIds: [memberOne],
     })).toMatchObject({ visibilityScope: "private", audienceMembershipIds: [memberOne] });
+    expect(parseCreateJoyPostBody({
+      postType: "memory", title: null, content: "活動回憶", visibilityScope: "club", audienceMembershipIds: [],
+      eventIds: ["64000000-0000-4000-8000-000000000002"],
+      rotaryYearIds: ["64000000-0000-4000-8000-000000000003"],
+      roleKeys: ["president"],
+      birthdayCampaignIds: ["64000000-0000-4000-8000-000000000004"],
+    })).toMatchObject({
+      eventIds: ["64000000-0000-4000-8000-000000000002"],
+      rotaryYearIds: ["64000000-0000-4000-8000-000000000003"],
+      roleKeys: ["president"],
+      birthdayCampaignIds: ["64000000-0000-4000-8000-000000000004"],
+    });
+    expect(() => parseCreateJoyPostBody({
+      postType: "memory", title: null, content: "活動回憶", visibilityScope: "club", audienceMembershipIds: [],
+      eventIds: ["64000000-0000-4000-8000-000000000002", "64000000-0000-4000-8000-000000000002"],
+    })).toThrow();
+    expect(() => parseCreateJoyPostBody({
+      postType: "memory", title: null, content: "活動回憶", visibilityScope: "club", audienceMembershipIds: [],
+      rotaryYearIds: Array.from({ length: 6 }, (_, index) => `64000000-0000-4000-8000-${String(index + 10).padStart(12, "0")}`),
+    })).toThrow();
+    expect(() => parseCreateJoyPostBody({
+      postType: "memory", title: null, content: "職務回憶", visibilityScope: "club", audienceMembershipIds: [],
+      roleKeys: ["president", "president"],
+    })).toThrow();
+    expect(() => parseCreateJoyPostBody({
+      postType: "memory", title: null, content: "生日祝福", visibilityScope: "club", audienceMembershipIds: [],
+      birthdayCampaignIds: ["not-a-uuid"],
+    })).toThrow();
+    expect(() => parseCreateJoyPostBody({
+      postType: "memory", title: null, content: "無效職務", visibilityScope: "club", audienceMembershipIds: [],
+      roleKeys: ["platform admin"],
+    })).toThrow();
     expect(() => parseCreateJoyPostBody({
       postType: "blessing", title: null, content: "祝福", visibilityScope: "private", audienceMembershipIds: [],
     })).toThrow();

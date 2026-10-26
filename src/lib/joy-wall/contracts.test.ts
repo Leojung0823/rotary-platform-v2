@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { parseJoyPost, parseJoyQuestionBatchDetail, parseJoyQuestionManagerPage, parseJoyQuestionRecipients, parseJoySuggestions } from "./contracts";
+import {
+  parseJoyPost,
+  parseJoyQuestionBatchDetail,
+  parseJoyQuestionManagerPage,
+  parseJoyQuestionRecipients,
+  parseJoySuggestions,
+  parseJoyTargetOptions,
+} from "./contracts";
 
 const basePost = {
   id: "64000000-0000-4000-8000-000000000001",
@@ -70,6 +77,34 @@ describe("Joy Wall response contracts", () => {
     };
     expect(parseJoyPost({ ...basePost, post_type: "iou", iou })).toMatchObject({ post_type: "iou", iou });
     expect(() => parseJoyPost({ ...basePost, post_type: "iou", iou: null })).toThrow("invalid_joy_post_projection");
+  });
+
+  it("validates same-club target option and post-target projections", () => {
+    const options = parseJoyTargetOptions({
+      events: [{ id: "event-1", title: "服務活動", starts_at: "2026-10-28T19:00:00.000Z" }],
+      rotary_years: [{ id: "year-1", start_year: 2026, theme: "團結服務" }],
+      roles: [{ role_key: "president", label: "社長" }],
+      birthday_campaigns: [{ id: "campaign-1", recipient_name: "社員甲", birthday_year: 2026 }],
+    });
+    expect(options.events).toHaveLength(1);
+    expect(options.roles).toEqual([{ role_key: "president", label: "社長" }]);
+    expect(options.birthday_campaigns).toEqual([{ id: "campaign-1", recipient_name: "社員甲", birthday_year: 2026 }]);
+    expect(parseJoyPost({ ...basePost, targets: [{
+      target_type: "event", target_id: "event-1", label: "服務活動", detail: "2026-10-28 19:00",
+    }, {
+      target_type: "role", target_id: "president", label: "社長", detail: null,
+    }, {
+      target_type: "birthday_campaign", target_id: "campaign-1", label: "社員甲的生日祝福", detail: "2026 年",
+    }] }).targets).toHaveLength(3);
+    expect(() => parseJoyTargetOptions({
+      events: [{ id: "event-1", title: "服務活動", starts_at: "invalid" }], rotary_years: [], roles: [], birthday_campaigns: [],
+    })).toThrow("invalid_joy_target_options");
+    expect(parseJoyTargetOptions({ events: [], rotary_years: [], roles: [], birthday_campaigns: [
+      { id: "campaign-1", recipient_name: "社員甲", birthday_year: 2026, birthday_date: "1980-01-01" },
+    ] }).birthday_campaigns).toEqual([{ id: "campaign-1", recipient_name: "社員甲", birthday_year: 2026 }]);
+    expect(() => parseJoyPost({ ...basePost, targets: [{
+      target_type: "event", target_id: "event-1", label: "", detail: null,
+    }] })).toThrow("invalid_joy_post_target");
   });
 
   it("validates manager prompt counts and never accepts editable system prompts", () => {

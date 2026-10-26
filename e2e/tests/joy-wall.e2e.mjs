@@ -54,6 +54,38 @@ test("a member can open Joy Wall, use accessible filters, and choose who may see
   await expect(page.getByRole("radio", { name: /全社社員可見/u })).toHaveCount(0);
 });
 
+test("a member can associate a Joy post with a visible event, active club role, and Rotary year", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const title = `活動年度關聯驗收 ${Date.now()}`;
+  await signIn(page, "e2e-shell-member-manager@example.test");
+  await openJoyWall(page);
+  await page.getByRole("checkbox", { name: /本機下一場服務活動/u }).check();
+  await page.getByRole("checkbox", { name: /社長/u }).check();
+  await page.getByRole("checkbox", { name: /2026-27 扶輪年度/u }).check();
+  await page.getByLabel("一句標題（選填）").fill(title);
+  await page.getByLabel("分享內容").fill("這則分享會保留所屬活動與年度的脈絡。");
+
+  const createResponsePromise = page.waitForResponse((response) =>
+    response.url().includes("/api/v1/joy/posts?") && response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "分享", exact: true }).click();
+  expect((await createResponsePromise).status()).toBe(201);
+
+  const postCard = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(postCard).toBeVisible();
+  const associations = postCard.getByRole("list", { name: "關聯對象" });
+  await expect(associations).toContainText("本機下一場服務活動");
+  await expect(associations).toContainText("社長");
+  await expect(associations).toContainText("2026-27 扶輪年度");
+  await page.reload();
+  const reloadedCard = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(reloadedCard.getByRole("list", { name: "關聯對象" })).toContainText("本機下一場服務活動");
+  await expect(reloadedCard.getByRole("list", { name: "關聯對象" })).toContainText("社長");
+  await expect(reloadedCard.getByRole("list", { name: "關聯對象" })).toContainText("2026-27 扶輪年度");
+});
+
 test("a member can submit an anonymous suggestion and a club officer can review it without seeing its author", async ({ browser, page }, testInfo) => {
   test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");

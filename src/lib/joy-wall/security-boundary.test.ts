@@ -23,6 +23,7 @@ describe("Joy Wall security and UX boundaries", () => {
   const suggestionsRoute = source("app/api/v1/joy/suggestions/route.ts");
   const suggestionItemRoute = source("app/api/v1/joy/suggestions/[suggestionId]/route.ts");
   const suggestionMigration = source("../supabase/migrations/20261026000200_joy_anonymous_suggestions.sql");
+  const targetMigration = source("../supabase/migrations/20261026000300_joy_target_associations.sql");
   const joyPage = source("app/(authenticated)/joy/page.tsx");
   const favoriteMigration = source("../supabase/migrations/20261003000300_joy_post_favorites.sql");
   const recipientActionsMigrationFile = migrationDefining("acknowledge_joy_post_receipt");
@@ -99,9 +100,30 @@ describe("Joy Wall security and UX boundaries", () => {
   it("projects only the caller's favorite state in the initial and focused feed", () => {
     expect(joyPage).toContain("p_favorites_only: false");
     expect(joyPage).toContain('supabase.rpc("get_my_joy_question_post_with_recipient_actions"');
-    expect(joyPage).toContain('supabase.rpc("list_joy_posts_with_recipient_actions"');
+    expect(joyPage).toContain('supabase.rpc("list_joy_posts_with_targets"');
     expect(favoriteMigration).toContain("public.get_my_joy_question_post(p_club_id, p_post_id)");
     expect(favoriteMigration).toContain("favorite.app_account_id = actor_id");
+  });
+
+  it("keeps Joy target associations private and rechecks target-specific access", () => {
+    expect(targetMigration).toContain("alter table public.joy_targets enable row level security");
+    expect(targetMigration).toContain("revoke all on table public.joy_targets from public, anon, authenticated, service_role");
+    expect(targetMigration).toContain("foreign key (event_id, club_id)");
+    expect(targetMigration).toContain("foreign key (rotary_year_id, club_id)");
+    expect(targetMigration).toContain("foreign key (birthday_campaign_id, club_id)");
+    expect(targetMigration).toContain("role_key text references public.role_definitions");
+    expect(targetMigration).toContain("public.event_includes_current_member(event.id)");
+    expect(targetMigration).toContain("public.current_can_access_archive(p_club_id)");
+    expect(targetMigration).toContain("public.joy_visible_birthday_campaigns(p_club_id)");
+    expect(targetMigration).toContain("has_function_privilege(");
+    expect(targetMigration).toContain("'birthday_year', campaigns.birthday_year");
+    expect(targetMigration).not.toContain("'birthday_date', campaigns.birthday_date");
+    expect(targetMigration).toContain("public.current_can_read_joy_post(p_post_id, p_club_id");
+    expect(postsRoute).toContain("p_role_keys: body.roleKeys");
+    expect(postsRoute).toContain("p_birthday_campaign_ids: body.birthdayCampaignIds");
+    expect(component).toContain("只顯示職稱、不顯示任職社員");
+    expect(targetMigration).toContain("public.create_joy_post_with_targets");
+    expect(targetMigration).toContain("public.list_joy_posts_with_targets");
   });
 
   it("limits receipt acknowledgement and hide requests to selected recipients", () => {
