@@ -16,7 +16,7 @@ vi.mock("@/lib/validation", async () => import("../../../lib/validation"));
 
 import * as route from "./route";
 
-const PUBLIC_ORIGIN = "https://rotary-platform-v2.onrender.com";
+const PUBLIC_ORIGIN = "https://rotary-platform-v2-mrha.onrender.com";
 const INTERNAL_ORIGIN = "http://0.0.0.0:10000";
 
 function callbackRequest(query: string) {
