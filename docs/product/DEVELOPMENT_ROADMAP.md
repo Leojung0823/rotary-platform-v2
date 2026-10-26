@@ -2,6 +2,13 @@
 
 更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
+
+- 分支 `codex/joy-recipient-actions` 已合入 `origin/main@1bc35b6` 的本機分支（merge `1179b0e`），包含功能 commit `07de2e0`；目前未推送、未開 PR、未部署。
+- 收件人可私下確認已收到，作者只取得匿名總數；要求幹部隱藏會進既有審核佇列，不會直接隱藏貼文。新增 migration `20261026000100_joy_recipient_actions.sql`、API/UI 與安全驗證，沿用 `joy_wall_v1`，沒有新增旗標或改權限模型。
+- 本機驗證通過：217 檔／1,609 Vitest、typecheck、lint、build、migration guard、85 份 SQL verification manifest、隔離 Supabase migration replay 與 85 份 SQL verification；DB lint 無 error、僅 3 項既有 warning；指定收件人互動 Playwright 1/1 通過。依本次規則未跑 CI／Browser Smoke。
+- 只代表此功能切片在本機完成。尚未同步 GitHub、部署 staging、開啟任何 hosted flag 或做真人驗收；Issue #4 仍有其他開發與發布工作，詳見 `TO-DO-LIST.md`。
+
 ## 2026-10-26 活動單擊報名與首頁活動定位（已部署 staging 並驗收）
 
 - 社員在活動清單／詳情頁點「我要參加、不克參加、待確認」即送出，移除下拉選單與額外送出步驟；失敗回饋、備註、同行人數仍保留，並由既有 RPC 判斷權限及報名期限。

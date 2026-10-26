@@ -3,6 +3,14 @@
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
 
+## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
+
+- 分支 `codex/joy-recipient-actions` 已包含 `origin/main@1bc35b6`（本機 merge commit `1179b0e`）；功能 commit 為 `07de2e0`。本次尚未推送、開 PR 或部署。
+- 新增 `20261026000100_joy_recipient_actions.sql` 與收件人 API/UI：指定收件人可私下確認已收到；作者只能看到匿名收件總數，不能知道哪些收件人已確認。要求幹部隱藏只會送進既有檢舉／審核佇列，不會立即把貼文藏起來。沿用 `joy_wall_v1`，沒有新增旗標或改 hosted 設定。
+- 資料庫安全驗證新增至 `supabase/verification/joy_recipient_actions_security.sql` 並登錄 manifest；收件人、作者、旁觀者及幹部的可見範圍均納入測試。瀏覽器流程由 `e2e/tests/joy-wall.e2e.mjs` 覆蓋。
+- 驗證：typecheck、lint、217 個 Vitest 檔／1,609 tests、build、migration guard、85 份 verification manifest、隔離 Supabase 完整重播與 85 份 SQL verification、`git diff --check` 通過。隔離資料庫 lint 無 error，僅 3 項既有 warning。重建本機合成 fixtures 後，指定 Joy Wall 桌機 E2E 1/1 通過。
+- 沒有跑 CI 或 Browser Smoke（依本次開發規則），沒有連線或修改 hosted／production。這只完成 Issue #4 的一個切片；歡喜牆其他功能、發布與社員驗收仍未完成。
+
 ## 2026-10-26 活動單擊報名與首頁活動定位（staging 已發布並驗收）
 
 - 社員在活動清單或詳情頁選「我要參加／不克參加／待確認」時，按鈕當下就儲存，不再使用下拉選單及第二個送出按鈕。原有備註、同行人數、伺服器權限檢查與 `set_my_event_registration` RPC 保持；取消或不參加會清除同行人數，失敗不顯示假成功。

@@ -1,6 +1,14 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-10-25（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
+
+- [x] 收件人可私下確認已收到；作者只看到匿名總數，無法辨認個別收件人。
+- [x] 收件人可要求幹部隱藏；要求進入既有審核佇列，不會立即隱藏貼文。
+- [x] 新 migration、API/UI、資料庫安全驗證及 manifest 已完成；沿用 `joy_wall_v1`，未新增旗標或改 hosted 設定。
+- [x] 驗證通過：217 檔／1,609 tests、typecheck、lint、build、migration guard、85 份 SQL verification manifest、隔離 Supabase 完整重播與 85 份 SQL verification、指定桌機 E2E 1/1。DB lint 無 error，只有 3 項既有 warning；未跑 CI／Browser Smoke。
+- 本功能目前只在 `codex/joy-recipient-actions` 本機分支，尚未推送／開 PR／部署；沒有 hosted 或 production 變更。整個 Issue #4 仍未完成。
 
 ## 2026-10-25 已完成：時間未定活動與板橋群英活動建檔（staging）
 
@@ -68,7 +76,7 @@
 
 - 非金錢 IOU 核心、社員待辦及主動 LINE 到期／逾期提醒都已進 main；提醒仍未部署 staging，站內提醒未新增。仍待 E-12 備份閘門、staging 部署及真人收訊驗收。
 - 職務、活動、生日專案、扶輪年度等目標；一般貼文截止日、草稿／排程／置頂；匿名建議箱與封鎖互動。批次提問截止日已另列於上方。
-- 回覆「收到／感謝／要求隱藏」、本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
+- 收件人「確認已收到」與「要求幹部隱藏」已於 2026-10-26 在本機分支完成，尚未同步／發布；仍待其他互動回覆（如感謝）、本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
 - 以上屬於 Issue #4 的後續獨立開發，不能由本次本機測試或新頁面存在推定完成；真人、staging、LINE provider／Rich Menu 與 production 待辦仍依本文件後續清單處理。
 
 ## 2026-10-03 全專案進度掃描
