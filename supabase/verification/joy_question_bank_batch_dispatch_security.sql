@@ -54,7 +54,12 @@ insert into public.club_role_assignments (
 select set_config('request.jwt.claim.sub', 'a9100000-0000-4000-8000-000000000001', true);
 insert into public.platform_feature_flags (
   feature_key, enabled, enabled_environments, rollout_percentage, updated_by
-) values ('joy_wall_v1', false, array['local'], 100, 'a9300000-0000-4000-8000-000000000001');
+) values ('joy_wall_v1', false, array['local'], 100, 'a9300000-0000-4000-8000-000000000001')
+on conflict (feature_key) do update
+set enabled = excluded.enabled,
+    enabled_environments = excluded.enabled_environments,
+    rollout_percentage = excluded.rollout_percentage,
+    updated_by = excluded.updated_by;
 
 do $$
 declare

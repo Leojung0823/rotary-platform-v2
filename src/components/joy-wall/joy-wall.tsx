@@ -7,6 +7,7 @@ import type {
   JoyCommentType,
   JoyIouProjection,
   JoyPost,
+  JoyPostDraft,
   JoyPostType,
   JoyReactionType,
   JoyReportReason,
@@ -23,6 +24,7 @@ import {
   parseJoyComment,
   parseJoyComments,
   parseJoyPost,
+  parseJoyPostDraft,
 } from "@/lib/joy-wall/contracts";
 import type { JoyComment } from "@/lib/joy-wall/contracts";
 import { JOY_COMMENT_MAX_CODE_POINTS, JOY_POST_MAX_CODE_POINTS } from "@/lib/joy-wall/validation";
@@ -34,13 +36,18 @@ type JoyWallProps = {
   audienceMembers: readonly JoyAudienceMember[];
   targetOptions: JoyTargetOptions;
   targetOptionsUnavailable: boolean;
+  initialDrafts: readonly JoyPostDraft[];
+  draftsUnavailable: boolean;
   initialPosts: readonly JoyPost[];
+  initialPinnedPosts: readonly JoyPost[];
+  pinnedPostsUnavailable: boolean;
+  canManagePublicPosts: boolean;
   initialCursor: string | null;
   focusedPostId: string | null;
 };
 type Envelope<T> = { data?: T; error?: string };
 type CommentState = { items: JoyComment[]; loaded: boolean };
-type EditingDraft = { postType: JoyPostType; title: string; content: string };
+type EditingDraft = { postType: JoyPostType; title: string; content: string; interactionDeadlineOn: string | null };
 
 const postTypeLabels: Record<JoyPostType, string> = {
   blessing: "祝福",
@@ -91,9 +98,12 @@ async function readData<T>(response: Response): Promise<T> {
 }
 
 function requestFailureMessage(error: unknown, fallback: string) {
-  return error instanceof JoyRequestError && error.message === "rate_limited"
-    ? "操作太頻繁，請稍候再試。"
-    : fallback;
+  if (!(error instanceof JoyRequestError)) return fallback;
+  if (error.message === "rate_limited") return "操作太頻繁，請稍候再試。";
+  if (error.message === "interactions_closed") return "這則分享已截止留言／回答；原有內容仍可閱讀。";
+  if (error.message === "pin_limit_reached") return "最多可置頂 5 則分享；請先取消一則置頂，再試一次。";
+  if (error.message === "pin_not_eligible") return "只能置頂已發布的全社分享；指定對象、私人分享與 IOU 不適用。";
+  return fallback;
 }
 
 function formatTime(value: string) {
@@ -153,9 +163,11 @@ function defaultCommentType(post: JoyPost): JoyCommentType {
 }
 
 export function JoyWall({
-  clubId, audienceMembers, targetOptions, targetOptionsUnavailable, initialPosts, initialCursor, focusedPostId,
+  clubId, audienceMembers, targetOptions, targetOptionsUnavailable, initialDrafts, draftsUnavailable,
+  initialPosts, initialPinnedPosts, pinnedPostsUnavailable, canManagePublicPosts, initialCursor, focusedPostId,
 }: JoyWallProps) {
   const [posts, setPosts] = useState([...initialPosts]);
+  const [pinnedPosts, setPinnedPosts] = useState([...initialPinnedPosts]);
   const [cursor, setCursor] = useState(initialCursor);
   const [favoritePosts, setFavoritePosts] = useState<JoyPost[]>([]);
   const [favoriteCursor, setFavoriteCursor] = useState<string | null>(null);
@@ -164,6 +176,7 @@ export function JoyWall({
   const [postType, setPostType] = useState<JoyPostType>("blessing");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [interactionDeadlineOn, setInteractionDeadlineOn] = useState("");
   const [visibilityScope, setVisibilityScope] = useState<JoyVisibilityScope>("club");
   const [audienceIds, setAudienceIds] = useState<string[]>([]);
   const [targetEventIds, setTargetEventIds] = useState<string[]>([]);
@@ -174,6 +187,8 @@ export function JoyWall({
   const [iouDueOn, setIouDueOn] = useState("");
   const [iouNotes, setIouNotes] = useState<Record<string, string>>({});
   const [publishing, setPublishing] = useState(false);
+  const [drafts, setDrafts] = useState([...initialDrafts]);
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [stateMessage, setStateMessage] = useState<string | null>(null);
@@ -197,6 +212,11 @@ export function JoyWall({
   const activePosts = showFavorites ? favoritePosts : posts;
   const activeCursor = showFavorites ? favoriteCursor : cursor;
   const visiblePosts = useMemo(() => filter === "all" ? activePosts : activePosts.filter((post) => post.post_type === filter), [activePosts, filter]);
+  const feedPosts = useMemo(() => {
+    if (showFavorites || filter !== "all") return visiblePosts;
+    const pinnedIds = new Set(pinnedPosts.map((post) => post.id));
+    return [...pinnedPosts, ...visiblePosts.filter((post) => !pinnedIds.has(post.id))];
+  }, [filter, pinnedPosts, showFavorites, visiblePosts]);
   const audienceCount = audienceIds.length;
   const contentLength = Array.from(content).length;
   const focusedQuestionId = initialPosts.find((post) =>
@@ -244,30 +264,115 @@ export function JoyWall({
     setStateMessage(null);
     try {
       const isIou = postType === "iou";
-      const response = await fetch(endpoint(clubId, isIou ? "/ious" : "/posts"), {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isIou
-          ? { recipientMembershipId: iouRecipientId, title: title.trim() || null, content, dueOn: iouDueOn || null }
-          : {
-            postType, title: title.trim() || null, content, visibilityScope,
-            audienceMembershipIds: audienceIds,
-            eventIds: targetEventIds,
-            rotaryYearIds: targetRotaryYearIds,
-            roleKeys: targetRoleKeys,
-            birthdayCampaignIds: targetBirthdayCampaignIds,
-          }),
-      });
+      let response: Response;
+      if (activeDraftId && !isIou) {
+        const savedDraftResponse = await fetch(endpoint(clubId, "/drafts"), {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(draftPayload(activeDraftId)),
+        });
+        const savedDraft = parseJoyPostDraft(await readData<unknown>(savedDraftResponse));
+        setDrafts((current) => current.map((draft) => draft.id === savedDraft.id ? savedDraft : draft));
+        response = await fetch(endpoint(clubId, `/drafts/${encodeURIComponent(activeDraftId)}/publish`), { method: "POST" });
+      } else {
+        response = await fetch(endpoint(clubId, isIou ? "/ious" : "/posts"), {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(isIou
+            ? { recipientMembershipId: iouRecipientId, title: title.trim() || null, content, dueOn: iouDueOn || null }
+            : {
+              postType, title: title.trim() || null, content, visibilityScope,
+              audienceMembershipIds: audienceIds,
+              eventIds: targetEventIds,
+              rotaryYearIds: targetRotaryYearIds,
+              roleKeys: targetRoleKeys,
+              birthdayCampaignIds: targetBirthdayCampaignIds,
+              interactionDeadlineOn: interactionDeadlineOn || null,
+            }),
+        });
+      }
       const post = parseJoyPost(await readData<unknown>(response));
       setPosts((current) => [post, ...current]);
+      if (activeDraftId) {
+        setDrafts((current) => current.filter((draft) => draft.id !== activeDraftId));
+        setActiveDraftId(null);
+      }
       setShowFavorites(false);
       setFilter("all");
       setPostType("blessing"); setTitle(""); setContent(""); setVisibilityScope("club"); setAudienceIds([]);
+      setInteractionDeadlineOn("");
       setTargetEventIds([]); setTargetRotaryYearIds([]); setTargetRoleKeys([]); setTargetBirthdayCampaignIds([]);
       setIouRecipientId(""); setIouDueOn("");
       setStateMessage(isIou ? "非現金承諾已送出，只有你和指定社員看得到。" : "已分享。內容只會提供給您選擇的對象。");
     } catch (error) {
       setStateMessage(requestFailureMessage(error, "這次沒有送出，請稍後再試；原本內容仍保留在表單裡。"));
     } finally { setPublishing(false); }
+  }
+
+  function draftPayload(draftId: string) {
+    return {
+      draftId, postType, title: title.trim() || null, content, visibilityScope,
+      interactionDeadlineOn: interactionDeadlineOn || null,
+      audienceMembershipIds: audienceIds,
+      eventIds: targetEventIds,
+      rotaryYearIds: targetRotaryYearIds,
+      roleKeys: targetRoleKeys,
+      birthdayCampaignIds: targetBirthdayCampaignIds,
+    };
+  }
+
+  async function saveDraft() {
+    if (postType === "iou" || contentLength > JOY_POST_MAX_CODE_POINTS) return;
+    const draftId = activeDraftId ?? crypto.randomUUID();
+    setPublishing(true);
+    setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, "/drafts"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftPayload(draftId)),
+      });
+      const savedDraft = parseJoyPostDraft(await readData<unknown>(response));
+      setDrafts((current) => current.some((draft) => draft.id === savedDraft.id)
+        ? current.map((draft) => draft.id === savedDraft.id ? savedDraft : draft)
+        : [savedDraft, ...current]);
+      setActiveDraftId(savedDraft.id);
+      setStateMessage("草稿已儲存，只有你看得到；要發布時再按「分享」。");
+    } catch (error) {
+      setStateMessage(requestFailureMessage(error, "草稿沒有儲存，請稍後再試；內容仍留在表單裡。"));
+    } finally { setPublishing(false); }
+  }
+
+  function resumeDraft(draft: JoyPostDraft) {
+    const availableMemberships = new Set(audienceMembers.map((member) => member.membership_id));
+    const availableAudienceIds = draft.audience_membership_ids.filter((id) => availableMemberships.has(id));
+    setActiveDraftId(draft.id);
+    setPostType(draft.post_type);
+    setTitle(draft.title ?? "");
+    setContent(draft.content);
+    setInteractionDeadlineOn(draft.interaction_deadline_on ?? "");
+    setVisibilityScope(draft.visibility_scope);
+    setAudienceIds(availableAudienceIds);
+    setTargetEventIds(draft.event_ids);
+    setTargetRotaryYearIds(draft.rotary_year_ids);
+    setTargetRoleKeys(draft.role_keys);
+    setTargetBirthdayCampaignIds(draft.birthday_campaign_ids);
+    setShowFavorites(false);
+    setStateMessage(availableAudienceIds.length === draft.audience_membership_ids.length
+      ? "已開啟草稿；發布前可再調整閱讀對象與關聯。"
+      : "草稿已開啟；部分原指定社員已不是可選社員，請重新確認閱讀對象後再發布。");
+    document.getElementById("joy-compose-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function deleteDraft(draftId: string) {
+    if (!window.confirm("要刪除這份尚未發布的草稿嗎？")) return;
+    setPendingId(`draft:${draftId}`);
+    setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, `/drafts/${encodeURIComponent(draftId)}`), { method: "DELETE" });
+      await readData<{ deleted: true }>(response);
+      setDrafts((current) => current.filter((draft) => draft.id !== draftId));
+      if (activeDraftId === draftId) setActiveDraftId(null);
+      setStateMessage("草稿已刪除。");
+    } catch (error) { setStateMessage(requestFailureMessage(error, "草稿沒有刪除，請稍後再試。")); }
+    finally { setPendingId(null); }
   }
 
   async function loadMore() {
@@ -339,6 +444,33 @@ export function JoyWall({
       setStateMessage(isFavorite ? "已加入您的收藏；只有您自己看得到。" : "已從您的收藏移除。");
     } catch (error) {
       setStateMessage(requestFailureMessage(error, "收藏狀態沒有更新，請稍後再試。"));
+    } finally { setPendingId(null); }
+  }
+
+  async function togglePinned(post: JoyPost) {
+    const isPinned = !post.is_pinned;
+    setPendingId(`pin:${post.id}`);
+    setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, `/posts/${encodeURIComponent(post.id)}/pin`), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPinned }),
+      });
+      const result = await readData<{ is_pinned: boolean; pinned_at: string | null }>(response);
+      if (result.is_pinned !== isPinned || (isPinned && !result.pinned_at)) {
+        throw new JoyRequestError("invalid_pin_response");
+      }
+      const updatePinState = (items: JoyPost[]) => items.map((item) =>
+        item.id === post.id ? { ...item, is_pinned: result.is_pinned } : item,
+      );
+      setPosts(updatePinState);
+      if (favoritesLoaded) setFavoritePosts(updatePinState);
+      setPinnedPosts((current) => isPinned
+        ? [{ ...post, is_pinned: true }, ...current.filter((item) => item.id !== post.id)].slice(0, 5)
+        : current.filter((item) => item.id !== post.id));
+      setStateMessage(isPinned ? "已置頂；全社社員都會優先看到這則分享。" : "已取消置頂。分享仍保留在原本的時間排序中。");
+    } catch (error) {
+      setStateMessage(requestFailureMessage(error, "置頂狀態沒有更新，請稍後再試。"));
     } finally { setPendingId(null); }
   }
 
@@ -485,7 +617,10 @@ export function JoyWall({
   }
 
   function beginEdit(post: JoyPost) {
-    setEditingId(post.id); setEditingDraft({ postType: post.post_type, title: post.title ?? "", content: post.content });
+    setEditingId(post.id); setEditingDraft({
+      postType: post.post_type, title: post.title ?? "", content: post.content,
+      interactionDeadlineOn: post.interaction_deadline_on,
+    });
     setStateMessage(null);
   }
 
@@ -512,7 +647,11 @@ export function JoyWall({
       <form onSubmit={(event) => void publish(event)}>
         <div className={styles.formRow}>
           <label className={styles.field}><span>分享類別</span>
-            <select value={postType} onChange={(event) => setPostType(event.target.value as JoyPostType)} disabled={publishing}>
+            <select value={postType} onChange={(event) => {
+              const nextType = event.target.value as JoyPostType;
+              setPostType(nextType);
+              if (nextType === "iou") setActiveDraftId(null);
+            }} disabled={publishing}>
               {joyPostTypes.map((type) => <option key={type} value={type}>{postTypeLabels[type]}</option>)}
             </select>
           </label>
@@ -525,6 +664,12 @@ export function JoyWall({
             placeholder={postType === "iou" ? "例如：我會協助你整理活動照片，或幫忙搬運物資……" : "寫下想跟社友分享的祝福、感謝或回憶……"} disabled={publishing} />
         </label>
         <div className={styles.counter} aria-live="polite">{contentLength} / {JOY_POST_MAX_CODE_POINTS}</div>
+
+        {postType !== "iou" && <label className={styles.field}>
+          <span>留言／回答截止日（選填）</span>
+          <input type="date" value={interactionDeadlineOn} onChange={(event) => setInteractionDeadlineOn(event.target.value)} disabled={publishing} />
+          <small className={styles.deadlineHelp}>依台灣日期計算；截止日當天結束後停止新留言與回答，既有內容仍可閱讀。</small>
+        </label>}
 
         {postType === "iou" ? <fieldset className={styles.audiencePicker}>
           <legend>這份承諾是給哪一位社員？</legend>
@@ -635,11 +780,34 @@ export function JoyWall({
         {stateMessage && <p className={styles.stateMessage} role="status">{stateMessage}</p>}
         <div className={styles.composerFooter}>
           <span className={styles.privacyNote}>{postType === "iou" ? "🔒 僅雙方可見；狀態變更會保留紀錄" : "🔒 只在本社內依閱讀範圍顯示"}</span>
+          {postType !== "iou" && <button type="button" className={styles.secondaryButton}
+            disabled={publishing || contentLength > JOY_POST_MAX_CODE_POINTS} onClick={() => void saveDraft()}>
+            {publishing ? "儲存中…" : activeDraftId ? "更新草稿" : "存草稿"}
+          </button>}
           <button type="submit" disabled={publishing || contentLength < 1 || contentLength > JOY_POST_MAX_CODE_POINTS || !audienceValid}>
             {publishing ? "送出中…" : postType === "iou" ? "提出承諾" : "分享"}
           </button>
         </div>
       </form>
+      <section className={styles.drafts} aria-labelledby="joy-drafts-title">
+        <div className={styles.draftsHeader}><h3 id="joy-drafts-title">我的草稿</h3><span>{drafts.length} / 20</span></div>
+        {draftsUnavailable
+          ? <p className={styles.muted}>目前無法載入草稿；請稍後重新整理，草稿不會因此公開。</p>
+          : drafts.length === 0
+            ? <p className={styles.muted}>還沒有草稿。未發布的內容只有你看得到。</p>
+            : <ul className={styles.draftList}>{drafts.map((draft) => <li key={draft.id} className={styles.draftItem}>
+              <div><strong>{draft.title || postTypeLabels[draft.post_type]}</strong>
+                <span>{draft.content.trim() ? `${draft.content.slice(0, 90)}${draft.content.length > 90 ? "…" : ""}` : "尚未填寫內容"}</span>
+                {draft.interaction_deadline_on && <small>留言／回答截止日：{formatDueDate(draft.interaction_deadline_on)}</small>}
+                <small>上次儲存：{formatTime(draft.updated_at)}</small>
+              </div>
+              <div className={styles.draftActions}>
+                <button type="button" onClick={() => resumeDraft(draft)}>繼續編輯</button>
+                <button type="button" className={styles.draftDelete} disabled={pendingId === `draft:${draft.id}`}
+                  onClick={() => void deleteDraft(draft.id)}>{pendingId === `draft:${draft.id}` ? "刪除中…" : "刪除"}</button>
+              </div>
+            </li>)}</ul>}
+      </section>
     </section>
 
     <section className={styles.feed} aria-labelledby="joy-feed-title">
@@ -647,7 +815,7 @@ export function JoyWall({
         <div><p className="eyebrow">社內好事簿</p><h2 id="joy-feed-title">看看大家分享什麼</h2></div>
         <span aria-live="polite" className={styles.postCount}>
           {filter === "all"
-            ? `${showFavorites ? "我的收藏" : "社內動態"} · ${activeCursor ? `已載入 ${activePosts.length} 則` : `${activePosts.length} 則`}`
+            ? `${showFavorites ? "我的收藏" : "社內動態"} · ${activeCursor ? `目前顯示 ${feedPosts.length} 則` : `${feedPosts.length} 則`}`
             : `${visiblePosts.length} 則此類別${activeCursor ? ` · 已載入 ${activePosts.length} 則` : ""}`}
         </span>
       </div>
@@ -660,12 +828,16 @@ export function JoyWall({
         </button>
         {showFavorites && <span className={styles.favoritePrivacy}>收藏只對自己可見</span>}
       </div>
+      {!showFavorites && filter === "all" && pinnedPosts.length > 0
+        && <p className={styles.pinnedHelp}>社務管理幹部置頂的分享會優先顯示；其他分享仍依時間排列。</p>}
+      {!showFavorites && pinnedPostsUnavailable
+        && <p className={styles.pinnedWarning} role="status">置頂分享暫時無法載入；下方一般動態仍可正常瀏覽。</p>}
       <div className={styles.filters} role="group" aria-label="依分享類別篩選">
         <button type="button" aria-pressed={filter === "all"} className={filter === "all" ? styles.filterActive : styles.filter} onClick={() => setFilter("all")}>全部</button>
         {joyPostTypes.map((type) => <button key={type} type="button" className={filter === type ? styles.filterActive : styles.filter}
           aria-pressed={filter === type} onClick={() => setFilter(type)}>{postTypeLabels[type]}</button>)}
       </div>
-      {visiblePosts.length === 0
+      {feedPosts.length === 0
         ? <div className={styles.empty}><span aria-hidden="true">✦</span>
           <strong>{showFavorites ? "您還沒有收藏的分享" : filter === "all" ? "這裡還沒有分享" : "這個類別還沒有分享"}</strong>
           <p>{showFavorites ? "看到想留著的祝福或回憶，按下「收藏」後就能在這裡快速找回。" : filter === "all" ? "留下第一份祝福、感謝或回憶，讓社內的好事被看見。" : "試試其他類別，或回到全部分享。"}</p>
@@ -673,20 +845,29 @@ export function JoyWall({
             ? <button type="button" onClick={() => { setShowFavorites(false); setFilter("all"); }}>回到社內動態</button>
             : filter !== "all" && <button type="button" onClick={() => setFilter("all")}>顯示全部分享</button>}
         </div>
-        : <div className={styles.postList}>{visiblePosts.map((post) => {
+        : <div className={styles.postList}>{feedPosts.map((post) => {
           const postComments = comments[post.id]?.items ?? [];
           const topLevelComments = postComments.filter((comment) => !comment.parent_comment_id);
           const replies = postComments.filter((comment) => comment.parent_comment_id);
           const draft = editingId === post.id ? editingDraft : null;
+          const isAddressedRecipient = post.can_acknowledge_receipt
+            || post.receipt_acknowledged_at !== null
+            || post.can_request_hide
+            || post.hide_request_submitted;
           return <article id={`joy-post-${post.id}`} key={post.id}
             className={`${styles.post} ${post.is_hidden ? styles.hiddenPost : ""} ${focusedPostId === post.id ? styles.focusedPost : ""}`}>
             <header className={styles.postHeader}>
               <Avatar name={post.author_display_name} avatarUrl={post.author_avatar_url} />
               <div className={styles.author}><strong>{post.author_display_name}</strong><span>{formatTime(post.created_at)}{post.updated_at !== post.created_at ? " · 已編輯" : ""}</span></div>
+              {post.is_pinned && <span className={styles.pinnedBadge}>置頂</span>}
               <span className={styles.postType}>{postTypeLabels[post.post_type]}</span>
             </header>
             {post.is_hidden && <p className={styles.hiddenNotice}>這則分享已暫時隱藏，只有您和管理幹部可見。</p>}
             <div className={styles.scopeLine}>{scopeLabels[post.visibility_scope]}</div>
+            {post.interaction_deadline_on && <p className={styles.interactionDeadline}>
+              留言／回答截止日：{formatDueDate(post.interaction_deadline_on)}
+              {!post.interactions_open && <strong> · 已截止，歷史內容仍可閱讀</strong>}
+            </p>}
             {post.targets.length > 0 && <ul className={styles.targetChips} aria-label="關聯對象">
               {post.targets.map((target) => <li key={`${target.target_type}:${target.target_id}`}>
                 <strong>{{ event: "活動", rotary_year: "扶輪年度", role: "職務", birthday_campaign: "生日祝福" }[target.target_type]}</strong>
@@ -700,6 +881,11 @@ export function JoyWall({
               </select></label>
               <label className={styles.field}><span>標題</span><input value={draft.title} maxLength={100} onChange={(event) => setEditingDraft({ ...draft, title: event.target.value })} /></label>
               <label className={styles.field}><span>內容</span><textarea value={draft.content} rows={4} maxLength={JOY_POST_MAX_CODE_POINTS} onChange={(event) => setEditingDraft({ ...draft, content: event.target.value })} /></label>
+              <label className={styles.field}><span>留言／回答截止日（選填）</span>
+                <input type="date" value={draft.interactionDeadlineOn ?? ""}
+                  onChange={(event) => setEditingDraft({ ...draft, interactionDeadlineOn: event.target.value || null })} />
+                <small className={styles.deadlineHelp}>截止日當天結束後停止新留言與回答；既有內容仍可閱讀。</small>
+              </label>
               <div className={styles.actionRow}>
                 <button type="button" className={styles.secondaryButton} onClick={() => { setEditingId(null); setEditingDraft(null); }}>取消</button>
                 <button type="button" disabled={pendingId === `edit:${post.id}`} onClick={() => void saveEdit(post.id)}>{pendingId === `edit:${post.id}` ? "儲存中…" : "儲存修改"}</button>
@@ -743,7 +929,7 @@ export function JoyWall({
             </section>}
             <div className={styles.actions}>
               {!post.is_hidden && !post.iou && <div className={styles.reactions}>
-                {joyReactionTypes.map((reaction) => <button type="button" key={reaction}
+                {joyReactionTypes.filter((reaction) => !(isAddressedRecipient && reaction === "thanks")).map((reaction) => <button type="button" key={reaction}
                   className={post.my_reaction === reaction ? styles.reactionSelected : styles.reaction}
                   aria-pressed={post.my_reaction === reaction} disabled={pendingId === `reaction:${post.id}`}
                   onClick={() => void react(post, reaction)}>
@@ -751,6 +937,13 @@ export function JoyWall({
                 </button>)}
               </div>}
               <div className={styles.actionLinks}>
+                {isAddressedRecipient && !post.is_hidden && <button type="button"
+                  aria-pressed={post.my_reaction === "thanks"}
+                  className={post.my_reaction === "thanks" ? styles.favoriteSelected : undefined}
+                  disabled={pendingId === `reaction:${post.id}`}
+                  onClick={() => void react(post, "thanks")}>
+                  {pendingId === `reaction:${post.id}` ? "送出中…" : post.my_reaction === "thanks" ? "已感謝作者（再點取消）" : "🙏 感謝作者"}
+                </button>}
                 {post.receipt_ack_count !== null && post.recipient_count !== null
                   && post.recipient_count > 0
                   && <span className={styles.recipientActionStatus}>已確認收到 {post.receipt_ack_count}/{post.recipient_count} 位</span>}
@@ -771,6 +964,12 @@ export function JoyWall({
                   disabled={pendingId === `favorite:${post.id}`} onClick={() => void toggleFavorite(post)}>
                   {pendingId === `favorite:${post.id}` ? "更新中…" : post.is_favorited ? "已收藏" : "收藏"}
                 </button>}
+                {canManagePublicPosts && post.visibility_scope === "club" && post.post_type !== "iou" && !post.is_hidden
+                  && <button type="button" aria-pressed={post.is_pinned}
+                    aria-label={post.is_pinned ? "取消置頂分享" : "置頂分享"}
+                    disabled={pendingId === `pin:${post.id}`} onClick={() => void togglePinned(post)}>
+                    {pendingId === `pin:${post.id}` ? "更新中…" : post.is_pinned ? "取消置頂" : "置頂"}
+                  </button>}
                 {!post.is_hidden && !post.iou && <button type="button" onClick={() => void toggleComments(post.id)}>
                   {commentsOpen[post.id] ? "收起留言" : `留言與回應（${post.comment_count}）`}
                 </button>}
@@ -801,10 +1000,10 @@ export function JoyWall({
                 : postComments.length === 0 ? <p className={styles.muted}>還沒有留言，來說第一句鼓勵的話吧。</p>
                   : <div className={styles.commentList}>{topLevelComments.map((comment) => <div key={comment.id}>
                     <CommentItem comment={comment} />
-                    {!post.is_hidden && <button className={styles.replyButton} type="button" onClick={() => setReplyTo({ postId: post.id, commentId: comment.id })}>回覆</button>}
+                    {!post.is_hidden && post.interactions_open && <button className={styles.replyButton} type="button" onClick={() => setReplyTo({ postId: post.id, commentId: comment.id })}>回覆</button>}
                     {replies.filter((reply) => reply.parent_comment_id === comment.id).map((reply) => <CommentItem key={reply.id} comment={reply} reply />)}
                   </div>)}</div>}
-              {!post.is_hidden && <form className={styles.commentForm} onSubmit={(event) => void submitComment(event, post)}>
+              {!post.is_hidden && post.interactions_open && <form className={styles.commentForm} onSubmit={(event) => void submitComment(event, post)}>
                 {replyTo?.postId === post.id && <p className={styles.replying}>正在回覆留言 <button type="button" onClick={() => setReplyTo(null)}>取消回覆</button></p>}
                 <label className={styles.field}><span>留言性質</span><select value={commentTypes[post.id] ?? defaultCommentType(post)}
                   onChange={(event) => setCommentTypes((current) => ({ ...current, [post.id]: event.target.value as JoyCommentType }))}>
@@ -818,6 +1017,9 @@ export function JoyWall({
                   {pendingId === `comment:${post.id}` ? "送出中…" : post.post_type === "question" && (commentTypes[post.id] ?? defaultCommentType(post)) === "answer" ? "送出回答" : "送出留言"}
                 </button>
               </form>}
+              {!post.interactions_open && <p className={styles.interactionClosedNote} role="note">
+                這則分享已截止留言／回答；您仍可閱讀過去的內容。
+              </p>}
             </section>}
           </article>;
         })}</div>}

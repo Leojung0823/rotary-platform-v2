@@ -1,7 +1,51 @@
-# 交接筆記（持續更新；最新核對 2026-10-26；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-10-27；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-10-27 已確認的功能上線規則
+
+- 使用者決定：**未來新功能一律在成功部署後自動可用，不要求人工開啟旗標**。若資料庫 RPC 需要 rollout row，功能 migration 要自動建立預設啟用的 row，並以 `actor_kind='system'` 留 append-only 稽核；緊急停用仍走受保護的既有流程。登入、社籍、角色、RLS 和 RPC 權限不可依賴旗標。
+- 既有 opt-in 功能維持原決定，不因新規則批次打開。Joy Wall 正在首次部署，因此此次加入 `20261027000100_joy_wall_deployment_default.sql`，讓它在 migration 部署後自動可用；若資料庫已有明確停用 row，migration 保留該決定。
+- 根目錄 `AGENTS.md`、`docs/product/ROLLOUT_CONTROLS.md`、`docs/deployment/STAGING_RUNBOOK.md` 與 feature-flag contract test 已同步此規則。
+
+## 2026-10-27 最新接力狀態（本節優先於下方歷史紀錄）
+
+- 收件人「感謝作者」明確按鈕已由 commit `110cb8a` 同步到權威 main。本次本機驗證 typecheck、lint、1,622 tests、build、隔離 DB 91 份 SQL verification、migration／manifest check 與 Playwright 1/1 通過。CI `40393717019`、Browser Smoke `40393717025`、Staging Release plan `40395551148` 對應先前 SHA `0dbe0e8`，不是本次變更的 hosted 驗收；plan 僅 dry-run，未套用 migration 或部署。
+- 目前唯一對應 staging 的 Render 服務是 `srv-da2td2dg1s2s73de3qvg`（`rotary-platform-v2-mrha.onrender.com`），部署 runtime `00f4d07a964a6640359359be6034266ef711543e`。`/api/health` 為 `status=ok`、environment `staging`、configuration/database `true`、`issues=[]`、`warnings=[]`。Joy Wall 新 migrations 尚未部署。
+- E-12 備份仍是 Go-Live 閘門：本機 `.env.staging` 所需欄位已存在，但 exporter 無法通過 staging 專案身份驗證；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403；直接 DB 連線也未成功。沒有備份產物、沒有向 hosted 寫入或上傳，也沒有對 staging／production 資料庫做變更。不可標記 `BACKUP-READY`。
+- E-06 staging warm baseline run `40398701762` 已成功，每頁 3 次；社員首頁中位數 LCP／FCP／TTFB／INP 為 `728／408／377.4／16 ms`，管理首頁為 `636／332／260.6／16 ms`。這是已部署 `00f4d07a` 的基線，不是 `main` 功能 commit `110cb8a` 的修改後比較；原始 trace 未保存。完整樣本與 CDP 摘要見 `docs/product/PERFORMANCE_IMPROVEMENT_LOG.md`。
+- Message Center scheduler environment 尚未建立。此排程開關是獨立的營運控制，不是產品 feature flag；完成 staging 部署與確認送達對象前不要啟動，以免造成意外 LINE 訊息。新功能部署即自動可用的規則不等於自動啟動外部訊息排程。
+- E-03 LINE OA follow 自動配對真人測試已由產品負責人確認驗收完成、可使用；僅限目前已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。較早文件中的 E-03 待驗收文字屬歷史紀錄，詳見 `TO-DO-LIST.md`。
+- 修復 PR #204 Browser Smoke run `40301166962` 觸發的訊息中心草稿問題：選填的公告到期時間留白時，前端原先仍拒絕儲存。現在留白可存、無效日期仍拒絕、排程意圖仍要求排程時間。typecheck、lint、218 檔／1,625 tests、Webpack build、migration／manifest checks、隔離資料庫完整 reset／lint／91 SQL verifications 及訊息中心 E2E 3/3 通過；修正已同步 main，尚未部署 staging。
+- PR #204 仍未合併。它要求 staging 上以專用測試帳號完整驗收 recovery email 至重新登入流程；本機草稿修正不能代替該 hosted 真人驗收，也不會自動合併該 PR。
+- 仍有真人／外部依賴：E-07 iOS／Android 與五位使用者測試、E-11 各社 OA／Rich Menu 手機驗收。E-08 涉及 production，未獲明確授權不操作；E-09 custom SMTP 依既定決策暫緩。
+
+### 本輪收件人感謝作者 UX
+
+- 指定／私人分享收件人可按「感謝作者」；這是既有匿名累計 `thanks` 反應的明確入口，不新建 schema、不發通知，也不新增人工旗標。作者只看到總數，無法辨認是哪位收件人操作。
+- 驗證：typecheck、lint、217 Vitest 檔／1,622 tests、production build、隔離 Supabase DB replay 與全部 91 份 SQL verification、DB lint（3 項既有 warning）、migration guard（以 `main` 為 base）、verification manifest、diff check，以及指定收件人 Playwright E2E 1/1 通過。測試 DB 位於獨立 project／port，完成後已停止並清除；共用本機 DB 未重置。
+- 本次沒有手動啟動 CI／Browser Smoke，也沒有修改 hosted staging／production。部署後會自動可用；staging 發布仍待 E-12 本機加密備份，且要以最新 main SHA 重跑 Release plan。
+
+## 2026-10-27 Joy Wall 草稿與一般貼文截止日整合（已同步 main；staging 待本機備份與 Go-Live）
+
+- 使用者決定新功能成功部署後自動可用，不要求人工開旗標；緊急停用仍保留，既有 opt-in 功能不批次開啟。Joy Wall 以 migration 自動建立啟用 row 並記錄 `system` audit。
+- 整合分支 `codex/joy-wall-deadline-draft-integration` 從 main `508f16e` 建立，包含草稿與截止日整合；原本的 `joy-wall-drafts` dirty worktree 未被修改。Migration 順序是 `000400` 草稿、`000500` 截止日核心、`000600` 草稿發布整合。草稿恢復與發布會保留互動截止日。
+- 功能 commit `4b1083a` 已快轉推上 `main`；CI 發現 Joy Wall SQL verifier 仍假設新旗標預設關閉，修正 commit `81b07fd` 已同步 main，並明確測試「部署預設開啟」和「緊急關閉後不可見」兩種狀態。
+- 驗證完成：typecheck、lint、217 Vitest 檔／1,621 tests、production build、migration guard、90-file verification manifest 與 diff check 通過。獨立 Supabase 專案完整 reset／migration replay、DB lint exit 0（3 項既有 warning）、90 份 SQL verifier 全過；Joy Wall Playwright 10/10 通過。CI `40383993705` 與 Browser Smoke `40383993730` 均以 `81b07fd` 成功。驗證只重置專用 Supabase 專案，未重置共用 54322。
+- Staging Release plan `40386405689` 對 exact SHA `81b07fd` 成功，dry-run 預覽 7 個 migrations；沒有套用 migration、改 staging 資料庫或部署應用程式。此 plan 不是 Go-Live。
+- Go-Live 仍待本機加密 staging logical backup：既有本機 `.env.staging` 的 Supabase Management API token 回 HTTP 401，沒有建立備份。GitHub staging secret 可供 plan 使用，但不能從 GitHub 讀回到本機。先更新本機 `.env.staging` 的 token，依 runbook 完成 local-only 加密匯出；文件同步會推進 main SHA，之後要用最新 SHA 重跑 plan。不要把任何 token 貼在聊天。
+- 本輪沒有修改 hosted staging／production，也沒有改動 production。功能要等受保護的 Staging Go-Live 套用 migration 並部署後才會在 staging 自動可用。
+- Event date-only 的 `event_date_only_v1` 不需重開：較早的接力紀錄記載使用者已由受保護 CLI 開啟，且管理表單已實際出現「時間未定」選項；本輪失敗的是落後主目錄的腳本檢查，沒有變更 hosted flag。
+
+## 2026-10-26 歡喜牆一般貼文截止日（本機驗收完成；尚未整合／發布）
+
+- 使用者已確認：截止日後停止新留言／回答，但仍可閱讀並保留歷史。截止日採台灣日曆日期，當日包含在有效期限內，隔日 00:00 起關閉新增互動。
+- 變更在 `codex/joy-post-deadline`，基礎 `931dd233ce853b30e03b0ef5bd4aaf1a17e7fc6e`。新增 `20261026000500_joy_post_interaction_deadlines.sql`、`joy_post_interaction_deadlines_security.sql`，並修改 Joy Wall 頁面、API、元件、合約、輸入驗證、測試及 verification manifest。前端在期限後隱藏留言／回答入口；server API 與 RPC 同樣拒絕逾期 mutation（HTTP 409／`P0001`），舊內容仍可讀。reaction、favorite、receipt、IOU 不受截止日影響。沿用 `joy_wall_v1`，未新增 flag 或 hosted 設定。
+- 驗證：typecheck、lint、217 Vitest 檔／1,617 tests、Webpack production build、migration guard、88-file verification manifest、`git diff --check` 通過；在獨立 Supabase 專案／連接埠執行完整 DB reset、lint、全部 migrations 與 manifest 內 88 份 SQL verification；指定截止日 Playwright E2E 1/1 通過。共用 54322 本機 DB 未重置。
+- 舊 Staging Release `40297992217` 只對基礎 `931dd23` 執行 dry-run，沒有套用 `000500`。最新 main plan `40317913782`（SHA `508f16e`）已成功完成 migration preview，且不包含本分支的 `000500`；沒有部署、改 hosted／production、跑本分支 CI 或 Browser Smoke。本分支尚未 push／開 PR。
+- 草稿分支目前未提交的 `000400` schema／API／發布 RPC 尚未保存截止日；整合時必須讓截止日隨草稿保存、編輯、讀取與發布，並測試確認發布後日期仍在。
+- **先不要發布此 migration：**平行草稿功能在另一個 worktree 有較早的 `20261026000400`，而該 worktree 有未提交修改。必須先由負責該分支的工作整合 `000400`，再確認 migration 歷史與順序；不要改寫或覆蓋那份工作。最新本功能分支與該 worktree 都由 `931dd23` 分出。
 
 ## 2026-10-26 Joy Wall 目標關聯（已同步 main；CI 通過；staging 待發布）
 
@@ -10,7 +54,7 @@
 - 通過：`npm test`（217 檔／1,616 tests）、typecheck、lint、migration guard、DB verification manifest（87 files）、`git diff --check`；Webpack production build 成功。
 - 完整隔離 DB 驗證已完成：新建專用 Supabase project，重播 160 支 migrations，DB lint exit 0（3 項既有 warning），87 份 SQL verification 全通過；未重置共用 54322 DB。因 repo `verify:db` wrapper 固定使用該共用 port，這次在臨時 project（port 61422）逐步執行相同 reset、lint 及 manifest 全套 SQL。
 - Webpack production build 與 Joy Wall 目標關聯 Playwright 1/1 通過，使用隔離 Supabase 合成帳號／資料。第一次測試因 production mode 未配置本機同源 origin 而回 403；以 `APP_ENV=local` 和明確 localhost origin 重跑後通過，沒有放寬同源檢查。`npm test`（217 檔／1,616 tests）、typecheck、lint、migration guard、87-file manifest、diff check 皆通過。預設 Turbopack build 因共享 `node_modules` symlink 指到另一 worktree而失敗；Webpack build 通過。
-- GitHub CI run `40295780260` 已成功，包含 validate、build 與 database jobs。Browser Smoke run `40295780270` 成功：243 passed、111 skipped；Message Center 排程編輯流程有 1 次 flaky retry 後通過（`tests/message-center.e2e.mjs:107`，與本功能無關）。尚未部署 staging；本輪沒有改 hosted／production，也未開啟任何 hosted flag。舊 Staging Release waiting run `40286231972` 是舊 SHA `6bc9433`，不適用於此 commit。
+- GitHub CI run `40295780260` 已成功，包含 validate、build 與 database jobs。Browser Smoke run `40295780270` 成功：243 passed、111 skipped；Message Center 排程編輯流程有 1 次 flaky retry 後通過（`tests/message-center.e2e.mjs:107`，與本功能無關）。尚未部署 staging；本輪沒有改 hosted／production，也未開啟任何 hosted flag。Staging Release run `40297992217` 已於 2026-10-26 經核准並成功完成，對應 exact SHA `931dd23`，只做 migration dry-run，沒有套 migration 或部署；main 前進後必須重開 plan。舊 run `40286231972` 對應 `6bc9433`，不可沿用。
 - 保留既有未追蹤項目 `rotary-joy-wall/`、`supabase/.gitignore`、`supabase/supabase.lock`；不要納入本次 staging。Go-Live 前需要本機加密 staging backup；已知 `.env.staging` 缺少 staging project ref、access token、DB password，須先由管理者安全補齊後按 runbook 建備份，再用最新 main SHA 做受保護發布。Issue #4 其他待辦與真人 staging 驗收仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 尚未發布）
@@ -20,17 +64,17 @@
 - 幹部可標成「已閱讀，完成處理」或「不需處理」，兩種狀態都留稽核事件；稽核不記建議原文／作者。使用既有 `joy_wall_v1`，新 RPC、同源 API、社務管理權限與每小時五則限流都 fail closed。
 - 新增 migration `20261026000200_joy_anonymous_suggestions.sql`、member／manager UI、API、契約／驗證測試、E2E 案例及 `joy_anonymous_suggestions_security.sql`，manifest 共 86 份。新 migration 已在隔離 Supabase DB 手動套用；匿名、跨社、停權、幹部投影不洩漏作者、稽核、旗標及限流驗證均通過。
 - 驗證已補齊：217 Vitest 檔／1,612 tests、typecheck、lint、migration guard、manifest guard、diff check 通過；`npm run build -- --webpack` 成功。全新隔離 Supabase stack 重播 160 支 migration，86 份 SQL verification 全通過；資料庫 lint exit 0，只有三項既有 warning。沒有對預設本機 DB 執行會 reset 的 `npm run verify:db`。
-- 匿名建議「社員匿名送出→幹部看不到作者並完成處理」的 targeted E2E 已通過；main 的 CI run `40285033235` 通過。Browser Smoke run `40285033200` 仍在執行中。舊的 plan run 已取消，待本次文件同步後以最新 SHA 重開；尚未執行 Go-Live。
-- 本機加密 staging backup 尚未產生。既有 `/Users/leoj/Documents/GitHub/rotary-platform-v2/.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`，不能從 GitHub secrets 讀回值；須先由管理者在本機安全補齊後，才能依 runbook 備份。Issue #4 其他未完成仍包括目標關聯（職務／活動／生日／扶輪年度）、一般貼文截止日、草稿／排程／置頂、封鎖、素材整合與保存政策，以及外部 staging／真人驗收。
-- 下一步：用最新 main SHA 重開 Staging Release plan；Go-Live 前先建立並確認本機加密 backup／可接受 rollback point。完成後才部署 staging。Issue #4 其餘開發與外部驗收仍未完成。
+- 匿名建議「社員匿名送出→幹部看不到作者並完成處理」的 targeted E2E 與 main CI `40285033235` 已通過。Browser Smoke `40285033200` 已取消，不列為通過；後續 SHA `931dd23` 的 Browser Smoke `40295780270` 已成功。Staging Release `40297992217` 已於 2026-10-26 經核准並成功完成，但只對 `931dd23` 執行 migration dry-run，沒有套用 migration 或部署。
+- 本機加密 staging backup 尚未產生。既有 `/Users/leoj/Documents/GitHub/rotary-platform-v2/.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`，須由管理者在本機安全補齊後，依 runbook 備份；不能從 GitHub secrets 讀回值。
+- Issue #4 仍有草稿／排程／置頂、封鎖互動、其他互動回覆、本人同意後的生日／回憶素材整合與歷史保存政策。一般貼文截止日已在 `codex/joy-post-deadline` 本機完成，待先整合較早的草稿 migration `20261026000400`；目標關聯、收件人動作及匿名建議箱已在 main，但尚未完成 staging 發布／真人驗收。
+- 下一步：完成本機加密 staging backup，再依最新 main SHA 重新執行受保護的 Release／Go-Live 流程。Issue #4 其他開發與外部／真人驗收仍未完成。
 
-## 2026-10-26 歡喜牆收件人動作（本機完成；尚未同步／發布）
+## 2026-10-26 歡喜牆收件人動作（已同步 main；staging 待發布／驗收）
 
-- 分支 `codex/joy-recipient-actions` 已包含 `origin/main@1bc35b6`（本機 merge commit `1179b0e`）；功能 commit 為 `07de2e0`。本次尚未推送、開 PR 或部署。
-- 新增 `20261026000100_joy_recipient_actions.sql` 與收件人 API/UI：指定收件人可私下確認已收到；作者只能看到匿名收件總數，不能知道哪些收件人已確認。要求幹部隱藏只會送進既有檢舉／審核佇列，不會立即把貼文藏起來。沿用 `joy_wall_v1`，沒有新增旗標或改 hosted 設定。
-- 資料庫安全驗證新增至 `supabase/verification/joy_recipient_actions_security.sql` 並登錄 manifest；收件人、作者、旁觀者及幹部的可見範圍均納入測試。瀏覽器流程由 `e2e/tests/joy-wall.e2e.mjs` 覆蓋。
-- 驗證：typecheck、lint、217 個 Vitest 檔／1,609 tests、build、migration guard、85 份 verification manifest、隔離 Supabase 完整重播與 85 份 SQL verification、`git diff --check` 通過。隔離資料庫 lint 無 error，僅 3 項既有 warning。重建本機合成 fixtures 後，指定 Joy Wall 桌機 E2E 1/1 通過。
-- 沒有跑 CI 或 Browser Smoke（依本次開發規則），沒有連線或修改 hosted／production。這只完成 Issue #4 的一個切片；歡喜牆其他功能、發布與社員驗收仍未完成。
+- 功能 commit `07de2e0da4754647026fe76d55a5449f961ccbe2` 與 migration `20261026000100_joy_recipient_actions.sql` 已同步 main，沒有為功能另開 PR。
+- 指定收件人可私下確認已收到；作者只能看到匿名收件總數，不能知道哪些收件人已確認。要求幹部隱藏只會送進既有檢舉／審核佇列，不會立即把貼文藏起來。沿用 `joy_wall_v1`，沒有新增旗標或改 hosted 設定。
+- 資料庫安全驗證涵蓋收件人、作者、旁觀者及幹部可見範圍；指定 Joy Wall 桌機 E2E 1/1 通過。完整原始驗證為 217 檔／1,609 tests、typecheck、lint、build、migration guard、85 份 SQL verification、隔離 Supabase replay；後續 main CI `40295780260` 與 Browser Smoke `40295780270` 成功。
+- Staging Release `40297992217` 已核准並成功完成，但只對 SHA `931dd23` 執行 dry-run，未套用 migration 或部署。本機加密 backup 仍未產生；此切片尚未開啟 hosted flag 或完成真人 staging 驗收。
 
 ## 2026-10-26 活動單擊報名與首頁活動定位（staging 已發布並驗收）
 

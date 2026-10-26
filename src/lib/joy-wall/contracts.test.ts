@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   parseJoyPost,
+  parseJoyPostDraft,
+  parseJoyPostDrafts,
   parseJoyQuestionBatchDetail,
   parseJoyQuestionManagerPage,
   parseJoyQuestionRecipients,
@@ -22,6 +24,8 @@ const basePost = {
   can_edit: false,
   can_archive: false,
   can_answer: false,
+  interaction_deadline_on: null,
+  interactions_open: true,
   is_hidden: false,
   comment_count: 0,
   reaction_counts: {},
@@ -30,17 +34,60 @@ const basePost = {
 };
 
 describe("Joy Wall response contracts", () => {
+  it("accepts private, incomplete drafts but rejects IOUs, oversized fields, and unknown identity data", () => {
+    const draft = {
+      id: "64000000-0000-4000-8000-000000000009",
+      post_type: "blessing",
+      title: null,
+      content: "",
+      visibility_scope: "selected",
+      audience_membership_ids: [],
+      event_ids: [],
+      rotary_year_ids: [],
+      role_keys: [],
+      birthday_campaign_ids: [],
+      interaction_deadline_on: "2026-11-30",
+      created_at: "2026-10-26T00:00:00.000Z",
+      updated_at: "2026-10-26T00:00:00.000Z",
+    };
+    expect(parseJoyPostDrafts({ drafts: [draft] })).toEqual([draft]);
+    expect(() => parseJoyPostDraft({ ...draft, post_type: "iou" })).toThrow("invalid_joy_post_draft_projection");
+    expect(() => parseJoyPostDraft({ ...draft, author_app_account_id: "64000000-0000-4000-8000-000000000010" }))
+      .toThrow("invalid_joy_post_draft_projection");
+    expect(() => parseJoyPostDraft({ ...draft, audience_membership_ids: ["not-a-uuid"] }))
+      .toThrow("invalid_joy_post_draft_projection");
+    expect(() => parseJoyPostDraft({ ...draft, interaction_deadline_on: "2026-02-30" }))
+      .toThrow("invalid_joy_post_draft_projection");
+    expect(() => parseJoyPostDrafts({ drafts: Array(21).fill(draft) }))
+      .toThrow("invalid_joy_post_drafts_projection");
+  });
+
   it("requires a server-projected answer capability", () => {
     expect(parseJoyPost(basePost).can_answer).toBe(false);
     expect(parseJoyPost(basePost).is_favorited).toBe(false);
+    expect(parseJoyPost(basePost).is_pinned).toBe(false);
     expect(parseJoyPost(basePost).can_acknowledge_receipt).toBe(false);
     expect(parseJoyPost(basePost).can_request_hide).toBe(false);
     expect(parseJoyPost({ ...basePost, can_answer: true }).can_answer).toBe(true);
     expect(parseJoyPost({ ...basePost, is_favorited: true }).is_favorited).toBe(true);
+    expect(parseJoyPost({ ...basePost, is_pinned: true }).is_pinned).toBe(true);
+    expect(() => parseJoyPost({ ...basePost, is_pinned: "true" })).toThrow("invalid_joy_post_projection");
     const withoutCapability = Object.fromEntries(
       Object.entries(basePost).filter(([key]) => key !== "can_answer"),
     ) as Record<string, unknown>;
     expect(() => parseJoyPost(withoutCapability)).toThrow("invalid_joy_post_projection");
+  });
+
+  it("validates an optional interaction deadline and server-computed closed state", () => {
+    expect(parseJoyPost({
+      ...basePost,
+      interaction_deadline_on: "2026-10-25",
+      interactions_open: false,
+    })).toMatchObject({ interaction_deadline_on: "2026-10-25", interactions_open: false });
+    expect(() => parseJoyPost({ ...basePost, interaction_deadline_on: "2026-02-30" }))
+      .toThrow("invalid_joy_post_projection");
+    expect(() => parseJoyPost({ ...basePost, interactions_open: "false" }))
+      .toThrow("invalid_joy_post_projection");
   });
 
   it("validates private recipient action state without exposing it to other readers", () => {

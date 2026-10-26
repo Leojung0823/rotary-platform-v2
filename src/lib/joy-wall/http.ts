@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { JOY_REQUEST_MAX_BYTES } from "./validation";
 
 const noStoreHeaders = { "Cache-Control": "no-store" };
-export function joyFailure(status = 400) {
-  return NextResponse.json({ error: status === 429 ? "rate_limited" : "request_failed" }, { status, headers: noStoreHeaders });
+export function joyFailure(status = 400, error?: string) {
+  return NextResponse.json({ error: error ?? (status === 429 ? "rate_limited" : "request_failed") }, { status, headers: noStoreHeaders });
 }
 export function joySuccess(data: unknown, status = 200) {
   return NextResponse.json({ data }, { status, headers: noStoreHeaders });
@@ -34,7 +34,10 @@ export async function readJoyJson(request: NextRequest) {
 export async function joyDeleteHasNoBody(request: NextRequest) {
   return hasEmptyBody(request, JOY_REQUEST_MAX_BYTES);
 }
-export function joyRpcFailure(error: { code?: string | null } | null) {
+export function joyRpcFailure(error: { code?: string | null; message?: string | null } | null) {
+  if (error?.message === "joy_post_interactions_closed") return joyFailure(409, "interactions_closed");
+  if (error?.message === "joy_pin_limit_reached") return joyFailure(409, "pin_limit_reached");
+  if (error?.message === "joy_post_not_pin_eligible") return joyFailure(400, "pin_not_eligible");
   if (error?.code === "22023") return joyFailure(400);
   if (error?.code === "54000") return joyFailure(429);
   if (error?.code === "P0002") return joyFailure(404);

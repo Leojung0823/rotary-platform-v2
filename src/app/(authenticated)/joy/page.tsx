@@ -11,8 +11,10 @@ import {
   parseJoyAudienceMembers,
   parseJoyPost,
   parseJoyPosts,
+  parseJoyPostDrafts,
   parseJoyTargetOptions,
   type JoyPost,
+  type JoyPostDraft,
   type JoyTargetOptions,
 } from "@/lib/joy-wall/contracts";
 import { encodeJoyCursor, parseJoyPostId } from "@/lib/joy-wall/validation";
@@ -84,27 +86,45 @@ async function renderSelectedWall(
   const focusedPostPromise = focusIouId
     ? supabase.rpc("get_my_joy_iou_post", { p_club_id: selectedClub.club_id, p_post_id: focusIouId })
     : focusPostId
-      ? supabase.rpc("get_my_joy_question_post_with_recipient_actions", { p_club_id: selectedClub.club_id, p_post_id: focusPostId })
+      ? supabase.rpc("get_my_joy_question_post_with_interaction_deadline", { p_club_id: selectedClub.club_id, p_post_id: focusPostId })
       : Promise.resolve({ data: null, error: null });
-  const [postsResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult] = await Promise.all([
-    supabase.rpc("list_joy_posts_with_targets", {
+  const [postsResult, pinnedResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult, draftsResult] = await Promise.all([
+    supabase.rpc("list_joy_posts_with_interaction_deadlines", {
       p_club_id: selectedClub.club_id,
       p_cursor_created_at: null,
       p_cursor_id: null,
       p_limit: 20,
       p_favorites_only: false,
     }),
+    supabase.rpc("list_pinned_joy_posts", { p_club_id: selectedClub.club_id }),
     supabase.rpc("list_joy_member_options", { p_club_id: selectedClub.club_id }),
     supabase.rpc("list_joy_target_options", { p_club_id: selectedClub.club_id }),
     readClubPermissions(selectedClub.club_id),
     focusedPostPromise,
+    supabase.rpc("list_my_joy_post_drafts", { p_club_id: selectedClub.club_id }),
   ]);
   if (postsResult.error) {
     return <Notice tone="error">歡喜牆內容目前無法載入，請稍後再試。</Notice>;
   }
   try {
     const page = parseJoyPosts(postsResult.data);
+    let initialPinnedPosts: JoyPost[] = [];
+    let pinnedPostsUnavailable = Boolean(pinnedResult.error);
+    if (!pinnedPostsUnavailable) {
+      try {
+        initialPinnedPosts = parseJoyPosts(pinnedResult.data).posts;
+        if (initialPinnedPosts.length > 5 || initialPinnedPosts.some((post) =>
+          !post.is_pinned || post.visibility_scope !== "club" || post.post_type === "iou" || post.is_hidden
+        )) throw new Error("invalid_pinned_joy_posts");
+      } catch { pinnedPostsUnavailable = true; initialPinnedPosts = []; }
+    }
     const audienceMembers = audienceResult.error ? [] : parseJoyAudienceMembers(audienceResult.data);
+    let initialDrafts: JoyPostDraft[] = [];
+    let draftsUnavailable = Boolean(draftsResult.error);
+    if (!draftsUnavailable) {
+      try { initialDrafts = parseJoyPostDrafts(draftsResult.data); }
+      catch { draftsUnavailable = true; }
+    }
     let targetOptions: JoyTargetOptions = { events: [], rotary_years: [], roles: [], birthday_campaigns: [] };
     let targetOptionsUnavailable = Boolean(targetOptionsResult.error);
     if (!targetOptionsUnavailable) {
@@ -149,7 +169,12 @@ async function renderSelectedWall(
         audienceMembers={audienceMembers}
         targetOptions={targetOptions}
         targetOptionsUnavailable={targetOptionsUnavailable}
+        initialDrafts={initialDrafts}
+        draftsUnavailable={draftsUnavailable}
         initialPosts={initialPosts}
+      initialPinnedPosts={initialPinnedPosts}
+      pinnedPostsUnavailable={pinnedPostsUnavailable}
+      canManagePublicPosts={canModerate && mode === "management"}
         initialCursor={encodeJoyCursor(page.nextCursor)}
         focusedPostId={focusedPost?.id ?? null}
       />

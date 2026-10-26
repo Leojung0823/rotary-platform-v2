@@ -15,6 +15,7 @@ import {
 import { AudiencePicker, type AudienceMember, type AudienceTag } from "@/components/audience/audience-picker";
 import { emptyAudienceSelection, type AudienceSelection } from "@/lib/audience/selection";
 import { describeMessagePushOutcome } from "@/lib/line/message-push-outcome";
+import { normalizeMessageDraftDateTimes } from "@/lib/message-center/draft-date-time";
 import type {
   ClubMessage,
   ClubMessageLifecycle,
@@ -355,19 +356,13 @@ export function MessageCenter({
     formData.set("draftIntent", intent);
     const expiresLocal = String(formData.get("expiresLocal") ?? "");
     const scheduledLocal = String(formData.get("scheduledLocal") ?? "");
-    const toIso = (value: string) => {
-      if (!value) return "";
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? null : date.toISOString();
-    };
-    const expiresAt = toIso(expiresLocal);
-    const scheduledAt = intent === "schedule" ? toIso(scheduledLocal) : "";
-    if (expiresAt === null || scheduledAt === null || (intent === "schedule" && !scheduledAt)) {
+    const dateTimes = normalizeMessageDraftDateTimes(expiresLocal, scheduledLocal, intent);
+    if (!dateTimes.ok) {
       setStateMessage("請確認到期時間與排程時間有效；排程時間必須填寫且在未來。 ");
       return;
     }
-    formData.set("expiresAt", expiresAt);
-    formData.set("scheduledAt", scheduledAt);
+    formData.set("expiresAt", dateTimes.expiresAt);
+    formData.set("scheduledAt", dateTimes.scheduledAt);
 
     setSavingDraft(true);
     setStateMessage(null);

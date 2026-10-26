@@ -38,23 +38,25 @@ The only accepted keys are:
 - `blessing_iou_collections_v1`
 - `blessing_iou_reporting_v1`
 
-A key with no database record resolves to **enabled** (`default_enabled`): every feature the
-platform has already shipped is meant to be available, and requiring a row before anyone can use
-it left finished work invisible. The exception is `flagsRequiringExplicitEnable` in
-`src/lib/product/feature-flags.ts` — currently `announcements_v09` — where absence resolves to
-**disabled** (`missing_configuration`), so a feature nobody has seen yet does not go live merely
-by being deployed. Turn one on with `npm run flags:enable <key>`, which goes through the audited
-RPC like any other rollout change.
+A key with no database record resolves to **enabled** (`default_enabled`) unless it is in the
+legacy `flagsRequiringExplicitEnable` compatibility list. Product decision dated 2026-10-27:
+every newly deployed feature must be available automatically; no follow-up human enable step is
+allowed. Do not add new keys to that legacy list. If a new database RPC requires a flag row, its
+deployment migration seeds an enabled row for the intended environments and records the actor as
+`system` in the append-only audit. Existing opt-in keys remain unchanged unless a separate release
+explicitly changes them. The protected `npm run flags:disable <key>` path remains available for an
+authorized emergency rollback; permission checks never depend on UI visibility or the flag alone.
 
 The evaluator has this fixed order:
 
-| Order | Condition | Result when not satisfied |
+| Order | Check | Behavior when the check fails or value is absent |
 | --- | --- | --- |
-| 1 | Corresponding exact-value kill switch is not `true` | disabled |
-| 2 | A valid database record exists | disabled |
-| 3 | `enabled` is true | disabled |
-| 4 | server-only `APP_ENV` is `local`, `staging`, or `production` and appears in `enabled_environments` | disabled |
-| 5 | HMAC rollout bucket is below `rollout_percentage` | disabled |
+| 1 | Exact-value emergency kill switch | `true` disables; malformed values fail closed |
+| 2 | Database flag read | Read errors fail closed |
+| 3 | Flag row | Missing legacy opt-in rows stay disabled; missing rows for other features default enabled only in a recognized environment |
+| 4 | Explicit row validity and `enabled` value | Malformed or disabled records fail closed |
+| 5 | Server-only `APP_ENV` is recognized and allowed by `enabled_environments` | Invalid or unlisted environments fail closed |
+| 6 | HMAC rollout bucket is below `rollout_percentage` | Missing identity/pepper or an out-of-bucket subject stays disabled |
 
 Malformed kill-switch values, invalid records, invalid environment data, database-read errors, absent pepper, absent subject, and HMAC errors all fail closed. `0` enables nobody and `100` enables every otherwise eligible subject. Failure selects the existing legacy path through `selectFeaturePath`; it does not turn a safe legacy page into a 500.
 

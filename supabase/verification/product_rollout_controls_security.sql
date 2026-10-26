@@ -110,6 +110,7 @@ begin
     from public.platform_feature_flag_audit as audit
     where audit.feature_key = 'role_context_v2'
       and audit.action_type = 'created'
+      and audit.actor_kind = 'user'
       and audit.actor_identifier_snapshot = '93000000-0000-4000-8000-000000000001'
       and audit.after_configuration = jsonb_build_object(
         'feature_key', 'role_context_v2',
@@ -118,7 +119,7 @@ begin
         'rollout_percentage', 25
       )
   ) then
-    raise exception 'feature-flag create audit or immutable actor snapshot is missing';
+    raise exception 'feature-flag create audit or user actor snapshot is missing';
   end if;
   if not exists (select 1 from public.platform_feature_flag_audit where action_type = 'disabled')
     or not exists (select 1 from public.platform_feature_flag_audit where action_type = 'enabled_environments_changed')

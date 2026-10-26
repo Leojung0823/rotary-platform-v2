@@ -18,6 +18,17 @@ async function openJoyWall(page) {
   await expect(page.getByRole("heading", { name: "分享一份歡喜" })).toBeVisible();
 }
 
+function todayInTaipei() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+}
+
+function yesterdayInTaipei() {
+  const [year, month, day] = todayInTaipei().split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
+}
+
 test("a member can open Joy Wall, use accessible filters, and choose who may see a share", async ({ page }) => {
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
 
@@ -52,6 +63,68 @@ test("a member can open Joy Wall, use accessible filters, and choose who may see
   await expect(page.getByLabel("希望完成日期（選填）")).toBeVisible();
   await expect(page.getByRole("button", { name: "提出承諾" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /全社社員可見/u })).toHaveCount(0);
+});
+
+test("a post deadline closes new answers but keeps prior discussion readable", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const title = `留言截止日驗收 ${Date.now()}`;
+  const oldAnswer = `截止前回答 ${Date.now()}`;
+  await signIn(page, "e2e-shell-member-manager@example.test");
+  await openJoyWall(page);
+
+  await page.locator('section[aria-labelledby="joy-compose-title"] select').first().selectOption("question");
+  await page.getByLabel("一句標題（選填）").fill(title);
+  await page.getByLabel("分享內容").fill("截止後仍保留已經留下的回答。 ");
+  await page.getByLabel("留言／回答截止日（選填）").fill(todayInTaipei());
+  let clubId = null;
+  const createResponsePromise = page.waitForResponse((response) => {
+    if (!response.url().includes("/api/v1/joy/posts?") || response.request().method() !== "POST") return false;
+    clubId = new URL(response.url()).searchParams.get("club_id");
+    return true;
+  });
+  await page.getByRole("button", { name: "分享", exact: true }).click();
+  expect((await createResponsePromise).status()).toBe(201);
+  expect(clubId).toMatch(/^[0-9a-f-]{36}$/iu);
+
+  const card = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(card).toBeVisible();
+  const postId = (await card.getAttribute("id")).replace("joy-post-", "");
+  const stableCard = page.locator(`#joy-post-${postId}`);
+  await stableCard.getByRole("button", { name: /留言與回應/u }).click();
+  await stableCard.getByLabel("寫下回應").fill(oldAnswer);
+  const answerResponsePromise = page.waitForResponse((response) =>
+    response.url().includes("/comments?") && response.request().method() === "POST",
+  );
+  await stableCard.getByRole("button", { name: "送出回答" }).click();
+  expect((await answerResponsePromise).status()).toBe(201);
+  await expect(stableCard.getByText(oldAnswer, { exact: true })).toBeVisible();
+
+  await stableCard.getByRole("button", { name: "編輯" }).click();
+  const editDeadline = stableCard.locator('input[type="date"]');
+  await expect(editDeadline).toHaveCount(1);
+  await expect(editDeadline).toHaveAccessibleName(/留言／回答截止日/u);
+  await editDeadline.fill(yesterdayInTaipei());
+  const updateResponsePromise = page.waitForResponse((response) =>
+    response.url().includes(`/api/v1/joy/posts/`) && response.request().method() === "PATCH",
+  );
+  await stableCard.getByRole("button", { name: "儲存修改" }).click();
+  expect((await updateResponsePromise).status()).toBe(200);
+  await expect(stableCard.getByText(/已截止，歷史內容仍可閱讀/u)).toBeVisible();
+  await expect(stableCard.getByLabel("寫下回應")).toHaveCount(0);
+  await expect(stableCard.getByText(oldAnswer, { exact: true })).toBeVisible();
+
+  const lateResponse = await page.evaluate(async ({ clubId, postId }) => {
+    const response = await fetch(`/api/v1/joy/posts/${encodeURIComponent(postId)}/comments?club_id=${encodeURIComponent(clubId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parentCommentId: null, commentType: "answer", content: "逾期回答不應成立。" }),
+    });
+    return { status: response.status, body: await response.json() };
+  }, { clubId, postId });
+  expect(lateResponse).toMatchObject({ status: 409, body: { error: "interactions_closed" } });
+  await expect(stableCard.getByText(oldAnswer, { exact: true })).toBeVisible();
 });
 
 test("a member can associate a Joy post with a visible event, active club role, and Rotary year", async ({ page }, testInfo) => {
@@ -159,6 +232,121 @@ test("a member can privately save a post and find it again in My Favorites", asy
 
   await views.getByRole("button", { name: "社內動態" }).click();
   await expect(page.getByRole("article").filter({ hasText: title }).first()).toBeVisible();
+});
+
+test("a manager can pin a public share and members can see it but cannot manage pins", async ({ browser, page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  test.setTimeout(45_000);
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const newerTitle = `一般分享 ${Date.now()}`;
+  const pinnedTitle = `管理置頂 ${Date.now()}`;
+  const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  try {
+    await signIn(page, "e2e-shell-member-manager@example.test");
+    await page.goto(new URL("/joy?mode=management", baseURL).toString());
+    const managerLink = page.getByRole("link", { name: "題庫與派題" });
+    await expect(managerLink).toBeVisible();
+    const managerHref = await managerLink.getAttribute("href");
+    const clubId = new URL(managerHref ?? "", baseURL).pathname.match(/\/clubs\/([^/]+)\/joy\/questions/u)?.[1];
+    expect(clubId).toMatch(/^[0-9a-f-]{36}$/iu);
+
+    await page.getByLabel("一句標題（選填）").fill(newerTitle);
+    await page.getByLabel("分享內容").fill("這則較新的分享用來確認置頂會排在前面。");
+    const firstCreate = page.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/posts?") && response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "分享", exact: true }).click();
+    expect((await firstCreate).status()).toBe(201);
+
+    await page.getByLabel("一句標題（選填）").fill(pinnedTitle);
+    await page.getByLabel("分享內容").fill("幹部置頂後，全社社員都能優先看到這份公開分享。");
+    const secondCreate = page.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/posts?") && response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "分享", exact: true }).click();
+    expect((await secondCreate).status()).toBe(201);
+
+    const pinnedCard = page.getByRole("article").filter({ hasText: pinnedTitle }).first();
+    await expect(pinnedCard).toBeVisible();
+    const pinResponse = page.waitForResponse((response) =>
+      response.url().includes("/pin?") && response.request().method() === "POST",
+    );
+    await pinnedCard.getByRole("button", { name: "置頂分享" }).click();
+    expect((await pinResponse).status()).toBe(200);
+    await expect(pinnedCard.getByText("置頂", { exact: true })).toBeVisible();
+    await expect(page.getByRole("article").first()).toContainText(pinnedTitle);
+
+    const ordinaryMember = await memberContext.newPage();
+    await signIn(ordinaryMember, memberEmail);
+    await ordinaryMember.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
+    const memberPinnedCard = ordinaryMember.getByRole("article").filter({ hasText: pinnedTitle }).first();
+    await expect(memberPinnedCard.getByText("置頂", { exact: true })).toBeVisible();
+    await expect(memberPinnedCard.getByRole("button", { name: "置頂分享" })).toHaveCount(0);
+    const postId = (await pinnedCard.getAttribute("id")).replace("joy-post-", "");
+    const directAttempt = await ordinaryMember.evaluate(async ({ clubId, postId }) => {
+      const response = await fetch(`/api/v1/joy/posts/${encodeURIComponent(postId)}/pin?club_id=${encodeURIComponent(clubId)}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isPinned: false }),
+      });
+      return response.status;
+    }, { clubId, postId });
+    expect(directAttempt).toBe(403);
+  } finally {
+    await memberContext.close();
+  }
+});
+
+test("a member can keep a Joy draft private, resume it, and publish it", async ({ browser, page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const title = `私人歡喜草稿 ${Date.now()}`;
+  const firstContent = "這段內容還沒有發布，只有草稿作者可以看見。";
+  const finalContent = "草稿完成編輯後才會出現在社員牆面。";
+  const interactionDeadline = "2026-11-30";
+  await signIn(page, "e2e-shell-member-manager@example.test");
+  await openJoyWall(page);
+  await page.getByLabel("一句標題（選填）").fill(title);
+  await page.getByLabel("分享內容").fill(firstContent);
+  await page.getByLabel("留言／回答截止日（選填）").fill(interactionDeadline);
+  const saveResponsePromise = page.waitForResponse((response) =>
+    response.url().includes("/api/v1/joy/drafts?") && response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "存草稿" }).click();
+  const saveResponse = await saveResponsePromise;
+  expect(saveResponse.status()).toBe(200);
+  const clubId = new URL(saveResponse.url()).searchParams.get("club_id");
+  expect(clubId).toMatch(/^[0-9a-f-]{36}$/iu);
+  const ownDraft = page.getByRole("listitem").filter({ hasText: title });
+  await expect(ownDraft).toBeVisible();
+
+  const bystanderContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  try {
+    const bystander = await bystanderContext.newPage();
+    await signIn(bystander, memberEmail);
+    await bystander.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
+    await expect(bystander.getByRole("heading", { name: "分享一份歡喜" })).toBeVisible();
+    await expect(bystander.getByText(title, { exact: true })).toHaveCount(0);
+    await expect(bystander.getByText(firstContent, { exact: true })).toHaveCount(0);
+    await expect(bystander.getByText("還沒有草稿。未發布的內容只有你看得到。")).toBeVisible();
+  } finally {
+    await bystanderContext.close();
+  }
+
+  await ownDraft.getByRole("button", { name: "繼續編輯" }).click();
+  await expect(page.getByLabel("留言／回答截止日（選填）")).toHaveValue(interactionDeadline);
+  await page.getByLabel("分享內容").fill(finalContent);
+  const publishResponsePromise = page.waitForResponse((response) =>
+    response.url().includes("/api/v1/joy/drafts/") && response.url().includes("/publish?")
+      && response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "分享", exact: true }).click();
+  const publishResponse = await publishResponsePromise;
+  expect(publishResponse.status()).toBe(201);
+  const publishedCard = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(publishedCard.getByText(finalContent, { exact: true })).toBeVisible();
+  await expect(publishedCard.getByText(/留言／回答截止日：/u)).toBeVisible();
+  await expect(page.getByText("還沒有草稿。未發布的內容只有你看得到。")).toBeVisible();
 });
 
 test("a private non-cash IOU needs acceptance and two separate completion confirmations", async ({
@@ -436,6 +624,15 @@ test("selected recipients can acknowledge receipt and request officer review wit
     expect((await receiptResponsePromise).status()).toBe(200);
     await expect(receivedCard.getByText("你已確認收到")).toBeVisible();
 
+    const thankAuthorButton = receivedCard.getByRole("button", { name: /感謝作者/u });
+    await expect(thankAuthorButton).toBeVisible();
+    const thanksResponsePromise = recipient.waitForResponse((response) =>
+      response.url().includes("/reaction?") && response.request().method() === "POST",
+    );
+    await thankAuthorButton.click();
+    expect((await thanksResponsePromise).status()).toBe(200);
+    await expect(thankAuthorButton).toHaveAttribute("aria-pressed", "true");
+
     const bystander = await bystanderContext.newPage();
     await signIn(bystander, memberEmail);
     await bystander.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
@@ -454,6 +651,8 @@ test("selected recipients can acknowledge receipt and request officer review wit
     const authorCard = page.getByRole("article").filter({ hasText: title }).first();
     await expect(authorCard.getByText("已確認收到 1/1 位")).toBeVisible();
     await expect(authorCard.getByText("你已確認收到")).toHaveCount(0);
+    await expect(authorCard.getByRole("button", { name: /感謝作者/u })).toHaveCount(0);
+    await expect(authorCard.getByRole("button", { name: /🙏 感謝/u })).toContainText("1");
 
     await page.goto(new URL(`/clubs/${clubId}/joy/moderation?mode=management`, baseURL).toString());
     const moderationCard = page.getByRole("article").filter({ hasText: title }).first();

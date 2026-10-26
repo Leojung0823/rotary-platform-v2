@@ -6,6 +6,19 @@
   box-shadow: 0 8px 28px rgb(18 48 76 / 5%);
 }
 .composer { padding: clamp(1rem, 3vw, 1.5rem); }
+.drafts { display: grid; gap: .65rem; margin-top: 1.1rem; padding-top: .9rem; border-top: 1px solid #edf1f4; }
+.draftsHeader { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.draftsHeader h3 { margin: 0; color: #263e52; font-size: .98rem; }
+.draftsHeader span, .draftItem small { color: #718294; font-size: .78rem; }
+.draftList { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.draftItem { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-width: 0; padding: .7rem .8rem; border: 1px solid #e0e8ee; border-radius: .8rem; background: #fbfdfe; }
+.draftItem > div:first-child { display: grid; gap: .2rem; min-width: 0; }
+.draftItem strong { color: #233a4f; font-size: .9rem; }
+.draftItem span { overflow-wrap: anywhere; color: #526a7c; font-size: .84rem; }
+.draftActions { display: flex; flex: 0 0 auto; gap: .45rem; }
+.draftActions button { min-height: 2.75rem; border: 1px solid #cedbe4; border-radius: 999px; padding: .45rem .8rem; background: #fff; color: #176789; font: inherit; font-size: .82rem; font-weight: 650; cursor: pointer; }
+.draftActions .draftDelete { color: #875252; }
+.draftActions button:disabled { opacity: .55; cursor: wait; }
 .sectionIntro, .feedHeader { display: flex; align-items: center; gap: .9rem; }
 .sectionIntro { margin-bottom: 1.2rem; }
 .sectionIntro h2, .feedHeader h2 { margin: 0; }
@@ -69,6 +82,8 @@
 .feed { display: grid; gap: .9rem; }
 .feedHeader { justify-content: space-between; align-items: flex-end; }
 .postCount { color: #65778a; font-size: .86rem; }
+.pinnedHelp, .pinnedWarning { margin: 0; color: #65778a; font-size: .84rem; line-height: 1.5; }
+.pinnedWarning { padding: .6rem .8rem; border-radius: .7rem; background: #fff8e7; color: #785b1b; }
 .filters { display: flex; gap: .45rem; overflow-x: auto; padding: .15rem .1rem .45rem; scrollbar-width: thin; }
 .filter, .filterActive { flex: 0 0 auto; min-height: 2.75rem; border: 1px solid #d7e2e9; border-radius: 999px; padding: .42rem .72rem; background: #fff; color: #41586c; font: inherit; font-size: .82rem; cursor: pointer; }
 .filterActive { border-color: #0d719f; background: #e7f4fa; color: #075579; font-weight: 700; }
@@ -81,7 +96,12 @@
 .author strong { overflow-wrap: anywhere; }
 .author span { color: #718295; font-size: .8rem; }
 .postType { margin-left: auto; flex: 0 0 auto; border-radius: 999px; padding: .3rem .6rem; background: #f1f5f7; color: #455d6e; font-size: .78rem; }
+.pinnedBadge { flex: 0 0 auto; border-radius: 999px; padding: .3rem .6rem; background: #fff2cd; color: #765300; font-size: .78rem; font-weight: 700; }
 .scopeLine { margin: .8rem 0 .45rem; color: #6c7e8e; font-size: .78rem; }
+.deadlineHelp { color: #748596; font-size: .82rem; line-height: 1.45; }
+.interactionDeadline { margin: .35rem 0 .7rem; color: #52697d; font-size: .82rem; }
+.interactionDeadline strong { color: #8b5e16; font-weight: 650; }
+.interactionClosedNote { margin: .8rem 0 0; padding: .65rem .75rem; border-radius: .65rem; background: #fff7e8; color: #78581d; font-size: .88rem; }
 .iouPrivacyNote { margin: 0 0 .75rem; color: #557084; font-size: .88rem; line-height: 1.5; }
 .iouCard { display: grid; gap: .65rem; margin-top: .9rem; padding: .9rem; border: 1px solid #d8e7ed; border-radius: .9rem; background: #f6fafb; }
 .iouStatusRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; color: #536a7b; font-size: .85rem; }
@@ -143,6 +163,8 @@
   .formRow { grid-template-columns: 1fr; }
   .composerFooter { align-items: stretch; flex-direction: column; }
   .composerFooter button { width: 100%; }
+  .draftItem { align-items: stretch; flex-direction: column; }
+  .draftActions button { flex: 1; }
   .reportForm { align-items: stretch; flex-direction: column; }
   .reportForm > button { width: 100%; }
   .visibility { gap: .45rem; }

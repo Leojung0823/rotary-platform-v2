@@ -44,8 +44,11 @@ export type JoyPost = {
   can_edit: boolean;
   can_archive: boolean;
   can_answer: boolean;
+  interaction_deadline_on: string | null;
+  interactions_open: boolean;
   is_hidden: boolean;
   is_favorited: boolean;
+  is_pinned: boolean;
   can_acknowledge_receipt: boolean;
   receipt_acknowledged_at: string | null;
   receipt_ack_count: number | null;
@@ -57,6 +60,22 @@ export type JoyPost = {
   my_reaction: JoyReactionType | null;
   iou: JoyIouProjection | null;
   targets: JoyPostTarget[];
+};
+
+export type JoyPostDraft = {
+  id: string;
+  post_type: Exclude<JoyPostType, "iou">;
+  title: string | null;
+  content: string;
+  visibility_scope: JoyVisibilityScope;
+  audience_membership_ids: string[];
+  event_ids: string[];
+  rotary_year_ids: string[];
+  role_keys: string[];
+  birthday_campaign_ids: string[];
+  interaction_deadline_on: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type JoyPostTarget = {
@@ -173,6 +192,7 @@ export function parseJoyQuestionPrompt(value: unknown): JoyQuestionPrompt {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 function isOneOf<T extends readonly string[]>(values: T, value: unknown): value is T[number] {
   return typeof value === "string" && values.includes(value);
 }
@@ -283,6 +303,12 @@ function parseJoyIou(value: unknown): JoyIouProjection {
 }
 
 export function parseJoyPost(value: unknown): JoyPost {
+  const deadline = value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>).interaction_deadline_on
+    : undefined;
+  const interactionsOpen = value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>).interactions_open
+    : undefined;
   if (!isRecord(value)
     || typeof value.id !== "string"
     || !isOneOf(joyPostTypes, value.post_type)
@@ -295,8 +321,11 @@ export function parseJoyPost(value: unknown): JoyPost {
     || !safeHttpUrl(value.author_avatar_url)
     || typeof value.can_edit !== "boolean" || typeof value.can_archive !== "boolean"
     || typeof value.can_answer !== "boolean"
+    || (deadline !== undefined && deadline !== null && !isDateOnly(deadline))
+    || (interactionsOpen !== undefined && typeof interactionsOpen !== "boolean")
     || typeof value.is_hidden !== "boolean"
     || (value.is_favorited !== undefined && typeof value.is_favorited !== "boolean")
+    || (value.is_pinned !== undefined && typeof value.is_pinned !== "boolean")
     || (value.can_acknowledge_receipt !== undefined && typeof value.can_acknowledge_receipt !== "boolean")
     || (value.receipt_acknowledged_at !== undefined && value.receipt_acknowledged_at !== null && !isTimestamp(value.receipt_acknowledged_at))
     || (value.receipt_ack_count !== undefined && value.receipt_ack_count !== null
@@ -338,8 +367,11 @@ export function parseJoyPost(value: unknown): JoyPost {
     can_edit: value.can_edit,
     can_archive: value.can_archive,
     can_answer: value.can_answer,
+    interaction_deadline_on: deadline as string | null ?? null,
+    interactions_open: interactionsOpen !== false,
     is_hidden: value.is_hidden,
     is_favorited: value.is_favorited === true,
+    is_pinned: value.is_pinned === true,
     can_acknowledge_receipt: value.can_acknowledge_receipt === true,
     receipt_acknowledged_at: value.receipt_acknowledged_at as string | null ?? null,
     receipt_ack_count: value.receipt_ack_count as number | null ?? null,
@@ -357,6 +389,42 @@ export function parseJoyPost(value: unknown): JoyPost {
 export function parseJoyPosts(value: unknown): { posts: JoyPost[]; nextCursor: unknown | null } {
   if (!isRecord(value) || !Array.isArray(value.posts)) throw new Error("invalid_joy_list_projection");
   return { posts: value.posts.map(parseJoyPost), nextCursor: value.next_cursor ?? null };
+}
+
+export function parseJoyPostDraft(value: unknown): JoyPostDraft {
+  const keys = ["id", "post_type", "title", "content", "visibility_scope", "audience_membership_ids",
+    "event_ids", "rotary_year_ids", "role_keys", "birthday_campaign_ids", "interaction_deadline_on", "created_at", "updated_at"];
+  const ids = (candidate: unknown, maximum: number): candidate is string[] => Array.isArray(candidate)
+    && candidate.length <= maximum
+    && candidate.every((item) => typeof item === "string" && uuidPattern.test(item))
+    && new Set(candidate).size === candidate.length;
+  if (!isRecord(value) || Object.keys(value).some((key) => !keys.includes(key))
+    || typeof value.id !== "string" || !uuidPattern.test(value.id)
+    || !isOneOf(joyCreatablePostTypes, value.post_type)
+    || (value.title !== null && (typeof value.title !== "string" || Array.from(value.title).length > 100))
+    || typeof value.content !== "string" || Array.from(value.content).length > 2000
+    || !isOneOf(joyVisibilityScopes, value.visibility_scope)
+    || !ids(value.audience_membership_ids, 25) || !ids(value.event_ids, 5)
+    || !ids(value.rotary_year_ids, 5) || !Array.isArray(value.role_keys) || value.role_keys.length > 5
+    || (value.interaction_deadline_on !== null && !isDateOnly(value.interaction_deadline_on))
+    || !value.role_keys.every((key) => typeof key === "string" && /^[a-z][a-z0-9_]{0,39}$/u.test(key))
+    || new Set(value.role_keys).size !== value.role_keys.length
+    || !ids(value.birthday_campaign_ids, 5)
+    || !isTimestamp(value.created_at) || !isTimestamp(value.updated_at)) {
+    throw new Error("invalid_joy_post_draft_projection");
+  }
+  if ((value.visibility_scope === "club" && value.audience_membership_ids.length !== 0)
+    || (value.visibility_scope === "private" && value.audience_membership_ids.length > 1)) {
+    throw new Error("invalid_joy_post_draft_projection");
+  }
+  return value as JoyPostDraft;
+}
+
+export function parseJoyPostDrafts(value: unknown): JoyPostDraft[] {
+  if (!isRecord(value) || !Array.isArray(value.drafts) || value.drafts.length > 20) {
+    throw new Error("invalid_joy_post_drafts_projection");
+  }
+  return value.drafts.map(parseJoyPostDraft);
 }
 
 export function parseJoyComment(value: unknown): JoyComment {
