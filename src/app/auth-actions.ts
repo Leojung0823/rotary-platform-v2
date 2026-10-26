@@ -39,10 +39,11 @@ export async function signOutToLoginAction(formData: FormData) {
 }
 
 export async function requestPasswordResetAction(formData: FormData) {
+  const siteUrl = trustedSiteUrl();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
   if (emailPattern.test(email)) {
-    const callbackUrl = new URL("/auth/callback", trustedSiteUrl());
+    const callbackUrl = new URL("/auth/callback", siteUrl);
     callbackUrl.searchParams.set("next", "/reset-password");
 
     const supabase = await createClient();
@@ -53,7 +54,7 @@ export async function requestPasswordResetAction(formData: FormData) {
     });
   }
 
-  redirect("/forgot-password?success=sent");
+  redirect(new URL("/forgot-password?success=sent", siteUrl).toString());
 }
 
 export async function confirmPasswordRecoveryAction(formData: FormData) {
@@ -89,27 +90,29 @@ export async function confirmPasswordRecoveryAction(formData: FormData) {
 }
 
 export async function resetPasswordAction(formData: FormData) {
+  const siteUrl = trustedSiteUrl();
+  const redirectToSite = (path: string): never => redirect(new URL(path, siteUrl).toString());
   const store = await cookies();
   const recoveryMarker = store.get("rotary_recovery")?.value ?? "";
-  if (!recoveryMarkerPattern.test(recoveryMarker)) redirect("/login?error=recovery_invalid");
+  if (!recoveryMarkerPattern.test(recoveryMarker)) redirectToSite("/login?error=recovery_invalid");
 
   let password: string;
   try {
     password = parseNewPassword(formData);
   } catch {
-    redirect("/reset-password?error=invalid_password");
+    return redirectToSite("/reset-password?error=invalid_password");
   }
 
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect("/login?error=recovery_invalid");
+  if (!data.user) redirectToSite("/login?error=recovery_invalid");
 
   const { error } = await supabase.auth.updateUser({ password });
-  if (error) redirect("/reset-password?error=invalid_password");
+  if (error) redirectToSite("/reset-password?error=invalid_password");
 
   store.delete("rotary_recovery");
   await supabase.auth.signOut({ scope: "global" });
-  redirect("/login?success=password_updated");
+  redirectToSite("/login?success=password_updated");
 }
 
 export async function startPasswordMemberJoinAction(formData: FormData) {
