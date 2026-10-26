@@ -7,7 +7,7 @@
 - 收件人「感謝作者」明確按鈕已由 commit `110cb8a` 同步 main。本次本機 typecheck、lint、1,622 tests、build、隔離 DB 91 份驗證與收件人流程 E2E 1/1 通過；CI `40393717019`、Browser Smoke `40393717025` 與 Release plan `40395551148` 都對應較早 SHA `0dbe0e8`，不能當成本次 hosted 驗收或部署證據。
 - Render staging 服務 `srv-da2td2dg1s2s73de3qvg`（`rotary-platform-v2-mrha.onrender.com`）仍部署 `00f4d07a964a6640359359be6034266ef711543e`；health 為 `status=ok`、configuration/database `true`、`issues=[]`、`warnings=[]`。Joy Wall 新功能尚未部署。
 - E-12 備份仍阻止 Go-Live：本機 `.env.staging` 欄位已存在，但 staging exporter 專案身份驗證失敗；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403，直接資料庫連線亦未成功。沒有備份、沒有 hosted 寫入或上傳；不可標記 `BACKUP-READY`。
-- E-06 已完成目前 staging 的 warm baseline run `40398701762`（desktop Chromium、受保護登入、每頁 3 次）：社員首頁中位數 LCP／FCP／TTFB／INP `728／408／377.4／16 ms`，管理首頁 `636／332／260.6／16 ms`。這不是修改前後比較；main `0dbe0e8` 未部署前不能據此判定新功能性能。
+- E-06 已完成目前 staging 的 warm baseline run `40398701762`（desktop Chromium、受保護登入、每頁 3 次）：社員首頁中位數 LCP／FCP／TTFB／INP `728／408／377.4／16 ms`，管理首頁 `636／332／260.6／16 ms`。這不是修改前後比較；main 功能 commit `110cb8a` 未部署前不能據此判定新功能性能。
 - 可完成主線工程的 Joy Wall 目前會在部署後自動可用，不需人工開產品旗標；scheduler 仍屬獨立營運設定，未經送達對象驗收前不啟動。E-03、E-07、E-11 需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。細節與待辦依 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
 
 ## 2026-10-27 收件人感謝作者（已同步 main；staging 待備份與發布）

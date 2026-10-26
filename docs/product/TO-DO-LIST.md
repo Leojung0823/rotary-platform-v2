@@ -6,7 +6,7 @@
 
 - 收件人「感謝作者」明確按鈕已由 commit `110cb8a` 同步至 main；CI `40393717019`、Browser Smoke `40393717025` 與 Staging Release plan `40395551148` 都對應舊 SHA `0dbe0e8`，不代表本次變更的 hosted 驗收或部署。plan 僅 dry-run，沒有套用 migration。Render staging 仍部署 `00f4d07a964a6640359359be6034266ef711543e`；`/api/health` 最近為 `status=ok`、`issues=[]`、`warnings=[]`。Go-Live 前須以最新 main 另跑 plan。
 - E-12 備份實測未完成：本機 `.env.staging` 已有必要變數名稱，但 exporter 的 staging 專案身份驗證失敗；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403，直接資料庫連線亦未成功。沒有建立備份、沒有上傳資料、沒有修改 hosted database。完成前不可送出 `BACKUP-READY`，也不可啟動 Go-Live。
-- E-06 已取得目前 staging warm 基線（run `40398701762`，每頁 3 次），數字及測量條件見 `PERFORMANCE_IMPROVEMENT_LOG.md`。這不是新版本前後比較；main `0dbe0e8` 尚未部署，因此 E-06 仍未結案。
+- E-06 已取得目前 staging warm 基線（run `40398701762`，每頁 3 次），數字及測量條件見 `PERFORMANCE_IMPROVEMENT_LOG.md`。這不是新版本前後比較；main 功能 commit `110cb8a` 尚未部署，因此 E-06 仍未結案。
 - Message Center scheduler 專用環境仍未建立。排程開關是伺服器排程的營運控制，不是產品功能旗標；未完成 staging 發布與送達驗收前不啟動排程，避免意外發送訊息。
 - E-03、E-07、E-11 仍需要真人 LINE／手機或外部平台操作；E-08 是 production 決策／發布，未獲明確範圍前不碰 production；E-09 custom SMTP 維持暫緩。其餘可獨立完成的本機工程待辦須逐項依最新 Issue／roadmap 核對，不能用這些外部驗收代替。
 
