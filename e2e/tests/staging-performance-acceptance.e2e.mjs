@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { isPublicHostname } from "../../src/lib/public-hostname.mjs";
+import { sanitizeStagingLcpAttribution } from "../../src/lib/staging-lcp-attribution.mjs";
 
 const memberEmail = process.env.STAGING_TEST_MEMBER_EMAIL;
 const memberPassword = process.env.STAGING_TEST_MEMBER_PASSWORD;
@@ -63,7 +64,17 @@ async function installPerformanceObservers(page) {
         for (const entry of list.getEntries()) {
           const current = window.__rotaryStagingPerformance.lcp;
           if (!current || entry.startTime >= current.startTime) {
-            window.__rotaryStagingPerformance.lcp = { startTime: entry.startTime };
+            const element = entry.element;
+            const isImage = element instanceof HTMLImageElement;
+            window.__rotaryStagingPerformance.lcp = {
+              startTime: entry.startTime,
+              renderTime: entry.renderTime,
+              loadTime: entry.loadTime,
+              size: entry.size,
+              elementTag: element?.tagName ?? null,
+              isImage,
+              url: (isImage ? element.currentSrc : entry.url) || null,
+            };
           }
         }
       });
@@ -173,17 +184,34 @@ async function collectMetrics(page) {
     return Number.isFinite(fcp?.startTime) && Number.isFinite(lcp?.startTime);
   }, undefined, { timeout: 10_000 });
 
-  const coreMetrics = await page.evaluate(() => {
+  const pageMetrics = await page.evaluate(() => {
     const navigation = performance.getEntriesByType("navigation")[0];
     const fcp = performance.getEntriesByName("first-contentful-paint")[0];
     const lcp = window.__rotaryStagingPerformance?.lcp;
+    const resource = lcp?.url
+      ? performance.getEntriesByName(lcp.url).filter((entry) => entry.entryType === "resource").at(-1)
+      : null;
     const round = (value) => Number.isFinite(value) ? Math.round(value * 10) / 10 : null;
     return {
-      lcpMs: round(lcp?.startTime),
-      fcpMs: round(fcp?.startTime),
-      ttfbMs: round(navigation?.responseStart - navigation?.startTime),
+      core: {
+        lcpMs: round(lcp?.startTime),
+        fcpMs: round(fcp?.startTime),
+        ttfbMs: round(navigation?.responseStart - navigation?.startTime),
+      },
+      lcp,
+      resource: resource ? {
+        initiatorType: resource.initiatorType,
+        startTime: resource.startTime,
+        responseEnd: resource.responseEnd,
+        duration: resource.duration,
+        transferSize: resource.transferSize,
+        encodedBodySize: resource.encodedBodySize,
+        decodedBodySize: resource.decodedBodySize,
+      } : null,
+      currentOrigin: window.location.origin,
     };
   });
+  const coreMetrics = pageMetrics.core;
 
   expect(coreMetrics.lcpMs).not.toBeNull();
   expect(coreMetrics.fcpMs).not.toBeNull();
@@ -206,7 +234,8 @@ async function collectMetrics(page) {
     if (interactionDurations.length === 0) return null;
     return Math.round(Math.max(...interactionDurations) * 10) / 10;
   });
-  return { ...coreMetrics, inpMs };
+  const lcpAttribution = sanitizeStagingLcpAttribution(pageMetrics);
+  return { ...coreMetrics, inpMs, lcpAttribution };
 }
 
 async function measureRoute(page, { label, route, heading }) {
