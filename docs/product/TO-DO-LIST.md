@@ -60,7 +60,7 @@
 - [x] 功能已同步 main（commit `cea0050`）；main CI、isolated DB 全套驗證及 targeted E2E 通過。
 - [x] 後續 main CI `40295780260` 與 Browser Smoke `40295780270` 均成功，涵蓋此功能的後續主線版本。
 - [ ] Go-Live 前建立本機加密 staging backup；目前本機 `.env.staging` 缺少 project ref、access token、DB password，因此未備份、未部署，也未修改 hosted／production。
-- Issue #4 尚有草稿／排程／置頂、封鎖互動、本人同意後的生日／回憶素材整合與歷史保存政策。一般貼文截止日已有本機實作，但尚待與草稿功能 migration `20261026000400` 整合後才能同步；目標關聯、收件人動作、匿名建議箱程式已在 main，但 staging 尚未由本輪發布／驗收。
+- Issue #4 的一般貼文截止日、草稿／排程／置頂、目標關聯、收件人動作與匿名建議箱程式均已同步 main；仍待封鎖互動、本人同意後的生日／回憶素材整合與保留政策。新功能 staging 發布／社員驗收仍受 E-12 限制。
 
 ## 2026-10-26 歡喜牆收件人動作（已同步 main；staging 待發布／驗收）
 
@@ -137,15 +137,15 @@
 ### 歡喜牆依 Issue #4 尚未完成的範圍
 
 - 非金錢 IOU 核心、社員待辦及主動 LINE 到期／逾期提醒都已進 main；提醒仍未部署 staging，站內提醒未新增。仍待 E-12 備份閘門、staging 部署及真人收訊驗收。
-- 職務／活動／生日／扶輪年度等目標與匿名建議箱已同步 main；一般貼文截止日已有本機實作，待草稿 migration `20261026000400` 整合後再同步。仍待草稿／排程／置頂及封鎖互動；批次提問截止日已另列於上方。
-- 收件人「確認已收到」與「要求幹部隱藏」已同步 main；本次補上指定收件人的「感謝作者」明確操作，沿用既有匿名計數表情反應 RPC，不新增個人可見回條或資料庫結構；staging／社員驗收仍待續。仍待本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
+- 職務／活動／生日／扶輪年度等目標、匿名建議箱、一般貼文截止日、草稿／排程與置頂都已同步 main；草稿留白選填到期日的錯誤也已由 `6f17fc2` 修正。仍待封鎖互動；staging 部署與社員驗收受 E-12 閘門限制。
+- 收件人「確認已收到」、「要求幹部隱藏」與「感謝作者」均已同步 main；感謝沿用匿名計數反應，不新增個人可見回條或資料庫結構。仍待社員 hosted 驗收、本人同意後的生日／回憶素材整合，以及該素材的保留／刪除政策。
 - 以上屬於 Issue #4 的後續獨立開發，不能由本次本機測試或新頁面存在推定完成；真人、staging、LINE provider／Rich Menu 與 production 待辦仍依本文件後續清單處理。
 
 ## 2026-10-03 全專案進度掃描
 
 - 最新現場主線為 `origin/main@c2cc773a3f3d18e0c952473a603899e42acc1238`；GitHub open PR 0，open issues 為 #4、#25、#36、#44、#55。main 的 CI `37070195215` 與 Browser Smoke `37070194916` 成功；Message Center Scheduler run `37078114585` 為 skipped，不能當成排程已運作的證據。
 - Staging `/api/health` 現場為 `revision=b6a184bb4c44`、`status=ok`、`issues=[]`、`warnings=[]`，但 revision 早於 main；目前 main 尚未部署。最新成功 Go-Live `36831610118` 只對應 b6a184；waiting Release `36920967197` 對應舊 SHA `e388933`，較新的 Release `37063069490` 已取消，皆不可當成本次部署計畫。production 未修改。
-- 外部／真人閘門仍有：#25 iPhone／Android 實機及 staging 社員流程；#36 staging `attendance_ui_v2` 旗標與角色隔離驗收；#44 新 recovery email 真人重設閉環；#55 五位社員／幹部 M1；E-03 LINE OA follow 身份與負向案例、E-11 各社 OA／Rich Menu 手機驗收、E-12 本機加密備份與 restore 演練。E-12 現場確認主 checkout `.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`；GitHub secret 值未讀取。#4 仍有職務／活動／生日／扶輪年度目標、一般貼文截止日、草稿／排程／置頂、匿名建議箱、封鎖及生日／回憶素材等未開發項目。
+- 外部／真人閘門仍有：#25 iPhone／Android 實機及 staging 社員流程；#36 staging `attendance_ui_v2` 角色隔離驗收；#44 新 recovery email 真人重設閉環；#55 五位社員／幹部 M1；E-11 各社 OA／Rich Menu 手機驗收；E-12 本機加密備份／restore。2026-10-27 重驗時 `.env.staging` 三項必要變數都有值，但唯讀專案身份檢查仍失敗；沒有備份或 hosted 寫入。E-03 已由產品負責人確認僅 PANCHIAO-ELITE 真人驗收可用；不包含 HAPPY。
 - 當時的掃描紀錄曾將收件人動作列為本機未同步；以目前 Git ancestry 重核後，功能 commit `07de2e0` 已在 `origin/main@931dd23`，後續 CI／Browser Smoke 亦成功。該舊掃描中的分支狀態不可再當成現況；staging 發布與社員驗收仍須另外完成。
 
 ## 2026-10-02 訊息中心 V0.9 排程公告（Issue #39）
@@ -1004,7 +1004,7 @@ production 沒有修改。
   但不符合目前的「備份只存本機」規則；舊流程與舊位置都不視為目前可用備份。
 - **待核准舊 run 已取消**：`36917733396`（source SHA `3a1d855`）原本仍等待 staging 核准；2026-10-02 已取消，結論為 `cancelled`，沒有建立備份。舊 SHA `e388933` 的 Staging Release plan `36920967197` 仍停在人工核准，未套用；它不是目前版本的 plan。
 - **安全修正**：已在 main `363e7cf` 移除 `.github/workflows/staging-logical-backup.yml`，避免再產生 hosted artifact；本機命令 `npm run backup:staging:local` 只會保存 AES-256-GCM 密文與 checksum，使用 RSA-OAEP-SHA256 包裝資料金鑰，輸出與私鑰都必須在 repo 外。CI `36948071991` 與 Browser Smoke `36948072084` 均成功。新流程不讀取或上傳至 GitHub artifact。
-- **目前阻礙**：本機 exporter、完整測試與隔離 `verify:db` 已通過並合併；實際匯出因 `.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`，在連線前安全拒絕。沒有讀取 staging、沒有產生新備份；需在本機安全提供憑證後重試。E-12 仍待新鮮加密匯出與 restore 演練。
+- **目前阻礙（2026-10-27 重驗）**：本機 `.env.staging` 的 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD` 三欄都有值，但唯讀 `verify-staging-project-identity.mjs` 回報 `PROJECT_METADATA_REQUEST_FAILED`，因此 exporter fail closed。先前診斷曾見 Management API HTTP 401、CLI Keychain token HTTP 403；沒有新備份、沒有 hosted 寫入或上傳。需在本機安全修復 Supabase 專案授權後重試；新鮮加密匯出與 restore 演練仍未完成。
 - **範圍限制**：dump 僅含 `public` schema 與資料，不包含 `auth` schema、Storage 物件內容、project secrets 或平台設定；檔案解密與 gzip 驗證不是完整 restore 演練。
 - **與 Go-Live 的關係**：Go-Live `34912921064` 以 `BACKUP-READY`、plan `34912834525` 與同一個 exact SHA 完成；
   migration apply、部署、health、HTTPS smoke 與 hosted member acceptance 全部成功。production 仍未修改。
@@ -1013,7 +1013,7 @@ production 沒有修改。
 ### E-09 Recovery email 與 custom SMTP `[!]`（暫緩）
 
 - **目前決策**：登入以 LINE 為主，recovery email 暫不重啟，不列為目前 release blocker。
-- **另行追蹤的 Issue #44／PR #204**：這是 recovery redirect 的安全修正，不等同重啟 custom SMTP。PR 仍開啟；應用程式與資料庫檢查通過，但 Browser Smoke run `40301166962` 失敗於訊息中心草稿測試（等待「草稿已儲存」提示，非 recovery 測試）。修正目前仍是另一工作目錄的未提交修改，尚不能算通過；Issue #44 明定不可自動合併。Smoke 修復後，仍須用測試帳號完成新 recovery email 的「點信 → 確認 → 更新密碼 → 重新登入」真人 staging 驗收。
+- **另行追蹤的 Issue #44／PR #204**：這是 recovery redirect 的安全修正，不等同重啟 custom SMTP。舊 Browser Smoke `40301166962` 在草稿沒有到期時間時失敗；前端錯把選填空值判為錯誤，已由 main commit `6f17fc2` 修正。最新 main 的 push-triggered Browser Smoke `40410079453` 與 PR 更新後的 checks（head `f0bbba5`）仍在執行／排隊，尚不能宣稱通過。PR 仍開啟且不得自動合併；仍須用專用測試帳號完成新 recovery email 的「收信 → 確認 → 更新密碼 → 重新登入」staging 真人驗收。
 - **重啟條件**：production 上線前，或密碼登入比例上升／社員回報重設失敗。
 - **重啟後驗收**：設定 custom SMTP，完成「收到新信 → 點信 → 確認 → 更新密碼 → 重新登入」真人流程；不可用 Mailpit 代替。
 

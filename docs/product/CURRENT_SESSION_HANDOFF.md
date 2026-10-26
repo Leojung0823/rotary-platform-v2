@@ -66,7 +66,7 @@
 - 驗證已補齊：217 Vitest 檔／1,612 tests、typecheck、lint、migration guard、manifest guard、diff check 通過；`npm run build -- --webpack` 成功。全新隔離 Supabase stack 重播 160 支 migration，86 份 SQL verification 全通過；資料庫 lint exit 0，只有三項既有 warning。沒有對預設本機 DB 執行會 reset 的 `npm run verify:db`。
 - 匿名建議「社員匿名送出→幹部看不到作者並完成處理」的 targeted E2E 與 main CI `40285033235` 已通過。Browser Smoke `40285033200` 已取消，不列為通過；後續 SHA `931dd23` 的 Browser Smoke `40295780270` 已成功。Staging Release `40297992217` 已於 2026-10-26 經核准並成功完成，但只對 `931dd23` 執行 migration dry-run，沒有套用 migration 或部署。
 - 本機加密 staging backup 尚未產生。既有 `/Users/leoj/Documents/GitHub/rotary-platform-v2/.env.staging` 缺少 `SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`，須由管理者在本機安全補齊後，依 runbook 備份；不能從 GitHub secrets 讀回值。
-- Issue #4 仍有草稿／排程／置頂、封鎖互動、其他互動回覆、本人同意後的生日／回憶素材整合與歷史保存政策。一般貼文截止日已在 `codex/joy-post-deadline` 本機完成，待先整合較早的草稿 migration `20261026000400`；目標關聯、收件人動作及匿名建議箱已在 main，但尚未完成 staging 發布／真人驗收。
+- Issue #4 的草稿、排程、置頂、截止日、目標關聯、收件人動作與匿名建議箱程式均已同步 main；剩餘產品工程為封鎖互動，以及本人同意後的生日／回憶素材整合與保存政策。這些新增功能仍待 E-12 閘門後部署 staging 並驗收。
 - 下一步：完成本機加密 staging backup，再依最新 main SHA 重新執行受保護的 Release／Go-Live 流程。Issue #4 其他開發與外部／真人驗收仍未完成。
 
 ## 2026-10-26 歡喜牆收件人動作（已同步 main；staging 待發布／驗收）

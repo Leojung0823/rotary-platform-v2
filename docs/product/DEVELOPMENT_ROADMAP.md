@@ -122,7 +122,7 @@
 
 - 最新主線現場核對為 `origin/main@c2cc773a3f3d18e0c952473a603899e42acc1238`；GitHub open PR 為 0，open issues 為 #4、#25、#36、#44、#55。main 的 CI `37070195215`、Browser Smoke `37070194916` 成功；Message Center Scheduler run `37078114585` skipped，不代表排程已啟用或成功送達。
 - staging health 為 `revision=b6a184bb4c44`、status `ok`、issues／warnings 空，但仍早於目前 main；目前 main 尚未部署。最新成功 Go-Live `36831610118` 只對應 b6a184；waiting Release `36920967197` 是舊 SHA `e388933`，較新的 Release `37063069490` 已取消，皆不能沿用到目前 main。production 未修改。
-- 尚待外部／真人：#25 iPhone／Android 實機與 staging 社員流程、#36 staging 出席旗標及角色隔離、#44 新 recovery email 真人重設閉環、#55 五位 M1、E-03 LINE follow 身份與負向案例、E-11 各社 OA／Rich Menu 手機驗收、E-12 本機加密備份及 restore。E-12 現場檢查發現主 checkout `.env.staging` 缺少三項所需輸入：`SUPABASE_PROJECT_REF`、`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`；GitHub secret 值未讀取。Issue #4 另有職務／活動／生日／扶輪年度目標、一般貼文截止日、草稿／排程／置頂、匿名建議箱、封鎖和生日／回憶素材未完成。
+- 尚待外部／真人：#25 iPhone／Android 實機與 staging 社員流程、#36 staging 出席角色隔離、#44 新 recovery email 真人重設閉環、#55 五位 M1、E-11 各社 OA／Rich Menu 手機驗收、E-12 本機加密備份及 restore。2026-10-27 唯讀重驗時 `.env.staging` 的 staging ref、access token、DB password 欄位皆有值，但 project identity API request 仍失敗；沒有新備份或 hosted 寫入。Issue #4 已同步的功能詳見本文件上方 2026-10-27 狀態；尚待封鎖互動與本人同意後的生日／回憶素材整合及保存政策。
 - 當時的掃描曾將收件人動作列為本機未同步；後續 Git ancestry 確認功能 commit `07de2e0` 已進 `origin/main@931dd23`，且後續 CI／Browser Smoke 成功。該歷史狀態不可當成現況；Staging Release `40297992217` 僅為 dry-run，仍未由此證明 staging 已部署。
 - 這不是 Issue #4 的完成宣告。IOU 提醒與題庫／批次派題程式已在 main，但 staging 尚未部署、旗標仍按既有 fail-closed 流程管理；站內提醒未新增。未開發模組及外部驗收須分別結案，詳見 [`TO-DO-LIST.md`](./TO-DO-LIST.md)。
 
