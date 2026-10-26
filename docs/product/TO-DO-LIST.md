@@ -7,8 +7,9 @@
 - 收件人「感謝作者」明確按鈕已由 commit `110cb8a` 同步至 main；CI `40393717019`、Browser Smoke `40393717025` 與 Staging Release plan `40395551148` 都對應舊 SHA `0dbe0e8`，不代表本次變更的 hosted 驗收或部署。plan 僅 dry-run，沒有套用 migration。Render staging 仍部署 `00f4d07a964a6640359359be6034266ef711543e`；`/api/health` 最近為 `status=ok`、`issues=[]`、`warnings=[]`。Go-Live 前須以最新 main 另跑 plan。
 - E-12 備份實測未完成：本機 `.env.staging` 已有必要變數名稱，但 exporter 的 staging 專案身份驗證失敗；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403，直接資料庫連線亦未成功。沒有建立備份、沒有上傳資料、沒有修改 hosted database。完成前不可送出 `BACKUP-READY`，也不可啟動 Go-Live。
 - E-06 已取得目前 staging warm 基線（run `40398701762`，每頁 3 次），數字及測量條件見 `PERFORMANCE_IMPROVEMENT_LOG.md`。這不是新版本前後比較；main 功能 commit `110cb8a` 尚未部署，因此 E-06 仍未結案。
+- E-03 LINE OA follow 自動配對真人驗收：產品負責人已確認測試驗收完成、目前可用；本次只使用已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。舊的 9 月「待真人核對」紀錄已由此決定 supersede；不延伸宣稱 HAPPY 或其他未設定社團已驗收。
 - Message Center scheduler 專用環境仍未建立。排程開關是伺服器排程的營運控制，不是產品功能旗標；未完成 staging 發布與送達驗收前不啟動排程，避免意外發送訊息。
-- E-03、E-07、E-11 仍需要真人 LINE／手機或外部平台操作；E-08 是 production 決策／發布，未獲明確範圍前不碰 production；E-09 custom SMTP 維持暫緩。其餘可獨立完成的本機工程待辦須逐項依最新 Issue／roadmap 核對，不能用這些外部驗收代替。
+- E-07、E-11 仍需要真人手機或外部平台操作；E-08 是 production 決策／發布，未獲明確範圍前不碰 production；E-09 custom SMTP 維持暫緩。其餘可獨立完成的本機工程待辦須逐項依最新 Issue／roadmap 核對，不能用這些外部驗收代替。
 
 ## 2026-10-27 收件人感謝作者（已同步 main；staging 待本機備份與 Go-Live）
 
@@ -911,7 +912,12 @@ production 沒有修改。
   需要各自建一個對照案例；本項以「實際送達與不重送」結案，不宣稱已涵蓋全部負向情境。
 - **目前不需再做**：GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步，不能再把「secret 不一致」當成目前原因。
 
-### E-03 LINE Login 身份的 follow 自動配對真人驗收 `[>]`（暫緩解除）
+### E-03 LINE Login 身份的 follow 自動配對真人驗收 `[x]`（已驗收可用；不含 HAPPY）
+
+- **目前結論（2026-10-27）**：產品負責人確認 LINE OA follow 自動配對真人測試已驗收完成、可使用。本次實際使用範圍為已設定的 `PANCHIAO-ELITE`；HAPPY 不使用，不列為已設定或已驗收社團。
+- 此結案依產品負責人的真人驗收回報；repo 內 SQL verification 另覆蓋身份配對及跨社／停權等授權邊界。下列 2026-09-14 至 2026-09-16 的待驗收敘述是歷史紀錄，已被本結論 supersede，不再代表目前待辦。未取得的其他社團／OA 實測不作推定。
+
+#### 歷史驗收紀錄（已由上方目前結論 supersede）
 
 - **2026-09-16 hosted 正向補充**：同一個 staging 會員帳號的 `/me/line-oa` 顯示「已完成好友與社員身份確認」；
   社務管理頁的 follower 清單也把已配對的 `U888f7e17b…` 投影為 `LEO`。這支持目前帳號的正向身份投影，

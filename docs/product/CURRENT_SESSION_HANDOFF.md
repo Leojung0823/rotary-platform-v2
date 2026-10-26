@@ -16,7 +16,8 @@
 - E-12 備份仍是 Go-Live 閘門：本機 `.env.staging` 所需欄位已存在，但 exporter 無法通過 staging 專案身份驗證；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403；直接 DB 連線也未成功。沒有備份產物、沒有向 hosted 寫入或上傳，也沒有對 staging／production 資料庫做變更。不可標記 `BACKUP-READY`。
 - E-06 staging warm baseline run `40398701762` 已成功，每頁 3 次；社員首頁中位數 LCP／FCP／TTFB／INP 為 `728／408／377.4／16 ms`，管理首頁為 `636／332／260.6／16 ms`。這是已部署 `00f4d07a` 的基線，不是 `main` 功能 commit `110cb8a` 的修改後比較；原始 trace 未保存。完整樣本與 CDP 摘要見 `docs/product/PERFORMANCE_IMPROVEMENT_LOG.md`。
 - Message Center scheduler environment 尚未建立。此排程開關是獨立的營運控制，不是產品 feature flag；完成 staging 部署與確認送達對象前不要啟動，以免造成意外 LINE 訊息。新功能部署即自動可用的規則不等於自動啟動外部訊息排程。
-- 仍有真人／外部依賴：E-03 LINE follow 身份配對與負向驗收、E-07 iOS／Android 與五位使用者測試、E-11 各社 OA／Rich Menu 手機驗收。E-08 涉及 production，未獲明確授權不操作；E-09 custom SMTP 依既定決策暫緩。
+- E-03 LINE OA follow 自動配對真人測試已由產品負責人確認驗收完成、可使用；僅限目前已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。較早文件中的 E-03 待驗收文字屬歷史紀錄，詳見 `TO-DO-LIST.md`。
+- 仍有真人／外部依賴：E-07 iOS／Android 與五位使用者測試、E-11 各社 OA／Rich Menu 手機驗收。E-08 涉及 production，未獲明確授權不操作；E-09 custom SMTP 依既定決策暫緩。
 
 ### 本輪收件人感謝作者 UX
 

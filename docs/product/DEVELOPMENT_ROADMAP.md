@@ -8,7 +8,7 @@
 - Render staging 服務 `srv-da2td2dg1s2s73de3qvg`（`rotary-platform-v2-mrha.onrender.com`）仍部署 `00f4d07a964a6640359359be6034266ef711543e`；health 為 `status=ok`、configuration/database `true`、`issues=[]`、`warnings=[]`。Joy Wall 新功能尚未部署。
 - E-12 備份仍阻止 Go-Live：本機 `.env.staging` 欄位已存在，但 staging exporter 專案身份驗證失敗；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403，直接資料庫連線亦未成功。沒有備份、沒有 hosted 寫入或上傳；不可標記 `BACKUP-READY`。
 - E-06 已完成目前 staging 的 warm baseline run `40398701762`（desktop Chromium、受保護登入、每頁 3 次）：社員首頁中位數 LCP／FCP／TTFB／INP `728／408／377.4／16 ms`，管理首頁 `636／332／260.6／16 ms`。這不是修改前後比較；main 功能 commit `110cb8a` 未部署前不能據此判定新功能性能。
-- 可完成主線工程的 Joy Wall 目前會在部署後自動可用，不需人工開產品旗標；scheduler 仍屬獨立營運設定，未經送達對象驗收前不啟動。E-03、E-07、E-11 需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。細節與待辦依 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
+- 可完成主線工程的新功能在成功部署後自動可用，不要求人工開產品旗標；只保留受保護的緊急停用／回滾控制，歷史 opt-in 功能不批次開啟。Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對已由產品負責人確認真人驗收完成、可用（只使用 PANCHIAO-ELITE；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。細節與待辦依 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
 
 ## 2026-10-27 收件人感謝作者（已同步 main；staging 待備份與發布）
 
