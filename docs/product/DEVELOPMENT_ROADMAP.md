@@ -1,6 +1,29 @@
 # Rotary Platform V2 開發地圖
 
-更新日期：2026-10-03（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+更新日期：2026-10-26（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+
+## 2026-10-26 活動單擊報名與首頁活動定位（已部署 staging 並驗收）
+
+- 社員在活動清單／詳情頁點「我要參加、不克參加、待確認」即送出，移除下拉選單與額外送出步驟；失敗回饋、備註、同行人數仍保留，並由既有 RPC 判斷權限及報名期限。
+- 首頁主要活動按鈕帶正確社團、社員模式與 event ID 錨點；活動頁會展開並定位到該活動。近期活動各列的既有詳情連結不變。
+- 新增只讀相容 RPC wrapper 與 SQL 驗證，沒有新增資料表或改 RLS／登入／權限；細節及檔案見 `CURRENT_SESSION_HANDOFF.md` 本節。
+- 驗證：217 檔／1,607 tests、typecheck、lint、build、完整 84 SQL verification、migration guard、manifest、diff check 通過；本機 production build E2E 75 passed／43 skipped。GitHub CI `40223023035`、自動 Browser Smoke `40223023068` 均成功（240 passed、102 skipped、1 flaky 重試後通過）。
+- 功能 commit `00f4d07a964a6640359359be6034266ef711543e` 已推 main 並部署 staging；Staging Release plan `40224119074`、Go-Live `40224287354` 成功，含 migration、HTTPS smoke 與受保護 hosted 社員驗收。Health revision `00f4d07a964a`、`status=ok`、configuration/database 正常、`issues=[]`、`warnings=[]`。唯一 migration 僅新增函式與權限，沒有改寫資料；因 staging Free 無資料庫備份，本次依 runbook 的 forward-fix 條件作為 rollback 依據，並未聲稱有備份。沒有 production 變更。
+- 目前部署邊界：staging 已完成；production 不在本次範圍。文件同步提交若造成 main SHA 前進，不會改變已驗收的 staging runtime `00f4d07a`，也不代表需要重新部署。
+
+## 2026-10-25 活動只填日期與活動建檔：staging完成
+
+- 第708至715次八場活動及八張主題封面已全部建立並發布至板橋群英扶輪社。708／710／714／715只有日期，正確顯示「時間未定」；709／711／712／713保留確切時段，713為全體社員。重新載入後八場仍已發布，八張私有封面皆實際載入1600×900；新四場對象皆為全社30位，沒有代社員回覆。
+- 日期未定功能與旗標、首頁近期活動整列直達詳情、封面不裁切均已部署staging（程式300097b；Plan40196606775、Go-Live40196686806、CI40196596420、完整Browser Smoke40196596375成功）。本機217檔1593tests、完整84SQL及手機桌機回歸通過。沒有production變更。
+- 八場IDs、文案、驗收圖及可後補資訊見 CURRENT_SESSION_HANDOFF.md 最上方最終驗收；素材及完整提示詞在兩份工作目錄的 outputs/event-covers/2026-q4。以下保留各階段歷史過程，舊的「等待登入／四場待續」不代表目前狀態。
+
+### 日期未定開發與發布過程（歷史）
+
+- 最終驗證更新：300097b 的完整 Browser Smoke 40196596375 已成功，233 passed／99 skipped／3 flaky（既有訊息排程、GPS、私人收藏重試後通過）。CI、Staging Release／Go-Live 與 health 也都通過；下方「仍執行中」是先前同步時點，以本段最終結果為準。剩餘四場建檔／圖片仍需恢復瀏覽器登入，第708次必須先確認未知寫入結果，不能直接重送。
+- 首頁近期活動整列直達詳情已修正，攜帶社別與社員模式、同名活動以 ID 區分；217 檔／1,593 tests、typecheck／lint／build、完整 84 SQL、手機／桌機真實導覽及 Rich Menu 回歸通過。封面完整顯示的 1440／375px 圖片上傳與解碼驗收亦通過、橫向溢位 0。兩項前端修正已以 300097b 同步 main 並部署 staging（Plan 40196606775／Go-Live 40196686806 成功；health issues 空）；CI 40196596420 成功，自動 Browser Smoke 40196596375 仍執行中。日期未定旗標已對管理員生效；第708次送出後登入過期，須本人重新登入，先查建立結果再續作。
+- 新增時間未定模式：顯示台北日期與「時間未定」，報名開放至當日日末，QR／GPS 本人簽到暫不開放，幹部可人工補登；缺席及出席率最早在活動日期結束後結算。確定時段後可編輯回一般模式，舊 QR 憑證不會復活。
+- event_date_only_v1 預設關閉；新增 20261015000100、20261015000200 兩支 migration。一般社員、外社、停權帳號與關旗標時的拒絕，均以真實本機 Postgres 驗證。完整 84 份 SQL、216 檔／1,590 項 Vitest、typecheck、lint、build 及 Playwright 1440／375px（4 passed／2 skipped）已通過。核心 fcda4f4 已推 main；Staging Release 40170135001、Go-Live 40170461557 成功，health revision fcda4f4b5958、issues 空。
+- 板橋群英第 709、711、712、713 次例會與各自封面已在 staging 發布，皆全社可見。八張主題封面已生成並保存；第708次建立結果未知，第710、714、715次未送出，四張封面尚待上傳，等待恢復瀏覽器登入後續作。封面詳情頁完整顯示修正已驗收並部署。最新證據／活動 ID 見 CURRENT_SESSION_HANDOFF.md；下方各日期段落保留當時的歷史狀態。
 
 ## 2026-10-03 歡喜牆私人收藏（程式與本機驗收完成；尚未部署）
 

@@ -41,6 +41,7 @@ function minimalPngWithDimensions(width, height) {
 test("a club manager can publish and disable the local Rich Menu", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "line-oa-rich-menu-1440", "Rich Menu publish mutates the local OA fixture.");
   await openLineOa(page);
+  await page.locator("#line-oa-advanced-settings").locator("summary").click();
 
   const richMenu = page.locator("section.card").filter({
     has: page.getByRole("heading", { name: "LINE Rich Menu" }),

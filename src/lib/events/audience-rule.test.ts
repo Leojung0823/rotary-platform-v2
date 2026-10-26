@@ -14,6 +14,7 @@ const memberFacingEventReaders = [
   "get_my_club_event",
   "list_my_event_page",
   "get_my_member_home_projection",
+  "get_my_member_home_with_event_ids",
   "list_my_member_pending_tasks",
   // A write, and the more serious half: the lists never offered a targeted
   // event, but nothing refused a registration for one.
@@ -74,6 +75,7 @@ const notAMemberEventList = new Set([
   "prevent_event_attendance_hard_delete", "protect_event_checkin_qr_credential_update",
   "cleanup_expired_dynamic_checkin_credentials",
   "set_club_event_cover",
+  "prevent_checkin_session_for_date_only_event",
 ]);
 
 /** The rule, applied directly or through a function that applies it. */

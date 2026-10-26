@@ -3,7 +3,7 @@ import { memberHomeRegistrationStates } from "@/lib/member-home";
 import { featuredEventFrom } from "./from-projection";
 import { registrationLabels, type PortalRegistrationState } from "./types";
 
-function featuredWith(registrationState: string, registrationOpen = true) {
+function featuredWith(registrationState: string, registrationOpen = true, timeUnspecified = false) {
   return featuredEventFrom({
     eventType: "regular_meeting",
     coverImagePath: null,
@@ -11,6 +11,7 @@ function featuredWith(registrationState: string, registrationOpen = true) {
     location: "大拙匠人食品有限公司",
     startsAt: "2026-09-17T10:30:00.000Z",
     endsAt: "2026-09-17T12:30:00.000Z",
+    timeUnspecified,
     registrationState: registrationState as never,
     registrationOpen,
     checkinState: "not_open",
@@ -46,5 +47,30 @@ describe("the hero says what the member's own answer was", () => {
   it("has a label for every state the portal can be in", () => {
     const states: PortalRegistrationState[] = ["not_registered", "registered", "declined", "open", "closed"];
     for (const state of states) expect(registrationLabels[state]).toBeTruthy();
+  });
+
+  it("does not imply a date-only meeting is exempt from attendance", () => {
+    const event = featuredWith("not_registered", true, true);
+    expect(event.checkinNote).toContain("時間未定");
+    expect(event.checkinNote).toContain("QR／定位");
+    expect(event.checkinNote).not.toBe("本活動不需簽到");
+  });
+
+  it("keeps an officer's manual check-in visible for a date-only meeting", () => {
+    const event = featuredWith("registered", true, true);
+    const manuallyCheckedIn = featuredEventFrom({
+      eventType: "regular_meeting",
+      coverImagePath: null,
+      title: "時間未定例會",
+      location: "社址",
+      startsAt: "2026-09-17T16:00:00.000Z",
+      endsAt: "2026-09-18T16:00:00.000Z",
+      timeUnspecified: true,
+      registrationState: "registered",
+      registrationOpen: true,
+      checkinState: "checked_in",
+    }, undefined);
+    expect(event.checkinNote).toContain("時間未定");
+    expect(manuallyCheckedIn.checkinNote).toBe("已完成簽到");
   });
 });

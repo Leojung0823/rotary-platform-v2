@@ -288,8 +288,9 @@
   white-space: nowrap;
 }
 .panelEmpty { margin: 0; padding: 14px 0 18px; color: var(--text-secondary); font-size: var(--type-meta); }
-.taskRow, .noticeRow { color: inherit; text-decoration: none; border-radius: 10px; }
-.taskRow:hover, .noticeRow:hover { background: #f6f9fd; }
+.eventRow, .taskRow, .noticeRow { color: inherit; text-decoration: none; border-radius: 10px; }
+.eventRow:hover, .taskRow:hover, .noticeRow:hover { background: #f6f9fd; }
+.eventRow:focus-visible { outline: 2px solid var(--rotary-blue); outline-offset: 3px; }
 .noticeDot { background: #d6dde7; }
 .noticeRowUnread .noticeDot { background: var(--rotary-blue); }
 .noticeRowUnread .rowText strong { font-weight: 700; }

@@ -3,6 +3,13 @@
 
 begin;
 
+do $$ begin
+  if has_function_privilege('anon', 'public.get_my_member_home_with_event_ids(uuid)', 'EXECUTE')
+    or not has_function_privilege('authenticated', 'public.get_my_member_home_with_event_ids(uuid)', 'EXECUTE') then
+    raise exception 'member_home_identity_rpc_acl_invalid';
+  end if;
+end $$;
+
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
@@ -119,6 +126,16 @@ begin
     or home->'notifications'->'items'->1->'action_path' <> 'null'::jsonb then
     raise exception 'member-home notification destination is invalid: %', home->'notifications';
   end if;
+  if public.get_my_member_home_with_event_ids('64000000-0000-4000-8000-000000000001')->'primary_event'->>'event_id'
+       <> '66000000-0000-4000-8000-000000000001'
+    or public.get_my_member_home_with_event_ids('64000000-0000-4000-8000-000000000001')->'next_event'->>'event_id'
+       <> '66000000-0000-4000-8000-000000000002' then
+    raise exception 'member_home_anchor_ids_do_not_match_ranked_events';
+  end if;
+  if (public.get_my_member_home_with_event_ids('64000000-0000-4000-8000-000000000001')
+       #- '{primary_event,event_id}' #- '{next_event,event_id}') <> home then
+    raise exception 'member_home_identity_projection_changed_existing_rules';
+  end if;
   if home::text like '%不應顯示%'
     or home::text like '%乙社%'
     or home::text like '%超出首頁上限%'
@@ -137,6 +154,31 @@ end;
 $$;
 reset role;
 
+-- If two presented events have identical display fields, the ranked primary
+-- and next slots must still resolve to separate rows in the projection order.
+insert into public.club_events (
+  id, club_id, event_type, title, location, starts_at, ends_at, registration_deadline,
+  counts_for_attendance, event_status, created_by_app_account_id, updated_by_app_account_id,
+  published_at, cancelled_at, cancellation_reason
+)
+select
+  '66000000-0000-4000-8000-000000000000', club_id, event_type, title, location,
+  starts_at, ends_at, registration_deadline, counts_for_attendance, event_status,
+  created_by_app_account_id, updated_by_app_account_id, published_at, cancelled_at, cancellation_reason
+from public.club_events where id = '66000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '61000000-0000-4000-8000-000000000001', true);
+do $$
+declare home jsonb;
+begin
+  home := public.get_my_member_home_with_event_ids('64000000-0000-4000-8000-000000000001');
+  if home->'primary_event'->>'event_id' <> '66000000-0000-4000-8000-000000000000'
+    or home->'next_event'->>'event_id' <> '66000000-0000-4000-8000-000000000001' then
+    raise exception 'duplicate_member_home_event_identity_did_not_preserve_ranked_slots: %', home;
+  end if;
+end $$;
+reset role;
+
 -- A legitimate account from another club cannot use a tampered club input.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '61000000-0000-4000-8000-000000000002', true);
@@ -145,6 +187,11 @@ begin
   begin
     perform public.get_my_member_home_projection('64000000-0000-4000-8000-000000000001');
     raise exception 'cross-club member read a member-home projection';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.get_my_member_home_with_event_ids('64000000-0000-4000-8000-000000000001');
+    raise exception 'cross-club member read event identity projection';
   exception when insufficient_privilege then null;
   end;
 end;
@@ -163,8 +210,28 @@ begin
     raise exception 'suspended membership retained a member-home projection';
   exception when insufficient_privilege then null;
   end;
+  begin
+    perform public.get_my_member_home_with_event_ids('64000000-0000-4000-8000-000000000001');
+    raise exception 'suspended membership retained event identity projection';
+  exception when insufficient_privilege then null;
+  end;
 end;
 $$;
+reset role;
+
+-- A suspended account is rejected even when its membership remains active.
+update public.club_memberships set membership_status = 'active'
+where id = '65000000-0000-4000-8000-000000000001';
+update public.app_accounts set account_status = 'suspended'
+where id = '63000000-0000-4000-8000-000000000001';
+set local role authenticated;
+do $$ begin
+  begin
+    perform public.get_my_member_home_with_event_ids('64000000-0000-4000-8000-000000000001');
+    raise exception 'suspended account retained event identity projection';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
 reset role;
 
 rollback;

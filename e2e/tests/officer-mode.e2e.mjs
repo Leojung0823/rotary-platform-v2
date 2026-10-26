@@ -56,7 +56,7 @@ test("an officer in member mode sees the events page a plain member sees", async
   await expect(page.getByText("草稿", { exact: true })).toHaveCount(0);
 
   // But the officer is still a member, so they register and check in as one.
-  await expect(page.getByRole("button", { name: "儲存報名狀態" }).first()).toBeVisible();
+  await expect(page.locator('button[name="response"][value="attending"]').first()).toBeVisible();
   await expect(page.getByRole("link", { name: "本人簽到" }).first()).toBeVisible();
 });
 

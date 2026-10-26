@@ -11,6 +11,7 @@ export type ClubSearchEvent = Readonly<{
   title: string;
   location: string;
   startsAt: string;
+  timeUnspecified: boolean;
 }>;
 
 export type ClubSearchMember = Readonly<{
@@ -73,8 +74,11 @@ export function parseClubSearchResults(value: unknown): ClubSearchResults | null
     if (typeof row.id !== "string" || !uuidPattern.test(row.id)) return null;
     if (title === null || title.length === 0) return null;
     if (!isoDateTime(row.starts_at)) return null;
+    if (typeof row.time_unspecified !== "boolean") return null;
     const location = row.location === null ? "" : boundedText(row.location);
-    return location === null ? null : { id: row.id, title, location, startsAt: row.starts_at };
+    return location === null ? null : {
+      id: row.id, title, location, startsAt: row.starts_at, timeUnspecified: row.time_unspecified,
+    };
   });
 
   const members = parseRows<ClubSearchMember>(value.members, (row) => {

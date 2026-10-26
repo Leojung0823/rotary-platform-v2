@@ -2,10 +2,10 @@ import { createClient } from "@supabase/supabase-js";
 import { inspectBootstrapTarget } from "../src/lib/bootstrap-target.mjs";
 
 const scenarios = {
-  disabled: { roleShells: false, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: false, birthdayV2: false, birthdayCollection: false, archiveHandover: false, lineOaOnboarding: false, lineOaFlexTemplates: false, lineRichMenu: false, duesFinance: false, joyWall: false },
-  "member-home-disabled": { roleShells: true, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: false, birthdayV2: false, birthdayCollection: false, archiveHandover: false, lineOaOnboarding: false, lineOaFlexTemplates: false, lineRichMenu: false, duesFinance: false, joyWall: false },
-  "checkin-disabled": { roleShells: true, memberHome: true, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: true, birthdayV2: false, birthdayCollection: false, archiveHandover: false, lineOaOnboarding: false, lineOaFlexTemplates: false, lineRichMenu: false, duesFinance: false, joyWall: false },
-  enabled: { roleShells: true, memberHome: true, checkinQr: true, gpsCheckin: true, attendanceUi: true, messageCenter: true, birthdayV2: true, birthdayCollection: true, archiveHandover: true, lineOaOnboarding: true, lineOaFlexTemplates: true, lineRichMenu: true, duesFinance: true, joyWall: true },
+  disabled: { roleShells: false, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: false, birthdayV2: false, birthdayCollection: false, archiveHandover: false, lineOaOnboarding: false, lineOaFlexTemplates: false, lineRichMenu: false, duesFinance: false, joyWall: false, eventDateOnly: false },
+  "member-home-disabled": { roleShells: true, memberHome: false, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: false, birthdayV2: false, birthdayCollection: false, archiveHandover: false, lineOaOnboarding: false, lineOaFlexTemplates: false, lineRichMenu: false, duesFinance: false, joyWall: false, eventDateOnly: false },
+  "checkin-disabled": { roleShells: true, memberHome: true, checkinQr: false, gpsCheckin: false, attendanceUi: false, messageCenter: true, birthdayV2: false, birthdayCollection: false, archiveHandover: false, lineOaOnboarding: false, lineOaFlexTemplates: false, lineRichMenu: false, duesFinance: false, joyWall: false, eventDateOnly: false },
+  enabled: { roleShells: true, memberHome: true, checkinQr: true, gpsCheckin: true, attendanceUi: true, messageCenter: true, birthdayV2: true, birthdayCollection: true, archiveHandover: true, lineOaOnboarding: true, lineOaFlexTemplates: true, lineRichMenu: true, duesFinance: true, joyWall: true, eventDateOnly: true },
 };
 const scenario = scenarios[process.argv[2]] ?? null;
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -42,6 +42,7 @@ for (const [featureKey, enabled] of [
   ["line_rich_menu_v1", scenario.lineRichMenu],
   ["dues_finance_v1", scenario.duesFinance],
   ["joy_wall_v1", scenario.joyWall],
+  ["event_date_only_v1", scenario.eventDateOnly],
 ]) {
   const { error } = await client.rpc("set_platform_feature_flag", {
     p_feature_key: featureKey,

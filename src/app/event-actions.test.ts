@@ -5,16 +5,55 @@ const mocks = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
   redirect: vi.fn((path: string) => { throw new Error(`redirect:${path}`); }),
   rpc: vi.fn(),
+  requireIdentity: vi.fn(),
+  evaluateCurrentFeatureFlag: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("@/lib/auth", () => ({ requireIdentity: mocks.requireIdentity }));
+vi.mock("@/lib/product/feature-flag-adapter.server", () => ({ evaluateCurrentFeatureFlag: mocks.evaluateCurrentFeatureFlag }));
 
-import { cancelEventAction, createEventAction } from "./event-actions";
+import { cancelEventAction, createEventAction, registerEventAction } from "./event-actions";
 import { initialEventCreateActionState } from "@/lib/events/validation";
 
 const clubId = "a1000000-0000-4000-8000-000000000001";
+
+describe("one-click registration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.createClient.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.rpc.mockResolvedValue({ error: null });
+  });
+  const registration = (overrides: Record<string, string> = {}) => {
+    const data = new FormData();
+    for (const [key, value] of Object.entries({ clubId, eventId: "a2000000-0000-4000-8000-000000000001", response: "attending", guestCount: "2", note: "攜伴", ...overrides })) data.set(key, value);
+    return registerEventAction({ status: "idle" }, data);
+  };
+  it("acknowledges the protected write without redirecting or waiting on a page refresh", async () => {
+    expect(await registration()).toEqual({ status: "success", response: "attending", guestCount: 2 });
+    expect(mocks.rpc).toHaveBeenCalledWith("set_my_event_registration", expect.objectContaining({ p_club_id: clubId, p_guest_count: 2, p_response: "attending", p_note: "攜伴" }));
+    expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+  it.each(["declined", "pending"])("clears saved guests when choosing %s", async (response) => {
+    expect(await registration({ response })).toEqual({ status: "success", response, guestCount: 0 });
+    expect(mocks.rpc).toHaveBeenCalledWith("set_my_event_registration", expect.objectContaining({ p_guest_count: 0, p_response: response }));
+  });
+  it("rejects malformed inputs without calling the database", async () => {
+    expect(await registration({ guestCount: "21" })).toEqual({ status: "error", errorCode: "invalid_input" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it.each([["event_capacity_full", "capacity_full"], ["event_registration_closed", "registration_closed"], ["active_event_membership_required", "forbidden"]])("never reports success for %s", async (message, errorCode) => {
+    mocks.rpc.mockResolvedValue({ error: { message } });
+    expect(await registration()).toEqual({ status: "error", errorCode });
+  });
+  it("keeps network errors private and does not pretend the result is saved", async () => {
+    mocks.rpc.mockRejectedValue(new Error("private network information"));
+    expect(await registration()).toEqual({ status: "error", errorCode: "unexpected" });
+  });
+});
 
 function formData(overrides: Record<string, string | boolean> = {}) {
   const values: Record<string, string | boolean> = {
@@ -33,6 +72,10 @@ function formData(overrides: Record<string, string | boolean> = {}) {
   form.set("clubId", clubId);
   for (const [key, value] of Object.entries(values)) {
     if (key === "countsForAttendance") {
+      if (value) form.set(key, "on");
+      continue;
+    }
+    if (key === "timeUnspecified") {
       if (value) form.set(key, "on");
       continue;
     }
@@ -60,6 +103,8 @@ describe("createEventAction", () => {
     vi.clearAllMocks();
     mocks.createClient.mockResolvedValue({ rpc: mocks.rpc });
     mocks.rpc.mockResolvedValue({ error: null });
+    mocks.requireIdentity.mockResolvedValue({ id: "a3000000-0000-4000-8000-000000000001" });
+    mocks.evaluateCurrentFeatureFlag.mockResolvedValue({ enabled: false });
   });
 
   it("keeps all submitted values when title validation fails", async () => {
@@ -157,6 +202,34 @@ describe("createEventAction", () => {
     }));
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/events");
     expect(mocks.redirect).toHaveBeenCalledWith(`/events?clubId=${clubId}&success=event_created`);
+  });
+
+  it("uses the protected time-mode RPC only for a feature-enabled date-only event", async () => {
+    mocks.evaluateCurrentFeatureFlag.mockResolvedValue({ enabled: true });
+    const form = formData({
+      eventDate: "2026-12-08",
+      timeUnspecified: true,
+      startsAt: "",
+      endsAt: "",
+      registrationDeadline: "",
+    });
+
+    await expect(createEventAction(initialEventCreateActionState, form))
+      .rejects.toThrow(`redirect:/events?clubId=${clubId}&success=event_created`);
+    expect(mocks.evaluateCurrentFeatureFlag).toHaveBeenCalledWith({
+      key: "event_date_only_v1",
+      subjectUuid: "a3000000-0000-4000-8000-000000000001",
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith("create_club_event_with_time_mode", expect.objectContaining({
+      p_time_unspecified: true,
+      p_registration_deadline: null,
+    }));
+  });
+
+  it("does not consult the new feature flag for an ordinary timed event", async () => {
+    await expect(submit()).rejects.toThrow(`redirect:/events?clubId=${clubId}&success=event_created`);
+    expect(mocks.evaluateCurrentFeatureFlag).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith("create_club_event", expect.any(Object));
   });
 });
 

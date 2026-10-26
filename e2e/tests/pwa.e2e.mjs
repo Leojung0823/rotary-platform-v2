@@ -117,6 +117,34 @@ test("iPhone 安裝頁顯示加入主畫面的三步驟", async ({ browser }, te
   await context.close();
 });
 
+test("新版 iPhone Safari 與 Chrome 各自顯示對應的按鈕位置", async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== "pwa-1440", "PWA acceptance runs in its dedicated project.");
+  const cases = [
+    {
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+      browserName: "Safari",
+      firstStep: "網址左邊的「≡」",
+    },
+    {
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/141.0.0.0 Mobile/15E148 Safari/604.1",
+      browserName: "Chrome",
+      firstStep: "網址右邊的「分享」",
+    },
+  ];
+  for (const { userAgent, browserName, firstStep } of cases) {
+    const context = await browser.newContext({ userAgent, viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    await page.goto(new URL("/install", baseURL).toString());
+    await expect(page.getByRole("heading", { name: "iPhone：加入主畫面" })).toBeVisible();
+    await expect(page.getByText(`您正在使用 ${browserName}`, { exact: false })).toBeVisible();
+    await expect(page.getByText(firstStep, { exact: false })).toBeVisible();
+    await expect(page.getByText("要先按「檢視較多」", { exact: false })).toBeVisible();
+    await expect(page.getByText("不用打字，也不用改名字", { exact: false })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+    await context.close();
+  }
+});
+
 test("LINE 內建瀏覽器會在安裝入口立即顯示外開教學", async ({ browser }, testInfo) => {
   test.skip(testInfo.project.name !== "pwa-1440", "PWA acceptance runs in its dedicated project.");
   const context = await browser.newContext({

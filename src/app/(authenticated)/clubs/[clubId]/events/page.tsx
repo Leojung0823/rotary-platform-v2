@@ -7,6 +7,7 @@ import { isEventClub, parseEvents } from "@/lib/events/page-contract";
 import { parseRegistrationRoster } from "@/lib/events/registration-roster";
 import { signCoverImageUrls } from "@/lib/events/cover-image.server";
 import { createClient } from "@/lib/supabase/server";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
@@ -36,7 +37,7 @@ export default async function EventManagementPage({
   params: Promise<{ clubId: string }>;
   searchParams: Promise<{ mode?: string; success?: string; error?: string; detail?: string }>;
 }) {
-  const [, { clubId }, query] = await Promise.all([requireIdentity(), params, searchParams]);
+  const [identity, { clubId }, query] = await Promise.all([requireIdentity(), params, searchParams]);
   if (!uuidPattern.test(clubId)) notFound();
   if (query.mode !== "management") {
     redirect(`/clubs/${encodeURIComponent(clubId)}/events?mode=management`);
@@ -46,10 +47,13 @@ export default async function EventManagementPage({
   // Management asks the same canonical projection as the old events page, but
   // with the explicit manager view. The RPC still decides tenant access and
   // event visibility; this route only chooses which UI to render.
-  const pageResult = await supabase.rpc("list_my_event_page", {
-    p_club_id: clubId,
-    p_as_member: false,
-  });
+  const [pageResult, dateOnlyFlag] = await Promise.all([
+    supabase.rpc("list_my_event_page", {
+      p_club_id: clubId,
+      p_as_member: false,
+    }),
+    evaluateCurrentFeatureFlag({ key: "event_date_only_v1", subjectUuid: identity.id }),
+  ]);
   const projection = pageResult.data && typeof pageResult.data === "object" && !Array.isArray(pageResult.data)
     ? pageResult.data as { clubs?: unknown; selected_club_id?: unknown; events?: unknown }
     : null;
@@ -137,6 +141,7 @@ export default async function EventManagementPage({
       audienceTags={audienceTags}
       audienceMembers={audienceMembers}
       rosters={rosters}
+      timeUnspecifiedEnabled={dateOnlyFlag.enabled}
     />
   </div>;
 }

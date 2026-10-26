@@ -20,6 +20,9 @@ const startedOn = new Intl.DateTimeFormat("zh-TW", {
   year: "numeric", month: "2-digit", day: "2-digit", weekday: "short",
   hour: "2-digit", minute: "2-digit", hour12: false,
 });
+const startedDate = new Intl.DateTimeFormat("zh-TW", {
+  timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", weekday: "short",
+});
 
 export default async function SearchPage({
   searchParams,
@@ -95,7 +98,9 @@ export default async function SearchPage({
             {results.events.map((event) => <li key={event.id}>
               <Link href={`/events/${encodeURIComponent(event.id)}`} prefetch={false}>{event.title}</Link>
               <span className="subtle">
-                {startedOn.format(new Date(event.startsAt))}
+                {event.timeUnspecified
+                  ? `${startedDate.format(new Date(event.startsAt))} · 時間未定`
+                  : startedOn.format(new Date(event.startsAt))}
                 {event.location ? ` · ${event.location}` : ""}
               </span>
             </li>)}

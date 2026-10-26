@@ -2,7 +2,8 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { registerEventAction } from "@/app/event-actions";
+import { EventRegistrationForm } from "@/components/events/event-registration-form";
+import { EventAnchorFocus } from "@/components/events/event-anchor-focus";
 import { requireIdentity } from "@/lib/auth";
 import {
   activeClubCookieName,
@@ -29,6 +30,7 @@ type ClubEvent = {
   location: string;
   starts_at: string;
   ends_at: string;
+  time_unspecified: boolean;
   registration_deadline: string | null;
   capacity: number | null;
   counts_for_attendance: boolean;
@@ -106,6 +108,7 @@ function isClubEvent(value: unknown): value is ClubEvent {
     && typeof event.location === "string"
     && typeof event.starts_at === "string"
     && typeof event.ends_at === "string"
+    && typeof event.time_unspecified === "boolean"
     && (typeof event.registration_deadline === "string" || event.registration_deadline === null)
     && (typeof event.capacity === "number" || event.capacity === null)
     && (typeof event.cover_image_path === "string" || event.cover_image_path === null || event.cover_image_path === undefined)
@@ -263,7 +266,8 @@ export default async function EventsPage({
       </div>}
 
       <div className="form-stack">
-        {events.map((event) => <article className="card" key={event.id}>
+        <EventAnchorFocus eventIds={events.map(event => event.id)} />
+        {events.map((event) => <article className="card event-anchor" id={`event-${event.id}`} key={event.id}>
           {/* Collapsed by default. A member opening this page is choosing which
               event to look at, and a list where every card is already expanded
               is a list you scroll past rather than read. The summary keeps what
@@ -289,7 +293,7 @@ export default async function EventsPage({
               </div>
               <h2>{event.title}</h2>
               <p className="event-when">
-                {formatEventTimeRange(event.starts_at, event.ends_at)}
+                {formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)}
                 {"　"}
                 <span className="event-fold-hint event-fold-hint-open">▸ 展開詳情</span>
                 <span className="event-fold-hint event-fold-hint-close">▾ 收合詳情</span>
@@ -305,7 +309,7 @@ export default async function EventsPage({
 
           <div className="two-column">
             <div>
-              <p><strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at)}</p>
+              <p><strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)}</p>
               <p><strong>地點：</strong>{event.location || "尚未填寫"}</p>
               <p><strong>報名截止：</strong>{event.registration_deadline === null
                 ? "不設截止，活動結束前都可報名"
@@ -320,29 +324,7 @@ export default async function EventsPage({
             </div>
           </div>
 
-          {event.status === "published" && event.registration_open && selectedClub.can_register && <form action={registerEventAction} className="form-stack">
-            <input type="hidden" name="clubId" value={selectedClub.club_id} />
-            <input type="hidden" name="eventId" value={event.id} />
-            {/* These two are one answer, not two questions: "am I coming, and
-                with how many". form-grid stacks below 840px, which split them
-                across two rows and made the pair read as unrelated. */}
-            <div className="response-grid">
-              <label className="field"><span className="label">我的回覆</span>
-                <select className="input" name="response" defaultValue={event.my_response ?? "pending"}>
-                  <option value="pending">待確認</option>
-                  <option value="attending">參加</option>
-                  <option value="declined">不參加</option>
-                </select>
-              </label>
-              <label className="field"><span className="label">攜伴人數</span>
-                <input className="input" type="number" name="guestCount" min={0} max={20} defaultValue={event.my_guest_count} inputMode="numeric" />
-              </label>
-            </div>
-            <label className="field"><span className="label">備註</span>
-              <input className="input" name="note" maxLength={500} defaultValue={event.my_note} />
-            </label>
-            <div className="form-actions"><button className="button" type="submit">儲存報名狀態</button></div>
-          </form>}
+          {event.status === "published" && event.registration_open && selectedClub.can_register && <EventRegistrationForm clubId={selectedClub.club_id} eventId={event.id} response={event.my_response} guestCount={event.my_guest_count} note={event.my_note} />}
 
           {event.status === "published" && !event.registration_open && <div className="notice notice-info">活動已開始或報名已截止，目前不能修改報名。</div>}
           {event.status === "published" && event.registration_open && !selectedClub.can_register && <div className="notice notice-info">此帳號可管理活動，但不是該社有效社員，因此不能占用社員報名名額。</div>}
@@ -361,10 +343,13 @@ export default async function EventsPage({
               agrees -- check_in_to_event_by_location never asks. Only this
               button still did, so a 不計入出席 event showed no way to check in
               and the officer who made one could not find one. */}
-          {event.status === "published" && selectedClub.can_register
+          {event.status === "published" && selectedClub.can_register && !event.time_unspecified
             && <div className="form-actions">
               <Link className="button button-secondary" href="/events/checkin">本人簽到</Link>
             </div>}
+          {event.status === "published" && event.time_unspecified && <p className="hint">
+            活動時間未定，暫不開放本人 QR／定位簽到。
+          </p>}
           </details>
         </article>)}
       </div>

@@ -24,6 +24,43 @@ async function expectNoHorizontalOverflow(page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
+test("each upcoming event row opens that exact event in member mode", async ({ page }, testInfo) => {
+  test.setTimeout(60_000);
+  await login(page, "e2e-shell-ordinary@example.test");
+  const dashboard = page.url();
+  const upcoming = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "近期活動", exact: true }),
+  });
+  const links = upcoming.getByRole("link").filter({ has: page.locator("strong") });
+  await expect(links.first()).toBeVisible();
+  const destinations = await links.evaluateAll((rows) => rows.map((row) => ({
+    href: row.getAttribute("href"),
+    title: row.querySelector("span:nth-child(2) > strong")?.textContent,
+  })));
+  expect(destinations.length).toBeGreaterThan(0);
+  const clubs = new Set();
+  for (const { href, title } of destinations) {
+    expect(title).toBeTruthy();
+    const destination = new URL(href, baseURL);
+    expect(destination.pathname).toMatch(/^\/events\/[0-9a-f-]{36}$/u);
+    expect(destination.searchParams.get("mode")).toBe("member");
+    expect(destination.searchParams.get("clubId")).toMatch(/^[0-9a-f-]{36}$/u);
+    clubs.add(destination.searchParams.get("clubId"));
+    const link = upcoming.locator(`a[href="${href}"]`);
+    await link.focus();
+    await link.press("Enter");
+    await expect(page).toHaveURL(destination.toString());
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    await expect(page.getByText("地點", { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page.goto(dashboard);
+  }
+  expect(clubs.size).toBe(1);
+  await expect(upcoming.getByRole("link", { name: /查看全部/u }))
+    .toHaveAttribute("href", `/events?clubId=${[...clubs][0]}&mode=member`);
+  await page.screenshot({ path: testInfo.outputPath("upcoming-event-links.png"), fullPage: true });
+});
+
 test("already-friend checks pairing in place and distinguishes lookup failures", async ({ page, context }, testInfo) => {
   await login(page, "e2e-shell-line-oa-unpaired@example.test");
   const taskCard = page.locator("section").filter({ has: page.getByRole("heading", { name: "待辦提醒", exact: true }) });
@@ -92,7 +129,21 @@ test("member home is server-resolved, member-first, and responsive", async ({ pa
     await expect(multiPage.getByRole("heading", { name: "今天與我有關的事情" })).toBeVisible();
     await multiPage.getByLabel("切換目前所在的社或委員會").click();
     await multiPage.getByRole("button", { name: /^本機 Shell 第二社 E2E-SHELL-SECOND/u }).click();
+    await expect(multiPage).toHaveURL(/\/dashboard\?mode=member$/u);
     await expect(multiPage.getByLabel("切換目前所在的社或委員會")).toContainText("本機 Shell 第二社");
+    const heroRsvp = multiPage.getByRole("link", { name: "前往報名" });
+    await expect(heroRsvp).toBeVisible();
+    const expectedAnchor = "a1000000-0000-4000-8000-000000000108";
+    const heroDestination = new URL(await heroRsvp.getAttribute("href"), baseURL);
+    expect(heroDestination.pathname).toBe("/events");
+    expect(heroDestination.searchParams.get("clubId")).toBe("a1000000-0000-4000-8000-000000000002");
+    expect(heroDestination.searchParams.get("mode")).toBe("member");
+    expect(heroDestination.hash).toBe(`#event-${expectedAnchor}`);
+    await heroRsvp.click();
+    const targetEvent = multiPage.locator(`#event-${expectedAnchor}`);
+    await expect(targetEvent.locator("details")).toHaveAttribute("open", "");
+    await expect(targetEvent.getByRole("heading", { name: "本機首頁按鈕定位驗收活動" })).toBeInViewport();
+    await multiPage.goto("/dashboard?mode=member");
     // The shell and the member pages must use the same active-club choice.
     // Without this assertion, /club-affairs silently fell back to the first
     // club even though the shell still said the second club was active.

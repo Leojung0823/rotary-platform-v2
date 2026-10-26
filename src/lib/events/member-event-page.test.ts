@@ -124,13 +124,18 @@ describe("each event starts collapsed", () => {
   });
 });
 
-describe("the answer and the guest count are one row", () => {
+describe("the optional note and guest count remain readable", () => {
   it("does not use the grid that stacks on a narrow screen", () => {
     for (const [name, source] of [["list", list], ["detail", detail]] as const) {
-      const form = source.slice(source.indexOf("我的回覆") - 300, source.indexOf("我的回覆"));
-      expect(form, `${name} still uses form-grid`).not.toContain('className="form-grid"');
-      expect(form).toContain('className="response-grid"');
+      expect(source, `${name} must use the same immediate response form`).toContain("<EventRegistrationForm");
     }
+    const form = readFileSync("src/components/events/event-registration-form.tsx", "utf8");
+    expect(form).not.toContain('className="form-grid"');
+    expect(form).toContain('className="response-grid"');
+    expect(form).not.toContain("<select");
+    expect(form).toContain('name="response" value="attending"');
+    expect(form).toContain('name="response" value="declined"');
+    expect(form).toContain("disabled={pending}");
   });
 
   it("keeps two columns at every width", () => {
@@ -144,8 +149,8 @@ describe("the answer and the guest count are one row", () => {
 
 describe("the time range and the links come from one place", () => {
   it("formats every event time through the shared formatter", () => {
-    expect(list).toContain("formatEventTimeRange(event.starts_at, event.ends_at)");
-    expect(detail).toContain("formatEventClockRange(event.starts_at, event.ends_at)");
+    expect(list).toContain("formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)");
+    expect(detail).toContain("formatEventClockRange(event.starts_at, event.ends_at, event.time_unspecified)");
     // A second, hand-rolled range is how the two pages drift apart.
     expect(detail).not.toContain("function formatTimeRange");
   });
@@ -166,9 +171,9 @@ describe("the time range and the links come from one place", () => {
     // Guarding against "no hand-rolled range" being satisfied by printing no
     // time at all.
     const summary = list.slice(list.indexOf("<summary>"), list.indexOf("</summary>"));
-    expect(summary).toContain("formatEventTimeRange(event.starts_at, event.ends_at)");
+    expect(summary).toContain("formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)");
     const body = list.slice(list.indexOf("</summary>"));
-    expect(body).toContain("<strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at)}");
+    expect(body).toContain("<strong>時間：</strong>{formatEventTimeRange(event.starts_at, event.ends_at, event.time_unspecified)}");
   });
 
   it("renders a description through the component that linkifies it", () => {

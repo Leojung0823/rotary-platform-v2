@@ -48,7 +48,7 @@ export const resolveMemberHomeProjection = cache(async function resolveMemberHom
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc("get_my_member_home_projection", { p_club_id: clubId });
+    const { data, error } = await supabase.rpc("get_my_member_home_with_event_ids", { p_club_id: clubId });
     if (error) resolution = { ok: false, reason: classifyMemberHomeFailure(error) };
     else {
       const projection = parseMemberHomeProjection(data);

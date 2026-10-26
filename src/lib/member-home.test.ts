@@ -13,6 +13,7 @@ const event = {
   cover_image_path: "11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222",
   starts_at: "2026-08-12T10:00:00.000Z",
   ends_at: "2026-08-12T12:00:00.000Z",
+  time_unspecified: false,
   registration_state: "not_registered",
   registration_open: true,
   checkin_state: "not_open",
@@ -57,6 +58,7 @@ describe("member-home projection contract", () => {
         coverImagePath: "11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222",
         startsAt: "2026-08-12T10:00:00.000Z",
         endsAt: "2026-08-12T12:00:00.000Z",
+        timeUnspecified: false,
         registrationState: "not_registered",
         registrationOpen: true,
         checkinState: "not_open",
@@ -205,6 +207,19 @@ describe("member-home projection contract", () => {
 });
 
 describe("member-home state presentation", () => {
+  it.each(["not_registered", "pending", "declined", "registered"])("targets the exact event and club for %s", (state) => {
+    const eventId = "a1000000-0000-4000-8000-000000000102";
+    const clubId = "a1000000-0000-4000-8000-000000000001";
+    const parsed = parseMemberHomeProjection(projection({ primary_event: { ...event, event_id: eventId, registration_state: state } }));
+    expect(parsed?.primaryEvent?.eventId).toBe(eventId);
+    expect(memberHomePrimaryAction(parsed!.primaryEvent!, clubId).href)
+      .toBe(`/events?clubId=${clubId}&mode=member#event-${eventId}`);
+  });
+
+  it("rejects an invalid event identity instead of guessing by title", () => {
+    expect(parseMemberHomeProjection(projection({ primary_event: { ...event, event_id: "not-an-id" } }))).toBeNull();
+  });
+
   it.each(memberHomeRegistrationStates)("accepts the canonical registration state %s", (registrationState) => {
     expect(parseMemberHomeProjection(projection({ primary_event: { ...event, registration_state: registrationState } }))?.primaryEvent?.registrationState)
       .toBe(registrationState);

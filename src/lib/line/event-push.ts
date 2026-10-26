@@ -8,7 +8,7 @@ import { deliverClubOaText, loadClubOaDispatchContext } from "./oa-dispatch";
 
 const MAX_LOCATION = 60;
 
-function formatStart(startsAt: string) {
+function formatStart(startsAt: string, timeUnspecified: boolean) {
   const parsed = new Date(startsAt);
   if (Number.isNaN(parsed.getTime())) return null;
   // 24-hour and with the weekday: a meeting notice is misread more easily than
@@ -19,9 +19,7 @@ function formatStart(startsAt: string) {
     month: "long",
     day: "numeric",
     weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
+    ...(timeUnspecified ? {} : { hour: "2-digit", minute: "2-digit", hour12: false as const }),
   }).format(parsed);
 }
 
@@ -46,10 +44,11 @@ export function composeEventPushText(event: {
   title: string;
   location?: string | null;
   startsAt: string;
+  timeUnspecified?: boolean;
 }) {
-  const when = formatStart(event.startsAt);
+  const when = formatStart(event.startsAt, event.timeUnspecified ?? false);
   const lines = [`【新活動】${event.title}`];
-  if (when) lines.push(`時間：${when}`);
+  if (when) lines.push(event.timeUnspecified ? `日期：${when}（時間未定）` : `時間：${when}`);
   const location = (event.location ?? "").trim();
   if (location) lines.push(`地點：${location.slice(0, MAX_LOCATION)}`);
   // The URL goes on its own line: LINE only turns a link into something
@@ -62,6 +61,7 @@ type EventTargets = {
   title?: unknown;
   location?: unknown;
   starts_at?: unknown;
+  time_unspecified?: unknown;
   event_status?: unknown;
   oa_user_ids?: unknown;
 };
@@ -104,7 +104,9 @@ export async function pushPublishedEventToLine({
   // happened by the time this runs, so this only catches a projection that does
   // not say what the caller assumed.
   if (projection.event_status !== "published") return { status: "failed", reason: "event_not_published" };
-  if (typeof projection.title !== "string" || typeof projection.starts_at !== "string") {
+  if (typeof projection.title !== "string"
+    || typeof projection.starts_at !== "string"
+    || typeof projection.time_unspecified !== "boolean") {
     return { status: "failed", reason: "targets_unavailable" };
   }
 
@@ -121,6 +123,7 @@ export async function pushPublishedEventToLine({
     title: projection.title,
     location: typeof projection.location === "string" ? projection.location : null,
     startsAt: projection.starts_at,
+    timeUnspecified: projection.time_unspecified,
   });
   const delivery = await deliverClubOaText("multicast", recipients, text, dispatch.context);
 

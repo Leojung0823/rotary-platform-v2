@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { EventCreateForm } from "@/components/events/event-create-form";
 import { Notice } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
+import { requireIdentity } from "@/lib/auth";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 import { audienceFromEvent } from "@/lib/audience/selection";
 import type { AudienceSelection } from "@/lib/audience/selection";
 import type { EventCreateFormValues } from "@/lib/events/validation";
@@ -30,6 +32,7 @@ type ManagedEvent = {
   location: string | null;
   starts_at: string;
   ends_at: string;
+  time_unspecified: boolean;
   registration_deadline: string | null;
   capacity: number | null;
   counts_for_attendance: boolean;
@@ -50,18 +53,28 @@ function toLocalInput(value: string) {
   return `${read("year")}-${read("month")}-${read("day")}T${read("hour")}:${read("minute")}`;
 }
 
+function toLocalDate(value: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date(value));
+  const read = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${read("year")}-${read("month")}-${read("day")}`;
+}
+
 export default async function EditEventPage({
   params,
 }: {
   params: Promise<{ clubId: string; eventId: string }>;
 }) {
   const { clubId, eventId } = await params;
-  const supabase = await createClient();
+  const [identity, supabase] = await Promise.all([requireIdentity(), createClient()]);
 
-  const [eventsResult, tagsResult, membersResult] = await Promise.all([
+  const [eventsResult, tagsResult, membersResult, dateOnlyFlag] = await Promise.all([
     supabase.rpc("list_club_events", { p_club_id: clubId }),
     supabase.rpc("list_club_member_tags", { p_club_id: clubId }),
     supabase.rpc("list_club_members", { p_club_id: clubId, p_query: null, p_status: "active" }),
+    evaluateCurrentFeatureFlag({ key: "event_date_only_v1", subjectUuid: identity.id }),
   ]);
   if (eventsResult.error) return <Notice tone="error">您沒有管理這個社活動的權限。</Notice>;
 
@@ -92,6 +105,8 @@ export default async function EditEventPage({
   const values: EventCreateFormValues = {
     eventType: target.event_type,
     title: target.title,
+    eventDate: toLocalDate(target.starts_at),
+    timeUnspecified: target.time_unspecified,
     startsAt: toLocalInput(target.starts_at),
     endsAt: toLocalInput(target.ends_at),
     registrationDeadline: target.registration_deadline === null
@@ -122,6 +137,7 @@ export default async function EditEventPage({
     <section className="card">
       <EventCreateForm
         clubId={clubId}
+        timeUnspecifiedEnabled={dateOnlyFlag.enabled}
         eventTypeLabels={eventTypeLabels}
         tags={((tagsResult.data as { tags?: never[] } | null)?.tags ?? [])}
         members={((membersResult.data ?? []) as never[])}

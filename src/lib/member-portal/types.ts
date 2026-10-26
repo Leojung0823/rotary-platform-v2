@@ -25,6 +25,8 @@ export type PortalFeaturedEvent = Readonly<{
 }>;
 
 export type PortalUpcomingEvent = Readonly<{
+  id: string;
+  href: string;
   month: string;
   day: string;
   title: string;

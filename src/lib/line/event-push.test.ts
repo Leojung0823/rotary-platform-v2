@@ -37,6 +37,7 @@ const published = {
   title: "九月例會",
   location: "台北國賓飯店",
   starts_at: "2026-09-10T11:30:00.000Z",
+  time_unspecified: false,
   event_status: "published",
   oa_user_ids: ["Uone", "Utwo"],
 };
@@ -133,6 +134,17 @@ describe("event push text", () => {
   it("omits an empty location instead of printing a blank line", () => {
     const text = composeEventPushText({ eventId: "a1000000-0000-4000-8000-000000000002", title: "爐邊會談", location: "", startsAt: "2026-09-10T11:30:00.000Z" });
     expect(text).not.toContain("地點：");
+  });
+
+  it("announces a date-only activity without inventing midnight", () => {
+    const text = composeEventPushText({
+      eventId: "a1000000-0000-4000-8000-000000000006",
+      title: "E-Meeting",
+      startsAt: "2026-10-26T16:00:00.000Z",
+      timeUnspecified: true,
+    });
+    expect(text).toContain("日期：2026年10月27日週二（時間未定）");
+    expect(text).not.toContain("00:00");
   });
 
   it("gives the member a link they can tap", () => {

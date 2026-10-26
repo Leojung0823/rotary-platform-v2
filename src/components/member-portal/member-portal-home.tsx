@@ -77,7 +77,7 @@ async function PortalBody({
     : undefined;
   const featuredEvent = projection.primaryEvent === null
     ? null
-    : featuredEventFrom(projection.primaryEvent, undefined);
+    : featuredEventFrom(projection.primaryEvent, undefined, activeClub.clubId);
   const lineOaTask = lineOaResolution?.ok ? lineOaTaskFrom(lineOaResolution.status, activeClub.clubId) : null;
   // The RPC supplies a priority snapshot, not every outstanding task. Keep
   // every supplied item; onboarding must not displace a deadline reminder.
@@ -88,7 +88,8 @@ async function PortalBody({
   return <MemberPortalBody
     featuredEvent={featuredEvent}
     featuredEventCoverUrl={featuredEventCoverUrl}
-    upcomingEvents={upcomingEventsFrom(projection.upcomingEvents)}
+    upcomingEvents={upcomingEventsFrom(projection.upcomingEvents, activeClub.clubId)}
+    eventsHref={`/events?clubId=${encodeURIComponent(activeClub.clubId)}&mode=member`}
     tasks={tasks}
     announcements={features.messageCentre ? announcementsFrom(projection, activeClub.clubId) : []}
     messagesHref={messagesHref}

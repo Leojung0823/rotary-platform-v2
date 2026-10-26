@@ -16,8 +16,14 @@ import { COVER_BUCKET } from "@/lib/events/cover-image";
 import { pushPublishedEventToLine } from "@/lib/line/event-push";
 import type { MessagePushOutcome } from "@/lib/line/message-push-outcome";
 import { createClient } from "@/lib/supabase/server";
+import { requireIdentity } from "@/lib/auth";
+import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 function eventPath(clubId: string, key: "success" | "error", code: string, mode?: string) {
   const params = new URLSearchParams(mode === "management" ? { [key]: code, mode } : { clubId, [key]: code });
@@ -154,7 +160,18 @@ export async function createEventAction(
   let createdEventId: string | null = null;
   try {
     const supabase = await createClient();
-    const result = await supabase.rpc("create_club_event", {
+    let useTimeModeRpc = false;
+    if (validated.input.timeUnspecified) {
+      const identity = await requireIdentity();
+      const flag = await evaluateCurrentFeatureFlag({ key: "event_date_only_v1", subjectUuid: identity.id });
+      if (!flag.enabled) {
+        return createEventFailure(values, revision, "目前尚未開放只填活動日期，請輸入確切開始與結束時間。", {
+          eventDate: "日期未定時間功能目前未開啟。",
+        });
+      }
+      useTimeModeRpc = true;
+    }
+    const rpcInput = {
       p_club_id: clubId,
       p_event_type: validated.input.eventType,
       p_title: validated.input.title,
@@ -167,7 +184,13 @@ export async function createEventAction(
       p_counts_for_attendance: countsForAttendance,
       p_venue_latitude: validated.input.venue?.latitude ?? null,
       p_venue_longitude: validated.input.venue?.longitude ?? null,
-    });
+    };
+    const result = useTimeModeRpc
+      ? await supabase.rpc("create_club_event_with_time_mode", {
+        ...rpcInput,
+        p_time_unspecified: validated.input.timeUnspecified,
+      })
+      : await supabase.rpc("create_club_event", rpcInput);
     rpcError = result.error;
     createdEventId = readEventId(result.data);
 
@@ -320,9 +343,14 @@ export async function cancelEventAction(formData: FormData) {
   redirect(eventPath(clubId, "success", "event_cancelled", mode));
 }
 
-export async function registerEventAction(formData: FormData) {
-  let clubId: string;
-  let eventId: string;
+export type EventRegistrationState =
+  | { status: "idle" }
+  | { status: "error"; errorCode: string }
+  | { status: "success"; response: "pending" | "attending" | "declined"; guestCount: number };
+
+export async function registerEventAction(_previous: EventRegistrationState, formData: FormData): Promise<EventRegistrationState> {
+  let clubId = "";
+  let eventId = "";
   let response: ReturnType<typeof parseEventResponse>;
   let guestCount: number;
   let note: string;
@@ -330,23 +358,29 @@ export async function registerEventAction(formData: FormData) {
     clubId = parseUuid(formData.get("clubId"));
     eventId = parseUuid(formData.get("eventId"));
     response = parseEventResponse(formData.get("response"));
-    guestCount = parseGuestCount(formData.get("guestCount"), response);
+    // Declining (or clearing a response) also clears previously saved guests.
+    guestCount = parseGuestCount(response === "attending" ? formData.get("guestCount") : "0", response);
     note = parseEventText(formData.get("note"), 500);
   } catch {
-    redirect("/events?error=invalid_input");
+    return { status: "error", errorCode: "invalid_input" };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("set_my_event_registration", {
-    p_club_id: clubId,
-    p_event_id: eventId,
-    p_response: response,
-    p_guest_count: guestCount,
-    p_note: note,
-  });
-  if (error) redirect(eventPath(clubId, "error", mapEventError(error.message)));
-  revalidatePath("/events");
-  redirect(eventPath(clubId, "success", "registration_saved"));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("set_my_event_registration", {
+      p_club_id: clubId,
+      p_event_id: eventId,
+      p_response: response,
+      p_guest_count: guestCount,
+      p_note: note,
+    });
+    if (error) return { status: "error", errorCode: mapEventError(error.message) };
+    // Do not redirect/revalidate the entire streamed shell before acknowledging
+    // this write. The client refreshes the dynamic page in the background.
+    return { status: "success", response, guestCount };
+  } catch {
+    return { status: "error", errorCode: "unexpected" };
+  }
 }
 
 export type VenueGeocodeState =
@@ -439,13 +473,28 @@ export async function updateEventAction(
   type UpdateOutcome = { notify_members?: unknown; changed_field_count?: unknown; version?: unknown };
   let outcome: UpdateOutcome | null = null;
   try {
-    const supabase = await createClient();
+    const [identity, supabase] = await Promise.all([requireIdentity(), createClient()]);
+    const flag = await evaluateCurrentFeatureFlag({ key: "event_date_only_v1", subjectUuid: identity.id });
+    if (validated.input.timeUnspecified) {
+      if (!flag.enabled) {
+        const existing = await supabase.rpc("list_club_events", { p_club_id: clubId, p_as_member: false });
+        const rows = isRecord(existing.data) && Array.isArray(existing.data.events) ? existing.data.events : [];
+        const wasAlreadyDateOnly = rows.some((row) => isRecord(row)
+          && row.id === eventId
+          && row.time_unspecified === true);
+        if (!wasAlreadyDateOnly) {
+          return createEventFailure(values, revision, "目前尚未開放只填活動日期，請輸入確切開始與結束時間。", {
+            eventDate: "日期未定時間功能目前未開啟。",
+          });
+        }
+      }
+    }
     // The audience first. counts_for_attendance and the audience are mutually
     // exclusive in the database, so widening the audience before the event
-    // stops counting would be refused by the trigger -- but update_club_event
+    // stops counting would be refused by the trigger -- but update_club_event_with_time_mode
     // sets counts_for_attendance to false in the same call, and it has to have
     // done so before the audience is written.
-    const result = await supabase.rpc("update_club_event", {
+    const rpcInput = {
       p_club_id: clubId,
       p_event_id: eventId,
       p_event_type: validated.input.eventType,
@@ -460,7 +509,13 @@ export async function updateEventAction(
       p_venue_latitude: validated.input.venue?.latitude ?? null,
       p_venue_longitude: validated.input.venue?.longitude ?? null,
       p_expected_version: Number.isNaN(expectedVersion) ? null : expectedVersion,
-    });
+    };
+    const result = flag.enabled
+      ? await supabase.rpc("update_club_event_with_time_mode", {
+        ...rpcInput,
+        p_time_unspecified: validated.input.timeUnspecified,
+      })
+      : await supabase.rpc("update_club_event", rpcInput);
     if (result.error) return updateEventRpcFailure(values, revision, result.error.message);
     outcome = (result.data ?? null) as UpdateOutcome | null;
 

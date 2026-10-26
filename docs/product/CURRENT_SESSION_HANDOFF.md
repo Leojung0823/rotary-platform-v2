@@ -1,7 +1,58 @@
-# 交接筆記（持續更新；最新核對 2026-10-03；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
+# 交接筆記（持續更新；最新核對 2026-10-26；主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
 > 先讀根目錄 `AGENTS.md`。權威來源是 GitHub `Leojung0823/rotary-platform-v2` 的 `main`。
 > `/Users/leoj/Documents/Codex/2026-08-15/rotary/` 是舊快照，不在 git 裡，不能當基準。
+
+## 2026-10-26 活動單擊報名與首頁活動定位（staging 已發布並驗收）
+
+- 社員在活動清單或詳情頁選「我要參加／不克參加／待確認」時，按鈕當下就儲存，不再使用下拉選單及第二個送出按鈕。原有備註、同行人數、伺服器權限檢查與 `set_my_event_registration` RPC 保持；取消或不參加會清除同行人數，失敗不顯示假成功。
+- 首頁主要「前往報名／確認報名／改為報名／查看活動」連到正確社別、社員模式及首頁主活動的錨點；活動清單收到錨點後會展開對應活動卡並定位。首頁近期活動每列原本直達個別詳情的行為不變。
+- 新增 `20261025000100_member_home_event_identity.sql`，以相容 wrapper 為首頁既有主／下一活動補上活動 ID；原本 RPC 的排序、資料範圍與授權不改。資料庫驗證涵蓋一般社員、跨社、停權、權限與顯示欄位相同的重複活動。沒有改登入、RLS、社籍或管理權限。
+- 本機已通過 `verify:db`（84 份 SQL verification）、217 個 Vitest 檔／1,607 tests、typecheck、lint、build、migration guard、verification manifest、diff check；production build 的本機 E2E 為 75 passed／43 skipped。GitHub CI `40223023035` 成功；自動 Browser Smoke `40223023068` 成功（240 passed、102 skipped、1 flaky；非本次功能的祝福金額隱私案例重試後通過）。
+- 功能 commit `00f4d07a964a6640359359be6034266ef711543e` 已推送至 `main`。Staging Release plan `40224119074` 與 Staging Go-Live `40224287354` 均成功，使用同一 exact SHA；Go-Live 完成 migration、staging 部署、HTTPS smoke 與受保護 hosted 社員驗收。`/api/health` 回報 `status=ok`、`environment=staging`、revision `00f4d07a964a`、configuration/database `true`、`issues=[]`、`warnings=[]`。
+- Staging Free 方案沒有資料庫備份；本次 Go-Live 的 `BACKUP-READY` 依據是 runbook 的 forward-fix 條件：唯一待套用 migration `20261025000100_member_home_event_identity.sql` 只新增函式與權限，沒有刪除／改寫資料或破壞性 schema 變更，舊 projection 定義仍在 Git。沒有宣稱建立資料庫備份。未修改 production，也未調整 feature flags。
+- 開發工作樹 `/Users/leoj/.codex/worktrees/rotary-event-date-only`，分支 `codex/event-date-only-20261015`；基準 `origin/main@38dab450c06c13fcf8f9475d9b47542ee8bfb810`。接下來只需同步本段與 roadmap 的文件狀態；程式 runtime 仍是已驗收的 `00f4d07a`，文件提交本身不代表需要再次部署。
+
+## 2026-10-25 最終驗收：八場活動與八張封面完成（staging）
+
+- 使用者重新登入後，先查完整管理清單，確認第708次原先未建立，才重新送出；沒有重複建立。第708、710、714、715次均已建立、上傳對應圖片及發布，與先前709、711、712、713次合計八場。重新載入頁面後八場皆維持已發布、圖片存在；四場日期未定皆正確顯示日期／時間未定／暫停社員QR與GPS，沒有偽造時段。
+- 管理頁「板橋群英扶輪社」共11場有效活動，包含本輪八場及原本三場。八張封面逐一展開並等 lazy loading 完成，實際 naturalWidth=1600、naturalHeight=900、complete=true，且皆為私有 Storage signed URL。新四場每場報名名單為全社30位待回覆；沒有替社員報名或修改既有報名狀態。
+
+| 次數 | 2026日期／時段 | event_id |
+| --- | --- | --- |
+| 708 | 10/27，時間未定 | 8cb1f1a7-4407-429c-b877-38106c5473bf |
+| 709 | 10/29 13:30–17:00 | 0ee15b38-b184-4fb8-8e07-19783e004a7c |
+| 710 | 11/3，時間未定 | 33ae2d9c-a3b1-4690-b99b-98e85ef30a45 |
+| 711 | 11/17 19:00–21:00 | a8299aa3-fbe2-4470-a2dc-6a40bcfb2741 |
+| 712 | 11/29 08:30–14:30 | e48bfafb-e5f9-4eac-a57b-140438f04b22 |
+| 713 | 12/8 19:00–21:00，全體社員 | ea37c480-dac7-4772-bdfb-b61af276b817 |
+| 714 | 12/15，時間未定 | 972d8cda-02b3-4a23-b26a-ddf2b38a2a76 |
+| 715 | 12/20，時間未定，CP Ali’s Place | 19f0abbf-608a-4f7c-abd0-2f306cd925b7 |
+
+- 完整活動清單、文案與IDs已更新 worktree 和主工作目錄兩份 outputs/event-covers/2026-q4/EVENTS.json；八張原圖及 PROMPTS.md 同存。實際已發布的聖誕趴完整卡片截圖為主工作目錄 outputs/event-covers/2026-q4/staging-published-card-715.jpg，含圖片、已發布、時間未定、地點與30位對象。這些產物依既有outputs規則不進Git，需保留主工作目錄副本。
+- 程式部署仍為300097b，Plan40196606775／Go-Live40196686806／CI40196596420／完整Smoke40196596375都成功。此次只新增使用者指定的staging活動資料，沒有production修改、沒有新migration，也沒有重複觸發發布或改LINE channel。首頁近期活動直達詳情、封面contain、本機217檔1593tests／84SQL與手機桌機回歸均已完成；詳細證據見下方過程。
+- 已用一般性介紹補齊活動說明，不把未知資料寫成事實。後續由幹部維護的資訊：三場E-Meeting連結與時段、711分享主題、參訪集合與流程、登山集合路線、選舉議程及聖誕趴時段安排。這些保留待公布，不是本輪程式或建檔失敗。
+
+## 2026-10-25 開發與驗收過程（歷史紀錄；以最上方最終驗收為準）
+
+- 最終自動瀏覽器驗證：產品 SHA `300097b` 的 Browser Smoke `40196596375` 已成功（233 passed／99 skipped／3 flaky，另含五項 rollback 各自通過）。三項重試後通過為既有訊息排程、GPS 冪等簽到及歡喜牆私人收藏，這輪首頁連結與 Rich Menu 回歸沒有重試。下方「仍執行中」為先前同步當時狀態，以本段最終結果為準。文件提交 `68f8b0c` 的 CI／Smoke 僅跑文件 scope gate，不能拿它取代產品 SHA 的完整測試證據。
+- 後續前端修正 commit `300097b1a0f3e642224381e355939bbcd4e33707` 已同步 main 並成功部署 staging：Release plan `40196606775`、Go-Live `40196686806`（含 HTTPS smoke／受保護 hosted 社員驗收）成功；2026-10-25T13:20:48Z health revision `300097b1a0f3`、status ok、configuration/database true、issues/warnings 空。CI `40196596420` 成功；自動 Browser Smoke `40196596375` 仍在執行，不能先算通過。沒有新 migration、沒有修改 production 或開旗標。已有可用的前版程式 `fcda4f4` 作為本次純前端發布的 rollback point，沒有聲稱新建 NAS／資料庫備份。
+- 最新旗標／建檔狀態：staging 管理頁已實際顯示「活動時間尚未確定」與活動日期欄，代表開關已對目前管理員生效。填寫第 708 次（2026/10/27、E-Meeting、線上參與方式待公布、全社、計入出席）並送出建立草稿後，頁面出錯，重載回到登入頁。寫入結果未知，不能標為已建立，也不能直接重送。請使用者重新登入後先查清單，若找到同標題／日期草稿就接續圖片與發布；確認沒有才重新建立。710／714／715 尚未送出；四張封面都還沒上傳。已非 Docker／CLI 開旗標阻塞，現在僅需恢復瀏覽器登入。
+- 目前瀏覽器登入的是無社籍的平台管理員，直接進入 `mode=member` 活動詳情會被拒絕；沒有為拍驗收圖而提升社籍或放寬權限。手機／桌機詳情、整列導覽與封面顯示證據來自本機普通社員／社員兼管理者，hosted 一般社員驗收另由受保護 workflow 完成；不可把平台管理員的畫面說成真人社員驗收。
+- 首頁「近期活動」點擊修正已在本機實作：原本每列是 div，現在整列為原生 Link，使用 RPC 既有 eventId 直達活動詳情並帶 clubId／mode=member；同名活動以 ID 區別，不用標題猜測。日期、標題與狀態均可點擊，鍵盤焦點有外框；「查看全部」與空活動入口亦保留社別。沒有增加 DB 查詢、migration 或改報名／授權規則。新增實際元件渲染／URL 測試 3 項及各 viewport 點擊回歸案例。
+- 最新本機驗證全部通過：217 檔／1,593 tests、typecheck、lint、build、完整 verify:db（重播 migrations＋84 份 SQL）、migration guard、verification manifest、E2E 語法與 diff check。DB lint 只有原有 3 項 warning。首頁近期活動的 1440／375px 真實鍵盤導覽及 Rich Menu 發布／停用回歸共 3 passed；封面額外以真實圖片上傳驗證 1600×900、object-fit:contain，1440px 高 480、375px 高 191.8125，兩尺寸橫向溢位皆 0。這批前端修正已隨 300097b 發布，不改 SQL 或權限。
+- 環境恢復紀錄：先前 Docker 正常重啟逾時，後來重新啟動成功；沒有 Factory Reset、搬移或刪除映像檔。原 Homebrew Supabase 2.107.0 簽章損壞被 macOS 終止；官方 Homebrew 重新安裝因 Xcode CLI 過舊失敗。改將已下載且 SHA256 符合官方 formula 的 2.109.1 解到 /tmp/rotary-supabase-cli.VQwm8n，codesign 驗證有效後執行完整本機驗證；未停用安全檢查、未改專案套件。Next 16／Node 26 的 env-file 直接建置會讓 worker 拒絕 NODE_OPTIONS；驗證使用 process.loadEnvFile 後以乾淨子程序跑 npm run build，並確認瀏覽器包內有本機 URL 和設定的公開 key（只輸出布林結果）。上傳、原生檔案選擇及圖片解碼均已實際通過。系統原本的 Supabase 安裝仍需日後另修，不把暫存工具說成永久修復。
+- 功能工作樹：`/Users/leoj/.codex/worktrees/rotary-event-date-only`，分支 `codex/event-date-only-20261015`；開發基準為 `origin/main@9d2b499`。核心 commit `fcda4f4b5958474de5fab7b3c9c8a97365fce0a1` 已推 main 並成功部署 staging；沒有修改 production。
+- 新增 `time_unspecified` 活動模式：只填台北日期、社員端標示「時間未定」、當天仍可報名；本人 QR／GPS 不開放；幹部仍可人工簽到；缺席與出席率到台北當日結束後才結算。功能旗標 `event_date_only_v1` 預設關閉。相關 migrations：`20261015000100_event_date_only_v1.sql`、`20261015000200_date_only_attendance_settlement.sql`；SQL 驗證：`supabase/verification/event_date_only_security.sql`。
+- Docker 已恢復（Server 29.6.1），磁碟約 20GB 可用。本機 typecheck、lint、Vitest 216 檔／1,590 項、build、migration guard、84 份 DB verification manifest、diff check 通過。完整 verify:db 已成功重播所有 migrations 並通過 84 份 SQL；DB lint 只有 3 項既有 warning。日期未定的雙向編輯、舊 QR 憑證撤銷、一般社員／外社／停權拒絕、當日不結算／隔日結算及詳情頁不誤報可簽到均已驗證。
+- 本機 DB reset 後，已按 superadmin → configure-local-e2e-role-shells enabled → browser fixtures 的順序重建測試資料，僅使用臨時隨機的合成本機測試密碼。Playwright 1440／375px 為 4 passed／2 skipped，涵蓋表單錯誤保留、未設截止發布、日期未定建立與社員報名重載後保存，以及補上確切時間；非桌機寫入案例依既有規則略過。使用社員兼管理者驗證報名，純管理帳號仍不能占用社員名額。報名驗收以成功的 action 回應與重新讀取的已保存狀態為準，不依賴尚未結束的外殼串流。
+- 核心 Staging Release plan `40170135001` 與 Go-Live `40170461557` 都成功（包含 migration 套用、HTTPS smoke、受保護 hosted 社員驗收）。2026-10-25T07:12:22Z 的 health 為 revision `fcda4f4b5958`、status ok、configuration/database true、issues/warnings 皆空。CI `40170096253` 成功；Browser Smoke `40170096238` 結束為 228 passed／99 skipped／1 flaky／1 failed。唯一失敗為 Rich Menu 測試未展開預設收合的「進階設定」即尋找區塊；日期未定案例通過。已在本機補上點擊既有 summary，尚待本機回歸，未提交。
+- event_date_only_v1 最初未開啟，本機 .env.staging 沒有儲存平台管理員密碼，已由使用者自行處理受保護 CLI；最新管理表單已實際出現日期未定選項。不要取用聊天中的舊密碼、偽造時間或繞過旗標。核心僅新增預設 false 欄位、約束與函式／grant 定義，沒有刪除欄位或改寫既有業務資料；staging 以關旗標與 forward-fix 恢復既有定義作為 rollback 依據，沒有聲稱產生新備份。
+- 內建 imagegen 完成 8 張藍金系列橫幅，已目視核對例會編號、活動文字與社名；不把未知時間、虛構議程或真人肖像放進圖中。圖片、完整提示詞 PROMPTS.md、活動資料 EVENTS.json 及驗收畫面，保存至工作樹 outputs/event-covers/2026-q4（既有 outputs 忽略規則排除 Git）。709、711、712、713 四張封面已成功上傳私有 event-covers Storage；重新載入後仍保存。709 詳情圖已確認為 1600×900 且實際載入；匿名 public object URL 回 HTTP 400，不能公開讀取。這不取代 hosted 跨社／真人驗收。
+- 已在 staging 的「板橋群英扶輪社」（club_id 3df4b471-40e1-494e-a3ce-9f7285500eb0）建立並發布四場例會，日期時間／地點／說明／圖片均重載核對，全社報名名單皆為 30 位：709 職業參訪（10/29 13:30–17:00，台北板橋馥華艾美酒店，event_id 0ee15b38-b184-4fb8-8e07-19783e004a7c）；711 Fellow Sharing（11/17 19:00–21:00，彭園板橋店，Cool & Mandy；主題保留待補，event_id a8299aa3-fbe2-4470-a2dc-6a40bcfb2741）；712 二分區聯合登山暨趣味競賽（11/29 08:30–14:30，中和烘爐地，event_id e48bfafb-e5f9-4eac-a57b-140438f04b22）；713 社務會議—2027–28 年度理事選舉（12/8 19:00–21:00，彭園板橋店，全體社員，event_id ea37c480-dac7-4772-bdfb-b61af276b817）。均依使用者提供的 Meeting No. 編為例會、全社可見、不設報名截止／名額；沒有猜測 GPS 座標。
+- 待確認／續作的四場（先查 708 是否已寫入，避免重複）：708 E-Meeting（2026/10/27，建立結果未知）；710 E-Meeting（11/3，未送出）；714 E-Meeting（12/15，未送出）；715 社員活動—聖誕趴（12/20，CP Ali’s Place，未送出）。全部時間未定，各自的封面已生成但尚未上傳；線上會議連結、議程與聖誕活動細節由幹部後補。
+- 封面詳情驗收發現原本 max-height:320px/object-fit:cover 會裁掉海報文字，已改為完整呈現、桌機最高 480px 的 contain 並通過本機雙尺寸驗收。截圖保存在 outputs/event-covers/2026-q4/local-poster-{1440,375}.png，另複製至主工作目錄相同 outputs 路徑；已隨 300097b 部署 staging，核心 fcda4f4 本身不含此修正。
+- 後續封面修正驗證：typecheck、lint、216 檔／1,590 tests、build、migration guard、84 份 verification manifest 與 diff check 再次通過。Docker VM 日誌於 06:53Z 顯示 shutdown complete／Power down，之後 Docker socket ping 5 秒逾時，db reset 無法取得回應；已終止本輪自己卡住的驗證程序，沒有清除容器或磁碟資料。先前核心完整 DB 驗證仍有效，但不能冒稱這次封面與 Rich Menu 本機瀏覽器回歸已跑完。使用者回覆「開好了」後，重載 staging 表單仍無時間未定選項，已詢問是打開終端機或 CLI 真正成功，待確認。
 
 ## 2026-10-03 歡喜牆私人收藏續作
 

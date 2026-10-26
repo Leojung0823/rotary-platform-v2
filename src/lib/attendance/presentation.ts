@@ -1,6 +1,7 @@
 import type { AdjustmentType } from "./validation";
 
 export type AttendanceStatus =
+  | "pending"
   | "present"
   | "makeup"
   | "official_leave"
@@ -9,6 +10,7 @@ export type AttendanceStatus =
   | "absent";
 
 export const attendanceStatusLabels: Record<AttendanceStatus, string> = {
+  pending: "待結算",
   present: "出席",
   makeup: "補出席",
   official_leave: "公假",
@@ -32,9 +34,9 @@ export const checkinMethodLabels: Record<string, string> = {
 };
 
 export function attendanceStatusBadge(status: string) {
+  if (status === "pending" || status === "exempt") return "badge badge-neutral";
   if (status === "present" || status === "makeup") return "badge badge-success";
   if (status === "absent") return "badge badge-danger";
-  if (status === "exempt") return "badge badge-neutral";
   return "badge badge-warning";
 }
 

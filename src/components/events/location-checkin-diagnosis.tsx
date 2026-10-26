@@ -2,6 +2,7 @@ import type { ClubEvent } from "@/lib/events/page-contract";
 import { locationCheckinBlockers, type LocationCheckinBlocker } from "@/lib/checkin/location-blockers";
 
 const blockerText: Record<LocationCheckinBlocker["reason"], string> = {
+  time_unspecified: "活動時間還沒確定，暫不開放本人定位簽到；請等幹部更新時間，或由幹部人工補登。",
   no_venue: "這場沒有設定場地座標，只能掃 QR。請幹部在活動裡補上座標。",
   too_early: "還沒開放。定位簽到從活動開始前一小時才打開。",
   too_late: "已經過了。定位簽到到活動結束後一小時為止。",

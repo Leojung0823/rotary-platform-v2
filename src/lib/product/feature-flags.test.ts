@@ -153,6 +153,7 @@ describe("feature flag evaluation truth table", () => {
 
   it("keeps Joy Wall dark until explicitly enabled and provides an emergency off switch", () => {
     expect(flagsRequiringExplicitEnable).toContain("joy_wall_v1");
+    expect(flagsRequiringExplicitEnable).toContain("event_date_only_v1");
     expect(evaluateFeatureFlag({
       key: "joy_wall_v1",
       record: null,

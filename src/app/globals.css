@@ -496,6 +496,7 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
    line of link-coloured text, this one is the card's own heading -- the member
    is choosing between events, so the summary carries the badges, the title and
    the time, and only the rest is behind the disclosure. */
+.event-anchor { scroll-margin-top: 88px; }
 .event-fold { margin: 0; }
 .event-fold > summary {
   display: grid;
