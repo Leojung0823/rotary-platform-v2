@@ -8,7 +8,7 @@
 - [x] API 與資料庫 RPC 都檢查截止狀態；逾期直接呼叫也會拒絕，不只靠前端隱藏操作。表情、收藏、收件確認與 IOU 流程不受影響；沿用 `joy_wall_v1`，沒有新增旗標。
 - [x] 新增 migration `20261026000500_joy_post_interaction_deadlines.sql`、資料庫安全驗證、manifest、UI/API 與針對性 E2E。
 - [x] 本機驗證：217 個 Vitest 檔／1,617 tests、typecheck、lint、Webpack production build、migration guard、88-file verification manifest、diff check；隔離 Supabase 重播全部 migrations 並通過此功能 SQL verifier，Joy 截止日 E2E 1/1 通過。
-- 本功能留在 `codex/joy-post-deadline`，尚未 push／開 PR／部署。舊 Staging Release `40297992217` 只對 `931dd23` 執行 dry-run，沒有套用本 migration。最新 main 的 Release plan `40317913782`（SHA `508f16e`）仍在等 staging 核准；該 plan 不含本地 `000500`。沒有修改 hosted／production，也未跑本功能 CI／Browser Smoke。
+- 本功能留在 `codex/joy-post-deadline`，尚未 push／開 PR／部署。舊 Staging Release `40297992217` 只對 `931dd23` 執行 dry-run，沒有套用本 migration。最新 main 的 Release plan `40317913782` 已於 SHA `508f16e` 成功完成 migration preview；它不含本地 `000500`，沒有套用 migration 或部署。沒有修改 hosted／production，也未跑本功能 CI／Browser Smoke。
 - **發布阻擋：**平行草稿功能仍持有較早的 `20261026000400` migration；本功能 `000500` 不可先部署。須先整合 `000400`，確認 migration 順序後再一起規劃發布。未對共用本機資料執行 `npm run verify:db`；已以獨立 Supabase 專案／連接埠執行等效完整 reset、lint 與 manifest 內全部 88 份 SQL 驗證。
 - **草稿整合驗收：**目前 `000400` 草稿 schema／API／發布 RPC 未保存截止日；整合時須讓截止日隨草稿保存、編輯與查閱，並在發布時呼叫截止日版本的建立流程，測試確認不會遺失日期。此項尚未實作，不能因草稿或截止日各自可用就視為整合完成。
 
@@ -22,7 +22,7 @@
 - [x] 功能 commit `b547ec7fc7e9e30f8f8cd0a0da4b35d49c57f94a` 已快轉同步至 GitHub `main`；沒有開 PR。
 - [x] GitHub CI run `40295780260`（validate、build、database）成功。
 - [x] Browser Smoke run `40295780270` 成功（243 passed、111 skipped）；Message Center 排程編輯流程有 1 次 flaky retry 後通過，該測試與本功能無關。
-- [ ] Go-Live 前完成本機加密 staging 備份，再以最新 main SHA 走受保護發布及真人社員驗收。已知 `.env.staging` 缺少 staging project ref、access token、DB password，須由管理者安全補齊。舊 plan `40297992217` 對應 exact SHA `931dd23`，只做 dry-run；最新 main plan `40317913782` 對應 SHA `508f16e`，仍等待 staging 核准，亦未套用 migration 或部署，且不含本地 `000500`。更舊 run `40286231972` 對應 `6bc9433`，不可沿用。
+- [ ] Go-Live 前完成本機加密 staging 備份，再以最新 main SHA 走受保護發布及真人社員驗收。已知 `.env.staging` 缺少 staging project ref、access token、DB password，須由管理者安全補齊。舊 plan `40297992217` 對應 exact SHA `931dd23`，只做 dry-run；最新 main plan `40317913782` 對應 SHA `508f16e`，已成功完成 migration preview，但沒有套用 migration 或部署，也不含本地 `000500`。更舊 run `40286231972` 對應 `6bc9433`，不可沿用。
 - 本輪沒有 hosted／production 變更或開啟 hosted flag；Issue #4 其他待辦仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 尚未交付）

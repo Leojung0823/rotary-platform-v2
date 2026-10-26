@@ -8,7 +8,7 @@
 - 使用者已確認：截止日後停止新留言／回答，但仍可閱讀並保留歷史。截止日採台灣日曆日期，當日包含在有效期限內，隔日 00:00 起關閉新增互動。
 - 變更在 `codex/joy-post-deadline`，基礎 `931dd233ce853b30e03b0ef5bd4aaf1a17e7fc6e`。新增 `20261026000500_joy_post_interaction_deadlines.sql`、`joy_post_interaction_deadlines_security.sql`，並修改 Joy Wall 頁面、API、元件、合約、輸入驗證、測試及 verification manifest。前端在期限後隱藏留言／回答入口；server API 與 RPC 同樣拒絕逾期 mutation（HTTP 409／`P0001`），舊內容仍可讀。reaction、favorite、receipt、IOU 不受截止日影響。沿用 `joy_wall_v1`，未新增 flag 或 hosted 設定。
 - 驗證：typecheck、lint、217 Vitest 檔／1,617 tests、Webpack production build、migration guard、88-file verification manifest、`git diff --check` 通過；在獨立 Supabase 專案／連接埠執行完整 DB reset、lint、全部 migrations 與 manifest 內 88 份 SQL verification；指定截止日 Playwright E2E 1/1 通過。共用 54322 本機 DB 未重置。
-- 舊 Staging Release `40297992217` 只對基礎 `931dd23` 執行 dry-run，沒有套用 `000500`。最新 main plan `40317913782`（SHA `508f16e`）仍等待 staging 核准，且不包含本分支的 `000500`；沒有部署、改 hosted／production、跑本分支 CI 或 Browser Smoke。本分支尚未 push／開 PR。
+- 舊 Staging Release `40297992217` 只對基礎 `931dd23` 執行 dry-run，沒有套用 `000500`。最新 main plan `40317913782`（SHA `508f16e`）已成功完成 migration preview，且不包含本分支的 `000500`；沒有部署、改 hosted／production、跑本分支 CI 或 Browser Smoke。本分支尚未 push／開 PR。
 - 草稿分支目前未提交的 `000400` schema／API／發布 RPC 尚未保存截止日；整合時必須讓截止日隨草稿保存、編輯、讀取與發布，並測試確認發布後日期仍在。
 - **先不要發布此 migration：**平行草稿功能在另一個 worktree 有較早的 `20261026000400`，而該 worktree 有未提交修改。必須先由負責該分支的工作整合 `000400`，再確認 migration 歷史與順序；不要改寫或覆蓋那份工作。最新本功能分支與該 worktree 都由 `931dd23` 分出。
 
