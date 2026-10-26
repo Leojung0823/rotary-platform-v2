@@ -4,37 +4,42 @@
 
 ## 2026-10-27 最新 staging／部署狀態（本節優先於下方歷史紀錄）
 
-- 收件人「感謝作者」明確按鈕已由 commit `110cb8a` 同步 main。本次本機 typecheck、lint、1,622 tests、build、隔離 DB 91 份驗證與收件人流程 E2E 1/1 通過；CI `40393717019`、Browser Smoke `40393717025` 與 Release plan `40395551148` 都對應較早 SHA `0dbe0e8`，不能當成本次 hosted 驗收或部署證據。
-- Render staging 服務 `srv-da2td2dg1s2s73de3qvg`（`rotary-platform-v2-mrha.onrender.com`）仍部署 `00f4d07a964a6640359359be6034266ef711543e`；health 為 `status=ok`、configuration/database `true`、`issues=[]`、`warnings=[]`。Joy Wall 新功能尚未部署。
-- E-12 備份仍阻止 Go-Live：本機 `.env.staging` 欄位已存在，但 staging exporter 專案身份驗證失敗；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403，直接資料庫連線亦未成功。沒有備份、沒有 hosted 寫入或上傳；不可標記 `BACKUP-READY`。
-- E-06 已完成目前 staging 的 warm baseline run `40398701762`（desktop Chromium、受保護登入、每頁 3 次）：社員首頁中位數 LCP／FCP／TTFB／INP `728／408／377.4／16 ms`，管理首頁 `636／332／260.6／16 ms`。這不是修改前後比較；main 功能 commit `110cb8a` 未部署前不能據此判定新功能性能。
+- `main` exact SHA `eba0815a31e22f298f6655a274055831ecc88e49` 已通過 CI `40415448937`、Browser Smoke `40415449015`（245 passed／123 skipped／3 flaky retry 後通過）；Staging Release `40415907270` 與 Go-Live `40417434022` 成功。Render staging revision `eba0815a31e2` 健康，HTTPS smoke 與受保護社員驗收通過；9 支 Joy Wall migration 已套用，production 未修改。
+- Joy Wall 新功能已部署 staging 並自動可用，不需要人工開旗標。E-12 本機加密 logical backup 仍未完成：本機 Management API token 回 HTTP 401，未建立備份檔。這次 staging 發布使用逐支 migration review 後的 additive forward-fix 作回復依據；這不是實體備份，不得如此宣稱。
+- E-06 同條件比較 workflow `40417885104` 已完成（desktop Chromium、受保護登入、warm cache、每頁 5 次）：社員首頁 LCP `1064→1348 ms`（+26.7%），管理首頁 `756→972 ms`（+28.6%）；FCP 分別改善 7.6%／7.5%，管理 TTFB 改善 27.3%、社員 TTFB 幾乎不變，INP 同為 16 ms。LCP 退步，整體改善未證明；staging 已恢復 `eba0815a31e2` 且健康。E-06 仍需診斷 LCP 根因。
 - 可完成主線工程的新功能在成功部署後自動可用，不要求人工開產品旗標；只保留受保護的緊急停用／回滾控制，歷史 opt-in 功能不批次開啟。Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對已由產品負責人確認真人驗收完成、可用（只使用 PANCHIAO-ELITE；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。細節與待辦依 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
 
-## 2026-10-27 歡喜牆互動封鎖（本機完成；待同步 main）
+## 2026-10-27 歡喜牆互動封鎖（已同步 main 並部署 staging）
 
 - 新增 migration 20261027000300_joy_interaction_blocks.sql、RPC/API、社員封鎖管理 UI 及安全驗證；規則為雙向阻擋彼此新留言／回覆／表情／指定分享／新 IOU，但保留既有貼文與歷史。既有 IOU、收件確認、幹部派題和檢舉不受影響；每人最多 250 位。
 - 沿用 joy_wall_v1，不新增 rollout flag；本機 typecheck、lint、1,628 tests、Webpack build、隔離 DB 92 份 SQL verification、migration／manifest checks 與桌機 E2E 1/1 通過。沒有重置共用 DB 或修改 hosted staging／production。
-- 目前只在 codex/joy-interaction-blocking 工作樹，尚未 commit／同步 main；部署 staging 仍受 E-12 備份閘門限制。
+- commit `eba0815a31e22f298f6655a274055831ecc88e49` 已同步 main。CI `40415448937`、Browser Smoke `40415449015` 成功；Staging Go-Live `40417434022` 成功部署 9 支 migration，health revision `eba0815a31e2`，HTTPS smoke 與受保護社員驗收通過。E-12 實體備份仍未產生；本次採 additive forward-fix，production 未修改。
 
-## 2026-10-27 訊息中心選填到期時間修正（已同步 main；staging 待 E-12 備份與 Go-Live）
+## 2026-10-27 訊息中心選填到期時間修正（已同步 main 並部署 staging）
 
 - PR #204 的 Browser Smoke run `40301166962` 曾在草稿流程失敗：留白的選填到期時間被前端錯誤拒絕。現在空白到期時間可正常儲存；無效非空值仍會拒絕，排程草稿仍必須提供有效排程時間。沒有改資料庫、權限或 hosted 設定。
 - 驗證：typecheck、lint、218 Vitest 檔／1,625 tests、Webpack production build、migration guard、91 份 SQL verification manifest、完整隔離資料庫 reset／lint／91 份 SQL verification、訊息中心 E2E 桌機 3/3 通過；DB lint 僅有 3 項既有 warning。
-- 此修正已同步 main，但尚未部署 staging。PR #204 仍保持開啟；其專用 recovery email「收信→確認→更新密碼→重新登入」真人 hosted 驗收尚未完成，因此不自動合併或標成完成。
+- 修正 commit `6f17fc2` 已在 main，並隨 Go-Live `40417434022` 部署至 staging revision `eba0815a31e2`；空白選填到期日可儲存。PR #204 仍開啟，等待獨立的 recovery email「收信→確認→更新密碼→重新登入」真人 hosted 驗收，因此不自動合併或標成完成。
 
-## 2026-10-27 收件人感謝作者（已同步 main；staging 待備份與發布）
+## 2026-10-27 收件人感謝作者（已同步 main 並部署 staging）
 
 - 指定／私人分享收件人可用清楚的「感謝作者」按鈕，底層沿用既有匿名計數的 `thanks` 反應，不增加資料庫或推播；作者看不到按鈕者身份。
 - 本機 typecheck、lint、1,622 tests、build、隔離 DB 全部 91 份 SQL verification、migration／manifest check、Playwright 1/1 均通過；沒有修改 hosted staging／production，也沒有新增人工旗標。
-- Go-Live 仍需先完成 E-12 本機加密 staging backup，再針對最新 main SHA 建立新的 Release plan；舊 plan `40395551148` 只對應舊 SHA `0dbe0e8`。
+- Go-Live `40417434022` 已將 `eba0815` 部署到 staging，HTTPS smoke 與受保護社員驗收通過；本機加密 backup 尚未產生，部署依 additive forward-fix 路徑執行。production 未修改。
 
-## 2026-10-27 歡喜牆草稿 × 互動截止日整合（已同步 main；staging 待本機備份與 Go-Live）
+## 2026-10-27 歡喜牆公開分享置頂（已同步 main 並部署 staging）
+
+- 幹部可置頂／取消置頂最多五則全社公開、已發布的非 IOU 分享；RPC 驗證 `joy.moderate`、社籍與貼文範圍，跨社／私人貼文不能置頂。
+- Migration `20261027000200_joy_wall_pinning.sql` 已包含於 Go-Live `40417434022` 的 9 支 migrations；staging revision `eba0815a31e2` 健康，部署後自動可用，不需人工開旗標。production 未修改。
+
+## 2026-10-27 歡喜牆草稿 × 互動截止日整合（已同步 main 並部署 staging）
 
 - 使用者決定未來新功能在成功部署後自動可用，不要求人工開旗標；保留受保護的緊急停用，既有 opt-in 功能不批次開啟。Joy Wall migration 自動建立啟用 row 並留下 system audit。
 - 草稿功能與一般貼文截止日已整合並推上 main：功能 commit `4b1083a`，SQL verifier 預設狀態修正 `81b07fd`。Migration 順序為 `000400`、`000500`、`000600`，草稿建立／編輯／恢復／發布會保留截止日。
 - 本機 typecheck、lint、217 Vitest 檔／1,621 tests、build、migration guard、90-file verification manifest、diff check、完整隔離 DB replay／90 SQL verifier 與 Joy Wall Playwright 10/10 通過；DB lint 只有 3 項既有 warning。GitHub CI `40383993705`、Browser Smoke `40383993730` 均以 `81b07fd` 成功。
-- Staging Release plan `40386405689` 對 `81b07fd` dry-run 成功，列出 7 個 migrations；沒有套用 migration 或部署。Go-Live 尚未執行：本機 `.env.staging` Management API token 回 401，因此 local-only 加密 backup 未產生。GitHub Actions 可用 secret 不可讀回本機；需更新本機 token並依 runbook 匯出。文件同步會使 main SHA 前進，Go-Live 前必須對最新 SHA 重跑 plan。
-- 本輪沒有 hosted staging／production 變更。程式只有在受保護 Go-Live 完成 migration apply 與部署後，才會於 staging 自動可用。
+- 舊 Staging Release plan `40386405689` 對 `81b07fd` 只做 dry-run，已由最新 plan `40415907270` 與 Go-Live `40417434022` 取代。
+- 三支整合 migration `20261026000400`、`20261026000500`、`20261026000600` 已包含在 Go-Live 的 9 支 migration 中；staging revision `eba0815a31e2` 健康，部署後自動可用，不需人工開旗標。
+- E-12 本機加密 logical backup 尚未產生（本機 Management API token 回 HTTP 401）。本次採 staging-only additive forward-fix 路徑，不代表實體備份；production 未修改。
 
 ## 2026-10-26 歡喜牆一般貼文截止日（程式本機完成；等待 migration 順序與發布）
 

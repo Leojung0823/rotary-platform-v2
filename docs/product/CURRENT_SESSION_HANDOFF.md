@@ -11,16 +11,14 @@
 
 ## 2026-10-27 最新接力狀態（本節優先於下方歷史紀錄）
 
-- 收件人「感謝作者」明確按鈕已由 commit `110cb8a` 同步到權威 main。本次本機驗證 typecheck、lint、1,622 tests、build、隔離 DB 91 份 SQL verification、migration／manifest check 與 Playwright 1/1 通過。CI `40393717019`、Browser Smoke `40393717025`、Staging Release plan `40395551148` 對應先前 SHA `0dbe0e8`，不是本次變更的 hosted 驗收；plan 僅 dry-run，未套用 migration 或部署。
-- 目前唯一對應 staging 的 Render 服務是 `srv-da2td2dg1s2s73de3qvg`（`rotary-platform-v2-mrha.onrender.com`），部署 runtime `00f4d07a964a6640359359be6034266ef711543e`。`/api/health` 為 `status=ok`、environment `staging`、configuration/database `true`、`issues=[]`、`warnings=[]`。Joy Wall 新 migrations 尚未部署。
-- E-12 備份仍是 Go-Live 閘門：本機 `.env.staging` 所需欄位已存在，但 exporter 無法通過 staging 專案身份驗證；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403；直接 DB 連線也未成功。沒有備份產物、沒有向 hosted 寫入或上傳，也沒有對 staging／production 資料庫做變更。不可標記 `BACKUP-READY`。
-- E-06 staging warm baseline run `40398701762` 已成功，每頁 3 次；社員首頁中位數 LCP／FCP／TTFB／INP 為 `728／408／377.4／16 ms`，管理首頁為 `636／332／260.6／16 ms`。這是已部署 `00f4d07a` 的基線，不是 `main` 功能 commit `110cb8a` 的修改後比較；原始 trace 未保存。完整樣本與 CDP 摘要見 `docs/product/PERFORMANCE_IMPROVEMENT_LOG.md`。
+- GitHub `main` exact SHA 為 `eba0815a31e22f298f6655a274055831ecc88e49`。CI `40415448937` 成功；Browser Smoke `40415449015` 成功（245 passed、123 skipped、3 flaky retry 後通過）。Staging Release plan `40415907270` 與 Go-Live `40417434022` 成功，9 支 migration 已套用、Render staging exact revision `eba0815a31e2` 健康；HTTPS smoke 與受保護社員登入／名冊／會員中心／登出驗收通過。`/api/health` 為 `status=ok`、environment `staging`、configuration/database `true`、`issues=[]`、`warnings=[]`。production 未修改。
+- E-12 本機加密 logical backup 仍未完成：`.env.staging` Management API token 回 HTTP 401，沒有產生備份檔或上傳。這次 Go-Live 以 9 支 migrations 經檢查後的 staging-only additive forward-fix 作為回復依據；這不是實體備份，禁止宣稱已備份。更新有效的本機 token 後仍可依 runbook 完成 local-only 加密匯出。
+- E-06 warm 效能比較 workflow `40417885104` 已完成：舊版 `00f4d07a964a6640359359be6034266ef711543e` 對照 `eba0815a31e22f298f6655a274055831ecc88e49`，每頁 5 次。兩頁 LCP 分別退步 26.7%／28.6%，FCP 約改善 7.5%，管理 TTFB 改善 27.3%，INP 相同；不能宣稱整體變快。Staging 已恢復 `eba0815a31e2` 且 health 正常。逐項數字與下一步見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
 - Message Center scheduler environment 尚未建立。此排程開關是獨立的營運控制，不是產品 feature flag；完成 staging 部署與確認送達對象前不要啟動，以免造成意外 LINE 訊息。新功能部署即自動可用的規則不等於自動啟動外部訊息排程。
 - E-03 LINE OA follow 自動配對真人測試已由產品負責人確認驗收完成、可使用；僅限目前已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。較早文件中的 E-03 待驗收文字屬歷史紀錄，詳見 `TO-DO-LIST.md`。
-- 修復 PR #204 Browser Smoke run `40301166962` 觸發的訊息中心草稿問題：選填的公告到期時間留白時，前端原先仍拒絕儲存。現在留白可存、無效日期仍拒絕、排程意圖仍要求排程時間。typecheck、lint、218 檔／1,625 tests、Webpack build、migration／manifest checks、隔離資料庫完整 reset／lint／91 SQL verifications 及訊息中心 E2E 3/3 通過；修正已同步 main，尚未部署 staging。
-- 歡喜牆互動封鎖已在目前分支完成：新增 20261027000300_joy_interaction_blocks.sql、RPC/API、社員端封鎖名單與完整安全驗證。規則為雙向禁止新留言／回覆／表情／指定分享／新 IOU；保留舊貼文與歷史，既有 IOU、收件確認、幹部派題與檢舉不受影響；每人上限 250 位。功能沿用 joy_wall_v1，沒有新增人工開啟旗標或修改權限角色。
-- 封鎖互動本機驗證：typecheck、lint、218 檔／1,628 tests、Webpack production build、完整隔離 DB replay 與 92 份 SQL verification、migration／verification manifest checks、diff check 全通過；桌機 E2E 1/1 通過（封鎖後雙方仍能看舊貼文、不能互相新增互動，解除後恢復）。第一次 E2E 的 403 是本機 production-build 測試來源未設定；加上 APP_ENV=local 與同一 NEXT_PUBLIC_SITE_URL 後通過，未放寬同源防護。
-- 封鎖互動目前只在 codex/joy-interaction-blocking 本機工作樹，尚未 commit／同步 main；後續要由 main 自動 CI／Browser Smoke 驗證。沒有對 staging／production 寫入。
+- PR #204 Browser Smoke run `40301166962` 觸發的訊息中心草稿空白到期日問題已修正並部署 staging；PR #204 仍未合併，仍待專用測試帳號完成 recovery email→更新密碼→重新登入的 hosted 驗收。
+- 歡喜牆互動封鎖 commit `eba0815a31e22f298f6655a274055831ecc88e49` 已同步 main 並部署 staging：新增 `20261027000300_joy_interaction_blocks.sql`、RPC/API、社員端封鎖名單與安全驗證；雙向禁止新留言／回覆／表情／指定分享／新 IOU，保留舊貼文與歷史，既有 IOU、收件確認、幹部派題和檢舉不受影響，每人上限 250 位。沿用 `joy_wall_v1`，沒有新增人工開啟旗標或修改角色權限。
+- 封鎖互動本機驗證：typecheck、lint、218 檔／1,628 tests、Webpack production build、完整隔離 DB replay 與 92 份 SQL verification、migration／verification manifest checks、diff check 及桌機 E2E 1/1 通過。CI `40415448937`、Browser Smoke `40415449015` 與 staging Go-Live `40417434022` 均成功；staging health revision `eba0815a31e2`。
 - PR #204 仍未合併。它要求 staging 上以專用測試帳號完整驗收 recovery email 至重新登入流程；本機草稿修正不能代替該 hosted 真人驗收，也不會自動合併該 PR。
 - 仍有真人／外部依賴：E-07 iOS／Android 與五位使用者測試、E-11 各社 OA／Rich Menu 手機驗收。E-08 涉及 production，未獲明確授權不操作；E-09 custom SMTP 依既定決策暫緩。
 
@@ -28,17 +26,17 @@
 
 - 指定／私人分享收件人可按「感謝作者」；這是既有匿名累計 `thanks` 反應的明確入口，不新建 schema、不發通知，也不新增人工旗標。作者只看到總數，無法辨認是哪位收件人操作。
 - 驗證：typecheck、lint、217 Vitest 檔／1,622 tests、production build、隔離 Supabase DB replay 與全部 91 份 SQL verification、DB lint（3 項既有 warning）、migration guard（以 `main` 為 base）、verification manifest、diff check，以及指定收件人 Playwright E2E 1/1 通過。測試 DB 位於獨立 project／port，完成後已停止並清除；共用本機 DB 未重置。
-- 本次沒有手動啟動 CI／Browser Smoke，也沒有修改 hosted staging／production。部署後會自動可用；staging 發布仍待 E-12 本機加密備份，且要以最新 main SHA 重跑 Release plan。
+- 已隨 Go-Live `40417434022` 部署 staging（revision `eba0815a31e2`），指定收件人可直接使用，不需人工開旗標；production 未修改。
 
-## 2026-10-27 Joy Wall 草稿與一般貼文截止日整合（已同步 main；staging 待本機備份與 Go-Live）
+## 2026-10-27 Joy Wall 草稿與一般貼文截止日整合（已同步 main 並部署 staging）
 
 - 使用者決定新功能成功部署後自動可用，不要求人工開旗標；緊急停用仍保留，既有 opt-in 功能不批次開啟。Joy Wall 以 migration 自動建立啟用 row 並記錄 `system` audit。
 - 整合分支 `codex/joy-wall-deadline-draft-integration` 從 main `508f16e` 建立，包含草稿與截止日整合；原本的 `joy-wall-drafts` dirty worktree 未被修改。Migration 順序是 `000400` 草稿、`000500` 截止日核心、`000600` 草稿發布整合。草稿恢復與發布會保留互動截止日。
 - 功能 commit `4b1083a` 已快轉推上 `main`；CI 發現 Joy Wall SQL verifier 仍假設新旗標預設關閉，修正 commit `81b07fd` 已同步 main，並明確測試「部署預設開啟」和「緊急關閉後不可見」兩種狀態。
 - 驗證完成：typecheck、lint、217 Vitest 檔／1,621 tests、production build、migration guard、90-file verification manifest 與 diff check 通過。獨立 Supabase 專案完整 reset／migration replay、DB lint exit 0（3 項既有 warning）、90 份 SQL verifier 全過；Joy Wall Playwright 10/10 通過。CI `40383993705` 與 Browser Smoke `40383993730` 均以 `81b07fd` 成功。驗證只重置專用 Supabase 專案，未重置共用 54322。
-- Staging Release plan `40386405689` 對 exact SHA `81b07fd` 成功，dry-run 預覽 7 個 migrations；沒有套用 migration、改 staging 資料庫或部署應用程式。此 plan 不是 Go-Live。
-- Go-Live 仍待本機加密 staging logical backup：既有本機 `.env.staging` 的 Supabase Management API token 回 HTTP 401，沒有建立備份。GitHub staging secret 可供 plan 使用，但不能從 GitHub 讀回到本機。先更新本機 `.env.staging` 的 token，依 runbook 完成 local-only 加密匯出；文件同步會推進 main SHA，之後要用最新 SHA 重跑 plan。不要把任何 token 貼在聊天。
-- 本輪沒有修改 hosted staging／production，也沒有改動 production。功能要等受保護的 Staging Go-Live 套用 migration 並部署後才會在 staging 自動可用。
+- 舊 Staging Release plan `40386405689` 對 exact SHA `81b07fd` 僅做 dry-run，已由最新 plan `40415907270` 與 Go-Live `40417434022` 取代。
+- 三支整合 migration `20261026000400`、`20261026000500`、`20261026000600` 已包含在 Go-Live 的 9 支 migration 中；staging revision `eba0815a31e2` 健康，草稿與截止日功能部署後自動可用，不需人工開旗標。
+- E-12 本機加密 logical backup 仍未產生：Management API token 回 HTTP 401。此次 staging-only 發布依逐支審查後的 additive forward-fix 路徑執行；不能把它描述成實體備份。production 未修改。
 - Event date-only 的 `event_date_only_v1` 不需重開：較早的接力紀錄記載使用者已由受保護 CLI 開啟，且管理表單已實際出現「時間未定」選項；本輪失敗的是落後主目錄的腳本檢查，沒有變更 hosted flag。
 
 ## 2026-10-26 歡喜牆一般貼文截止日（本機驗收完成；尚未整合／發布）

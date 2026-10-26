@@ -42,10 +42,12 @@ A key with no database record resolves to **enabled** (`default_enabled`) unless
 legacy `flagsRequiringExplicitEnable` compatibility list. Product decision dated 2026-10-27:
 every newly deployed feature must be available automatically; no follow-up human enable step is
 allowed. Do not add new keys to that legacy list. If a new database RPC requires a flag row, its
-deployment migration seeds an enabled row for the intended environments and records the actor as
-`system` in the append-only audit. Existing opt-in keys remain unchanged unless a separate release
-explicitly changes them. The protected `npm run flags:disable <key>` path remains available for an
-authorized emergency rollback; permission checks never depend on UI visibility or the flag alone.
+deployment migration seeds `enabled=true`, `rollout_percentage=100`, and every target deployment
+environment, then records the actor as `system` in the append-only audit. Do not use partial rollout,
+omit the target environment, or omit a required row to defer availability until a manual step.
+Existing opt-in keys remain unchanged unless a separate release explicitly changes them. The
+protected `npm run flags:disable <key>` path remains available for an authorized emergency rollback;
+permission checks never depend on UI visibility or the flag alone.
 
 The evaluator has this fixed order:
 

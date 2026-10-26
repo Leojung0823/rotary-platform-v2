@@ -318,7 +318,7 @@ npm run bootstrap:superadmin
 
 ## 6b. 對 staging 開啟功能
 
-既有的 rollout flag 可能仍需明確設定；這些是歷史 opt-in 功能。自 2026-10-27 起，**新功能必須在部署後自動可用，不得要求管理員再執行 `flags:enable`**。若資料庫 RPC 需要旗標列，部署 migration 必須建立預設啟用、帶 system-migration 稽核的設定；權限仍由 RPC、RLS 與伺服器驗證。
+既有的 rollout flag 可能仍需明確設定；這些是歷史 opt-in 功能。自 2026-10-27 起，**新功能必須在部署後自動對社員可用，不得要求管理員再執行 `flags:enable`**。若資料庫 RPC 需要旗標列，部署 migration 必須建立 `enabled=true`、`rollout_percentage=100` 且涵蓋本次部署環境的設定，並寫入 `system` 稽核；不得靠分批百分比、環境漏列或缺少 row 來延後開放。真正的登入、角色、社籍與 RPC/RLS 權限仍照常驗證。
 
 `flagsRequiringExplicitEnable`（`src/lib/product/feature-flags.ts`）中的舊 key 在沒有紀錄時仍會關閉，保持既有產品決定不變。這份 runbook 下方的手動啟用指令只供這些既有功能使用；新功能不得新增到該清單。Joy Wall 的部署預設由 `20261027000100_joy_wall_deployment_default.sql` 建立，不需人工開旗標。
 
@@ -400,11 +400,13 @@ npm run smoke:staging
 staging 在 Free 方案下沒有任何可還原的備份，所以 `BACKUP-READY` 實際上是在聲明
 「這次變更出錯時可以只靠再寫一支 migration 修回去」。可以這樣主張的條件：
 
-- 變更**只動 schema 物件的定義**（函式、view、投影、grant），前一版定義完整留在 git 裡；
-- **不刪除資料表、不刪欄位、不改寫既有資料列**；
+- 變更只做**新增或可向前修復的 schema 變更**（新資料表、nullable 欄位、索引、約束、函式、view、投影、grant），前一版定義完整留在 git 裡；
+- **不刪除資料表、不刪欄位、不改寫既有業務資料列**；
 - 沒有破壞性的型別轉換或不可逆的 backfill。
 
-任一條不成立——例如要 drop column、改資料型別、或做資料遷移——**forward-fix 就不是有效依據**，
+窄例外：若新功能依產品規則必須在部署後自動可用，可包含一筆由 migration 建立、帶 `system` 稽核的功能預設設定列；必須使用 `INSERT ... ON CONFLICT DO NOTHING`，不得覆寫既有管理員設定，並能透過受保護的緊急停用流程回復。這不允許新增或搬移社員、交易、出席等業務資料，也不構成實體備份。
+
+任一條不成立——例如要 drop column、改資料型別、覆寫既有列、或做業務資料 backfill——**forward-fix 就不是有效依據**，
 不得以此輸入 `BACKUP-READY`。那種變更必須先取得真正的備份能力（升級方案或自行匯出），
 否則一旦出錯，staging 資料就是回不來的。
 
