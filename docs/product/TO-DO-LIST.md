@@ -9,6 +9,7 @@
 - E-06 已取得目前 staging warm 基線（run `40398701762`，每頁 3 次），數字及測量條件見 `PERFORMANCE_IMPROVEMENT_LOG.md`。這不是新版本前後比較；main 功能 commit `110cb8a` 尚未部署，因此 E-06 仍未結案。
 - E-03 LINE OA follow 自動配對真人驗收：產品負責人已確認測試驗收完成、目前可用；本次只使用已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。舊的 9 月「待真人核對」紀錄已由此決定 supersede；不延伸宣稱 HAPPY 或其他未設定社團已驗收。
 - Message Center scheduler 專用環境仍未建立。排程開關是伺服器排程的營運控制，不是產品功能旗標；未完成 staging 發布與送達驗收前不啟動排程，避免意外發送訊息。
+- GitHub PR #204 的 Browser Smoke run `40301166962` 曾在訊息中心草稿流程失敗；原因是把「公告到期時間（選填）」留白時，前端仍將空值判成格式錯誤。本次修正允許空白到期時間、仍拒絕無效日期，排程意圖仍要求有效排程時間；沒有改資料庫或權限。typecheck、lint、1,625 tests、Webpack production build、完整隔離 `verify:db`（91 份 SQL verification）、migration／manifest check、訊息中心 E2E 3/3 均通過，已同步 main；尚未部署 staging。PR #204 仍開啟，登入恢復密碼的 hosted 真人閉環未驗收，不自動合併。
 - E-07、E-11 仍需要真人手機或外部平台操作；E-08 是 production 決策／發布，未獲明確範圍前不碰 production；E-09 custom SMTP 維持暫緩。其餘可獨立完成的本機工程待辦須逐項依最新 Issue／roadmap 核對，不能用這些外部驗收代替。
 
 ## 2026-10-27 收件人感謝作者（已同步 main；staging 待本機備份與 Go-Live）

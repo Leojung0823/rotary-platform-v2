@@ -10,6 +10,12 @@
 - E-06 已完成目前 staging 的 warm baseline run `40398701762`（desktop Chromium、受保護登入、每頁 3 次）：社員首頁中位數 LCP／FCP／TTFB／INP `728／408／377.4／16 ms`，管理首頁 `636／332／260.6／16 ms`。這不是修改前後比較；main 功能 commit `110cb8a` 未部署前不能據此判定新功能性能。
 - 可完成主線工程的新功能在成功部署後自動可用，不要求人工開產品旗標；只保留受保護的緊急停用／回滾控制，歷史 opt-in 功能不批次開啟。Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對已由產品負責人確認真人驗收完成、可用（只使用 PANCHIAO-ELITE；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。細節與待辦依 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
 
+## 2026-10-27 訊息中心選填到期時間修正（已同步 main；staging 待 E-12 備份與 Go-Live）
+
+- PR #204 的 Browser Smoke run `40301166962` 曾在草稿流程失敗：留白的選填到期時間被前端錯誤拒絕。現在空白到期時間可正常儲存；無效非空值仍會拒絕，排程草稿仍必須提供有效排程時間。沒有改資料庫、權限或 hosted 設定。
+- 驗證：typecheck、lint、218 Vitest 檔／1,625 tests、Webpack production build、migration guard、91 份 SQL verification manifest、完整隔離資料庫 reset／lint／91 份 SQL verification、訊息中心 E2E 桌機 3/3 通過；DB lint 僅有 3 項既有 warning。
+- 此修正已同步 main，但尚未部署 staging。PR #204 仍保持開啟；其專用 recovery email「收信→確認→更新密碼→重新登入」真人 hosted 驗收尚未完成，因此不自動合併或標成完成。
+
 ## 2026-10-27 收件人感謝作者（已同步 main；staging 待備份與發布）
 
 - 指定／私人分享收件人可用清楚的「感謝作者」按鈕，底層沿用既有匿名計數的 `thanks` 反應，不增加資料庫或推播；作者看不到按鈕者身份。
