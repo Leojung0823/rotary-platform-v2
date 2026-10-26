@@ -88,3 +88,4 @@ supabase/verification/joy_target_associations_security.sql
 supabase/verification/joy_post_interaction_deadlines_security.sql
 supabase/verification/joy_post_drafts_security.sql
 supabase/verification/joy_wall_deployment_default.sql
+supabase/verification/joy_wall_pinning_security.sql

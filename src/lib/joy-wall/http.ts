@@ -36,6 +36,8 @@ export async function joyDeleteHasNoBody(request: NextRequest) {
 }
 export function joyRpcFailure(error: { code?: string | null; message?: string | null } | null) {
   if (error?.message === "joy_post_interactions_closed") return joyFailure(409, "interactions_closed");
+  if (error?.message === "joy_pin_limit_reached") return joyFailure(409, "pin_limit_reached");
+  if (error?.message === "joy_post_not_pin_eligible") return joyFailure(400, "pin_not_eligible");
   if (error?.code === "22023") return joyFailure(400);
   if (error?.code === "54000") return joyFailure(429);
   if (error?.code === "P0002") return joyFailure(404);

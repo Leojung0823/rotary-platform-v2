@@ -48,6 +48,7 @@ export type JoyPost = {
   interactions_open: boolean;
   is_hidden: boolean;
   is_favorited: boolean;
+  is_pinned: boolean;
   can_acknowledge_receipt: boolean;
   receipt_acknowledged_at: string | null;
   receipt_ack_count: number | null;
@@ -324,6 +325,7 @@ export function parseJoyPost(value: unknown): JoyPost {
     || (interactionsOpen !== undefined && typeof interactionsOpen !== "boolean")
     || typeof value.is_hidden !== "boolean"
     || (value.is_favorited !== undefined && typeof value.is_favorited !== "boolean")
+    || (value.is_pinned !== undefined && typeof value.is_pinned !== "boolean")
     || (value.can_acknowledge_receipt !== undefined && typeof value.can_acknowledge_receipt !== "boolean")
     || (value.receipt_acknowledged_at !== undefined && value.receipt_acknowledged_at !== null && !isTimestamp(value.receipt_acknowledged_at))
     || (value.receipt_ack_count !== undefined && value.receipt_ack_count !== null
@@ -369,6 +371,7 @@ export function parseJoyPost(value: unknown): JoyPost {
     interactions_open: interactionsOpen !== false,
     is_hidden: value.is_hidden,
     is_favorited: value.is_favorited === true,
+    is_pinned: value.is_pinned === true,
     can_acknowledge_receipt: value.can_acknowledge_receipt === true,
     receipt_acknowledged_at: value.receipt_acknowledged_at as string | null ?? null,
     receipt_ack_count: value.receipt_ack_count as number | null ?? null,

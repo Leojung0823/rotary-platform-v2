@@ -39,6 +39,9 @@ type JoyWallProps = {
   initialDrafts: readonly JoyPostDraft[];
   draftsUnavailable: boolean;
   initialPosts: readonly JoyPost[];
+  initialPinnedPosts: readonly JoyPost[];
+  pinnedPostsUnavailable: boolean;
+  canManagePublicPosts: boolean;
   initialCursor: string | null;
   focusedPostId: string | null;
 };
@@ -98,6 +101,8 @@ function requestFailureMessage(error: unknown, fallback: string) {
   if (!(error instanceof JoyRequestError)) return fallback;
   if (error.message === "rate_limited") return "操作太頻繁，請稍候再試。";
   if (error.message === "interactions_closed") return "這則分享已截止留言／回答；原有內容仍可閱讀。";
+  if (error.message === "pin_limit_reached") return "最多可置頂 5 則分享；請先取消一則置頂，再試一次。";
+  if (error.message === "pin_not_eligible") return "只能置頂已發布的全社分享；指定對象、私人分享與 IOU 不適用。";
   return fallback;
 }
 
@@ -159,9 +164,10 @@ function defaultCommentType(post: JoyPost): JoyCommentType {
 
 export function JoyWall({
   clubId, audienceMembers, targetOptions, targetOptionsUnavailable, initialDrafts, draftsUnavailable,
-  initialPosts, initialCursor, focusedPostId,
+  initialPosts, initialPinnedPosts, pinnedPostsUnavailable, canManagePublicPosts, initialCursor, focusedPostId,
 }: JoyWallProps) {
   const [posts, setPosts] = useState([...initialPosts]);
+  const [pinnedPosts, setPinnedPosts] = useState([...initialPinnedPosts]);
   const [cursor, setCursor] = useState(initialCursor);
   const [favoritePosts, setFavoritePosts] = useState<JoyPost[]>([]);
   const [favoriteCursor, setFavoriteCursor] = useState<string | null>(null);
@@ -206,6 +212,11 @@ export function JoyWall({
   const activePosts = showFavorites ? favoritePosts : posts;
   const activeCursor = showFavorites ? favoriteCursor : cursor;
   const visiblePosts = useMemo(() => filter === "all" ? activePosts : activePosts.filter((post) => post.post_type === filter), [activePosts, filter]);
+  const feedPosts = useMemo(() => {
+    if (showFavorites || filter !== "all") return visiblePosts;
+    const pinnedIds = new Set(pinnedPosts.map((post) => post.id));
+    return [...pinnedPosts, ...visiblePosts.filter((post) => !pinnedIds.has(post.id))];
+  }, [filter, pinnedPosts, showFavorites, visiblePosts]);
   const audienceCount = audienceIds.length;
   const contentLength = Array.from(content).length;
   const focusedQuestionId = initialPosts.find((post) =>
@@ -433,6 +444,33 @@ export function JoyWall({
       setStateMessage(isFavorite ? "已加入您的收藏；只有您自己看得到。" : "已從您的收藏移除。");
     } catch (error) {
       setStateMessage(requestFailureMessage(error, "收藏狀態沒有更新，請稍後再試。"));
+    } finally { setPendingId(null); }
+  }
+
+  async function togglePinned(post: JoyPost) {
+    const isPinned = !post.is_pinned;
+    setPendingId(`pin:${post.id}`);
+    setStateMessage(null);
+    try {
+      const response = await fetch(endpoint(clubId, `/posts/${encodeURIComponent(post.id)}/pin`), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPinned }),
+      });
+      const result = await readData<{ is_pinned: boolean; pinned_at: string | null }>(response);
+      if (result.is_pinned !== isPinned || (isPinned && !result.pinned_at)) {
+        throw new JoyRequestError("invalid_pin_response");
+      }
+      const updatePinState = (items: JoyPost[]) => items.map((item) =>
+        item.id === post.id ? { ...item, is_pinned: result.is_pinned } : item,
+      );
+      setPosts(updatePinState);
+      if (favoritesLoaded) setFavoritePosts(updatePinState);
+      setPinnedPosts((current) => isPinned
+        ? [{ ...post, is_pinned: true }, ...current.filter((item) => item.id !== post.id)].slice(0, 5)
+        : current.filter((item) => item.id !== post.id));
+      setStateMessage(isPinned ? "已置頂；全社社員都會優先看到這則分享。" : "已取消置頂。分享仍保留在原本的時間排序中。");
+    } catch (error) {
+      setStateMessage(requestFailureMessage(error, "置頂狀態沒有更新，請稍後再試。"));
     } finally { setPendingId(null); }
   }
 
@@ -777,7 +815,7 @@ export function JoyWall({
         <div><p className="eyebrow">社內好事簿</p><h2 id="joy-feed-title">看看大家分享什麼</h2></div>
         <span aria-live="polite" className={styles.postCount}>
           {filter === "all"
-            ? `${showFavorites ? "我的收藏" : "社內動態"} · ${activeCursor ? `已載入 ${activePosts.length} 則` : `${activePosts.length} 則`}`
+            ? `${showFavorites ? "我的收藏" : "社內動態"} · ${activeCursor ? `目前顯示 ${feedPosts.length} 則` : `${feedPosts.length} 則`}`
             : `${visiblePosts.length} 則此類別${activeCursor ? ` · 已載入 ${activePosts.length} 則` : ""}`}
         </span>
       </div>
@@ -790,12 +828,16 @@ export function JoyWall({
         </button>
         {showFavorites && <span className={styles.favoritePrivacy}>收藏只對自己可見</span>}
       </div>
+      {!showFavorites && filter === "all" && pinnedPosts.length > 0
+        && <p className={styles.pinnedHelp}>社務管理幹部置頂的分享會優先顯示；其他分享仍依時間排列。</p>}
+      {!showFavorites && pinnedPostsUnavailable
+        && <p className={styles.pinnedWarning} role="status">置頂分享暫時無法載入；下方一般動態仍可正常瀏覽。</p>}
       <div className={styles.filters} role="group" aria-label="依分享類別篩選">
         <button type="button" aria-pressed={filter === "all"} className={filter === "all" ? styles.filterActive : styles.filter} onClick={() => setFilter("all")}>全部</button>
         {joyPostTypes.map((type) => <button key={type} type="button" className={filter === type ? styles.filterActive : styles.filter}
           aria-pressed={filter === type} onClick={() => setFilter(type)}>{postTypeLabels[type]}</button>)}
       </div>
-      {visiblePosts.length === 0
+      {feedPosts.length === 0
         ? <div className={styles.empty}><span aria-hidden="true">✦</span>
           <strong>{showFavorites ? "您還沒有收藏的分享" : filter === "all" ? "這裡還沒有分享" : "這個類別還沒有分享"}</strong>
           <p>{showFavorites ? "看到想留著的祝福或回憶，按下「收藏」後就能在這裡快速找回。" : filter === "all" ? "留下第一份祝福、感謝或回憶，讓社內的好事被看見。" : "試試其他類別，或回到全部分享。"}</p>
@@ -803,7 +845,7 @@ export function JoyWall({
             ? <button type="button" onClick={() => { setShowFavorites(false); setFilter("all"); }}>回到社內動態</button>
             : filter !== "all" && <button type="button" onClick={() => setFilter("all")}>顯示全部分享</button>}
         </div>
-        : <div className={styles.postList}>{visiblePosts.map((post) => {
+        : <div className={styles.postList}>{feedPosts.map((post) => {
           const postComments = comments[post.id]?.items ?? [];
           const topLevelComments = postComments.filter((comment) => !comment.parent_comment_id);
           const replies = postComments.filter((comment) => comment.parent_comment_id);
@@ -813,6 +855,7 @@ export function JoyWall({
             <header className={styles.postHeader}>
               <Avatar name={post.author_display_name} avatarUrl={post.author_avatar_url} />
               <div className={styles.author}><strong>{post.author_display_name}</strong><span>{formatTime(post.created_at)}{post.updated_at !== post.created_at ? " · 已編輯" : ""}</span></div>
+              {post.is_pinned && <span className={styles.pinnedBadge}>置頂</span>}
               <span className={styles.postType}>{postTypeLabels[post.post_type]}</span>
             </header>
             {post.is_hidden && <p className={styles.hiddenNotice}>這則分享已暫時隱藏，只有您和管理幹部可見。</p>}
@@ -910,6 +953,12 @@ export function JoyWall({
                   disabled={pendingId === `favorite:${post.id}`} onClick={() => void toggleFavorite(post)}>
                   {pendingId === `favorite:${post.id}` ? "更新中…" : post.is_favorited ? "已收藏" : "收藏"}
                 </button>}
+                {canManagePublicPosts && post.visibility_scope === "club" && post.post_type !== "iou" && !post.is_hidden
+                  && <button type="button" aria-pressed={post.is_pinned}
+                    aria-label={post.is_pinned ? "取消置頂分享" : "置頂分享"}
+                    disabled={pendingId === `pin:${post.id}`} onClick={() => void togglePinned(post)}>
+                    {pendingId === `pin:${post.id}` ? "更新中…" : post.is_pinned ? "取消置頂" : "置頂"}
+                  </button>}
                 {!post.is_hidden && !post.iou && <button type="button" onClick={() => void toggleComments(post.id)}>
                   {commentsOpen[post.id] ? "收起留言" : `留言與回應（${post.comment_count}）`}
                 </button>}

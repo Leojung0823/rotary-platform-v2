@@ -24,6 +24,8 @@ describe("Joy Wall security and UX boundaries", () => {
   const draftsRoute = source("app/api/v1/joy/drafts/route.ts");
   const draftItemRoute = source("app/api/v1/joy/drafts/[draftId]/route.ts");
   const draftPublishRoute = source("app/api/v1/joy/drafts/[draftId]/publish/route.ts");
+  const pinRoute = source("app/api/v1/joy/posts/[postId]/pin/route.ts");
+  const pinMigration = source("../supabase/migrations/20261027000200_joy_wall_pinning.sql");
   const draftsMigration = source("../supabase/migrations/20261026000400_joy_post_drafts.sql");
   const draftDeadlineMigration = source("../supabase/migrations/20261026000600_joy_post_draft_interaction_deadlines.sql");
   const suggestionItemRoute = source("app/api/v1/joy/suggestions/[suggestionId]/route.ts");
@@ -42,6 +44,7 @@ describe("Joy Wall security and UX boundaries", () => {
     source("app/api/v1/joy/posts/[postId]/reaction/route.ts"),
     source("app/api/v1/joy/posts/[postId]/favorite/route.ts"),
     source("app/api/v1/joy/posts/[postId]/receipt/route.ts"),
+    pinRoute,
     source("app/api/v1/joy/posts/[postId]/report/route.ts"),
     reportRoute,
     createIouRoute,
@@ -71,10 +74,23 @@ describe("Joy Wall security and UX boundaries", () => {
     expect(createIouRoute).toContain('client.rpc("create_joy_iou"');
     expect(iouActionRoute).toContain('client.rpc("act_joy_iou"');
     expect(source("app/api/v1/joy/posts/[postId]/favorite/route.ts")).toContain('client.rpc("set_joy_post_favorite"');
+    expect(pinRoute).toContain('client.rpc("set_joy_post_pinned"');
     for (const route of mutationRoutes) {
       expect(route).toContain("featureEnabled");
       expect(route).toContain("joyFailure(404)");
     }
+  });
+
+  it("shows bounded public pins to members but keeps pin controls in management mode", () => {
+    expect(joyPage).toContain('supabase.rpc("list_pinned_joy_posts"');
+    expect(joyPage).toContain('canModerate && mode === "management"');
+    expect(component).toContain("canManagePublicPosts && post.visibility_scope === \"club\"");
+    expect(component).toContain("post.post_type !== \"iou\"");
+    expect(pinMigration).toContain("joy_pin_limit_reached");
+    expect(pinMigration).toContain("post.visibility_scope <> 'club'");
+    expect(pinMigration).toContain("post.post_type <> 'iou'");
+    expect(pinMigration).toContain("joy_wall_audit_events");
+    expect(pinMigration).toContain("list_pinned_joy_posts");
   });
 
   it("renders content as text and keeps personal visibility selected by the author", () => {

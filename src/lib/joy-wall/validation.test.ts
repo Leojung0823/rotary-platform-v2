@@ -8,6 +8,7 @@ import {
   parseJoyModerationBody,
   parseJoyReactionBody,
   parseJoyFavoriteBody,
+  parseJoyPinBody,
   parseJoyReportBody,
   parseUpdateJoyPostBody,
   parseCreateJoyQuestionPromptBody,
@@ -127,6 +128,9 @@ describe("Joy Wall input validation", () => {
     expect(parseJoyFavoriteBody({ isFavorite: true })).toBe(true);
     expect(parseJoyFavoriteBody({ isFavorite: false })).toBe(false);
     expect(() => parseJoyFavoriteBody({ isFavorite: true, actorId: memberOne })).toThrow();
+    expect(parseJoyPinBody({ isPinned: true })).toBe(true);
+    expect(parseJoyPinBody({ isPinned: false })).toBe(false);
+    expect(() => parseJoyPinBody({ isPinned: true, actorId: memberOne })).toThrow();
   });
 
   it("validates draft inputs while allowing incomplete audience selection and blank content", () => {

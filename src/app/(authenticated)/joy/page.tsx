@@ -88,7 +88,7 @@ async function renderSelectedWall(
     : focusPostId
       ? supabase.rpc("get_my_joy_question_post_with_interaction_deadline", { p_club_id: selectedClub.club_id, p_post_id: focusPostId })
       : Promise.resolve({ data: null, error: null });
-  const [postsResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult, draftsResult] = await Promise.all([
+  const [postsResult, pinnedResult, audienceResult, targetOptionsResult, permissionResult, focusedPostResult, draftsResult] = await Promise.all([
     supabase.rpc("list_joy_posts_with_interaction_deadlines", {
       p_club_id: selectedClub.club_id,
       p_cursor_created_at: null,
@@ -96,6 +96,7 @@ async function renderSelectedWall(
       p_limit: 20,
       p_favorites_only: false,
     }),
+    supabase.rpc("list_pinned_joy_posts", { p_club_id: selectedClub.club_id }),
     supabase.rpc("list_joy_member_options", { p_club_id: selectedClub.club_id }),
     supabase.rpc("list_joy_target_options", { p_club_id: selectedClub.club_id }),
     readClubPermissions(selectedClub.club_id),
@@ -107,6 +108,16 @@ async function renderSelectedWall(
   }
   try {
     const page = parseJoyPosts(postsResult.data);
+    let initialPinnedPosts: JoyPost[] = [];
+    let pinnedPostsUnavailable = Boolean(pinnedResult.error);
+    if (!pinnedPostsUnavailable) {
+      try {
+        initialPinnedPosts = parseJoyPosts(pinnedResult.data).posts;
+        if (initialPinnedPosts.length > 5 || initialPinnedPosts.some((post) =>
+          !post.is_pinned || post.visibility_scope !== "club" || post.post_type === "iou" || post.is_hidden
+        )) throw new Error("invalid_pinned_joy_posts");
+      } catch { pinnedPostsUnavailable = true; initialPinnedPosts = []; }
+    }
     const audienceMembers = audienceResult.error ? [] : parseJoyAudienceMembers(audienceResult.data);
     let initialDrafts: JoyPostDraft[] = [];
     let draftsUnavailable = Boolean(draftsResult.error);
@@ -161,6 +172,9 @@ async function renderSelectedWall(
         initialDrafts={initialDrafts}
         draftsUnavailable={draftsUnavailable}
         initialPosts={initialPosts}
+      initialPinnedPosts={initialPinnedPosts}
+      pinnedPostsUnavailable={pinnedPostsUnavailable}
+      canManagePublicPosts={canModerate && mode === "management"}
         initialCursor={encodeJoyCursor(page.nextCursor)}
         focusedPostId={focusedPost?.id ?? null}
       />

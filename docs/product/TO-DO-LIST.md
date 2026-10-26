@@ -2,6 +2,14 @@
 
 更新日期：2026-10-27（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
+## 2026-10-27 歡喜牆公開分享置頂（程式與本機驗收完成；尚未部署）
+
+- [x] 幹部可置頂／取消置頂全社公開、已發布的非 IOU 分享；最多 5 則。置頂後社員可見並排在一般動態前，普通社員只能閱讀，不能管理。
+- [x] API 與資料庫 RPC 都檢查 `joy.moderate`、社籍與貼文範圍；以社別交易鎖守住 5 則上限，操作寫入稽核。私人／指定對象貼文、IOU、未發布內容不可置頂。
+- [x] 沿用 `joy_wall_v1`，未新增功能旗標；新部署由既有 `20261027000100_joy_wall_deployment_default.sql` 建立預設啟用設定。預設可用，旗標只保留緊急停用用途；不會批次開啟其他歷史 opt-in 功能。
+- [x] 新 migration `20261027000200_joy_wall_pinning.sql`、安全驗證 SQL 與 manifest、RPC API、社員／管理模式 UI 及 Playwright 驗收完成。typecheck、lint、1,622 項測試、完整 `verify:db`、migration／verification 檢查、build、diff check 通過；置頂專項 Playwright 1/1 通過。
+- 本輪尚未對 staging／production 部署。Staging Go-Live 仍須先完成本機加密備份及最新 SHA 的受保護發布；部署後會自動可用，不需人工開旗標。
+
 ## 2026-10-27 歡喜牆草稿與一般貼文截止日整合（已同步 main；staging 待本機備份與 Go-Live）
 
 - [x] 新增發布規則：未來功能部署後自動可用，不要求人工開旗標。Joy Wall 本次以 `20261027000100_joy_wall_deployment_default.sql` 自動建立預設啟用 row，並記 system 稽核；不會批次開啟其他既有 opt-in 功能。

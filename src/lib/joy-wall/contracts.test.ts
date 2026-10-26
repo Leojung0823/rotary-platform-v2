@@ -65,10 +65,13 @@ describe("Joy Wall response contracts", () => {
   it("requires a server-projected answer capability", () => {
     expect(parseJoyPost(basePost).can_answer).toBe(false);
     expect(parseJoyPost(basePost).is_favorited).toBe(false);
+    expect(parseJoyPost(basePost).is_pinned).toBe(false);
     expect(parseJoyPost(basePost).can_acknowledge_receipt).toBe(false);
     expect(parseJoyPost(basePost).can_request_hide).toBe(false);
     expect(parseJoyPost({ ...basePost, can_answer: true }).can_answer).toBe(true);
     expect(parseJoyPost({ ...basePost, is_favorited: true }).is_favorited).toBe(true);
+    expect(parseJoyPost({ ...basePost, is_pinned: true }).is_pinned).toBe(true);
+    expect(() => parseJoyPost({ ...basePost, is_pinned: "true" })).toThrow("invalid_joy_post_projection");
     const withoutCapability = Object.fromEntries(
       Object.entries(basePost).filter(([key]) => key !== "can_answer"),
     ) as Record<string, unknown>;

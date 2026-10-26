@@ -230,6 +230,13 @@ export function parseJoyFavoriteBody(value: unknown) {
   return value.isFavorite;
 }
 
+export function parseJoyPinBody(value: unknown) {
+  if (!isRecord(value) || !exactKeys(value, ["isPinned"]) || typeof value.isPinned !== "boolean") {
+    throw new Error("invalid_body");
+  }
+  return value.isPinned;
+}
+
 export function parseJoyReportBody(value: unknown) {
   if (!isRecord(value) || !exactKeys(value, ["reason"]) || typeof value.reason !== "string"
     || !joyReportReasons.includes(value.reason as (typeof joyReportReasons)[number])) throw new Error("invalid_body");

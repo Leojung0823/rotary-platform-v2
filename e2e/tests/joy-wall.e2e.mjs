@@ -234,6 +234,68 @@ test("a member can privately save a post and find it again in My Favorites", asy
   await expect(page.getByRole("article").filter({ hasText: title }).first()).toBeVisible();
 });
 
+test("a manager can pin a public share and members can see it but cannot manage pins", async ({ browser, page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  test.setTimeout(45_000);
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const newerTitle = `一般分享 ${Date.now()}`;
+  const pinnedTitle = `管理置頂 ${Date.now()}`;
+  const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  try {
+    await signIn(page, "e2e-shell-member-manager@example.test");
+    await page.goto(new URL("/joy?mode=management", baseURL).toString());
+    const managerLink = page.getByRole("link", { name: "題庫與派題" });
+    await expect(managerLink).toBeVisible();
+    const managerHref = await managerLink.getAttribute("href");
+    const clubId = new URL(managerHref ?? "", baseURL).pathname.match(/\/clubs\/([^/]+)\/joy\/questions/u)?.[1];
+    expect(clubId).toMatch(/^[0-9a-f-]{36}$/iu);
+
+    await page.getByLabel("一句標題（選填）").fill(newerTitle);
+    await page.getByLabel("分享內容").fill("這則較新的分享用來確認置頂會排在前面。");
+    const firstCreate = page.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/posts?") && response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "分享", exact: true }).click();
+    expect((await firstCreate).status()).toBe(201);
+
+    await page.getByLabel("一句標題（選填）").fill(pinnedTitle);
+    await page.getByLabel("分享內容").fill("幹部置頂後，全社社員都能優先看到這份公開分享。");
+    const secondCreate = page.waitForResponse((response) =>
+      response.url().includes("/api/v1/joy/posts?") && response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "分享", exact: true }).click();
+    expect((await secondCreate).status()).toBe(201);
+
+    const pinnedCard = page.getByRole("article").filter({ hasText: pinnedTitle }).first();
+    await expect(pinnedCard).toBeVisible();
+    const pinResponse = page.waitForResponse((response) =>
+      response.url().includes("/pin?") && response.request().method() === "POST",
+    );
+    await pinnedCard.getByRole("button", { name: "置頂分享" }).click();
+    expect((await pinResponse).status()).toBe(200);
+    await expect(pinnedCard.getByText("置頂", { exact: true })).toBeVisible();
+    await expect(page.getByRole("article").first()).toContainText(pinnedTitle);
+
+    const ordinaryMember = await memberContext.newPage();
+    await signIn(ordinaryMember, memberEmail);
+    await ordinaryMember.goto(new URL(`/joy?clubId=${clubId}&mode=member`, baseURL).toString());
+    const memberPinnedCard = ordinaryMember.getByRole("article").filter({ hasText: pinnedTitle }).first();
+    await expect(memberPinnedCard.getByText("置頂", { exact: true })).toBeVisible();
+    await expect(memberPinnedCard.getByRole("button", { name: "置頂分享" })).toHaveCount(0);
+    const postId = (await pinnedCard.getAttribute("id")).replace("joy-post-", "");
+    const directAttempt = await ordinaryMember.evaluate(async ({ clubId, postId }) => {
+      const response = await fetch(`/api/v1/joy/posts/${encodeURIComponent(postId)}/pin?club_id=${encodeURIComponent(clubId)}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isPinned: false }),
+      });
+      return response.status;
+    }, { clubId, postId });
+    expect(directAttempt).toBe(403);
+  } finally {
+    await memberContext.close();
+  }
+});
+
 test("a member can keep a Joy draft private, resume it, and publish it", async ({ browser, page }, testInfo) => {
   test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
