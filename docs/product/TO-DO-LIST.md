@@ -982,6 +982,7 @@ production 沒有修改。
 ### E-09 Recovery email 與 custom SMTP `[!]`（暫緩）
 
 - **目前決策**：登入以 LINE 為主，recovery email 暫不重啟，不列為目前 release blocker。
+- **另行追蹤的 Issue #44／PR #204**：這是 recovery redirect 的安全修正，不等同重啟 custom SMTP。PR 仍開啟；應用程式與資料庫檢查通過，但 Browser Smoke run `40301166962` 失敗於訊息中心草稿測試（等待「草稿已儲存」提示，非 recovery 測試）。修正目前仍是另一工作目錄的未提交修改，尚不能算通過；Issue #44 明定不可自動合併。Smoke 修復後，仍須用測試帳號完成新 recovery email 的「點信 → 確認 → 更新密碼 → 重新登入」真人 staging 驗收。
 - **重啟條件**：production 上線前，或密碼登入比例上升／社員回報重設失敗。
 - **重啟後驗收**：設定 custom SMTP，完成「收到新信 → 點信 → 確認 → 更新密碼 → 重新登入」真人流程；不可用 Mailpit 代替。
 
