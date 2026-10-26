@@ -734,7 +734,7 @@ Phase 2 之後追加並完成的社務功能：
 - 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `1ef38bb50407`；生日旗標、Render scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。生日邀請真人送達與冪等重跑已由 scheduler `34695450977`／`34695655038` 驗收；follow identity pairing 仍依 E-03 待精確身份核對。
 - 生日 scheduler 的環境隔離問題已修正：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護；secret 已同步。不可移除 staging 保護或把部署用 secrets 暴露給無審核 job。
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
-- **多數新功能的 flag 預設關閉**，包含 `attendance_ui_v2`。「已完成」不等於「社員看得到」；要對使用者開啟需另行設定 flag。
+- **歷史 opt-in 功能維持原本的旗標狀態**，包含 `attendance_ui_v2`，不因新規則而批次開啟。自 2026-10-27 起，新功能在成功部署後必須自動可用，不得要求管理員另行開旗標；旗標只保留受保護的緊急停用／回復用途。登入、社籍、角色與資料存取權限仍須由伺服器、RPC、RLS 等安全機制檢查。
 - PR #37（出席統計）與 PR #10 已關閉：前者的 migration 會與 PR #61 的 canonical attendance domain 形成第二套 authority，功能改以投影層重新實作；後者是已上線功能的決策紀錄。PR #40 也已關閉，公告通知已在 `main` 實作；保留的舊分支不能直接合併。
 - `src/lib/product/features.ts` 的 `developing` 清單仍包含社費／收款／核銷、報表與匯出、正式部署完成度、LINE Rich Menu、手機 Web App 與社務 AI 助理。社費與 Rich Menu 的 hosted／OA 驗收、PWA 的 iOS／Android 實機驗收仍未完成；社務 AI 助理仍沒有可執行企劃，不能擅自開工。
 
