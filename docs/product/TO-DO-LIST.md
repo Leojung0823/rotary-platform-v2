@@ -4,11 +4,17 @@
 
 ## 2026-10-27 staging／待辦即時核對（優先於下方歷史紀錄）
 
-- 最新 main 為 `0dbe0e86a96b0c14fa4ddae71264c08afa1490e2`；CI `40393717019`、Browser Smoke `40393717025` 均成功。Staging Release plan `40395551148` 已核准並成功，只預覽 8 個 migrations，沒有套用 migration 或部署。Render staging 服務目前仍是 runtime `00f4d07a964a6640359359be6034266ef711543e`；`/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。Joy Wall 置頂及其他未部署 migrations 尚未上 staging。
+- 收件人「感謝作者」明確按鈕已由 commit `110cb8a` 同步至 main；CI `40393717019`、Browser Smoke `40393717025` 與 Staging Release plan `40395551148` 都對應舊 SHA `0dbe0e8`，不代表本次變更的 hosted 驗收或部署。plan 僅 dry-run，沒有套用 migration。Render staging 仍部署 `00f4d07a964a6640359359be6034266ef711543e`；`/api/health` 最近為 `status=ok`、`issues=[]`、`warnings=[]`。Go-Live 前須以最新 main 另跑 plan。
 - E-12 備份實測未完成：本機 `.env.staging` 已有必要變數名稱，但 exporter 的 staging 專案身份驗證失敗；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403，直接資料庫連線亦未成功。沒有建立備份、沒有上傳資料、沒有修改 hosted database。完成前不可送出 `BACKUP-READY`，也不可啟動 Go-Live。
 - E-06 已取得目前 staging warm 基線（run `40398701762`，每頁 3 次），數字及測量條件見 `PERFORMANCE_IMPROVEMENT_LOG.md`。這不是新版本前後比較；main `0dbe0e8` 尚未部署，因此 E-06 仍未結案。
 - Message Center scheduler 專用環境仍未建立。排程開關是伺服器排程的營運控制，不是產品功能旗標；未完成 staging 發布與送達驗收前不啟動排程，避免意外發送訊息。
 - E-03、E-07、E-11 仍需要真人 LINE／手機或外部平台操作；E-08 是 production 決策／發布，未獲明確範圍前不碰 production；E-09 custom SMTP 維持暫緩。其餘可獨立完成的本機工程待辦須逐項依最新 Issue／roadmap 核對，不能用這些外部驗收代替。
+
+## 2026-10-27 收件人感謝作者（已同步 main；staging 待本機備份與 Go-Live）
+
+- [x] 指定／私人分享的收件人看到明確的「感謝作者」按鈕；沿用既有 `thanks` 表情反應 API／RPC，不新增資料庫結構、通知推播或產品旗標。作者只看到匿名累計數，無法辨認是哪位收件人操作。
+- [x] 本機驗證通過：typecheck、lint、217 檔／1,622 tests、production build、migration guard、91 份 SQL verification、manifest check、diff check；隔離 Supabase DB replay 與 DB lint 通過（lint 有 3 項既有 warning）；收件人→作者／旁觀者流程 Playwright 1/1 通過。沒有重置共用本機 DB。
+- 本次沒有修改 staging／production，也未手動啟動 CI／Browser Smoke。功能沿用 Joy Wall 部署後自動可用的既有設定；staging 發布仍受 E-12 本機加密備份閘門限制。
 
 ## 2026-10-27 歡喜牆公開分享置頂（程式與本機驗收完成；尚未部署）
 
@@ -130,7 +136,7 @@
 
 - 非金錢 IOU 核心、社員待辦及主動 LINE 到期／逾期提醒都已進 main；提醒仍未部署 staging，站內提醒未新增。仍待 E-12 備份閘門、staging 部署及真人收訊驗收。
 - 職務／活動／生日／扶輪年度等目標與匿名建議箱已同步 main；一般貼文截止日已有本機實作，待草稿 migration `20261026000400` 整合後再同步。仍待草稿／排程／置頂及封鎖互動；批次提問截止日已另列於上方。
-- 收件人「確認已收到」與「要求幹部隱藏」已同步 main；staging／社員驗收仍待續。仍待其他互動回覆（如感謝）、本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
+- 收件人「確認已收到」與「要求幹部隱藏」已同步 main；本次補上指定收件人的「感謝作者」明確操作，沿用既有匿名計數表情反應 RPC，不新增個人可見回條或資料庫結構；staging／社員驗收仍待續。仍待本人同意後的生日／回憶素材整合，以及完整歷史保存政策。
 - 以上屬於 Issue #4 的後續獨立開發，不能由本次本機測試或新頁面存在推定完成；真人、staging、LINE provider／Rich Menu 與 production 待辦仍依本文件後續清單處理。
 
 ## 2026-10-03 全專案進度掃描

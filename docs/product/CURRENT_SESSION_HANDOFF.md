@@ -11,12 +11,18 @@
 
 ## 2026-10-27 最新接力狀態（本節優先於下方歷史紀錄）
 
-- 權威 repo 是 `Leojung0823/rotary-platform-v2` 的 `main@0dbe0e86a96b0c14fa4ddae71264c08afa1490e2`。CI `40393717019` 與 Browser Smoke `40393717025` 成功；Staging Release plan `40395551148` 核准後成功完成 migration dry-run，預覽 8 支 migration，未套用或部署。
+- 收件人「感謝作者」明確按鈕已由 commit `110cb8a` 同步到權威 main。本次本機驗證 typecheck、lint、1,622 tests、build、隔離 DB 91 份 SQL verification、migration／manifest check 與 Playwright 1/1 通過。CI `40393717019`、Browser Smoke `40393717025`、Staging Release plan `40395551148` 對應先前 SHA `0dbe0e8`，不是本次變更的 hosted 驗收；plan 僅 dry-run，未套用 migration 或部署。
 - 目前唯一對應 staging 的 Render 服務是 `srv-da2td2dg1s2s73de3qvg`（`rotary-platform-v2-mrha.onrender.com`），部署 runtime `00f4d07a964a6640359359be6034266ef711543e`。`/api/health` 為 `status=ok`、environment `staging`、configuration/database `true`、`issues=[]`、`warnings=[]`。Joy Wall 新 migrations 尚未部署。
 - E-12 備份仍是 Go-Live 閘門：本機 `.env.staging` 所需欄位已存在，但 exporter 無法通過 staging 專案身份驗證；Management API token 回 HTTP 401，Supabase CLI Keychain token 回 HTTP 403；直接 DB 連線也未成功。沒有備份產物、沒有向 hosted 寫入或上傳，也沒有對 staging／production 資料庫做變更。不可標記 `BACKUP-READY`。
 - E-06 staging warm baseline run `40398701762` 已成功，每頁 3 次；社員首頁中位數 LCP／FCP／TTFB／INP 為 `728／408／377.4／16 ms`，管理首頁為 `636／332／260.6／16 ms`。這是已部署 `00f4d07a` 的基線，不是 `main@0dbe0e8` 的修改後比較；原始 trace 未保存。完整樣本與 CDP 摘要見 `docs/product/PERFORMANCE_IMPROVEMENT_LOG.md`。
 - Message Center scheduler environment 尚未建立。此排程開關是獨立的營運控制，不是產品 feature flag；完成 staging 部署與確認送達對象前不要啟動，以免造成意外 LINE 訊息。新功能部署即自動可用的規則不等於自動啟動外部訊息排程。
 - 仍有真人／外部依賴：E-03 LINE follow 身份配對與負向驗收、E-07 iOS／Android 與五位使用者測試、E-11 各社 OA／Rich Menu 手機驗收。E-08 涉及 production，未獲明確授權不操作；E-09 custom SMTP 依既定決策暫緩。
+
+### 本輪收件人感謝作者 UX
+
+- 指定／私人分享收件人可按「感謝作者」；這是既有匿名累計 `thanks` 反應的明確入口，不新建 schema、不發通知，也不新增人工旗標。作者只看到總數，無法辨認是哪位收件人操作。
+- 驗證：typecheck、lint、217 Vitest 檔／1,622 tests、production build、隔離 Supabase DB replay 與全部 91 份 SQL verification、DB lint（3 項既有 warning）、migration guard（以 `main` 為 base）、verification manifest、diff check，以及指定收件人 Playwright E2E 1/1 通過。測試 DB 位於獨立 project／port，完成後已停止並清除；共用本機 DB 未重置。
+- 本次沒有手動啟動 CI／Browser Smoke，也沒有修改 hosted staging／production。部署後會自動可用；staging 發布仍待 E-12 本機加密備份，且要以最新 main SHA 重跑 Release plan。
 
 ## 2026-10-27 Joy Wall 草稿與一般貼文截止日整合（已同步 main；staging 待本機備份與 Go-Live）
 
