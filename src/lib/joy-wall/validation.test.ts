@@ -32,11 +32,13 @@ describe("Joy Wall input validation", () => {
       rotaryYearIds: ["64000000-0000-4000-8000-000000000003"],
       roleKeys: ["president"],
       birthdayCampaignIds: ["64000000-0000-4000-8000-000000000004"],
+      interactionDeadlineOn: "2026-11-30",
     })).toMatchObject({
       eventIds: ["64000000-0000-4000-8000-000000000002"],
       rotaryYearIds: ["64000000-0000-4000-8000-000000000003"],
       roleKeys: ["president"],
       birthdayCampaignIds: ["64000000-0000-4000-8000-000000000004"],
+      interactionDeadlineOn: "2026-11-30",
     });
     expect(() => parseCreateJoyPostBody({
       postType: "memory", title: null, content: "活動回憶", visibilityScope: "club", audienceMembershipIds: [],
@@ -81,6 +83,11 @@ describe("Joy Wall input validation", () => {
       postType: "other", title: null, content: "字".repeat(2001), visibilityScope: "club", audienceMembershipIds: [],
     })).toThrow();
     expect(() => parseUpdateJoyPostBody({ postType: "question", title: "", content: "ok", visibilityScope: "private" })).toThrow();
+    expect(parseUpdateJoyPostBody({ postType: "question", title: "", content: "ok", interactionDeadlineOn: null }))
+      .toMatchObject({ postType: "question", interactionDeadlineOn: null });
+    expect(() => parseUpdateJoyPostBody({
+      postType: "question", title: "", content: "ok", interactionDeadlineOn: "2026-02-30",
+    })).toThrow();
   });
 
   it("normalizes UUIDs and bounds list requests", () => {

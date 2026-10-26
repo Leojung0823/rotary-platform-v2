@@ -22,9 +22,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const clubId = parseJoyClubId(request.nextUrl.searchParams.get("club_id"));
     const postId = parseJoyPostId((await context.params).postId);
     const body = parseUpdateJoyPostBody(await readJoyJson(request));
-    const { data, error } = await client.rpc("update_own_joy_post", {
+    const { data, error } = await client.rpc("update_own_joy_post_with_interaction_deadline", {
       p_club_id: clubId, p_post_id: postId, p_post_type: body.postType,
       p_title: body.title, p_content: body.content,
+      p_interaction_deadline_on: body.interactionDeadlineOn,
     });
     if (error) return joyRpcFailure(error);
     return joySuccess(parseJoyPost(data));

@@ -99,8 +99,16 @@ describe("Joy Wall security and UX boundaries", () => {
 
   it("projects only the caller's favorite state in the initial and focused feed", () => {
     expect(joyPage).toContain("p_favorites_only: false");
-    expect(joyPage).toContain('supabase.rpc("get_my_joy_question_post_with_recipient_actions"');
-    expect(joyPage).toContain('supabase.rpc("list_joy_posts_with_targets"');
+    expect(joyPage).toContain('supabase.rpc("list_joy_posts_with_interaction_deadlines"');
+    expect(joyPage).toContain('supabase.rpc("get_my_joy_question_post_with_interaction_deadline"');
+    expect(postsRoute).toContain('client.rpc("create_joy_post_with_interaction_deadline"');
+    expect(itemRoute).toContain('client.rpc("update_own_joy_post_with_interaction_deadline"');
+    expect(component).toContain('post.interactions_open');
+    expect(component).toContain("歷史內容仍可閱讀");
+    expect(source("../supabase/migrations/20261026000500_joy_post_interaction_deadlines.sql"))
+      .toContain("joy_post_interactions_closed");
+    expect(source("../supabase/migrations/20261026000500_joy_post_interaction_deadlines.sql"))
+      .toContain("public.get_my_joy_question_post_with_recipient_actions(p_club_id, p_post_id)");
     expect(favoriteMigration).toContain("public.get_my_joy_question_post(p_club_id, p_post_id)");
     expect(favoriteMigration).toContain("favorite.app_account_id = actor_id");
   });

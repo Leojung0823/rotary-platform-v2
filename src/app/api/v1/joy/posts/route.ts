@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const cursor = decodeJoyCursor(request.nextUrl.searchParams.get("cursor"));
     const view = request.nextUrl.searchParams.get("view") ?? "all";
     if (view !== "all" && view !== "favorites") return joyFailure(400);
-    const { data, error } = await client.rpc("list_joy_posts_with_targets", {
+    const { data, error } = await client.rpc("list_joy_posts_with_interaction_deadlines", {
       p_club_id: clubId,
       p_cursor_created_at: cursor?.createdAt ?? null,
       p_cursor_id: cursor?.id ?? null,
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     const clubId = parseJoyClubId(request.nextUrl.searchParams.get("club_id"));
     const body = parseCreateJoyPostBody(await readJoyJson(request));
-    const { data, error } = await client.rpc("create_joy_post_with_targets", {
+    const { data, error } = await client.rpc("create_joy_post_with_interaction_deadline", {
       p_club_id: clubId,
       p_post_type: body.postType,
       p_title: body.title,
@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       p_rotary_year_ids: body.rotaryYearIds,
       p_role_keys: body.roleKeys,
       p_birthday_campaign_ids: body.birthdayCampaignIds,
+      p_interaction_deadline_on: body.interactionDeadlineOn,
     });
     if (error) return joyRpcFailure(error);
     return joySuccess(parseJoyPost(data), 201);

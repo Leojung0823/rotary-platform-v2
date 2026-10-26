@@ -18,6 +18,17 @@ async function openJoyWall(page) {
   await expect(page.getByRole("heading", { name: "分享一份歡喜" })).toBeVisible();
 }
 
+function todayInTaipei() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+}
+
+function yesterdayInTaipei() {
+  const [year, month, day] = todayInTaipei().split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
+}
+
 test("a member can open Joy Wall, use accessible filters, and choose who may see a share", async ({ page }) => {
   if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
 
@@ -52,6 +63,68 @@ test("a member can open Joy Wall, use accessible filters, and choose who may see
   await expect(page.getByLabel("希望完成日期（選填）")).toBeVisible();
   await expect(page.getByRole("button", { name: "提出承諾" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /全社社員可見/u })).toHaveCount(0);
+});
+
+test("a post deadline closes new answers but keeps prior discussion readable", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "joy-wall-1440", "This flow writes local test data and runs once.");
+  if (!password) throw new Error("E2E_ROLE_PASSWORD is required for Joy Wall browser tests.");
+
+  const title = `留言截止日驗收 ${Date.now()}`;
+  const oldAnswer = `截止前回答 ${Date.now()}`;
+  await signIn(page, "e2e-shell-member-manager@example.test");
+  await openJoyWall(page);
+
+  await page.locator('section[aria-labelledby="joy-compose-title"] select').first().selectOption("question");
+  await page.getByLabel("一句標題（選填）").fill(title);
+  await page.getByLabel("分享內容").fill("截止後仍保留已經留下的回答。 ");
+  await page.getByLabel("留言／回答截止日（選填）").fill(todayInTaipei());
+  let clubId = null;
+  const createResponsePromise = page.waitForResponse((response) => {
+    if (!response.url().includes("/api/v1/joy/posts?") || response.request().method() !== "POST") return false;
+    clubId = new URL(response.url()).searchParams.get("club_id");
+    return true;
+  });
+  await page.getByRole("button", { name: "分享", exact: true }).click();
+  expect((await createResponsePromise).status()).toBe(201);
+  expect(clubId).toMatch(/^[0-9a-f-]{36}$/iu);
+
+  const card = page.getByRole("article").filter({ hasText: title }).first();
+  await expect(card).toBeVisible();
+  const postId = (await card.getAttribute("id")).replace("joy-post-", "");
+  const stableCard = page.locator(`#joy-post-${postId}`);
+  await stableCard.getByRole("button", { name: /留言與回應/u }).click();
+  await stableCard.getByLabel("寫下回應").fill(oldAnswer);
+  const answerResponsePromise = page.waitForResponse((response) =>
+    response.url().includes("/comments?") && response.request().method() === "POST",
+  );
+  await stableCard.getByRole("button", { name: "送出回答" }).click();
+  expect((await answerResponsePromise).status()).toBe(201);
+  await expect(stableCard.getByText(oldAnswer, { exact: true })).toBeVisible();
+
+  await stableCard.getByRole("button", { name: "編輯" }).click();
+  const editDeadline = stableCard.locator('input[type="date"]');
+  await expect(editDeadline).toHaveCount(1);
+  await expect(editDeadline).toHaveAccessibleName(/留言／回答截止日/u);
+  await editDeadline.fill(yesterdayInTaipei());
+  const updateResponsePromise = page.waitForResponse((response) =>
+    response.url().includes(`/api/v1/joy/posts/`) && response.request().method() === "PATCH",
+  );
+  await stableCard.getByRole("button", { name: "儲存修改" }).click();
+  expect((await updateResponsePromise).status()).toBe(200);
+  await expect(stableCard.getByText(/已截止，歷史內容仍可閱讀/u)).toBeVisible();
+  await expect(stableCard.getByLabel("寫下回應")).toHaveCount(0);
+  await expect(stableCard.getByText(oldAnswer, { exact: true })).toBeVisible();
+
+  const lateResponse = await page.evaluate(async ({ clubId, postId }) => {
+    const response = await fetch(`/api/v1/joy/posts/${encodeURIComponent(postId)}/comments?club_id=${encodeURIComponent(clubId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parentCommentId: null, commentType: "answer", content: "逾期回答不應成立。" }),
+    });
+    return { status: response.status, body: await response.json() };
+  }, { clubId, postId });
+  expect(lateResponse).toMatchObject({ status: 409, body: { error: "interactions_closed" } });
+  await expect(stableCard.getByText(oldAnswer, { exact: true })).toBeVisible();
 });
 
 test("a member can associate a Joy post with a visible event, active club role, and Rotary year", async ({ page }, testInfo) => {

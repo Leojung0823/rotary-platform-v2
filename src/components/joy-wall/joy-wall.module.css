@@ -82,6 +82,10 @@
 .author span { color: #718295; font-size: .8rem; }
 .postType { margin-left: auto; flex: 0 0 auto; border-radius: 999px; padding: .3rem .6rem; background: #f1f5f7; color: #455d6e; font-size: .78rem; }
 .scopeLine { margin: .8rem 0 .45rem; color: #6c7e8e; font-size: .78rem; }
+.deadlineHelp { color: #748596; font-size: .82rem; line-height: 1.45; }
+.interactionDeadline { margin: .35rem 0 .7rem; color: #52697d; font-size: .82rem; }
+.interactionDeadline strong { color: #8b5e16; font-weight: 650; }
+.interactionClosedNote { margin: .8rem 0 0; padding: .65rem .75rem; border-radius: .65rem; background: #fff7e8; color: #78581d; font-size: .88rem; }
 .iouPrivacyNote { margin: 0 0 .75rem; color: #557084; font-size: .88rem; line-height: 1.5; }
 .iouCard { display: grid; gap: .65rem; margin-top: .9rem; padding: .9rem; border: 1px solid #d8e7ed; border-radius: .9rem; background: #f6fafb; }
 .iouStatusRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; color: #536a7b; font-size: .85rem; }
