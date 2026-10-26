@@ -2,7 +2,7 @@
 
 更新日期：2026-10-27（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-27 歡喜牆草稿與一般貼文截止日整合（本機驗收完成；待發布）
+## 2026-10-27 歡喜牆草稿與一般貼文截止日整合（已同步 main；staging 待本機備份與 Go-Live）
 
 - [x] 新增發布規則：未來功能部署後自動可用，不要求人工開旗標。Joy Wall 本次以 `20261027000100_joy_wall_deployment_default.sql` 自動建立預設啟用 row，並記 system 稽核；不會批次開啟其他既有 opt-in 功能。
 - [x] 新增一般貼文留言／回答台灣日期截止日：期限當日仍可互動，隔日 00:00 起停止新增，歷史仍可閱讀；API 與資料庫 RPC 都會拒絕逾期 mutation。表情、收藏、收件確認與 IOU 不受影響，沿用 `joy_wall_v1`。
@@ -10,7 +10,9 @@
 - [x] migration 依序為 `20261026000400_joy_post_drafts.sql`、`20261026000500_joy_post_interaction_deadlines.sql`、`20261026000600_joy_post_draft_interaction_deadlines.sql`；draft RPC 權限簽章、security verifier、manifest、輸入驗證、UI 與 E2E 已一併更新。
 - [x] `npm run typecheck`、`npm run lint`、`npm test`（217 檔／1,621 tests）、`npm run build`、`npm run check:migrations`、`npm run check:db-verifications` 與 `git diff --check` 通過。
 - [x] 專用隔離 Supabase stack 完整 reset／migration replay；DB lint exit 0（3 項既有 warning）；90 份 SQL security verification 全通過。Joy Wall 桌機 Playwright 10/10 通過，包含截止日拒絕逾期互動、草稿儲存／恢復／發布。
-- [ ] 尚未 commit／push main、跑 GitHub CI／Browser Smoke 或部署；未改 hosted／production。Go-Live 前仍須完成本機加密 staging backup；目前記錄的 `.env.staging` Management API token 曾回覆 HTTP 401，需重驗有效性，匯出尚未產生備份或 hosted write。
+- [x] 功能 commit `4b1083a` 與 verifier 修正 `81b07fd` 已同步 main；CI `40383993705` 與 Browser Smoke `40383993730` 均成功。Staging Release plan `40386405689` 對 `81b07fd` 成功 dry-run，預覽 7 個 migrations，未套用或部署。
+- [ ] Go-Live 前仍須完成本機加密 staging backup；本機 `.env.staging` Management API token 回覆 HTTP 401，沒有產生備份。GitHub staging secret 不能讀回本機；需安全更新本機 token 後依 runbook 匯出。這次文件同步會推進 main SHA，Go-Live 前須對最新 SHA 重新跑 Staging Release plan。
+- 本輪未對 hosted staging／production 寫入或部署；Joy Wall migration 套用並部署到 staging 後才會自動可用。緊急停用保留為回復開關，其他既有 opt-in 功能不因本規則批次開啟。
 
 ## 2026-10-26 Joy Wall 目標關聯（已同步 main；CI 通過；staging 待發布）
 

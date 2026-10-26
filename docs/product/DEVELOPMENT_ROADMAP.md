@@ -2,12 +2,13 @@
 
 更新日期：2026-10-27（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-27 歡喜牆草稿 × 互動截止日整合（本機驗收完成；待發布）
+## 2026-10-27 歡喜牆草稿 × 互動截止日整合（已同步 main；staging 待本機備份與 Go-Live）
 
-- 使用者已決定新功能部署後自動可用、不要求人工開旗標；既有 opt-in 功能維持原狀。新增 `20261027000100_joy_wall_deployment_default.sql`，Joy Wall 首次部署時自動建立 enabled flag row，system actor 及不可變 audit 同步記錄；受保護的 emergency disable 保留。
-- 已把草稿功能、一般貼文截止日整合在 `codex/joy-wall-deadline-draft-integration`；migration 順序為 `000400`、`000500`、`000600`，草稿中的日期會隨建立、編輯、讀取及發布保留。
-- 驗證通過：typecheck、lint、217 Vitest 檔／1,621 tests、build、migration guard、90-file verification manifest、diff check；獨立 Supabase 完整 reset／migration replay、DB lint exit 0（3 項既有 warning）、90 份 SQL verifier 全通過；Joy Wall 桌機 Playwright 10/10 通過。
-- 尚未 commit／push main、開 PR、跑 GitHub CI／Browser Smoke 或部署；未修改 hosted／production。staging local-only backup 尚未建立，現有記錄中的 Management API PAT 曾回 HTTP 401，Go-Live 仍受此備份前置條件阻擋。
+- 使用者決定未來新功能在成功部署後自動可用，不要求人工開旗標；保留受保護的緊急停用，既有 opt-in 功能不批次開啟。Joy Wall migration 自動建立啟用 row 並留下 system audit。
+- 草稿功能與一般貼文截止日已整合並推上 main：功能 commit `4b1083a`，SQL verifier 預設狀態修正 `81b07fd`。Migration 順序為 `000400`、`000500`、`000600`，草稿建立／編輯／恢復／發布會保留截止日。
+- 本機 typecheck、lint、217 Vitest 檔／1,621 tests、build、migration guard、90-file verification manifest、diff check、完整隔離 DB replay／90 SQL verifier 與 Joy Wall Playwright 10/10 通過；DB lint 只有 3 項既有 warning。GitHub CI `40383993705`、Browser Smoke `40383993730` 均以 `81b07fd` 成功。
+- Staging Release plan `40386405689` 對 `81b07fd` dry-run 成功，列出 7 個 migrations；沒有套用 migration 或部署。Go-Live 尚未執行：本機 `.env.staging` Management API token 回 401，因此 local-only 加密 backup 未產生。GitHub Actions 可用 secret 不可讀回本機；需更新本機 token並依 runbook 匯出。文件同步會使 main SHA 前進，Go-Live 前必須對最新 SHA 重跑 plan。
+- 本輪沒有 hosted staging／production 變更。程式只有在受保護 Go-Live 完成 migration apply 與部署後，才會於 staging 自動可用。
 
 ## 2026-10-26 歡喜牆一般貼文截止日（程式本機完成；等待 migration 順序與發布）
 

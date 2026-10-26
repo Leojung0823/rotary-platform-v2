@@ -9,12 +9,15 @@
 - 既有 opt-in 功能維持原決定，不因新規則批次打開。Joy Wall 正在首次部署，因此此次加入 `20261027000100_joy_wall_deployment_default.sql`，讓它在 migration 部署後自動可用；若資料庫已有明確停用 row，migration 保留該決定。
 - 根目錄 `AGENTS.md`、`docs/product/ROLLOUT_CONTROLS.md`、`docs/deployment/STAGING_RUNBOOK.md` 與 feature-flag contract test 已同步此規則。
 
-## 2026-10-27 Joy Wall 草稿與一般貼文截止日整合（本機驗收完成；待發布）
+## 2026-10-27 Joy Wall 草稿與一般貼文截止日整合（已同步 main；staging 待本機備份與 Go-Live）
 
-- 整合分支 `codex/joy-wall-deadline-draft-integration` 從 main `508f16e` 建立，再合併截止日工作與平行草稿工作樹的程式變更；原本的 `joy-wall-drafts` dirty worktree 未被修改。migration 順序核對為 `000400` 草稿、`000500` 截止日核心、`000600` 草稿發布整合。
-- 草稿建立／更新／讀取包含 `interaction_deadline_on`；恢復草稿會還原日期，發布 RPC 改用 `create_joy_post_with_interaction_deadline`，避免草稿發布後遺失期限。新增 `20261026000600_joy_post_draft_interaction_deadlines.sql`，並同步 SQL verifier、API、contracts、validation、UI 與 targeted E2E。
-- 驗證完成：typecheck、lint、217 Vitest 檔／1,621 tests、production build、migration guard、90-file verification manifest 與 diff check 通過。獨立 Supabase stack 完整 reset／migration replay、DB lint exit 0（3 項既有 warning）、90 份 SQL verifier 全過；Joy Wall 桌機 Playwright 10/10 通過。Supabase CLI 2.122.0 可用；Docker Desktop 的 credential helper 需將其內建 `Resources/bin` 加入 PATH。共用 54322 沒有重置。
-- 還沒 commit／push main，未開 PR、未跑 GitHub CI／Browser Smoke，未部署或更動 hosted／production。staging backup 尚未完成：本機 `.env.staging` Management API PAT 曾對 Projects API 回 HTTP 401；尚未建立 backup，且沒有 hosted write。發布前要安全重驗／更新 PAT、完成本機加密 backup，再針對最新 main SHA 執行受保護 staging Go-Live。不要把任何 token 貼在聊天。
+- 使用者決定新功能成功部署後自動可用，不要求人工開旗標；緊急停用仍保留，既有 opt-in 功能不批次開啟。Joy Wall 以 migration 自動建立啟用 row 並記錄 `system` audit。
+- 整合分支 `codex/joy-wall-deadline-draft-integration` 從 main `508f16e` 建立，包含草稿與截止日整合；原本的 `joy-wall-drafts` dirty worktree 未被修改。Migration 順序是 `000400` 草稿、`000500` 截止日核心、`000600` 草稿發布整合。草稿恢復與發布會保留互動截止日。
+- 功能 commit `4b1083a` 已快轉推上 `main`；CI 發現 Joy Wall SQL verifier 仍假設新旗標預設關閉，修正 commit `81b07fd` 已同步 main，並明確測試「部署預設開啟」和「緊急關閉後不可見」兩種狀態。
+- 驗證完成：typecheck、lint、217 Vitest 檔／1,621 tests、production build、migration guard、90-file verification manifest 與 diff check 通過。獨立 Supabase 專案完整 reset／migration replay、DB lint exit 0（3 項既有 warning）、90 份 SQL verifier 全過；Joy Wall Playwright 10/10 通過。CI `40383993705` 與 Browser Smoke `40383993730` 均以 `81b07fd` 成功。驗證只重置專用 Supabase 專案，未重置共用 54322。
+- Staging Release plan `40386405689` 對 exact SHA `81b07fd` 成功，dry-run 預覽 7 個 migrations；沒有套用 migration、改 staging 資料庫或部署應用程式。此 plan 不是 Go-Live。
+- Go-Live 仍待本機加密 staging logical backup：既有本機 `.env.staging` 的 Supabase Management API token 回 HTTP 401，沒有建立備份。GitHub staging secret 可供 plan 使用，但不能從 GitHub 讀回到本機。先更新本機 `.env.staging` 的 token，依 runbook 完成 local-only 加密匯出；文件同步會推進 main SHA，之後要用最新 SHA 重跑 plan。不要把任何 token 貼在聊天。
+- 本輪沒有修改 hosted staging／production，也沒有改動 production。功能要等受保護的 Staging Go-Live 套用 migration 並部署後才會在 staging 自動可用。
 - Event date-only 的 `event_date_only_v1` 不需重開：較早的接力紀錄記載使用者已由受保護 CLI 開啟，且管理表單已實際出現「時間未定」選項；本輪失敗的是落後主目錄的腳本檢查，沒有變更 hosted flag。
 
 ## 2026-10-26 歡喜牆一般貼文截止日（本機驗收完成；尚未整合／發布）
