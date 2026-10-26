@@ -7,7 +7,7 @@
 - 一般貼文可選台灣日曆截止日；截止當天仍能留言／回答，隔日 00:00 起不再接受新留言或回答。舊留言／回答仍可閱讀、保留；反應、收藏、收件確認及 IOU 不隨之關閉。
 - 前端不顯示新增留言／回答操作；API 與 RPC 仍會獨立拒絕逾期請求，避免繞過 UI。使用 `joy_wall_v1`，沒有新增旗標或變更讀者權限。
 - 本機分支 `codex/joy-post-deadline` 新增 migration `20261026000500_joy_post_interaction_deadlines.sql` 及 SQL security verifier，並更新 API、頁面、元件、合約、驗證、E2E 與 verification manifest。217 Vitest 檔／1,617 tests、typecheck、lint、Webpack production build、migration guard、88-file manifest、diff check 通過；隔離 Supabase 完整 migration replay 與全部 88 份 SQL verifier、Joy 截止日 E2E 1/1 通過。
-- 尚未 push／開 PR／部署；CI／Browser Smoke 未執行。Staging Release run `40297992217` 已核准並成功完成，但只是 `931dd23` 的 dry-run，沒有套用這項 migration。未修改 hosted 或 production。
+- 尚未 push／開 PR／部署；CI／Browser Smoke 未執行。舊 Staging Release run `40297992217` 只對 `931dd23` 做 dry-run，沒有套用這項 migration。最新 main plan `40317913782`（SHA `508f16e`）仍等待 staging 核准，且不包含本分支的 `000500`。未修改 hosted 或 production。
 - 發布前須先整合平行草稿分支的 `20261026000400`，不可讓本 migration `000500` 越過較早版本部署。完整 DB reset／lint／88 SQL verification 都在獨立 Supabase 專案與連接埠執行，未 reset 共用 54322。
 
 ## 2026-10-26 Joy Wall 目標關聯（已同步 main；CI 通過；staging 待發布）
@@ -16,7 +16,7 @@
 - 資料庫會檢查同社、活動可見權限、有效職務及生日徵集功能旗標；讀取貼文時再依當前讀者權限過濾目標。生日旗標關閉或讀者失去生日清單權限時，選項與既有貼文上的生日關聯都不顯示。沿用 `joy_wall_v1`，沒有新增旗標或改 hosted／production。
 - 新增 `20261026000300_joy_target_associations.sql`、`joy_target_associations_security.sql` 與 API／頁面／驗證測試。乾淨隔離 Supabase stack 已重播 160 支 migration；DB lint exit 0，只有 3 項既有 warning；87 份 SQL verification 全通過。沒有重置共用本機資料庫。`npm run verify:db` wrapper 固定指向共用 54322，因此同樣的 reset／lint／SQL 驗證改在唯一 project ID、61422 port 的臨時 stack 執行。
 - 驗證：217 Vitest 檔／1,616 tests、typecheck、lint、migration guard、verification manifest（87 files）、`git diff --check` 通過；Webpack production build 與 Joy 目標關聯 Playwright 桌機流程 1/1 通過（本機合成資料）。GitHub CI `40295780260` 成功（validate、build、database）；Browser Smoke `40295780270` 成功（243 passed、111 skipped），其中 Message Center 排程編輯流程有 1 次 flaky retry 後通過。預設 Turbopack build 因 worktree `node_modules` symlink 指向另一個 worktree而失敗，Webpack build 成功。
-- 尚未部署 staging；本輪沒有更動 hosted／production，也沒有開啟任何 hosted flag。Staging Release run `40297992217` 已於 2026-10-26 經核准並成功完成，對應 exact SHA `931dd23`，只做 migration dry-run，沒有套 migration 或部署；main 前進後必須重開最新 SHA 的 plan。舊 run `40286231972` 對應 `6bc9433`，不可沿用。Go-Live 前仍須完成本機加密 staging 備份；已知 `.env.staging` 缺少 project ref、access token、DB password，需先安全補齊。Issue #4 其他待辦仍未完成。
+- 尚未部署 staging；本輪沒有更動 hosted／production，也沒有開啟任何 hosted flag。舊 plan `40297992217` 對應 `931dd23`，只做 migration dry-run，沒有套 migration 或部署。最新 main plan `40317913782` 對應 `508f16e`，仍等待 staging 核准，不含本地 `000500`，也沒有部署。舊 run `40286231972` 對應 `6bc9433`，不可沿用。Go-Live 前仍須完成本機加密 staging 備份；已知 `.env.staging` 缺少 project ref、access token、DB password，需先安全補齊。Issue #4 其他待辦仍未完成。
 
 ## 2026-10-26 Joy Wall 匿名建議箱（已同步 main；staging 驗收／發布待續）
 
