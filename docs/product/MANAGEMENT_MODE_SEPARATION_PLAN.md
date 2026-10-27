@@ -533,7 +533,7 @@ Browser Smoke；階段 4 若執行也同樣跑一次。會改資料的瀏覽器�
 - `AGENTS.md` 第 5 節：安全邊界
 - `AGENTS.md` 第 6 節：瀏覽器測試規則
 - `docs/product/EXPERIENCE_CONTEXT.md`：模式與 active club 的既有語意
-- `docs/product/TO-DO-LIST.md` 第 3 項：本企劃的待辦入口
+- `docs/product/TO-DO-LIST.md`：唯一現行待辦清單；本企劃未列為目前工程待辦時，以清單為準
 - `docs/product/CURRENT_SESSION_HANDOFF.md`：本輪實作狀態、驗證結果與未完成外部條件
 - `docs/deployment/STAGING_MANAGEMENT_ACCEPTANCE.md`：staging 執行秘書專項驗收流程
 - `docs/mvp/BIRTHDAY_WISHES_V2_PLAN.md`：生日徵集的產品規則，本企劃不得更動

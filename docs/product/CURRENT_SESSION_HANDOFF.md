@@ -14,11 +14,11 @@
 - 最新 staging 產品 revision `11e931eb5d2a50d324d4ceb1d683af3c267043e0` 已部署。CI `40424265531`、Browser Smoke `40424265620`、Release plan `40425814322`、Go-Live `40427019420` 成功；本次沒有新 migration。`/api/health` 為 `revision=11e931eb5d2a`、`status=ok`、configuration/database `true`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過。production 未修改。
 - E-12 本機加密匯出與 public-only 隔離還原演練完成：密文 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`。無網路 Supabase PostgreSQL 17.6 容器還原 98 張表／3,398 筆資料且逐表吻合、440 個函式載入、98 張表均啟用 RLS、3 個 Auth 外鍵有效；解密串流未寫明文檔或上傳。備份不含 Auth／Storage／project secrets 與設定；還原以 72 個合成 Auth IDs 驗證 public 外鍵，並非完整 app／災難復原。FileVault 開啟，一次性 staging-only Project Settings Read token 已撤銷，臨時容器已移除。
 - 備份與解密私鑰分別保存在本機 repo 外私密目錄，請保留兩者、不可提交 repo；完整路徑只在本機交付，不寫入 GitHub 文件。舊的主 checkout `/Users/leoj/Documents/GitHub/rotary-platform-v2` 可能含未提交工作，本輪未修改；備份使用乾淨 main clone。
-- E-06 最新 staging 診斷 run `40430963025` 使用產品 revision `11e931eb5d2a50d324d4ceb1d683af3c267043e0`、warm cache、每頁 5 次：社員首頁 LCP/FCP/TTFB/INP 中位數 `832/340/309.6/16 ms`，管理首頁 `836/300/268.8/16 ms`。新增的 proxy auth Server-Timing 中位數僅 `1.5/1.6 ms`；CDP 摘要兩頁皆 0 個長任務。社員首頁 LCP 有時是 `/hero-mountains.webp`，資源載入約 `193.7–232.5 ms`，不是目前最明顯的等待來源。這只排除了部分假設，不能指出後續 SSR／資料往返的確切瓶頸；E-06 仍進行中。詳見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
+- E-06 已結案：run `40430963025` 的社員／管理首頁 LCP、TTFB、INP 中位數均達 Core Web Vitals 良好門檻；依產品決定不再追查剩餘伺服器等待，未宣稱已加速。詳見 `TO-DO-LIST-HISTORY-2026-10-27.md` 的封存節；`PERFORMANCE_IMPROVEMENT_LOG.md` 與診斷工具保留。
 - 訊息中心 Browser Smoke 根因已確認為測試在收件對象選擇器 hydration 尚未完成前輸入，送出時標題欄仍空白，伺服器正確拒絕空標題。`060e75b03cc14a5db3ffc9930af4018bd21e2f99` 只調整 E2E 等待並在送出前驗證欄位值，沒有改產品程式或放寬斷言；targeted E2E 連跑兩輪各 3/3 通過。CI `40436731139` 成功，完整 Browser Smoke `40436731002` exact SHA `060e75b` 成功（248 passed／123 skipped），兩項 rollback 測試通過。Staging 產品 revision 仍為 `11e931e`，本次沒有部署。
-- E-06 效能量測工具已補上 staging telemetry 彙總：只讀 staging 的最近 15 分鐘，僅顯示首頁情境解析／資料投影的樣本數、中位數、P95；工作流程會硬性確認 staging project ref，拒絕其他 project，且原始 query 輸出不進 log／artifact。parser 有隱私欄位與數值範圍測試；本機全套應用測試、build、隔離 DB reset/lint 與 92 份 SQL verification 通過。這只新增測試診斷能力，沒有改產品 runtime、schema、權限或 staging 資料；待同步 main 後用 staging 重新量測。
-- `TO-DO-LIST.md` 已在 `578ab69` 整理成 2026-10-27 唯一現行清單；舊版 1,559 行逐日快照完整封存為 `TO-DO-LIST-HISTORY-2026-10-27.md`，舊的互相矛盾狀態不可再視為現行待辦。文件 CI `40434345531` 成功，Browser Smoke 依文件變更範圍略過。
-- Message Center scheduler 是獨立營運設定，未完成送達對象驗收前不要啟動。E-03 LINE OA follow 自動配對真人驗收已完成（只使用 `PANCHIAO-ELITE`；HAPPY 不使用）。PR #204 仍待專用測試帳號真人完成 recovery email→更新密碼→重新登入 hosted 驗收；不自動合併。E-07／E-11 真人實機驗收仍待做，E-08 production 維持未授權不碰，E-09 custom SMTP 暫緩。
+- E-06 staging telemetry 工具已同步 main，僅讀取彙總資料、不輸出原始 query 或個資；依產品決定不再以此追查伺服器等待。產品程式與 staging 未因診斷工具而改動；工具與 `PERFORMANCE_IMPROVEMENT_LOG.md` 保留。
+- `TO-DO-LIST.md` 是 2026-10-27 唯一現行清單；已完成與封存證據記於 `TO-DO-LIST-HISTORY-2026-10-27.md`，舊快照不可視為目前待辦。文件更新依 change-scope 規則判定是否執行完整 Browser Smoke。
+- E-07、E-11 與 PR #204 真人驗收依產品決定封存但未驗收；E-08 production 發布前需重新評估。PR #204 維持 open/draft、不合併；E-09 一併暫緩。Message Center scheduler 不啟動、不建立排程。LINE OA 僅使用 `PANCHIAO-ELITE`，HAPPY 不使用。E-03 LINE OA follow 自動配對真人驗收已完成。
 
 ## 2026-10-27 前次接力狀態（歷史狀態）
 

@@ -180,6 +180,10 @@ export type JoyQuestionBatchSummary = {
   answered_count: number;
   unavailable_count: number;
 };
+export type JoyQuestionBatchDispatchResult = {
+  batch: JoyQuestionBatchSummary;
+  replayed: boolean;
+};
 export type JoyQuestionManagerPage = {
   prompts: JoyQuestionPrompt[];
   batches: JoyQuestionBatchSummary[];
@@ -537,6 +541,29 @@ export function parseJoyQuestionManagerPage(value: unknown): JoyQuestionManagerP
     prompts,
     batches,
     distinct_active_prompt_count: value.distinct_active_prompt_count,
+  };
+}
+
+export function parseJoyQuestionBatchDispatch(value: unknown): JoyQuestionBatchDispatchResult {
+  if (!isRecord(value) || typeof value.id !== "string" || !uuidPattern.test(value.id)
+    || typeof value.title !== "string" || value.title.trim().length === 0
+    || !isTimestamp(value.created_at)
+    || !(value.due_on === null || isDateOnly(value.due_on))
+    || !isNonNegativeInteger(value.assignment_count) || value.assignment_count < 1 || value.assignment_count > 250
+    || typeof value.replayed !== "boolean") {
+    throw new Error("invalid_joy_question_batch_dispatch");
+  }
+  return {
+    batch: {
+      id: value.id,
+      title: value.title,
+      created_at: value.created_at,
+      due_on: value.due_on,
+      assignment_count: value.assignment_count,
+      answered_count: 0,
+      unavailable_count: 0,
+    },
+    replayed: value.replayed,
   };
 }
 

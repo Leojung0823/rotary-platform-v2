@@ -4,6 +4,7 @@ import {
   parseJoyPostDraft,
   parseJoyPostDrafts,
   parseJoyQuestionBatchDetail,
+  parseJoyQuestionBatchDispatch,
   parseJoyQuestionManagerPage,
   parseJoyQuestionRecipients,
   parseJoySuggestions,
@@ -187,6 +188,33 @@ describe("Joy Wall response contracts", () => {
       .toThrow();
     expect(() => parseJoyQuestionManagerPage({ ...page, batches: [{ ...page.batches[0], answered_count: 2 }] }))
       .toThrow("invalid_joy_question_manager_page");
+  });
+
+  it("validates the persisted batch returned by a successful dispatch", () => {
+    const dispatched = {
+      id: "64000000-0000-4000-8000-000000000021",
+      title: "本月提問",
+      created_at: "2026-10-02T00:00:00.000Z",
+      due_on: "2026-10-15",
+      assignment_count: 2,
+      replayed: false,
+    };
+    expect(parseJoyQuestionBatchDispatch(dispatched)).toEqual({
+      batch: {
+        id: dispatched.id,
+        title: dispatched.title,
+        created_at: dispatched.created_at,
+        due_on: dispatched.due_on,
+        assignment_count: 2,
+        answered_count: 0,
+        unavailable_count: 0,
+      },
+      replayed: false,
+    });
+    expect(() => parseJoyQuestionBatchDispatch({ ...dispatched, assignment_count: 0 }))
+      .toThrow("invalid_joy_question_batch_dispatch");
+    expect(() => parseJoyQuestionBatchDispatch({ ...dispatched, due_on: "2026-02-30" }))
+      .toThrow("invalid_joy_question_batch_dispatch");
   });
 
   it("validates recipient and batch projections without requiring answer contents", () => {

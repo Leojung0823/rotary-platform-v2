@@ -542,6 +542,14 @@ test("club officers can batch different private Joy questions while ordinary mem
     expect(dispatchResponse.status(), `batch dispatch returned ${dispatchResponse.status()} (${payload?.error ?? "no error code"})`)
       .toBe(201);
 
+    const immediateBatchCard = page.locator("article").filter({ hasText: batchTitle }).last();
+    await expect(immediateBatchCard.getByText("0/2 已回答", { exact: false })).toBeVisible();
+    await expect(immediateBatchCard.getByText(`回答截止：${batchDueOn}（台北）`)).toBeVisible();
+
+    // The successful API response is reflected immediately, and the following
+    // full read proves the server persisted it rather than only updating UI state.
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "提問題庫與派發" })).toBeVisible();
     const batchCard = page.locator("article").filter({ hasText: batchTitle }).last();
     await expect(batchCard.getByText("0/2 已回答", { exact: false })).toBeVisible();
     await expect(batchCard.getByText(`回答截止：${batchDueOn}（台北）`)).toBeVisible();

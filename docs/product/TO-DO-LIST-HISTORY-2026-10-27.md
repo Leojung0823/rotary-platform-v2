@@ -4,11 +4,53 @@
 
 > 本檔保留過往每日快照、驗收細節與原始日期，僅供追溯。歷史段落可能互相矛盾，也可能把已完成工作標成待辦；**不得依此執行或判斷目前狀態**。唯一現行待辦請看 [`TO-DO-LIST.md`](./TO-DO-LIST.md)。
 
-## 2026-10-27 最新 staging／待辦核對（本節優先）
+## 2026-10-27 產品決定封存
+
+以下項目從唯一現行清單移出，保留原工作內容與封存前狀態。此決定不是驗收證據；封存的真人／外部項目不得標示為已完成或已驗收。
+
+### E-06 登入後首頁效能診斷 `[>]`
+
+- 原工作內容：為 staging 效能測試加入 proxy auth 計時與 LCP 歸因；盤點 dashboard 的身份、社團情境與旗標讀取，以及社員首頁投影、LINE OA onboarding、request-scoped 去重與 Suspense 骨架。原待辦曾規劃補上不含個資的伺服器階段耗時證據，檢查 identity／context／首頁投影等待及遙測寫入，再以同一 staging、warm cache、每頁 5 次複測；不公開快取登入首頁、不共用個人資料、不改登入、角色、RLS、RPC 權限或社團隔離，也不在無證據時猜測改查詢／快取。
+- 結案：run `40430963025` 實測社員首頁 LCP／TTFB／INP 中位數 832／309.6／16 ms，社務管理首頁 836／268.8／16 ms，均已達 Core Web Vitals 良好門檻（LCP < 2.5 s、TTFB < 800 ms、INP < 200 ms）；依產品決定不再追查剩餘伺服器等待。未宣稱已加速。
+- `PERFORMANCE_IMPROVEMENT_LOG.md` 及效能診斷工具保留，不刪除。
+
+### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
+
+- 原工作內容：以真實 iPhone Safari、Android Chrome 及至少五位社員／幹部測試登入、導覽、活動報名、簽到、生日祝福、LINE OA 引導與管理流程；記錄裝置、瀏覽器、網路、測試結果與問題。桌面 Chromium 自動化不能替代實機與使用者測試。
+- 封存（依產品決定不執行，未驗收）。
+
+### E-11 LINE OA／Rich Menu 外部設定與手機驗收 `[>]`
+
+- 原工作內容：程式已在 main／staging；待相關扶輪社完成 LINE OA 後台設定，再以手機逐項點選 Rich Menu，確認導向正確社別與功能；驗收須記錄已設定社別、實際 OA 與手機結果，未設定社別不得寫成已完成。
+- 封存（依產品決定不執行，未驗收）。
+
+### PR #204 Recovery email hosted 真人驗收 `[>]`
+
+- 原工作內容：使用專用 staging 測試帳號完成「收到 recovery email → 開啟連結 → 設定新密碼 → 重新登入」，記錄 hosted 結果；真人流程完成前不要合併 PR #204，本機測試或 CI 不取代真人驗收。
+- 封存（依產品決定不執行，未驗收）。
+
+### Message Center scheduler staging 營運設定 `[ ]`
+
+- 原工作內容：先確認排程實際會送給哪些對象、內容與時間，並完成 staging 收件對象驗收，再考慮設定與啟動 scheduler；收件對象驗收及管理者確認前不要啟動，避免誤發 LINE 訊息。這是外部營運排程，不等同產品 feature flag。
+- 封存（依產品決定不執行，未驗收）。
+
+### 封存後仍須遵守的限制
+
+- PR #204 維持 open、draft，不合併、不 close、不刪除分支；已在 PR 留言說明「真人驗收依產品決定封存，暫不合併」。PR #204 與 E-09 一併視為暫緩。
+- Message Center scheduler 維持不啟動，也不建立任何排程。
+- LINE OA 僅使用 `PANCHIAO-ELITE`；HAPPY 不使用，也不可將 PANCHIAO 設定或憑證套用至 HAPPY。
+
+## 2026-10-27 Browser Smoke failure triage
+
+- Run `40430771865` attempt 2 的訊息中心失敗不是 toast 太快消失：錯誤截圖與 DOM context 顯示標題欄在提交時為空，伺服器依驗證規則拒絕儲存，回覆「標題、內容或時間格式不正確，請檢查後再試。」；當時的測試在收件對象選擇器 hydration 前輸入欄位。修正已在 commit `060e75b`：等候收件對象 hydration，並在點擊前確認標題與內容欄值，不延長 timeout、不放寬斷言。持久的草稿列表項目仍是保存成功的驗證。
+- Joy Wall 派題的錯誤上下文與 trace 顯示：點擊派發後 `POST /api/v1/joy/question-batches` 回 HTTP 201，資料含批次 ID、名稱、截止日及 2 位收件人；trace 隨後有成功的頁面 refresh，但伺服器渲染的派發列表在該次瀏覽器狀態仍沒有新批次。根因是管理器只以 server prop `initialPage.batches` 渲染列表，成功 mutation 後只呼叫非同步 `router.refresh()`，沒有立即把已確認建立的批次加入畫面；測試的 locator 逾時反映真實 UI 更新缺口，不是單純文字選擇器錯誤。
+- 修正與驗證：待工程修正與連續 Browser Smoke run 完成後，補記 commit、相關本機 e2e 結果及兩個連續成功的 Browser Smoke run 編號；完成後本項不再留在唯一現行待辦。
+
+## 2026-10-27 最新 staging／待辦核對（產品決定前快照；封存狀態以上方新節為準）
 
 - staging 已部署產品 revision：`11e931eb5d2a50d324d4ceb1d683af3c267043e0`。CI `40424265531`、Browser Smoke `40424265620`、Release plan `40425814322`、Go-Live `40427019420` 成功；沒有新 migration，資料庫保持最新。staging health revision `11e931eb5d2a`、`status=ok`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過，production 未修改。
 - E-12 本機加密匯出與 public-only 還原演練完成：密文 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`；位於本機 repo 外私密目錄。AES-GCM/gzip 與 checksum 通過；隔離、無網路 Supabase PostgreSQL 17.6 還原 98 張表／3,398 筆資料，表筆數逐一吻合、440 個函式載入、98 張表均啟用 RLS、3 個 Auth 外鍵通過驗證。為符合備份不含 Auth 的範圍，還原時只在隔離資料庫建立 72 個合成 Auth ID；這不是完整應用程式／災難復原。未落地明文、未上傳，短期 staging-only scoped token 已撤銷；不含 Auth、Storage 物件或平台設定。
-- E-06 最新診斷 run `40430963025`（產品 revision `11e931e`、staging、warm cache、每頁 5 次）：社員首頁 LCP/FCP/TTFB/INP 中位數 `832/340/309.6/16 ms`，管理首頁 `836/300/268.8/16 ms`。proxy auth 驗證中位數僅 `1.5/1.6 ms`，CDP 兩頁均 0 個長任務；社員首頁 hero 圖片載入約 `194–233 ms`，不是主要等待。這沒有定位其餘伺服器／資料往返耗時，也不是產品修改前後比較，不能宣稱整體已加速；E-06 仍進行中。詳細樣本與限制見 `PERFORMANCE_IMPROVEMENT_LOG.md`。診斷工具 CI `40430771863` 成功。Browser Smoke `40430771865` 首次執行 245 passed／123 skipped，Joy Wall 派題的 locator 逾時，另有 2 個測試重試後通過；截圖／錯誤上下文仍顯示派題與 `0/2 已回答`，失敗更像等待不穩但仍待重跑確認。Attempt 2 正在重跑失敗 job。
+- E-06 最新診斷 run `40430963025`（產品 revision `11e931e`、staging、warm cache、每頁 5 次）：社員首頁 LCP/FCP/TTFB/INP 中位數 `832/340/309.6/16 ms`，管理首頁 `836/300/268.8/16 ms`。proxy auth 驗證中位數僅 `1.5/1.6 ms`，CDP 兩頁均 0 個長任務；社員首頁 hero 圖片載入約 `194–233 ms`，不是主要等待。產品決定結案、不再追查剩餘伺服器等待；這不是產品修改前後比較，未宣稱整體已加速。詳細樣本與限制見 `PERFORMANCE_IMPROVEMENT_LOG.md`。診斷工具 CI `40430771863` 成功。Browser Smoke `40430771865` attempt 2 的失敗原因與後續修正，見本檔「2026-10-27 Browser Smoke failure triage」。
 - E-03 LINE OA follow 自動配對真人驗收已由產品負責人確認完成、目前可用；只限已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。Message Center scheduler 專用環境仍未建立；送達對象驗收前不啟動排程。
 - PR #204 草稿空白到期日問題已修正並部署；PR #204 尚未合併，仍待專用測試帳號真人完成 recovery email「收信→確認→更新密碼→重新登入」hosted 驗收，不自動合併。
 - E-07（真實 iPhone／Android、M1 五位使用者測試）、E-11（各社 OA／Rich Menu 實機驗收）仍待真人／外部操作。E-08 是 production 決策與發布，未有明確範圍核准前不碰 production；E-09 custom SMTP 維持暫緩。
@@ -23,7 +65,7 @@
 - PR #204 的訊息中心草稿空白到期日 bug 已由 `6f17fc2` 隨 Go-Live `40417434022` 修正部署。PR #204 尚未合併，仍待專用測試帳號真實完成 recovery email「收信→確認→更新密碼→重新登入」真人 hosted 驗收；不自動合併。
 - E-07（真實 iPhone／Android、M1 五位使用者測試）、E-11（各社 OA／Rich Menu 實機驗收）仍待真人／外部操作。E-08 是 production 決策與發布，未有明確範圍核准前不碰 production；E-09 custom SMTP 維持暫緩。
 
-> 下方日期較早的段落保留當時的工作紀錄；其中「尚未部署／待開旗標／憑證缺少」等狀態已由本節 2026-10-27 即時核對取代。當前待辦以本節及 E-01–E-12 最新狀態為準，不要照舊段落重跑過期的發布計畫。
+> 下方日期較早的段落保留當時的工作紀錄；其中「尚未部署／待開旗標／憑證缺少」等狀態不可當作現在狀態。唯一現行待辦請看 [`TO-DO-LIST.md`](./TO-DO-LIST.md)；E-06、E-07、E-11、PR #204 與 scheduler 的最新封存決定以上方「2026-10-27 產品決定封存」為準，不要照舊段落重跑過期工作。
 
 ## 2026-10-27 歡喜牆互動封鎖（已同步 main 並部署 staging）
 

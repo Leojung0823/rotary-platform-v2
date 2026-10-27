@@ -7,8 +7,8 @@
 - 發布規則：新功能成功部署後自動可用，不要求人工開旗標；緊急停用仍須受保護，既有 opt-in 功能不批次開啟。此規則不自動啟動外部訊息排程，也不取代登入、角色、社籍、RLS／RPC 權限。
 - 已部署至 staging 的產品 revision：`11e931eb5d2a50d324d4ceb1d683af3c267043e0`。CI `40424265531`、Browser Smoke `40424265620`、Staging Release plan `40425814322`、Go-Live `40427019420` 均成功；資料庫已是最新，沒有新 migration。health `status=ok`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過。production 未修改。
 - E-12 本機加密 logical export 與 public-only 隔離還原演練完成：密文與 checksum 留在本機 repo 外私密目錄，檔名 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`。98 張表／3,398 筆資料逐表吻合，98 張表 RLS 啟用、Auth 外鍵有效；72 個 Auth IDs 僅為隔離演練的合成占位，不含真實 Auth／Storage／平台設定，也不代表完整災難復原。沒有上傳，短期 staging-only scoped token 已撤銷。
-- E-06 run `40423362042` → `40427338234` 同條件比較（staging、warm cache、每頁 5 次）：管理首頁 LCP/FCP/TTFB/INP 中位數 `1104/348/314.3/16` → `748/304/288.3/16 ms`；社員首頁 `1096/428/325.2/16` → `1104/608/579.4/16 ms`。管理頁有正向觀察，社員頁未證明改善，E-06 仍進行中；詳見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
-- Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對真人驗收已完成（只使用 `PANCHIAO-ELITE`；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策、production 未修改；E-09 custom SMTP 暫緩；PR #204 recovery email 完整重設流程仍待 hosted 真人驗收，不自動合併。細節見 `TO-DO-LIST.md` 與 `CURRENT_SESSION_HANDOFF.md`。
+- E-06 已依產品決定結案：run `40430963025` 的社員／管理首頁 LCP、TTFB、INP 均達 Core Web Vitals 良好門檻；不再追查剩餘伺服器等待，也未宣稱已加速。歷史測量、限制與保留的診斷工具見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md) 及 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。
+- E-07、E-11、PR #204 真人／手機驗收依產品決定封存但未驗收；E-08 production 發布前須重新評估是否補做，E-09 暫緩。PR #204 維持 open/draft、不合併；Message Center scheduler 不啟動且不建立排程。LINE OA 僅使用 `PANCHIAO-ELITE`，HAPPY 不使用。唯一現行工程待辦以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 為準。
 
 ## 2026-10-27 前次 staging／部署核對（歷史狀態）
 
@@ -675,7 +675,7 @@ follow 事件自動配對真人驗收。
 出席 UI 整合已完成，並且如原本要求的那樣繼續使用 PR #61 的 canonical Attendance RPC，未另建 authority。
 
 所有需要 LINE Developers Console、Render／GitHub secret、staging 發布、Chrome DevTools、實機／真人驗收或產品決策的項目，
-統一記在 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12；本文件只保留路線與依賴，不另維護第二份外部待辦。
+目前可執行的待辦統一記在 [`TO-DO-LIST.md`](./TO-DO-LIST.md)；已完成與依產品決定封存的項目及證據見 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。本文件只保留路線與依賴，不另維護第二份待辦清單。
 
 ## 開發原則
 
@@ -756,7 +756,7 @@ Phase 2 之後追加並完成的社務功能：
   閱讀本文件時仍應把 release source SHA 與 staging runtime 分開看。
 - PR #135 前的 staging 實測曾在社員切換社團時回傳內部 `0.0.0.0:10000` redirect；PR #135 已在 `main` 改用受信任的公開站台網址，
   並已隨本次 Go-Live 發布；仍要完成一次 hosted 社團切換回歸，才能把使用者行為標為完成。
-- Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 4 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試仍未完成。
+- Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 2 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試依 2026-10-27 產品決定封存、未驗收，production 發布前須重新評估是否補做。
 - 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `1ef38bb50407`；生日旗標、Render scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。生日邀請真人送達與冪等重跑已由 scheduler `34695450977`／`34695655038` 驗收；follow identity pairing 仍依 E-03 待精確身份核對。
 - 生日 scheduler 的環境隔離問題已修正：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護；secret 已同步。不可移除 staging 保護或把部署用 secrets 暴露給無審核 job。
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
@@ -1029,15 +1029,6 @@ PR-01c 不做：
 
 ## Current Next Actions
 
-目前仍未結案的項目，完整清單與證據以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 的 E-01–E-12 為準；E-01、E-02、E-04、E-05 已完成，E-09 依產品決定暫緩；E-12 因備份保存政策改為本機-only 而重新開啟。下一步不是重新開發 E-05，而是依照外部條件依序補驗收：
-
-1. **E-03：follow 自動配對真人驗收** `[>]`：用乾淨真人帳號確認 LINE Login 身份自動對到正確 person，再測多社／外社／停權／退社；目前程式與日期窗口防護已完成，缺的是人核對的證據。
-2. **E-10：雙重社籍與跨社執行秘書驗收** `[x]`：`35500891585` 已完成停權／退社／外社執行秘書的 staging 負向矩陣；跨社社員管理 URL 會被 `/access-denied` 擋下。
-3. **E-06：登入後管理頁效能量測** `[>]`：社員首頁單一 hero preload 修正已部署並完成 DOM 核對；仍缺同一帳號、同一社別、同一 runtime／快取條件下的 FCP／TTFB／LCP 前後比較，以及 INP。Chrome DevTools 沒有已登入 staging session 前，數字一律記為「未量測」，不得用 `/login` 或不同 runtime 的數字代替。
-4. **E-07：iOS／Android 實機與 M1 測試** `[ ]`：至少五位社員／幹部，記錄裝置、網路、結果與問題；自動化 Chromium 不取代真人實機與訪談。
-5. **E-11：LINE Rich Menu／完整 OA 整合** `[>]`：程式已合併並部署 staging；仍待各社 OA 外部設定、旗標決策與真人手機驗收，不得把本機 mock 測試當成 LINE 發布證據。
-6. **E-08：production 準備** `[!]`：另立正式環境 release 任務，不與 staging 驗收混在一起；在取得明確產品決策前不修改 production。
-7. **E-09：Recovery email 維持暫緩** `[!]`：只有符合重啟條件才做 custom SMTP 與真人信件驗收。
-8. **非外部驗收項目**：社費／收款／核銷、財務報表與生日設定 UX 已有程式與 staging 基礎，但仍要依 `TO-DO-LIST.md` 的角色、空資料、儲存／關閉與跨社矩陣逐項驗收；服務計劃 hosted 草稿／發布邊界已結案。社務 AI 助理沒有已批准的可執行規格，不擅自開工。
+唯一現行待辦與可執行項目以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 為準；歷史驗收證據、已完成項目與 2026-10-27 封存決定見 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。E-06 已依產品決定結案、未宣稱已加速；E-07、E-11、PR #204 真人驗收封存但未驗收。E-08 production 發布前需重新評估是否補做，E-09 維持暫緩。不要從本路線圖重開已封存項目。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。#124、#126、#127、#130、#132、#135、#139 與 #145 已隨 Go-Live `34912921064` 發布；#136–#141 與 #143／#144／#146／#147 是文件／發布工具變更。後續若只有文件同步，不需要重新部署 staging。

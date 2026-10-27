@@ -4,11 +4,13 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type {
   JoyQuestionBatchDetail,
+  JoyQuestionBatchSummary,
   JoyQuestionManagerPage,
   JoyQuestionPrompt,
   JoyQuestionRecipient,
 } from "@/lib/joy-wall/contracts";
 import {
+  parseJoyQuestionBatchDispatch,
   parseJoyQuestionBatchDetail,
   parseJoyQuestionPrompt,
 } from "@/lib/joy-wall/contracts";
@@ -55,6 +57,7 @@ export function JoyQuestionManager({
   const [error, setError] = useState<string | null>(null);
   const [openBatch, setOpenBatch] = useState<string | null>(null);
   const [batchDetail, setBatchDetail] = useState<JoyQuestionBatchDetail | null>(null);
+  const [newlyDispatchedBatches, setNewlyDispatchedBatches] = useState<JoyQuestionBatchSummary[]>([]);
 
   const visibleRecipients = recipients.filter((recipient) =>
     recipient.display_name.toLocaleLowerCase().includes(recipientSearch.trim().toLocaleLowerCase()),
@@ -62,6 +65,11 @@ export function JoyQuestionManager({
   const selectedCount = selectedIds.size;
   const activeCount = initialPage.distinct_active_prompt_count;
   const selectionHasEnoughPrompts = selectedCount > 0 && selectedCount <= activeCount;
+  const serverBatchIds = new Set(initialPage.batches.map((batch) => batch.id));
+  const batches = [
+    ...newlyDispatchedBatches.filter((batch) => !serverBatchIds.has(batch.id)),
+    ...initialPage.batches,
+  ].sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at)).slice(0, 20);
 
   function toggleRecipient(id: string) {
     setSelectedIds((current) => {
@@ -138,7 +146,12 @@ export function JoyQuestionManager({
           dueOn: batchDueOn || null,
         }),
       });
-      await readData(response);
+      const dispatchResult = parseJoyQuestionBatchDispatch(await readData(response));
+      if (!serverBatchIds.has(dispatchResult.batch.id)) {
+        setNewlyDispatchedBatches((current) => current.some((batch) => batch.id === dispatchResult.batch.id)
+          ? current
+          : [dispatchResult.batch, ...current].slice(0, 20));
+      }
       requestIdRef.current = null;
       setSelectedIds(new Set()); setBatchTitle(""); setBatchDueOn("");
       setNotice(`已派發給 ${selectedCount} 位社員；每人收到一題不同的私密待辦。`);
@@ -239,8 +252,8 @@ export function JoyQuestionManager({
 
     <section className={styles.panel} aria-labelledby="joy-question-batch-history-title">
       <header className={styles.sectionHeader}><div><p className="eyebrow">只顯示回答狀態，不顯示回答內容</p><h2 id="joy-question-batch-history-title">最近派發紀錄</h2></div></header>
-      {initialPage.batches.length === 0 ? <p className={styles.empty}>目前還沒有批次派發紀錄。</p> :
-        <div className={styles.batchList}>{initialPage.batches.map((batch) => <article key={batch.id} className={styles.batchCard}>
+      {batches.length === 0 ? <p className={styles.empty}>目前還沒有批次派發紀錄。</p> :
+        <div className={styles.batchList}>{batches.map((batch) => <article key={batch.id} className={styles.batchCard}>
           <div className={styles.batchSummary}><div><h3>{batch.title}</h3><time dateTime={batch.created_at}>{formattedDate(batch.created_at)}</time>
             <p>{batch.due_on ? `回答截止：${batch.due_on}（台北）` : "沒有設定回答期限"}</p></div>
             <p>{batch.answered_count}/{batch.assignment_count} 已回答 · {batch.unavailable_count} 則已隱藏或不可用</p>
