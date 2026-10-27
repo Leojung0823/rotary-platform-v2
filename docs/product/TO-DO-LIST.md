@@ -6,7 +6,7 @@
 
 ## 2026-10-27 最新狀態基準
 
-- GitHub `main` 文件／診斷工具基準：`caa369e666ed35d1a3bd31d2f3b8c785811cfbf5`；產品 staging revision：`11e931eb5d2a50d324d4ceb1d683af3c267043e0`。診斷工具沒有修改產品程式，因此沒有重新部署 staging。
+- GitHub `main` 已含今天的待辦整理 commit `578ab690b0b17ce9a139eea0037ab5bb6da8523e`；效能診斷工具 revision 為 `59958784efc157c64f4bc87c3c1940b8cb5a5836`；產品 staging revision 仍是 `11e931eb5d2a50d324d4ceb1d683af3c267043e0`。診斷工具沒有修改產品程式，因此沒有重新部署 staging。
 - 最近一次 staging health 為 `status=ok`、`issues=[]`；production 本輪沒有修改。
 - E-12 本機加密 public-only logical export 與隔離還原演練已完成；它不包含 Auth、Storage 物件或 Supabase 專案設定，不等於完整災難復原。備份與解密私鑰留在 repo 外本機私密目錄；一次性 staging-only token 已撤銷。
 - E-06 診斷：run `40430963025`，產品 revision `11e931e`、warm cache、每頁 5 次。社員首頁 LCP／FCP／TTFB／INP 中位數 `832／340／309.6／16 ms`；社務管理首頁 `836／300／268.8／16 ms`。proxy auth 中位數 `1.5／1.6 ms`，CDP 摘要兩頁皆 0 個長任務。結果排除了幾個猜測，但**尚未定位剩餘伺服器等待的確切來源，也不能宣稱整體已加速**。完整量測與限制見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
@@ -20,7 +20,7 @@
 - **已完成**：為 staging 效能測試加入 proxy auth 計時與 LCP 歸因；查明 proxy auth、主執行緒長任務及首頁 hero 圖都不是目前看到的主要延遲。原始碼盤點確認 dashboard 已並行啟動身份、社團情境與旗標讀取；社員首頁也並行讀取首頁投影與 LINE OA onboarding，已有 request-scoped 去重及 Suspense 骨架。
 - **接下來**：補上不含個人資料的伺服器階段耗時證據，優先檢查 identity／context／首頁投影的實際等待，以及遙測寫入端是否可用；再用相同 staging、warm cache、每頁 5 次重測。不能只因同一產品 revision 的不同 run 有較低數字就宣稱改善。
 - **不可做**：不把整個登入首頁設為公開快取；不共用其他使用者的個人資料；不改登入、角色、RLS、RPC 權限或社團隔離。沒有證據前不猜測性改查詢或快取。
-- **驗證現況**：CI `40430771863` 通過。Browser Smoke `40430771865` 第一次有 245 passed／123 skipped；Joy Wall 派題一項 locator 逾時，另兩項重試後通過。截圖顯示派題已成功、`0/2 已回答` 已顯示。Attempt 2 正在重跑失敗 job，完成後須更新此狀態；不是效能測量失敗。
+- **驗證現況**：效能測試 CI `40430771863` 通過。Browser Smoke `40430771865` attempt 2 已結束但整體失敗；細節列於下方「Browser Smoke failure triage」。本結果不代表 staging 產品部署失敗，也不是效能測試失敗。
 
 ### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
 
@@ -32,6 +32,12 @@
 - 程式已在 main／staging；待相關扶輪社完成其 LINE OA 後台設定，再以手機逐項點選 Rich Menu，確認導向正確社別與功能。
 - 目前產品確認只使用 `PANCHIAO-ELITE`；HAPPY 不使用，不得把 PANCHIAO 設定或憑證套用到 HAPPY。
 - 驗收須記錄每個已設定社別、實際 OA、手機結果；未設定的社別不得寫成已完成。
+
+### Browser Smoke failure triage `[>]`
+
+- run `40430771865` attempt 1：245 passed／123 skipped；Joy Wall 派題文字 locator 逾時，另 2 個案例重試後通過。錯誤截圖與上下文顯示派題成功、`0/2 已回答` 可見。
+- attempt 2：246 passed／123 skipped；Joy Wall 案例通過，但訊息中心 `tests/message-center.e2e.mjs:107` 等不到「草稿已儲存。」提示而失敗；定位簽到另有 1 個案例重試後通過。
+- **接下來**：檢查 attempt 2 的訊息中心錯誤上下文／狀態，確認是 UI 流程回歸、提示文字定位不穩，還是測試資料／時序問題；修因果，不要只放寬斷言。除非有新證據，這項與 E-06 效能診斷分開處理。
 
 ### PR #204 Recovery email hosted 真人驗收 `[>]`
 
