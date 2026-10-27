@@ -23,7 +23,10 @@ describe("staging dashboard timing summary", () => {
       medianDurationMs: 72.4,
       p95DurationMs: 105.8,
     }]);
-    expect(formatStagingDashboardTimings(timings)).toContain("社員首頁資料投影");
+    const summary = formatStagingDashboardTimings(timings);
+    expect(summary).toContain("社員首頁資料投影");
+    expect(summary).toContain("| 社員首頁資料投影 | 5 | 72.4 | 105.8 |");
+    expect(summary).not.toContain("daily_subject");
   });
 
   it("rejects unknown events and any extra column that could carry private data", () => {

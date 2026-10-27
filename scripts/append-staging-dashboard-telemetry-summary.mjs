@@ -20,5 +20,7 @@ try {
   await unlink(outputPath).catch(() => {});
 }
 
-await appendFile(summaryPath, `${formatStagingDashboardTimings(timings)}\n`);
-console.log("Only validated aggregate timings were added to the job summary; raw query output was discarded.");
+const summary = formatStagingDashboardTimings(timings);
+await appendFile(summaryPath, `${summary}\n`);
+console.log(summary.trimEnd());
+console.log("Raw query output was discarded.");

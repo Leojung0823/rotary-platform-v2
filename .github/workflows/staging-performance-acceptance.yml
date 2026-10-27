@@ -129,6 +129,7 @@ jobs:
           if [ -z "$SUPABASE_PROJECT_REF" ] || [ "$SUPABASE_PROJECT_REF" != "$EXPECTED_STAGING_SUPABASE_PROJECT_REF" ]; then
             echo "### Staging dashboard server-side timings" >> "$GITHUB_STEP_SUMMARY"
             echo "- Query refused because the configured project was missing or matched the production project." >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice::Read-only staging telemetry query refused because the configured project ref was missing or unexpected."
             exit 0
           fi
           if ! supabase --output-format json db query \
@@ -138,6 +139,7 @@ jobs:
             2>/dev/null; then
             echo "### Staging dashboard server-side timings" >> "$GITHUB_STEP_SUMMARY"
             echo "- Read-only query unavailable; no credentials or raw database output were retained." >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice::Read-only staging telemetry query unavailable; credentials and raw database output were discarded."
             rm -f "$STAGING_DASHBOARD_TELEMETRY_OUTPUT"
             exit 0
           fi
