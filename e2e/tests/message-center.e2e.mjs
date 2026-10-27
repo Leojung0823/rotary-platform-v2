@@ -20,6 +20,14 @@ async function login(page, email) {
   await expect(page).toHaveURL(/\/dashboard$/u);
 }
 
+async function waitForMessageCenterEditor(page) {
+  await expect(page.getByRole("heading", { name: "公告管理" })).toBeVisible();
+  // page.goto waits for the document load event, not client hydration. This
+  // summary changes only after AudiencePicker's client effect has run, so the
+  // first uncontrolled input will not be typed into before hydration finishes.
+  await expect(page.getByText(/^(?:\d+ 位社員|目前無法計算對象人數，送出前請再確認一次。)$/u)).toBeVisible();
+}
+
 test("a plain member has an inbox but no way to write to the club", async ({ page }) => {
   await login(page, memberEmail);
   const navigation = page.getByRole("navigation", { name: "主要導覽" });
@@ -49,10 +57,13 @@ test("an officer sends a message and the member it was addressed to reads it", a
 
   await login(page, officerEmail);
   await page.goto(new URL("/messages", baseURL).toString());
-  await expect(page.getByRole("heading", { name: "公告管理" })).toBeVisible();
+  await waitForMessageCenterEditor(page);
 
   await page.getByLabel("標題").fill(messageTitle);
-  await page.getByLabel("內容").fill("這是一則瀏覽器測試訊息，內容只用於驗收。");
+  const messageBody = "這是一則瀏覽器測試訊息，內容只用於驗收。";
+  await page.getByLabel("內容").fill(messageBody);
+  await expect(page.getByLabel("標題")).toHaveValue(messageTitle);
+  await expect(page.getByLabel("內容")).toHaveValue(messageBody);
   await page.getByRole("button", { name: "立即發布並嘗試 LINE 推播" }).click();
   await expect(page.getByText("訊息已送出。", { exact: false })).toBeVisible();
 
@@ -109,10 +120,14 @@ test("an officer can save a draft, edit it, schedule it and cancel the schedule"
   test.setTimeout(60_000);
   await login(page, officerEmail);
   await page.goto(new URL("/messages", baseURL).toString());
+  await waitForMessageCenterEditor(page);
 
   const draftTitle = `公告草稿測試 ${Date.now()}`;
+  const draftBody = "建立草稿後可以修改，再設定預定發布時間。";
   await page.getByLabel("標題").fill(draftTitle);
-  await page.getByLabel("內容").fill("建立草稿後可以修改，再設定預定發布時間。");
+  await page.getByLabel("內容").fill(draftBody);
+  await expect(page.getByLabel("標題")).toHaveValue(draftTitle);
+  await expect(page.getByLabel("內容")).toHaveValue(draftBody);
   await page.getByRole("button", { name: "儲存草稿" }).click();
   await expect(page.getByText("草稿已儲存。", { exact: true })).toBeVisible();
 
