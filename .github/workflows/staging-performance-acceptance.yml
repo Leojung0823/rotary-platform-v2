@@ -127,15 +127,16 @@ jobs:
             `- Measurement source: ${results.measurementSource}`,
             "- Metrics were collected after protected member/operator login in the same staging runtime.",
             "- INP is reported as unmeasured when the browser exposes no qualifying Event Timing entry; no value is synthesized.",
+            "- Proxy auth timing is retained only from the allow-listed `auth` Server-Timing entry; it is not total server-render time.",
             "- DevTools trace summaries keep only event counts and long-task durations; raw trace data was discarded.",
             "- No email address, password, page content, screenshots, video or HTML report was retained.",
             "",
-            "| Page | Sample | LCP (ms) | FCP (ms) | TTFB (ms) | INP (ms) |",
-            "| --- | ---: | ---: | ---: | ---: | ---: |",
+            "| Page | Sample | LCP (ms) | FCP (ms) | TTFB (ms) | Proxy auth (ms) | INP (ms) |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
           ];
           for (const route of results.routes) {
             for (const sample of route.samples) {
-              lines.push(`| ${route.label} | ${sample.sample} | ${sample.lcpMs} | ${sample.fcpMs} | ${sample.ttfbMs} | ${sample.inpMs ?? "unmeasured"} |`);
+              lines.push(`| ${route.label} | ${sample.sample} | ${sample.lcpMs} | ${sample.fcpMs} | ${sample.ttfbMs} | ${sample.authProxyMs ?? "unmeasured"} | ${sample.inpMs ?? "unmeasured"} |`);
             }
           }
           lines.push("", "| Page | Sample | LCP element | CSS module target | Safe resource path | Resource duration (ms) | Post-resource render delay (ms) | Transfer size (bytes) |", "| --- | ---: | --- | --- | --- | ---: | ---: | ---: |");

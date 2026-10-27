@@ -99,3 +99,16 @@ export function sanitizeStagingLcpAttribution({ currentOrigin, lcp, resource } =
       : null,
   };
 }
+
+/**
+ * Retain only the proxy's bounded auth Server-Timing duration. Descriptions
+ * and every other server timing entry are deliberately discarded.
+ * @param {unknown} entries
+ */
+export function sanitizeStagingAuthProxyDuration(entries) {
+  if (!Array.isArray(entries)) return null;
+  const entry = entries.find((candidate) =>
+    typeof candidate === "object" && candidate !== null && candidate.name === "auth");
+  const duration = round(entry?.duration);
+  return duration !== null && duration <= 120_000 ? duration : null;
+}

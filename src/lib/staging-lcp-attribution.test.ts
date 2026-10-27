@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeStagingLcpAttribution } from "./staging-lcp-attribution.mjs";
+import {
+  sanitizeStagingAuthProxyDuration,
+  sanitizeStagingLcpAttribution,
+} from "./staging-lcp-attribution.mjs";
 
 describe("staging LCP attribution privacy filter", () => {
   it("keeps safe static image attribution and relative resource timings", () => {
@@ -109,5 +112,25 @@ describe("staging LCP attribution privacy filter", () => {
       resourceDurationMs: null,
       afterResourceRenderDelayMs: null,
     });
+  });
+});
+
+describe("staging proxy auth timing privacy filter", () => {
+  it("keeps only the bounded auth duration and drops descriptions and other timings", () => {
+    const result = sanitizeStagingAuthProxyDuration([
+      { name: "auth", duration: 41.26, description: "private token details" },
+      { name: "db", duration: 900 },
+    ]);
+
+    expect(result).toBe(41.3);
+    expect(JSON.stringify(result)).not.toContain("private");
+  });
+
+  it("returns unavailable for absent, malformed, or unbounded timing entries", () => {
+    expect(sanitizeStagingAuthProxyDuration(undefined)).toBeNull();
+    expect(sanitizeStagingAuthProxyDuration([{ name: "db", duration: 10 }])).toBeNull();
+    expect(sanitizeStagingAuthProxyDuration([{ name: "auth", duration: -1 }])).toBeNull();
+    expect(sanitizeStagingAuthProxyDuration([{ name: "auth", duration: 120_001 }])).toBeNull();
+    expect(sanitizeStagingAuthProxyDuration([{ name: "auth", duration: Number.NaN }])).toBeNull();
   });
 });

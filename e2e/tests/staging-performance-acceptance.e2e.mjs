@@ -1,7 +1,10 @@
 import { writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { isPublicHostname } from "../../src/lib/public-hostname.mjs";
-import { sanitizeStagingLcpAttribution } from "../../src/lib/staging-lcp-attribution.mjs";
+import {
+  sanitizeStagingAuthProxyDuration,
+  sanitizeStagingLcpAttribution,
+} from "../../src/lib/staging-lcp-attribution.mjs";
 
 const memberEmail = process.env.STAGING_TEST_MEMBER_EMAIL;
 const memberPassword = process.env.STAGING_TEST_MEMBER_PASSWORD;
@@ -203,6 +206,7 @@ async function collectMetrics(page) {
         lcpMs: round(lcp?.startTime),
         fcpMs: round(fcp?.startTime),
         ttfbMs: round(navigation?.responseStart - navigation?.startTime),
+        authProxyMs: sanitizeStagingAuthProxyDuration(navigation?.serverTiming),
       },
       lcp,
       resource: resource ? {
