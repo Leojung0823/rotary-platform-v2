@@ -133,8 +133,13 @@ describe("the optional note and guest count remain readable", () => {
     expect(form).not.toContain('className="form-grid"');
     expect(form).toContain('className="response-grid"');
     expect(form).not.toContain("<select");
-    expect(form).toContain('name="response" value="attending"');
-    expect(form).toContain('name="response" value="declined"');
+    expect(form).toContain('data-response-choice="attending"');
+    expect(form).toContain('data-response-choice="declined"');
+    expect(form).toContain('value={attending && !hasUnsavedChanges ? "pending" : "attending"}');
+    expect(form).toContain('value={declined && !hasUnsavedChanges ? "pending" : "declined"}');
+    expect(form).not.toContain('value="pending" formNoValidate');
+    expect(form).toContain('className={attending ? "button" : "button button-secondary"}');
+    expect(form).toContain('className={declined ? "button" : "button button-secondary"}');
     expect(form).toContain("disabled={pending}");
   });
 
@@ -143,6 +148,13 @@ describe("the optional note and guest count remain readable", () => {
     // Nothing may collapse it inside a media query.
     for (const block of css.split("@media").slice(1)) {
       expect(block, "a media query collapses .response-grid").not.toMatch(/\.response-grid[^{]*\{[^}]*grid-template-columns:\s*1fr\s*[;}]/u);
+    }
+  });
+
+  it("keeps both reply buttons on one row at every width", () => {
+    expect(css).toMatch(/\.event-response-actions\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/u);
+    for (const block of css.split("@media").slice(1)) {
+      expect(block, "a media query stacks the event reply buttons").not.toMatch(/\.event-response-actions[^{]*\{[^}]*grid-template-columns:\s*1fr\s*[;}]/u);
     }
   });
 });

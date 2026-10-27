@@ -61,6 +61,24 @@ test("each upcoming event row opens that exact event in member mode", async ({ p
   await page.screenshot({ path: testInfo.outputPath("upcoming-event-links.png"), fullPage: true });
 });
 
+test("an event-response reminder opens and positions its exact event", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "member-home-1440", "one width is enough to verify the reminder destination");
+  await login(page, "e2e-shell-ordinary@example.test");
+
+  const eventId = "a1000000-0000-4000-8000-000000000102";
+  const taskCard = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "待辦提醒", exact: true }),
+  });
+  const reminder = taskCard.getByRole("link").filter({ hasText: "本機下一場服務活動" });
+  await expect(reminder).toHaveAttribute("href", new RegExp(`#event-${eventId}$`, "u"));
+  await reminder.click();
+
+  await expect(page).toHaveURL(new RegExp(`/events\\?clubId=[0-9a-f-]+&mode=member#event-${eventId}$`, "u"));
+  const event = page.locator(`#event-${eventId}`);
+  await expect(event.locator("details")).toHaveAttribute("open", "");
+  await expect(event.getByRole("heading", { name: "本機下一場服務活動" })).toBeInViewport();
+});
+
 test("already-friend checks pairing in place and distinguishes lookup failures", async ({ page, context }, testInfo) => {
   await login(page, "e2e-shell-line-oa-unpaired@example.test");
   const taskCard = page.locator("section").filter({ has: page.getByRole("heading", { name: "待辦提醒", exact: true }) });

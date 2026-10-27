@@ -61,6 +61,17 @@ describe("待辦提醒不只有活動報名", () => {
     expect(parsed).toEqual(original);
   });
 
+  it("sends an event-response reminder to that event's anchor in its club", () => {
+    const eventId = "a1000000-0000-4000-8000-000000000102";
+    const clubId = "a1000000-0000-4000-8000-000000000001";
+    const parsed = parsedTasks([task({
+      task_id: eventId,
+      action_path: `/events?clubId=${clubId}&mode=member`,
+    })])!;
+
+    expect(tasksFrom(parsed)[0].href).toBe(`/events?clubId=${clubId}&mode=member#event-${eventId}`);
+  });
+
   it("sends an IOU task to its private IOU and marks its own type with a heart", () => {
     const parsed = parsedTasks([task({
       task_id: "95000000-0000-4000-8000-000000000001",

@@ -527,6 +527,14 @@ code { padding: 3px 6px; border-radius: 5px; color: #31516a; background: #edf2f5
   gap: var(--space-3);
 }
 
+/* The two replies are alternatives, not a primary action plus a lesser one.
+   Keep both visible side by side on phones as well as desktop. */
+.event-response-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-content: stretch;
+}
+
 /* A link an organiser typed into a description. */
 .event-description a { color: var(--blue-ink); text-decoration: underline; overflow-wrap: anywhere; }
 

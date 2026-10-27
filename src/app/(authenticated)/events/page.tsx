@@ -64,7 +64,7 @@ const statusLabels: Record<ClubEvent["status"], string> = {
 };
 
 const responseLabels: Record<Exclude<ClubEvent["my_response"], null>, string> = {
-  pending: "待確認",
+  pending: "尚未回覆",
   attending: "參加",
   declined: "不參加",
 };

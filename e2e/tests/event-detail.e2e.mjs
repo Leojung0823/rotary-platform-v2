@@ -53,6 +53,28 @@ test("an event anchor expands the exact card after streaming and reload", async 
   await expect(card.getByRole("heading", { name: "本機下一場服務活動" })).toBeInViewport();
 });
 
+test("event reply choices stay side by side and only the selected choice is blue", async ({ page }) => {
+  await login(page);
+  const id = "a1000000-0000-4000-8000-000000000102";
+  await page.goto(`/events/${id}?mode=member`);
+  const choices = page.locator("form [data-response-choice]");
+  await expect(choices).toHaveCount(2);
+  await expect(choices.first()).toBeVisible();
+  await expect(page.locator('[data-response-choice="declined"]')).toHaveText("不克參加");
+  await expect(page.locator('[data-response-choice="attending"]')).toHaveText("我要參加");
+
+  const boxes = await Promise.all([0, 1].map(index => choices.nth(index).boundingBox()));
+  expect(boxes[0]).not.toBeNull();
+  expect(boxes[1]).not.toBeNull();
+  expect(Math.abs(boxes[0].y - boxes[1].y)).toBeLessThan(1);
+  expect(boxes[0].x).toBeLessThan(boxes[1].x);
+  for (const button of await choices.all()) {
+    const selected = await button.getAttribute("aria-pressed") === "true";
+    const classes = (await button.getAttribute("class")).split(/\s+/u);
+    expect(classes.includes("button-secondary")).toBe(!selected);
+  }
+});
+
 test("one click saves attendance and optional fields without a second submit", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "event-detail-1440", "Write the shared fixture only once.");
   test.setTimeout(90_000);
@@ -60,57 +82,65 @@ test("one click saves attendance and optional fields without a second submit", a
   const id = "a1000000-0000-4000-8000-000000000102";
   await page.goto(`/events?mode=member&clubId=a1000000-0000-4000-8000-000000000001#event-${id}`);
   const card = page.locator(`#event-${id}`);
-  const choose = async (response) => {
+  const choose = async (response, target = card, pathname = "/events") => {
     let release;
     const gate = new Promise(resolve => { release = resolve; });
     const hold = async (route) => {
       if (route.request().method() === "POST") await gate;
       await route.continue();
     };
-    await page.route("**/events?*", hold);
+    const routePattern = `**${pathname}*`;
+    await page.route(routePattern, hold);
     const committed = page.waitForResponse((result) => result.request().method() === "POST"
-      && new URL(result.url()).pathname === "/events");
-    await card.locator(`button[name=response][value=${response}]`).click();
+      && new URL(result.url()).pathname === pathname);
+    await target.locator(`[data-response-choice="${response}"]`).click();
     try {
-      for (const button of await card.locator("button[name=response]").all()) await expect(button).toBeDisabled();
+      for (const button of await target.locator("[data-response-choice]").all()) await expect(button).toBeDisabled();
     } finally {
       release();
     }
     const result = await committed;
-    await page.unroute("**/events?*", hold);
+    await page.unroute(routePattern, hold);
     expect(result.ok()).toBe(true);
-    await expect(card.getByRole("status")).toContainText("報名狀態已更新");
+    await expect(target.getByRole("status")).toContainText("報名狀態已更新");
     await page.reload();
-    await expect(card.locator("details")).toHaveAttribute("open", "");
+    if (pathname === "/events") {
+      await expect(card.locator("details")).toHaveAttribute("open", "");
+    } else {
+      await expect(page.locator(`[data-response-choice="${response}"]`)).toBeVisible();
+    }
   };
   await card.getByLabel("攜伴人數（選填）").fill("1");
   await card.getByLabel("備註（選填）").fill("本機一鍵報名測試");
   await choose("attending");
-  await expect(card.locator('button[value="attending"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(card.locator('[data-response-choice="attending"]')).toHaveAttribute("aria-pressed", "true");
   await expect(card.getByLabel("攜伴人數（選填）")).toHaveValue("1");
   await expect(card.getByLabel("備註（選填）")).toHaveValue("本機一鍵報名測試");
   await card.screenshot({ path: testInfo.outputPath("one-click-registration.png") });
+
+  // Clicking the selected answer with untouched fields cancels the reply.
+  await choose("attending");
+  await expect(card.locator('[data-response-choice="attending"]')).toHaveAttribute("aria-pressed", "false");
+  await expect(card.locator('[data-response-choice="declined"]')).toHaveAttribute("aria-pressed", "false");
+  await expect(card).toContainText("我的狀態：尚未回覆");
+
+  // A changed note or guest count means the same button saves the edit instead
+  // of accidentally treating the click as a cancellation.
+  await card.getByLabel("攜伴人數（選填）").fill("1");
+  await choose("attending");
   await choose("declined");
-  await expect(card.locator('button[value="declined"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(card.locator('[data-response-choice="declined"]')).toHaveAttribute("aria-pressed", "true");
   await expect(card.getByLabel("攜伴人數（選填）")).toHaveValue("0");
-  await choose("pending");
-  await expect(card).toContainText("我的狀態：待確認");
+  await choose("declined");
+  await expect(card.locator('[data-response-choice="declined"]')).toHaveAttribute("aria-pressed", "false");
+  await expect(card).toContainText("我的狀態：尚未回覆");
+
   await page.goto(`/events/${id}?mode=member`);
-  await page.getByLabel("備註（選填）").fill("");
-  const detailAttending = page.waitForResponse((result) => result.request().method() === "POST"
-    && new URL(result.url()).pathname === `/events/${id}`);
-  await page.locator('button[name=response][value=attending]').click();
-  expect((await detailAttending).ok()).toBe(true);
-  await expect(page.locator("form").getByRole("status")).toContainText("報名狀態已更新");
-  await page.reload();
-  await expect(page.locator('button[value=attending]')).toHaveAttribute("aria-pressed", "true");
-  const detailPending = page.waitForResponse((result) => result.request().method() === "POST"
-    && new URL(result.url()).pathname === `/events/${id}`);
-  await page.locator('button[name=response][value=pending]').click();
-  expect((await detailPending).ok()).toBe(true);
-  await expect(page.locator("form").getByRole("status")).toContainText("報名狀態已更新");
-  await page.reload();
-  await expect(page.locator('button[value=attending]')).toHaveAttribute("aria-pressed", "false");
+  const detailForm = page.locator("form");
+  await choose("attending", detailForm, `/events/${id}`);
+  await expect(detailForm.locator('[data-response-choice="attending"]')).toHaveAttribute("aria-pressed", "true");
+  await choose("attending", detailForm, `/events/${id}`);
+  await expect(detailForm.locator('[data-response-choice="attending"]')).toHaveAttribute("aria-pressed", "false");
 });
 
 test("an event id that is not this member's is indistinguishable from one that does not exist", async ({ page }) => {

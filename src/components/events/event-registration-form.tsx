@@ -5,16 +5,17 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerEventAction, type EventRegistrationState } from "@/app/event-actions";
 
-function ResponseButtons({ response }: { response: string | null }) {
+function ResponseButtons({ response, hasUnsavedChanges }: { response: string | null; hasUnsavedChanges: boolean }) {
   const { pending } = useFormStatus();
-  return <div className="form-actions" aria-busy={pending}>
-    <button className="button" type="submit" name="response" value="attending" disabled={pending} aria-pressed={response === "attending"}>
-      {pending ? "儲存中…" : response === "attending" ? "已報名・更新資料" : "我要參加"}
+  const attending = response === "attending";
+  const declined = response === "declined";
+  return <div className="form-actions event-response-actions" aria-busy={pending}>
+    <button className={declined ? "button" : "button button-secondary"} type="submit" name="response" value={declined && !hasUnsavedChanges ? "pending" : "declined"} data-response-choice="declined" disabled={pending} aria-pressed={declined} formNoValidate>
+      不克參加
     </button>
-    <button className="button button-secondary" type="submit" name="response" value="declined" formNoValidate disabled={pending} aria-pressed={response === "declined"}>
-      {response === "declined" ? "已回覆不參加" : "不克參加"}
+    <button className={attending ? "button" : "button button-secondary"} type="submit" name="response" value={attending && !hasUnsavedChanges ? "pending" : "attending"} data-response-choice="attending" disabled={pending} aria-pressed={attending} formNoValidate>
+      我要參加
     </button>
-    {response && response !== "pending" && <button className="button button-secondary" type="submit" name="response" value="pending" formNoValidate disabled={pending}>改為待確認</button>}
     {pending && <span role="status">正在儲存，請稍候。</span>}
   </div>;
 }
@@ -32,12 +33,14 @@ export function EventRegistrationForm({ clubId, eventId, response, guestCount, n
   const [currentResponse, setCurrentResponse] = useState(response);
   const [guests, setGuests] = useState(String(guestCount));
   const [currentNote, setCurrentNote] = useState(note);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const router = useRouter();
   const [state, action, pending] = useActionState(async (previous: EventRegistrationState, data: FormData) => {
     const result = await registerEventAction(previous, data);
     if (result.status === "success") {
       setCurrentResponse(result.response);
       setGuests(String(result.guestCount));
+      setHasUnsavedChanges(false);
     }
     return result;
   }, { status: "idle" } as EventRegistrationState);
@@ -50,14 +53,14 @@ export function EventRegistrationForm({ clubId, eventId, response, guestCount, n
     <input type="hidden" name="eventId" value={eventId} />
     <div className="response-grid">
       <label className="field"><span className="label">備註（選填）</span>
-        <input className="input" name="note" maxLength={500} value={currentNote} onChange={event => setCurrentNote(event.target.value)} disabled={pending} />
+        <input className="input" name="note" maxLength={500} value={currentNote} onChange={event => { setCurrentNote(event.target.value); setHasUnsavedChanges(true); }} disabled={pending} />
       </label>
       <label className="field"><span className="label">攜伴人數（選填）</span>
-        <input className="input" type="number" name="guestCount" min={0} max={20} value={guests} onChange={event => setGuests(event.target.value)} inputMode="numeric" disabled={pending} />
+        <input className="input" type="number" name="guestCount" min={0} max={20} value={guests} onChange={event => { setGuests(event.target.value); setHasUnsavedChanges(true); }} inputMode="numeric" disabled={pending} />
       </label>
     </div>
-    <p className="hint">點選按鈕即儲存回覆；要更新攜伴人數或備註，修改後再點一次參加按鈕即可。</p>
-    <ResponseButtons response={currentResponse} />
+    <p className="hint">點選按鈕即儲存回覆。再點一次已選項目可取消回覆；如果先修改備註或攜伴人數，再點目前選項會儲存變更。</p>
+    <ResponseButtons response={currentResponse} hasUnsavedChanges={hasUnsavedChanges} />
     {!pending && state.status === "error" && <p role="alert">{errors[state.errorCode] ?? "目前無法完成操作，請稍後再試。"}</p>}
     {!pending && state.status === "success" && <p role="status">報名狀態已更新。</p>}
   </form>;

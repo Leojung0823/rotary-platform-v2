@@ -124,6 +124,22 @@ const taskIcons: Record<MemberHomePendingTask["kind"], PortalTask["icon"]> = {
   topic_discussion: "bell",
 };
 
+const eventIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
+function taskHref(task: MemberHomePendingTask): string {
+  if (task.kind !== "event_response" || !eventIdPattern.test(task.taskId)) return task.actionPath;
+
+  const destination = new URL(task.actionPath, "https://rotary.invalid");
+  if (destination.origin !== "https://rotary.invalid" || destination.pathname !== "/events") {
+    return task.actionPath;
+  }
+
+  // The event-response task ID is the event ID. Keep its existing club and
+  // member-mode query, then let EventAnchorFocus open and scroll to that card.
+  destination.hash = `event-${task.taskId}`;
+  return `${destination.pathname}${destination.search}${destination.hash}`;
+}
+
 /**
  * The title used to be hardcoded to 「回覆活動報名」 because there was only ever
  * one kind. Each row now carries its own, and its own destination -- so a new
@@ -152,7 +168,7 @@ export function tasksFrom(
       // late says nothing about time at all.
       status: urgency?.label ?? null,
       tone: urgency?.tone ?? "neutral",
-      href: task.actionPath,
+      href: taskHref(task),
     };
   });
 }
