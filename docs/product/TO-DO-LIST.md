@@ -6,7 +6,7 @@
 
 ## 2026-10-27 最新狀態基準
 
-- GitHub `main` 已含今天的待辦整理 commit `578ab690b0b17ce9a139eea0037ab5bb6da8523e`；效能診斷工具 revision 為 `59958784efc157c64f4bc87c3c1940b8cb5a5836`；產品 staging revision 仍是 `11e931eb5d2a50d324d4ceb1d683af3c267043e0`。診斷工具沒有修改產品程式，因此沒有重新部署 staging。
+- GitHub `main` 已含待辦整理 commit `578ab690b0b17ce9a139eea0037ab5bb6da8523e`、效能診斷工具 revision `59958784efc157c64f4bc87c3c1940b8cb5a5836`，以及 Browser Smoke 修正 commit `47589943b023b393ed50a619310038189270a3d8`。產品 staging revision 仍是 `11e931eb5d2a50d324d4ceb1d683af3c267043e0`；本次 Smoke／Joy UI 修正只同步 main，沒有部署 staging。
 - 最近一次 staging health 為 `status=ok`、`issues=[]`；production 本輪沒有修改。
 - E-12 本機加密 public-only logical export 與隔離還原演練已完成；它不包含 Auth、Storage 物件或 Supabase 專案設定，不等於完整災難復原。備份與解密私鑰留在 repo 外本機私密目錄；一次性 staging-only token 已撤銷。
 - E-06 已結案，見封存檔 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。
@@ -15,7 +15,7 @@
 
 **GPS 簽到規則（已完成，不是待辦）**：以與活動地點相距 200 公尺內判定，不設 GPS accuracy 門檻；定位請求使用 `maximumAge: 0`。不要自行補上 accuracy 限制。
 
-唯一現行工程待辦：完成 2026-10-27 Browser Smoke failure triage 的根因修正與至少兩次連續 Browser Smoke 成功；根因與證據見 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。封存不代表外部真人驗收已完成。
+目前沒有尚待執行的工程待辦。2026-10-27 Browser Smoke failure triage 已完成兩次連續成功執行；根因、修正、本機 E2E 與 run／attempt 證據記於封存檔。封存不代表外部真人驗收已完成。
 
 ## 2. 需要產品決定或目前暫緩（不是可自行執行的開發）
 

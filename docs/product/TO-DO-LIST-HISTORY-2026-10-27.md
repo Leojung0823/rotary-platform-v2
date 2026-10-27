@@ -44,7 +44,10 @@
 
 - Run `40430771865` attempt 2 的訊息中心失敗不是 toast 太快消失：錯誤截圖與 DOM context 顯示標題欄在提交時為空，伺服器依驗證規則拒絕儲存，回覆「標題、內容或時間格式不正確，請檢查後再試。」；當時的測試在收件對象選擇器 hydration 前輸入欄位。修正已在 commit `060e75b`：等候收件對象 hydration，並在點擊前確認標題與內容欄值，不延長 timeout、不放寬斷言。持久的草稿列表項目仍是保存成功的驗證。
 - Joy Wall 派題的錯誤上下文與 trace 顯示：點擊派發後 `POST /api/v1/joy/question-batches` 回 HTTP 201，資料含批次 ID、名稱、截止日及 2 位收件人；trace 隨後有成功的頁面 refresh，但伺服器渲染的派發列表在該次瀏覽器狀態仍沒有新批次。根因是管理器只以 server prop `initialPage.batches` 渲染列表，成功 mutation 後只呼叫非同步 `router.refresh()`，沒有立即把已確認建立的批次加入畫面；測試的 locator 逾時反映真實 UI 更新缺口，不是單純文字選擇器錯誤。
-- 修正與驗證：待工程修正與連續 Browser Smoke run 完成後，補記 commit、相關本機 e2e 結果及兩個連續成功的 Browser Smoke run 編號；完成後本項不再留在唯一現行待辦。
+- 修正：訊息中心 hydration 問題已由既有 commit `060e75b03cc14a5db3ffc9930af4018bd21e2f99` 修正：等待收件對象選擇器載入，並在提交前驗證標題／內容欄位，不延長 timeout、不放寬斷言。Joy Wall 真實 UI 缺口由 `47589943b023b393ed50a619310038189270a3d8` 修正：驗證 HTTP 201 的派發結果後，立即將新批次加入最近派發列表，再由 `router.refresh()` 與重新載入讀取伺服器狀態；E2E 同時驗證即時顯示與重新載入後仍存在，沒有只改 locator 或延長 timeout。
+- 本機驗證：typecheck、lint、完整 Vitest（220 檔／1,640 tests）、build、隔離 DB reset／DB lint／92 份 SQL verification、migration 與 DB verification manifest checks、`git diff --check` 通過；相關訊息中心及 Joy Wall Playwright E2E 為 16 passed、2 skipped。DB lint 只有 3 項既有 warning。
+- GitHub CI `40444515221` 於 exact SHA `47589943b023b393ed50a619310038189270a3d8` 成功。Browser Smoke `40444515305` 同一 SHA 的 attempt 1、attempt 2 連續成功：attempt 1 為 247 passed／123 skipped，1 項 location-checkin 測試重試後通過；attempt 2 為 246 passed／123 skipped，LINE OA 管理與 location-checkin 各有 1 項重試後通過。Joy Wall 派題 E2E 兩次都通過；這些非本次修正範圍的 flaky retry 已如實記錄，workflow 最終均為 success。
+- 結案：本次唯一工程待辦已完成，不再列於唯一現行待辦。此修正只同步 GitHub main，沒有部署 staging 或 production；沒有啟動排程、寄送 LINE／email，也沒有修改登入、角色、RLS、RPC 權限或社團隔離。
 
 ## 2026-10-27 最新 staging／待辦核對（產品決定前快照；封存狀態以上方新節為準）
 
