@@ -206,8 +206,10 @@ async function collectMetrics(page) {
         lcpMs: round(lcp?.startTime),
         fcpMs: round(fcp?.startTime),
         ttfbMs: round(navigation?.responseStart - navigation?.startTime),
-        authProxyMs: sanitizeStagingAuthProxyDuration(navigation?.serverTiming),
       },
+      authServerTiming: navigation?.serverTiming
+        ?.filter((entry) => entry.name === "auth")
+        .map(({ name, duration }) => ({ name, duration })) ?? [],
       lcp,
       resource: resource ? {
         initiatorType: resource.initiatorType,
@@ -221,7 +223,10 @@ async function collectMetrics(page) {
       currentOrigin: window.location.origin,
     };
   });
-  const coreMetrics = pageMetrics.core;
+  const coreMetrics = {
+    ...pageMetrics.core,
+    authProxyMs: sanitizeStagingAuthProxyDuration(pageMetrics.authServerTiming),
+  };
 
   expect(coreMetrics.lcpMs).not.toBeNull();
   expect(coreMetrics.fcpMs).not.toBeNull();
