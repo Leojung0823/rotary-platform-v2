@@ -92,7 +92,7 @@ export function DiscussionVoteControls({
             <strong>{option.label}</strong>
             <span>{option.voteCount} 票</span>
           </div>
-          <Button type="button" className={selected ? "button-secondary" : ""}
+          <Button type="button" className={selected ? "" : "button-secondary"}
             disabled={pending || needsRefresh} onClick={() => void castVote(option.id)}>
             {pending && selected ? "送出中…" : selected ? "已選擇，可改票" : "投這一票"}
           </Button>

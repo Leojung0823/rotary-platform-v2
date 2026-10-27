@@ -58,7 +58,12 @@ test("幹部發佈議題後，社員收到待辦、留言投票，具名票只�
     await memberPage.getByLabel("新增留言").fill(comment);
     await memberPage.getByRole("button", { name: "送出留言" }).click();
     await expect(memberPage.getByText(comment, { exact: true })).toBeVisible();
-    await memberPage.getByRole("button", { name: "投這一票" }).first().click();
+    const voteButton = memberPage.getByRole("button", { name: "投這一票" }).first();
+    await expect(voteButton).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await voteButton.click();
+    await memberPage.mouse.move(10, 10);
+    await expect(memberPage.getByRole("button", { name: "已選擇，可改票" }))
+      .toHaveCSS("background-color", "rgb(10, 114, 232)");
     await expect(memberPage.getByText("您目前選擇")).toBeVisible();
     await expect(memberPage.getByText(/投票已送出|投票已記錄/u)).toBeVisible();
     await memberPage.goto(new URL("/tasks?clubId=" + clubId + "&mode=member", baseURL).toString());
