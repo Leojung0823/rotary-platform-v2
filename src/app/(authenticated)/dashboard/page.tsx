@@ -229,9 +229,9 @@ export default async function DashboardPage({
   }
 
   const managedClub = activeClubForMode(context.context, "management");
-  const managementPermissionResult = resolved.resolution.mode === "management" && managedClub
-    ? await readClubPermissions(managedClub.clubId)
-    : { ok: true, permissions: [] as readonly string[] };
+  const managementPermissionsPromise = resolved.resolution.mode === "management" && managedClub
+    ? readClubPermissions(managedClub.clubId).then((result) => result.permissions)
+    : undefined;
 
   if (roleShellsEvaluation.enabled) {
     if (resolved.resolution.mode === "member") {
@@ -256,7 +256,7 @@ export default async function DashboardPage({
       identity={identity}
       context={context.context}
       mode={resolved.resolution.mode}
-      managementPermissions={managementPermissionResult.permissions}
+      managementPermissionsPromise={managementPermissionsPromise}
       managementFeatures={{
         blessingIouEnabled: blessingIouEvaluation.enabled,
         birthdayCollectionEnabled: birthdayCollectionEvaluation.enabled,

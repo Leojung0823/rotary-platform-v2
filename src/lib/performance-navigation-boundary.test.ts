@@ -107,7 +107,22 @@ describe("performance-first navigation boundaries", () => {
 
     expect(shell).toContain("unreadMessageCountPromise = readUnreadMessageCount()");
     expect(shell).toContain("<Suspense fallback={<ShellNavigation");
-    expect(shell).toContain("async function ShellNavigationWithUnreadCount");
+    expect(shell).toContain("async function ShellNavigationWithDeferredInputs");
     expect(shell).not.toContain("unreadMessageCount,\n  ] = await Promise.all");
+  });
+
+  it("streams management dashboard content while permission-filtered links resolve", () => {
+    const dashboard = source("src/app/(authenticated)/dashboard/page.tsx");
+    const shell = source("src/components/role-aware-app-shell.tsx");
+    const landing = source("src/components/role-aware-dashboard.tsx");
+    const shellBoundary = shell.slice(shell.indexOf("export async function RoleAwareAppShellBoundary"));
+
+    expect(dashboard).not.toContain("await readClubPermissions");
+    expect(dashboard).toContain("managementPermissionsPromise={managementPermissionsPromise}");
+    expect(shellBoundary).not.toContain("await readClubPermissions");
+    expect(shellBoundary).toContain("readClubPermissions(managedClub.clubId).then");
+    expect(shell).toContain("<Suspense fallback={<ShellNavigation");
+    expect(landing).toContain("<Suspense fallback={<ManagementToolsLoading />");
+    expect(landing).toContain("managementToolsForClub(clubId, await permissions, features)");
   });
 });

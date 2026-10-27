@@ -243,16 +243,29 @@ function ShellNavigation({
 }
 
 /**
- * The unread count is only a navigation badge, not an authorization input or
- * page content. Keep it out of the shell's first paint: the rest of the shell
- * can stream with no badge and this small region fills in when its RPC ends.
+ * The unread count is only a navigation badge, and permissions here only
+ * filter which management destinations appear. Defer both with navigation:
+ * the fallback shows no badge and no permission-gated links, while each route
+ * continues to enforce its own authorization.
  */
-async function ShellNavigationWithUnreadCount({
+async function ShellNavigationWithDeferredInputs({
   unreadMessageCountPromise,
+  managementPermissionsPromise,
   ...props
-}: ShellNavigationProps & { unreadMessageCountPromise: Promise<number> }) {
-  const unreadMessageCount = await unreadMessageCountPromise;
-  return <ShellNavigation {...props} unreadMessageCount={unreadMessageCount} />;
+}: ShellNavigationProps & {
+  unreadMessageCount: number;
+  unreadMessageCountPromise?: Promise<number>;
+  managementPermissionsPromise?: Promise<readonly string[]>;
+}) {
+  const [unreadMessageCount, managementPermissions] = await Promise.all([
+    unreadMessageCountPromise ?? Promise.resolve(props.unreadMessageCount),
+    managementPermissionsPromise ?? Promise.resolve(props.managementPermissions),
+  ]);
+  return <ShellNavigation
+    {...props}
+    unreadMessageCount={unreadMessageCount}
+    managementPermissions={managementPermissions}
+  />;
 }
 
 export function RoleAwareAppShell({
@@ -265,6 +278,7 @@ export function RoleAwareAppShell({
   unreadMessageCount = 0,
   unreadMessageCountPromise,
   managementPermissions = [],
+  managementPermissionsPromise,
   children,
 }: {
   identity: Identity;
@@ -276,6 +290,7 @@ export function RoleAwareAppShell({
   unreadMessageCount?: number;
   unreadMessageCountPromise?: Promise<number>;
   managementPermissions?: readonly string[];
+  managementPermissionsPromise?: Promise<readonly string[]>;
   children: ReactNode;
 }) {
   return <div className={`${styles.shell} ${styles[`shell${mode[0].toUpperCase()}${mode.slice(1)}`]}`}>
@@ -307,15 +322,17 @@ export function RoleAwareAppShell({
         unreadMessageCount={unreadMessageCount}
         managementPermissions={managementPermissions}
       />}>
-        {unreadMessageCountPromise
-          ? <ShellNavigationWithUnreadCount
+        {unreadMessageCountPromise || managementPermissionsPromise
+          ? <ShellNavigationWithDeferredInputs
             context={context}
             mode={mode}
             pathname={pathname}
             attendanceEnabled={attendanceEnabled}
             messageCenterEnabled={messageCenterEnabled}
-            unreadMessageCountPromise={unreadMessageCountPromise}
+            unreadMessageCount={unreadMessageCount}
             managementPermissions={managementPermissions}
+            unreadMessageCountPromise={unreadMessageCountPromise}
+            managementPermissionsPromise={managementPermissionsPromise}
           />
           : <ShellNavigation
             context={context}
@@ -406,9 +423,9 @@ export async function RoleAwareAppShellBoundary({
   // projection returned by the database. A failed read fails closed, while
   // the route's own RPC/RLS checks remain the real authorization boundary.
   const managedClub = activeClubForMode(contextResolution.context, shell.mode);
-  const managementPermissionResult = shell.mode === "management" && managedClub
-    ? await readClubPermissions(managedClub.clubId)
-    : { ok: true, permissions: [] as readonly string[] };
+  const managementPermissionsPromise = shell.mode === "management" && managedClub
+    ? readClubPermissions(managedClub.clubId).then((result) => result.permissions)
+    : undefined;
 
   return <RoleAwareAppShell
     identity={identity}
@@ -418,7 +435,7 @@ export async function RoleAwareAppShellBoundary({
     attendanceEnabled={attendanceEvaluation.enabled}
     messageCenterEnabled={messageCenterEvaluation.enabled}
     unreadMessageCountPromise={unreadMessageCountPromise}
-    managementPermissions={managementPermissionResult.permissions}
+    managementPermissionsPromise={managementPermissionsPromise}
   >
     {children}
   </RoleAwareAppShell>;

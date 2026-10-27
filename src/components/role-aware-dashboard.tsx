@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { activeClubForMode, type ExperienceContext, type ExperienceMode } from "@/lib/experience-context";
 import type { Identity } from "@/lib/auth";
@@ -48,11 +49,56 @@ function ManagementToolCard({
   </Link>;
 }
 
+async function ManagementToolsSection({
+  clubId,
+  permissions,
+  features,
+}: {
+  clubId: string;
+  permissions: Promise<readonly string[]>;
+  features: ManagementToolFeatures;
+}) {
+  const managementTools = managementToolsForClub(clubId, await permissions, features);
+
+  return <section aria-labelledby="management-tools-heading">
+    <div className="section-heading">
+      <div>
+        <p className="eyebrow">社務工具</p>
+        <h2 id="management-tools-heading">常用管理功能</h2>
+      </div>
+      <span>{managementTools.length} 項可用功能</span>
+    </div>
+    {managementTools.length === 0 ? <EmptyState
+      title="目前沒有可用的管理工具"
+      body="您的管理模式已開啟，但目前沒有可操作的社務權限；若這不符合預期，請聯絡社長或平台管理員。"
+    /> : <div className="club-grid">
+      {managementTools.map((tool) => <ManagementToolCard key={tool.id} {...tool} />)}
+    </div>}
+  </section>;
+}
+
+function ManagementToolsLoading() {
+  return <section aria-busy="true" aria-labelledby="management-tools-heading">
+    <div className="section-heading">
+      <div>
+        <p className="eyebrow">社務工具</p>
+        <h2 id="management-tools-heading">常用管理功能</h2>
+      </div>
+      <span className="sr-only">正在確認目前可用的管理權限</span>
+    </div>
+    <div className="skeleton-card" aria-hidden="true">
+      <span className="skeleton skeleton-card-title" />
+      <span className="skeleton skeleton-copy skeleton-copy-wide" />
+    </div>
+  </section>;
+}
+
 export function RoleAwareDashboardLanding({
   identity,
   context,
   mode,
   managementPermissions = [],
+  managementPermissionsPromise,
   managementFeatures = {
     blessingIouEnabled: false,
     birthdayCollectionEnabled: false,
@@ -64,14 +110,13 @@ export function RoleAwareDashboardLanding({
   context: ExperienceContext;
   mode: ExperienceMode;
   managementPermissions?: readonly string[];
+  managementPermissionsPromise?: Promise<readonly string[]>;
   managementFeatures?: ManagementToolFeatures;
 }) {
   const content = modeContent[mode];
   const activeClub = activeClubForMode(context, mode);
   const memberDestination = activeClub ? `/club/${encodeURIComponent(activeClub.clubId)}?mode=member` : null;
-  const managementTools = activeClub && mode === "management"
-    ? managementToolsForClub(activeClub.clubId, managementPermissions, managementFeatures)
-    : [];
+  const permissionsPromise = managementPermissionsPromise ?? Promise.resolve(managementPermissions);
 
   return <div className="page-stack">
     <header className="page-header">
@@ -98,20 +143,12 @@ export function RoleAwareDashboardLanding({
       <p>可查看扶輪社首頁、活動與簽到。</p>
       <Link className="card-link" href={memberDestination!}>前往我的扶輪社 →</Link>
     </Card> : null}
-    {mode === "management" && activeClub && <section aria-labelledby="management-tools-heading">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">社務工具</p>
-          <h2 id="management-tools-heading">常用管理功能</h2>
-        </div>
-        <span>{managementTools.length} 項可用功能</span>
-      </div>
-      {managementTools.length === 0 ? <EmptyState
-        title="目前沒有可用的管理工具"
-        body="您的管理模式已開啟，但目前沒有可操作的社務權限；若這不符合預期，請聯絡社長或平台管理員。"
-      /> : <div className="club-grid">
-        {managementTools.map((tool) => <ManagementToolCard key={tool.id} {...tool} />)}
-      </div>}
-    </section>}
+    {mode === "management" && activeClub && <Suspense fallback={<ManagementToolsLoading />}>
+      <ManagementToolsSection
+        clubId={activeClub.clubId}
+        permissions={permissionsPromise}
+        features={managementFeatures}
+      />
+    </Suspense>}
   </div>;
 }
