@@ -232,13 +232,14 @@ async function addClubManagementRole({ clubId, account, createdBy }) {
 async function addMemberHomeEvents({ clubId, account }) {
   const currentEventId = "a1000000-0000-4000-8000-000000000101";
   const nextEventId = "a1000000-0000-4000-8000-000000000102";
+  const declinedEventId = "a1000000-0000-4000-8000-000000000109";
   const checkinSessionId = "a1000000-0000-4000-8000-000000000103";
-  const existing = await admin.from("club_events").select("id").in("id", [currentEventId, nextEventId]);
+  const existing = await admin.from("club_events").select("id").in("id", [currentEventId, nextEventId, declinedEventId]);
   if (existing.error) fail("could not inspect local member-home events");
 
   const now = Date.now();
   const existingIds = new Set(existing.data.map((event) => event.id));
-  if (existingIds.size !== 2) {
+  if (existingIds.size !== 3) {
     const events = [
       {
         id: currentEventId,
@@ -270,12 +271,38 @@ async function addMemberHomeEvents({ clubId, account }) {
         updated_by_app_account_id: account.id,
         published_at: new Date(now - 24 * 60 * 60_000).toISOString(),
       },
+      {
+        id: declinedEventId,
+        club_id: clubId,
+        event_type: "service",
+        title: "本機已回覆的服務活動",
+        location: "本機社區中心",
+        starts_at: new Date(now + 3 * 24 * 60 * 60_000).toISOString(),
+        ends_at: new Date(now + (3 * 24 + 2) * 60 * 60_000).toISOString(),
+        registration_deadline: new Date(now + 2 * 24 * 60 * 60_000).toISOString(),
+        counts_for_attendance: true,
+        event_status: "published",
+        created_by_app_account_id: account.id,
+        updated_by_app_account_id: account.id,
+        published_at: new Date(now - 24 * 60 * 60_000).toISOString(),
+      },
     ].filter((event) => !existingIds.has(event.id));
     if (events.length > 0) {
       const insert = await admin.from("club_events").insert(events);
       if (insert.error) fail("could not create local member-home events");
     }
   }
+
+  const declinedResponse = await admin.from("event_registrations").upsert({
+    club_id: clubId,
+    event_id: declinedEventId,
+    app_account_id: account.id,
+    response: "declined",
+    guest_count: 0,
+    note: "",
+    responded_at: new Date(now - 60 * 60_000).toISOString(),
+  }, { onConflict: "event_id,app_account_id" });
+  if (declinedResponse.error) fail("could not create local declined member-home response");
 
   const session = await admin.from("event_checkin_sessions").select("id").eq("id", checkinSessionId).maybeSingle();
   if (session.error) fail("could not inspect local member-home check-in session");

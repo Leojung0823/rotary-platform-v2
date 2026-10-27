@@ -107,7 +107,9 @@ export function upcomingEventsFrom(
       when: event.timeUnspecified ? `${weekdayOnly.format(at)} · 時間未定` : weekdayTime.format(at),
       state: event.registrationState === "registered"
         ? "registered"
-        : event.registrationState === "open" ? "open" : "closed",
+        : event.registrationState === "declined"
+          ? "declined"
+          : event.registrationState === "open" ? "open" : "closed",
     };
   });
 }

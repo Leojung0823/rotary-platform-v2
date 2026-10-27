@@ -3,10 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MemberPortalBody } from "@/components/member-portal/member-portal";
 import { upcomingEventsFrom } from "./from-projection";
+import { registrationLabels } from "./types";
 import type { MemberHomeUpcomingEvent } from "@/lib/member-home";
 
 const clubId = "3df4b471-40e1-494e-a3ce-9f7285500eb0";
-const events: MemberHomeUpcomingEvent[] = ["open", "registered", "closed"].map((state, index) => ({
+const events: MemberHomeUpcomingEvent[] = ["open", "registered", "declined", "closed"].map((state, index) => ({
   eventId: `00000000-0000-4000-8000-00000000000${index}`,
   title: "同名例會",
   startsAt: "2026-11-16T16:00:00.000Z",
@@ -17,14 +18,15 @@ const events: MemberHomeUpcomingEvent[] = ["open", "registered", "closed"].map((
 describe("home upcoming events lead to their own member detail", () => {
   it("keeps same-title events distinct and carries the selected club and member mode", () => {
     const rows = upcomingEventsFrom(events, clubId);
-    expect(new Set(rows.map((row) => row.id)).size).toBe(3);
+    expect(new Set(rows.map((row) => row.id)).size).toBe(events.length);
     for (const [index, row] of rows.entries()) {
       const url = new URL(row.href, "https://example.test");
       expect(url.pathname).toBe(`/events/${events[index].eventId}`);
       expect(url.searchParams.get("clubId")).toBe(clubId);
       expect(url.searchParams.get("mode")).toBe("member");
     }
-    expect(rows.map((row) => row.state)).toEqual(["open", "registered", "closed"]);
+    expect(rows.map((row) => row.state)).toEqual(["open", "registered", "declined", "closed"]);
+    expect(registrationLabels[rows[2].state]).toBe("不克出席");
     expect(rows[1].when).toContain("時間未定");
     expect(rows[1].day).toBe("17日");
   });
@@ -56,6 +58,8 @@ describe("home upcoming events lead to their own member detail", () => {
       expect(link![2]).toContain(row.when);
       expect(link![2]).not.toMatch(/<(?:button|a)\b/u);
     }
+    const declinedRow = anchors.find(([, href]) => href.replaceAll("&amp;", "&") === rows[2].href);
+    expect(declinedRow?.[2]).toContain("不克出席");
     expect(anchors.some(([, href, label]) => href === `/events?clubId=${clubId}&amp;mode=member` && label.includes("查看全部"))).toBe(true);
   });
 });

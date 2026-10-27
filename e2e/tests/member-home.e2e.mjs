@@ -33,6 +33,9 @@ test("each upcoming event row opens that exact event in member mode", async ({ p
   });
   const links = upcoming.getByRole("link").filter({ has: page.locator("strong") });
   await expect(links.first()).toBeVisible();
+  const declinedEventRow = links.filter({ hasText: "本機已回覆的服務活動" });
+  await expect(declinedEventRow).toContainText("不克出席");
+  await expect(declinedEventRow).not.toContainText("開放報名");
   const destinations = await links.evaluateAll((rows) => rows.map((row) => ({
     href: row.getAttribute("href"),
     title: row.querySelector("span:nth-child(2) > strong")?.textContent,

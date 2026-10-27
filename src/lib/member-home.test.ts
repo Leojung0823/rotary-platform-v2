@@ -204,6 +204,20 @@ describe("member-home projection contract", () => {
     const parsed = parseMemberHomeProjection(projection({ next_event: { ...event, title: "下一場例會" } }));
     expect(parsed?.nextEvent?.title).toBe("下一場例會");
   });
+
+  it("preserves a member's declined response in upcoming events", () => {
+    const parsed = parseMemberHomeProjection(projection({
+      upcoming_events: [{
+        event_id: "a1000000-0000-4000-8000-000000000109",
+        title: "已回覆不克出席的活動",
+        starts_at: "2026-08-14T10:00:00.000Z",
+        time_unspecified: false,
+        registration_state: "declined",
+      }],
+    }));
+
+    expect(parsed?.upcomingEvents[0]?.registrationState).toBe("declined");
+  });
 });
 
 describe("member-home state presentation", () => {

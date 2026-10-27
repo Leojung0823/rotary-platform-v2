@@ -61,7 +61,7 @@ export type MemberHomeUpcomingEvent = Readonly<{
   title: string;
   startsAt: string;
   timeUnspecified: boolean;
-  registrationState: "registered" | "open" | "closed";
+  registrationState: "registered" | "declined" | "open" | "closed";
 }>;
 
 /** An event this member has been asked about and has not answered. */
@@ -238,7 +238,7 @@ function parseNotification(value: unknown): MemberHomeNotification | null {
 }
 
 const maximumUpcomingEvents = 4;
-const upcomingRegistrationStates = ["registered", "open", "closed"] as const;
+const upcomingRegistrationStates = ["registered", "declined", "open", "closed"] as const;
 
 function parseUpcomingEvent(value: unknown): MemberHomeUpcomingEvent | null {
   if (!isRecord(value)

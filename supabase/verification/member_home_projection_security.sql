@@ -52,6 +52,11 @@ insert into public.event_registrations (
   '66000000-0000-4000-8000-000000000001',
   '63000000-0000-4000-8000-000000000001',
   'attending', 0, '', now()
+), (
+  '64000000-0000-4000-8000-000000000001',
+  '66000000-0000-4000-8000-000000000002',
+  '63000000-0000-4000-8000-000000000001',
+  'declined', 0, '', now()
 );
 
 insert into public.event_checkin_sessions (
@@ -109,7 +114,8 @@ begin
     or home->'next_event'->>'title' <> '下一場首頁服務活動'
     or home->'primary_event'->>'registration_state' <> 'registered'
     or home->'primary_event'->>'checkin_state' <> 'available'
-    or home->'next_event'->>'registration_state' <> 'not_registered' then
+    or home->'next_event'->>'registration_state' <> 'declined'
+    or home->'upcoming_events'->0->>'registration_state' <> 'declined' then
     raise exception 'member-home priority or presentation state is invalid: %', home;
   end if;
   if home->'notifications'->>'unread_count' <> '3'
