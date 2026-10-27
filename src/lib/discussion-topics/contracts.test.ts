@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { parseDiscussionTopicDetail, parseDiscussionTopicList } from "./contracts";
+import {
+  parseDiscussionTopicDetail,
+  parseDiscussionTopicEditData,
+  parseDiscussionTopicList,
+  parseDiscussionVoteResult,
+} from "./contracts";
 import { parseDiscussionOptions, parseTaipeiDateTimeLocal } from "./validation";
 
 const clubId = "a1000000-0000-4000-8000-000000000001";
@@ -43,6 +48,32 @@ describe("議題討論資料契約", () => {
       ],
       comments: [], named_votes: [{ display_name: "不完整" }],
     }, clubId, topicId)).toThrow("invalid_discussion_topic_detail");
+  });
+  it("接受僅供幹部使用的編輯資料並驗證社團與選項", () => {
+    const edit = parseDiscussionTopicEditData({
+      id: topicId, club_id: clubId, title: "服務方向討論", description: "說明",
+      deadline_at: "2026-10-29T04:00:00.000Z", audience_kind: "tags", anonymous_votes: false,
+      options: [{ id: optionId, label: "擴大服務" }, { id: "c3000000-0000-4000-8000-000000000002", label: "維持現況" }],
+      audience_tag_ids: ["d4000000-0000-4000-8000-000000000001"], audience_membership_ids: [],
+      vote_count: 1, comment_count: 0,
+    }, clubId, topicId);
+    expect(edit).toMatchObject({ audienceKind: "tags", anonymousVotes: false, voteCount: 1 });
+    expect(() => parseDiscussionTopicEditData({
+      id: topicId, club_id: "a1000000-0000-4000-8000-000000000002",
+    }, clubId, topicId)).toThrow("invalid_discussion_topic_edit_data");
+  });
+  it("驗證投票只回傳本人選擇與聚合票數，不接受跨社、缺漏或不一致資料", () => {
+    const otherOptionId = "c3000000-0000-4000-8000-000000000002";
+    const result = parseDiscussionVoteResult({
+      topic_id: topicId, club_id: clubId, my_vote_option_id: optionId, vote_count: 2,
+      options: [{ id: optionId, vote_count: 1 }, { id: otherOptionId, vote_count: 1 }],
+    }, clubId, topicId);
+    expect(result).toMatchObject({ myVoteOptionId: optionId, voteCount: 2 });
+    expect(() => parseDiscussionVoteResult({
+      topic_id: topicId, club_id: clubId, my_vote_option_id: optionId, vote_count: 2,
+      options: [{ id: optionId, vote_count: 0 }, { id: otherOptionId, vote_count: 0 }],
+      named_votes: [{ membership_id: "must-not-be-returned" }],
+    }, clubId, topicId)).toThrow("invalid_discussion_vote_result");
   });
   it("驗證選項並把台北 datetime-local 轉成正確時刻", () => {
     expect(parseDiscussionOptions("同意\n不同意")).toEqual(["同意", "不同意"]);

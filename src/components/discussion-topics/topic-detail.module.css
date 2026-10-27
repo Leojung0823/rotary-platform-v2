@@ -8,6 +8,13 @@
   margin: 1rem 0 0;
 }
 
+.voteStatus {
+  min-height: 1.5em;
+  margin: .75rem 0 0;
+  color: var(--muted, #64748b);
+  font-size: .95rem;
+}
+
 .privacy {
   color: var(--text, #172b4d);
 }

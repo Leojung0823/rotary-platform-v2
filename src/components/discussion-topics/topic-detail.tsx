@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { addDiscussionCommentAction, castDiscussionVoteAction } from "@/app/discussion-topic-actions";
+import { addDiscussionCommentAction } from "@/app/discussion-topic-actions";
+import { ManagementTopicActions } from "@/components/discussion-topics/management-topic-actions";
+import { DiscussionVoteControls } from "@/components/discussion-topics/vote-controls";
 import { Button, Card, Field } from "@/components/ui";
 import type { DiscussionTopicDetail } from "@/lib/discussion-topics/contracts";
 import styles from "./topic-detail.module.css";
@@ -35,6 +37,7 @@ export function DiscussionTopicDetailView({
         {managementView ? "返回議題管理" : "所有議題"}
       </Link>
     </header>
+    {managementView && <ManagementTopicActions clubId={clubId} topicId={topic.id} />}
 
     <Card>
       <div className={styles.description}>{topic.description}</div>
@@ -44,27 +47,22 @@ export function DiscussionTopicDetailView({
 
     <Card>
       <div className="section-heading"><div><p className="eyebrow">投票</p><h2>選擇一個答案</h2></div>
-        <span>{topic.voteCount} 人已投票</span></div>
-      <div className={styles.options}>
-        {topic.options.map((option) => {
-          const selected = topic.myVoteOptionId === option.id;
-          return <div className={styles.option} key={option.id}>
-            <div className={styles.optionLabel}>
-              <strong>{option.label}</strong>
-              <span>{option.voteCount} 票</span>
-            </div>
-            {!managementView && topic.isOpen && <form action={castDiscussionVoteAction}>
-              <input type="hidden" name="clubId" value={clubId} />
-              <input type="hidden" name="topicId" value={topic.id} />
-              <input type="hidden" name="optionId" value={option.id} />
-              <Button type="submit" className={selected ? "button-secondary" : ""}>
-                {selected ? "已選擇，可改票" : "投這一票"}
-              </Button>
-            </form>}
-            {selected && <span className={styles.selected}>您目前選擇</span>}
-          </div>;
-        })}
-      </div>
+        {managementView && <span>{topic.voteCount} 人已投票</span>}</div>
+      {!managementView && topic.isOpen
+        ? <DiscussionVoteControls clubId={clubId} topicId={topic.id} initialOptions={topic.options}
+          initialVoteCount={topic.voteCount} initialMyVoteOptionId={topic.myVoteOptionId} />
+        : <div className={styles.options}>
+          {topic.options.map((option) => {
+            const selected = topic.myVoteOptionId === option.id;
+            return <div className={styles.option} key={option.id}>
+              <div className={styles.optionLabel}>
+                <strong>{option.label}</strong>
+                <span>{option.voteCount} 票</span>
+              </div>
+              {selected && <span className={styles.selected}>您目前選擇</span>}
+            </div>;
+          })}
+        </div>}
     </Card>
 
     {managementView && topic.namedVotes.length > 0 && <Card>

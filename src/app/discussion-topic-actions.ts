@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireIdentity } from "@/lib/auth";
+import { parseDiscussionVoteResult, type DiscussionVoteResult } from "@/lib/discussion-topics/contracts";
 import { createClient } from "@/lib/supabase/server";
 import {
   parseDiscussionAudienceKind, parseDiscussionOptions, parseDiscussionUuid,
@@ -24,34 +25,48 @@ function memberPath(clubId: string, topicId: string, result: "success" | "error"
 function mapFailure(error: { code?: string | null; message?: string | null } | null) {
   if (error?.code === "42501" || error?.message?.includes("discussion_manage_required")) return "forbidden";
   if (error?.code === "P0002") return "closed";
+  if (error?.message?.includes("discussion_topic_structure_locked")) return "structure_locked";
   if (error?.code === "22023") return "invalid_input";
   return "unexpected";
+}
+
+function readTopicForm(formData: FormData) {
+  const title = formString(formData, "title", 121).trim();
+  const description = formString(formData, "description", 5001).trim();
+  const deadlineAt = parseTaipeiDateTimeLocal(formString(formData, "deadlineAt", 32));
+  const selectedMode = formData.get("audienceMode");
+  const audienceKind = selectedMode === "everyone" ? "all"
+    : selectedMode === "members" ? "people"
+      : parseDiscussionAudienceKind(selectedMode);
+  const tagIds = readDiscussionUuidList(formData, "audienceTagIds", 20);
+  const membershipIds = readDiscussionUuidList(formData, "audienceMembershipIds", 100);
+  const optionLabels = parseDiscussionOptions(formString(formData, "options", 1000));
+  const voteMode = formData.get("voteMode");
+  if (voteMode !== "anonymous" && voteMode !== "named") throw new Error("invalid_input");
+  return {
+    title,
+    description,
+    deadlineAt,
+    audienceKind,
+    tagIds: audienceKind === "tags" ? tagIds : [],
+    membershipIds: audienceKind === "people" ? membershipIds : [],
+    anonymousVotes: voteMode === "anonymous",
+    optionLabels,
+  };
 }
 
 export async function publishDiscussionTopicAction(formData: FormData) {
   const clubId = parseDiscussionUuid(formString(formData, "clubId", 64), "invalid_club_id");
   try {
     await requireIdentity();
-    const title = formString(formData, "title", 121).trim();
-    const description = formString(formData, "description", 5001).trim();
-    const deadlineAt = parseTaipeiDateTimeLocal(formString(formData, "deadlineAt", 32));
-    const selectedMode = formData.get("audienceMode");
-    const audienceKind = selectedMode === "everyone" ? "all"
-      : selectedMode === "members" ? "people"
-        : parseDiscussionAudienceKind(selectedMode);
-    const tagIds = readDiscussionUuidList(formData, "audienceTagIds", 20);
-    const membershipIds = readDiscussionUuidList(formData, "audienceMembershipIds", 100);
-    const optionLabels = parseDiscussionOptions(formString(formData, "options", 1000));
-    const voteMode = formData.get("voteMode");
-    if (voteMode !== "anonymous" && voteMode !== "named") throw new Error("invalid_input");
-
+    const topic = readTopicForm(formData);
     const supabase = await createClient();
     const { error } = await supabase.rpc("create_club_discussion_topic", {
-      p_club_id: clubId, p_title: title, p_description: description, p_deadline_at: deadlineAt,
-      p_audience_kind: audienceKind,
-      p_tag_ids: audienceKind === "tags" ? tagIds : [],
-      p_membership_ids: audienceKind === "people" ? membershipIds : [],
-      p_anonymous_votes: voteMode === "anonymous", p_options: optionLabels,
+      p_club_id: clubId, p_title: topic.title, p_description: topic.description, p_deadline_at: topic.deadlineAt,
+      p_audience_kind: topic.audienceKind,
+      p_tag_ids: topic.tagIds,
+      p_membership_ids: topic.membershipIds,
+      p_anonymous_votes: topic.anonymousVotes, p_options: topic.optionLabels,
     });
     if (error) redirect(managementPath(clubId, "error", mapFailure(error)));
     revalidatePath("/topics");
@@ -61,6 +76,63 @@ export async function publishDiscussionTopicAction(formData: FormData) {
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("NEXT_REDIRECT")) throw error;
     redirect(managementPath(clubId, "error", "invalid_input"));
+  }
+}
+
+export async function updateDiscussionTopicAction(formData: FormData) {
+  const clubId = parseDiscussionUuid(formString(formData, "clubId", 64), "invalid_club_id");
+  const topicId = parseDiscussionUuid(formString(formData, "topicId", 64), "invalid_topic_id");
+  const destination = (result: "success" | "error", value: string) =>
+    "/clubs/" + encodeURIComponent(clubId) + "/topics/" + encodeURIComponent(topicId)
+      + "?mode=management&" + result + "=" + encodeURIComponent(value);
+  try {
+    await requireIdentity();
+    const topic = readTopicForm(formData);
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("update_club_discussion_topic", {
+      p_club_id: clubId,
+      p_topic_id: topicId,
+      p_title: topic.title,
+      p_description: topic.description,
+      p_deadline_at: topic.deadlineAt,
+      p_audience_kind: topic.audienceKind,
+      p_tag_ids: topic.tagIds,
+      p_membership_ids: topic.membershipIds,
+      p_anonymous_votes: topic.anonymousVotes,
+      p_options: topic.optionLabels,
+    });
+    if (error) redirect(destination("error", mapFailure(error)));
+    revalidatePath("/topics");
+    revalidatePath("/dashboard");
+    revalidatePath("/tasks");
+    revalidatePath("/clubs/" + clubId + "/topics");
+    revalidatePath("/clubs/" + clubId + "/topics/" + topicId);
+    redirect(destination("success", "updated"));
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("NEXT_REDIRECT")) throw error;
+    redirect(destination("error", "invalid_input"));
+  }
+}
+
+export async function deleteDiscussionTopicAction(formData: FormData) {
+  const clubId = parseDiscussionUuid(formString(formData, "clubId", 64), "invalid_club_id");
+  const topicId = parseDiscussionUuid(formString(formData, "topicId", 64), "invalid_topic_id");
+  try {
+    await requireIdentity();
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("delete_club_discussion_topic", {
+      p_club_id: clubId,
+      p_topic_id: topicId,
+    });
+    if (error) redirect(managementPath(clubId, "error", mapFailure(error)));
+    revalidatePath("/topics");
+    revalidatePath("/dashboard");
+    revalidatePath("/tasks");
+    revalidatePath("/clubs/" + clubId + "/topics");
+    redirect(managementPath(clubId, "success", "deleted"));
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("NEXT_REDIRECT")) throw error;
+    redirect(managementPath(clubId, "error", "unexpected"));
   }
 }
 
@@ -85,24 +157,39 @@ export async function addDiscussionCommentAction(formData: FormData) {
   }
 }
 
-export async function castDiscussionVoteAction(formData: FormData) {
-  const clubId = parseDiscussionUuid(formString(formData, "clubId", 64), "invalid_club_id");
-  const topicId = parseDiscussionUuid(formString(formData, "topicId", 64), "invalid_topic_id");
+export type CastDiscussionVoteActionResult =
+  | { ok: true; vote: DiscussionVoteResult }
+  | { ok: false; message: "closed" | "invalid_input" | "unexpected" | "uncertain" };
+
+export async function castDiscussionVoteAction(formData: FormData): Promise<CastDiscussionVoteActionResult> {
+  let rpcAttempted = false;
+  let confirmedVote: DiscussionVoteResult | null = null;
   try {
+    const clubId = parseDiscussionUuid(formString(formData, "clubId", 64), "invalid_club_id");
+    const topicId = parseDiscussionUuid(formString(formData, "topicId", 64), "invalid_topic_id");
     await requireIdentity();
     const optionId = parseDiscussionUuid(formString(formData, "optionId", 64), "invalid_option_id");
     const supabase = await createClient();
-    const { error } = await supabase.rpc("cast_club_discussion_vote", {
+    rpcAttempted = true;
+    const { data, error } = await supabase.rpc("cast_club_discussion_vote", {
       p_club_id: clubId, p_topic_id: topicId, p_option_id: optionId,
     });
-    if (error) redirect(memberPath(clubId, topicId, "error", mapFailure(error)));
+    if (error) {
+      const failure = mapFailure(error);
+      if (failure === "closed" || failure === "invalid_input") return { ok: false, message: failure };
+      return { ok: false, message: error.code ? "unexpected" : "uncertain" };
+    }
+    const vote = parseDiscussionVoteResult(data, clubId, topicId);
+    if (vote.myVoteOptionId !== optionId) return { ok: false, message: "uncertain" };
+    confirmedVote = vote;
     revalidatePath("/topics");
-    revalidatePath("/topics/" + topicId);
     revalidatePath("/dashboard");
     revalidatePath("/tasks");
-    redirect(memberPath(clubId, topicId, "success", "voted"));
+    return { ok: true, vote };
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("NEXT_REDIRECT")) throw error;
-    redirect(memberPath(clubId, topicId, "error", "invalid_input"));
+    if (confirmedVote) return { ok: true, vote: confirmedVote };
+    if (rpcAttempted) return { ok: false, message: "uncertain" };
+    return { ok: false, message: "invalid_input" };
   }
 }

@@ -67,15 +67,17 @@ export default async function DiscussionTopicManagementPage({
   });
 
   const errorMessages: Record<string, string> = {
-    forbidden: "目前帳號沒有發佈議題的權限。",
+    forbidden: "目前帳號沒有管理議題的權限。",
     invalid_input: "欄位內容或參與對象不完整，請檢查後再試。",
     closed: "議題已截止，無法執行這項操作。",
+    structure_locked: "議題已有投票或留言，參與對象、選項和投票方式不能更改。",
     unexpected: "操作沒有完成，請稍後再試。",
   };
 
   return <div className="page-stack">
     <ManagementHeader />
     {query.success === "published" && <Notice tone="success">議題已發佈，指定社員可在社員模式看到議題與投票提醒。</Notice>}
+    {query.success === "deleted" && <Notice tone="success">議題已從社員端隱藏，投票與留言歷史已保留。</Notice>}
     {query.error && <Notice tone="error">{errorMessages[query.error] ?? errorMessages.unexpected}</Notice>}
     <Notice>截止後社員仍可閱讀歷史內容，但不能再留言或投票；未完成的待辦提醒也會自動消失。</Notice>
     <DiscussionTopicComposer clubId={clubId} tags={tags} members={members} />

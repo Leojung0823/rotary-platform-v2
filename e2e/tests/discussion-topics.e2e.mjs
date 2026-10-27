@@ -60,6 +60,7 @@ test("幹部發佈議題後，社員收到待辦、留言投票，具名票只�
     await expect(memberPage.getByText(comment, { exact: true })).toBeVisible();
     await memberPage.getByRole("button", { name: "投這一票" }).first().click();
     await expect(memberPage.getByText("您目前選擇")).toBeVisible();
+    await expect(memberPage.getByText(/投票已送出|投票已記錄/u)).toBeVisible();
     await memberPage.goto(new URL("/tasks?clubId=" + clubId + "&mode=member", baseURL).toString());
     await expect(memberPage.getByRole("link").filter({ hasText: title })).toHaveCount(0);
 
@@ -68,6 +69,21 @@ test("幹部發佈議題後，社員收到待辦、留言投票，具名票只�
     await detailLink.click();
     await expect(page.getByRole("heading", { name: "具名投票名單" })).toBeVisible();
     await expect(page.locator("ul").filter({ hasText: "一般社員" }).getByText("一般社員", { exact: true })).toBeVisible();
+
+    await page.getByRole("link", { name: "編輯議題" }).click();
+    await expect(page.getByText(/已有投票或留言/u)).toBeVisible();
+    await page.getByLabel("議題說明").fill("社員已參與後，仍可修正文案，但投票結構會保留。\n" + comment);
+    await page.getByRole("button", { name: "儲存修改" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "議題修改已儲存" })).toBeVisible();
+    await expect(page.getByText("投票結構會保留", { exact: false })).toBeVisible();
+
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "刪除議題" }).click();
+    await expect(page).toHaveURL(/\/clubs\/[^/]+\/topics\?mode=management&success=deleted/u);
+    await expect(page.getByRole("status").filter({ hasText: "歷史已保留" })).toBeVisible();
+    await expect(page.getByRole("link").filter({ hasText: title })).toHaveCount(0);
+    await memberPage.goto(new URL("/topics?clubId=" + clubId + "&mode=member", baseURL).toString());
+    await expect(memberPage.getByRole("link").filter({ hasText: title })).toHaveCount(0);
   } finally {
     await memberContext.close();
   }

@@ -29,7 +29,10 @@ begin
  or has_table_privilege('authenticated','public.club_discussion_topic_votes','select')
  or has_function_privilege('authenticated','public.discussion_topic_includes_membership(uuid,uuid,uuid)','execute')
  or has_function_privilege('authenticated','public.discussion_topic_projection(uuid,uuid,uuid,boolean)','execute')
- or has_function_privilege('anon','public.create_club_discussion_topic(uuid,text,text,timestamptz,text,uuid[],uuid[],boolean,jsonb)','execute') then
+ or has_function_privilege('anon','public.create_club_discussion_topic(uuid,text,text,timestamptz,text,uuid[],uuid[],boolean,jsonb)','execute')
+ or has_function_privilege('anon','public.update_club_discussion_topic(uuid,uuid,text,text,timestamptz,text,uuid[],uuid[],boolean,jsonb)','execute')
+ or has_function_privilege('anon','public.delete_club_discussion_topic(uuid,uuid)','execute')
+ or has_function_privilege('anon','public.get_club_discussion_topic_edit(uuid,uuid)','execute') then
   raise exception 'Discussion data or an internal helper is directly exposed.';
  end if;
 end $boundary$;
@@ -43,13 +46,24 @@ begin
    now()+interval '2 days','all','{}'::uuid[],'{}'::uuid[],true,'["同意","不同意"]'::jsonb);
   raise exception 'A regular member published a topic.';
  exception when insufficient_privilege then null; end;
+  begin
+   perform public.update_club_discussion_topic('5d000000-0000-4000-8000-000000000001',
+     'b2000000-0000-4000-8000-000000000099','不應可編輯','一般社員不能管理。',now()+interval '2 days',
+     'all','{}'::uuid[],'{}'::uuid[],true,'["同意","不同意"]'::jsonb);
+   raise exception 'A regular member edited a topic.';
+  exception when insufficient_privilege then null; end;
+  begin
+   perform public.delete_club_discussion_topic('5d000000-0000-4000-8000-000000000001',
+     'b2000000-0000-4000-8000-000000000099');
+   raise exception 'A regular member deleted a topic.';
+  exception when insufficient_privilege then null; end;
 end $denied$;
 reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','1d000000-0000-4000-8000-000000000001',true);
 do $setup$
-declare tag_id uuid; targeted jsonb; specific jsonb; whole_club jsonb;
+declare tag_id uuid; targeted jsonb; specific jsonb; whole_club jsonb; deleted_topic jsonb; edit_data jsonb;
 begin
  tag_id := (public.create_club_member_tag('5d000000-0000-4000-8000-000000000001','理事會',null)->>'tag_id')::uuid;
  perform public.set_membership_tags('5d000000-0000-4000-8000-000000000001','6d000000-0000-4000-8000-000000000002',array[tag_id]);
@@ -57,26 +71,42 @@ begin
    now()+interval '2 days','tags',array[tag_id],'{}'::uuid[],true,'["擴大服務","維持現況"]'::jsonb);
  specific := public.create_club_discussion_topic('5d000000-0000-4000-8000-000000000001','指定社員提案','請指定社員提供意見。',
    now()+interval '2 days','people','{}'::uuid[],array['6d000000-0000-4000-8000-000000000002'::uuid],true,'["支持","不支持"]'::jsonb);
+ perform public.update_club_discussion_topic('5d000000-0000-4000-8000-000000000001',(specific->>'id')::uuid,
+   '指定社員提案（已修改）','請指定社員提供意見。',now()+interval '3 days','people','{}'::uuid[],
+   array['6d000000-0000-4000-8000-000000000002'::uuid],true,'["支持","不支持"]'::jsonb);
  whole_club := public.create_club_discussion_topic('5d000000-0000-4000-8000-000000000001','年度活動時間','請全體社員選擇。',
    now()+interval '3 days','all','{}'::uuid[],'{}'::uuid[],false,'["平日晚上","週末白天"]'::jsonb);
+ deleted_topic := public.create_club_discussion_topic('5d000000-0000-4000-8000-000000000001','保留歷史的刪除測試','投票與留言應保留。',
+   now()+interval '3 days','all','{}'::uuid[],'{}'::uuid[],true,'["保留","不保留"]'::jsonb);
  targeted := public.get_club_discussion_topic('5d000000-0000-4000-8000-000000000001',(targeted->>'id')::uuid);
  specific := public.get_club_discussion_topic('5d000000-0000-4000-8000-000000000001',(specific->>'id')::uuid);
  whole_club := public.get_club_discussion_topic('5d000000-0000-4000-8000-000000000001',(whole_club->>'id')::uuid);
+ deleted_topic := public.get_club_discussion_topic('5d000000-0000-4000-8000-000000000001',(deleted_topic->>'id')::uuid);
+ edit_data := public.get_club_discussion_topic_edit('5d000000-0000-4000-8000-000000000001',(specific->>'id')::uuid);
+ if edit_data->>'title'<>'指定社員提案（已修改）'
+   or jsonb_array_length(edit_data->'audience_membership_ids')<>1
+   or edit_data->'audience_membership_ids'->>0<>'6d000000-0000-4000-8000-000000000002'
+   or edit_data ? 'comments' or edit_data ? 'named_votes' then
+   raise exception 'Management edit projection is incomplete or includes unrelated private data.';
+ end if;
  perform set_config('discussion.targeted_id',targeted->>'id',true);
  perform set_config('discussion.specific_id',specific->>'id',true);
  perform set_config('discussion.whole_id',whole_club->>'id',true);
+ perform set_config('discussion.deleted_id',deleted_topic->>'id',true);
+ perform set_config('discussion.tag_id',tag_id::text,true);
  perform set_config('discussion.target_option',targeted->'options'->0->>'id',true);
  perform set_config('discussion.whole_option',whole_club->'options'->0->>'id',true);
+ perform set_config('discussion.deleted_option',deleted_topic->'options'->0->>'id',true);
 end $setup$;
 reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','1d000000-0000-4000-8000-000000000002',true);
 do $target_member$
-declare visible jsonb; core_tasks jsonb; all_tasks jsonb; detail jsonb;
+declare visible jsonb; core_tasks jsonb; all_tasks jsonb; detail jsonb; vote_result jsonb;
 begin
  visible := public.list_my_club_discussion_topics('5d000000-0000-4000-8000-000000000001');
- if jsonb_array_length(visible->'topics')<>3
+ if jsonb_array_length(visible->'topics')<>4
    or not exists(select 1 from jsonb_array_elements(visible->'topics') t where t->>'id'=current_setting('discussion.specific_id'))
  then raise exception 'Targeted member did not see all three allowed topics.'; end if;
  core_tasks := public.list_my_member_pending_tasks('5d000000-0000-4000-8000-000000000001',50,0,true);
@@ -91,10 +121,17 @@ begin
   raise exception 'Member detail projection omitted initial vote/comment counts.';
  end if;
  perform public.add_club_discussion_comment('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid,'支持擴大服務。');
- perform public.cast_club_discussion_vote('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid,current_setting('discussion.target_option')::uuid);
+ vote_result := public.cast_club_discussion_vote('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid,current_setting('discussion.target_option')::uuid);
+ if vote_result ? 'named_votes' or vote_result ? 'comments'
+   or vote_result->>'my_vote_option_id'<>current_setting('discussion.target_option')
+   or vote_result->>'vote_count'<>'1' then
+   raise exception 'Vote acknowledgement was not compact, private and complete.';
+ end if;
  if exists(select 1 from jsonb_array_elements(public.list_my_member_pending_tasks('5d000000-0000-4000-8000-000000000001',50,0,true)->'tasks') t
    where t->>'task_id'=current_setting('discussion.targeted_id')) then raise exception 'Topic task remained after voting.'; end if;
  perform public.cast_club_discussion_vote('5d000000-0000-4000-8000-000000000001',current_setting('discussion.whole_id')::uuid,current_setting('discussion.whole_option')::uuid);
+ perform public.add_club_discussion_comment('5d000000-0000-4000-8000-000000000001',current_setting('discussion.deleted_id')::uuid,'這則刪除後仍要保留。');
+ perform public.cast_club_discussion_vote('5d000000-0000-4000-8000-000000000001',current_setting('discussion.deleted_id')::uuid,current_setting('discussion.deleted_option')::uuid);
 end $target_member$;
 reset role;
 
@@ -104,7 +141,7 @@ do $untargeted$
 declare visible jsonb;
 begin
  visible := public.list_my_club_discussion_topics('5d000000-0000-4000-8000-000000000001');
- if jsonb_array_length(visible->'topics')<>1 then raise exception 'Untagged member saw a targeted topic.'; end if;
+ if jsonb_array_length(visible->'topics')<>2 then raise exception 'Untagged member saw a targeted topic or missed an all-club topic.'; end if;
  if public.get_my_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid) is not null
  then raise exception 'Untagged member read targeted topic.'; end if;
  if public.get_my_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.specific_id')::uuid) is not null
@@ -127,14 +164,75 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','1d000000-0000-4000-8000-000000000001',true);
 do $officer_reads$
-declare named_detail jsonb; anonymous_detail jsonb;
+declare named_detail jsonb; anonymous_detail jsonb; edit_data jsonb; updated jsonb; manager_list jsonb;
 begin
  named_detail := public.get_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.whole_id')::uuid);
  if not exists(select 1 from jsonb_array_elements(named_detail->'named_votes') v where v->>'display_name'='受邀社員')
  then raise exception 'Officer could not read named ballot.'; end if;
  anonymous_detail := public.get_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid);
  if jsonb_array_length(anonymous_detail->'named_votes')<>0 then raise exception 'Anonymous ballot was disclosed to officer.'; end if;
+
+ edit_data := public.get_club_discussion_topic_edit('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid);
+ updated := public.update_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid,
+   '理事會服務方向（已修訂）','投票與留言已有社員參與，僅修改文案。',now()+interval '4 days','tags',
+   array[current_setting('discussion.tag_id')::uuid],'{}'::uuid[],true,'["擴大服務","維持現況"]'::jsonb);
+ if updated->>'id'<>current_setting('discussion.targeted_id') then raise exception 'Manager failed to edit topic copy.'; end if;
+ begin
+  perform public.update_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid,
+   '理事會服務方向（已修訂）','投票結構不可更改。',now()+interval '4 days','tags',
+   array[current_setting('discussion.tag_id')::uuid],'{}'::uuid[],true,'["擴大服務","維持現況（改動）"]'::jsonb);
+  raise exception 'Manager changed the options after members interacted.';
+ exception when sqlstate '22023' then
+  if sqlerrm <> 'discussion_topic_structure_locked' then raise; end if;
+ end;
+ begin
+  perform public.update_club_discussion_topic('5d000000-0000-4000-8000-000000000002',current_setting('discussion.targeted_id')::uuid,
+   '跨社修改','不應成功。',now()+interval '4 days','all','{}'::uuid[],'{}'::uuid[],true,'["A","B"]'::jsonb);
+  raise exception 'Manager edited a topic in another club.';
+ exception when insufficient_privilege then null; end;
+ begin
+  perform public.delete_club_discussion_topic('5d000000-0000-4000-8000-000000000002',current_setting('discussion.targeted_id')::uuid);
+  raise exception 'Manager deleted a topic in another club.';
+ exception when insufficient_privilege then null; end;
+
+ perform public.delete_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.deleted_id')::uuid);
+ if public.get_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.deleted_id')::uuid) is not null then
+  raise exception 'Deleted topic remained visible to managers.';
+ end if;
+ manager_list := public.list_club_discussion_topics('5d000000-0000-4000-8000-000000000001');
+ if exists(select 1 from jsonb_array_elements(manager_list->'topics') t where t->>'id'=current_setting('discussion.deleted_id')) then
+  raise exception 'Deleted topic remained in management list.';
+ end if;
 end $officer_reads$;
+reset role;
+
+do $soft_delete_retained$
+begin
+ if not exists(select 1 from public.club_discussion_topics topic
+   where topic.id=current_setting('discussion.deleted_id')::uuid and topic.deleted_at is not null)
+   or not exists(select 1 from public.club_discussion_topic_comments comment
+     where comment.topic_id=current_setting('discussion.deleted_id')::uuid and comment.body='這則刪除後仍要保留。')
+   or not exists(select 1 from public.club_discussion_topic_votes ballot
+     where ballot.topic_id=current_setting('discussion.deleted_id')::uuid) then
+   raise exception 'Soft deletion did not preserve the topic, its comment and its ballot.';
+ end if;
+end $soft_delete_retained$;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','1d000000-0000-4000-8000-000000000002',true);
+do $deleted_member_hidden$
+declare visible jsonb; tasks jsonb;
+begin
+ visible := public.list_my_club_discussion_topics('5d000000-0000-4000-8000-000000000001');
+ if jsonb_array_length(visible->'topics')<>3
+   or public.get_my_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.deleted_id')::uuid) is not null then
+   raise exception 'Deleted topic remained visible to members.';
+ end if;
+ tasks := public.list_my_member_pending_tasks('5d000000-0000-4000-8000-000000000001',50,0,true);
+ if exists(select 1 from jsonb_array_elements(tasks->'tasks') t where t->>'task_id'=current_setting('discussion.deleted_id')) then
+  raise exception 'Deleted topic remained in member reminders.';
+ end if;
+end $deleted_member_hidden$;
 reset role;
 
 update public.club_discussion_topics set deadline_at=statement_timestamp()-interval '1 minute'
@@ -159,5 +257,23 @@ begin
   raise exception 'Vote accepted after deadline.';
  exception when no_data_found then null; end;
 end $deadline$;
+reset role;
+
+update public.club_memberships set membership_status='suspended'
+where id='6d000000-0000-4000-8000-000000000002';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','1d000000-0000-4000-8000-000000000002',true);
+do $suspended_member$
+begin
+ begin
+  perform public.list_my_club_discussion_topics('5d000000-0000-4000-8000-000000000001');
+  raise exception 'Suspended member listed discussion topics.';
+ exception when insufficient_privilege then null; end;
+ begin
+  perform public.cast_club_discussion_vote('5d000000-0000-4000-8000-000000000001',
+    current_setting('discussion.targeted_id')::uuid,current_setting('discussion.target_option')::uuid);
+  raise exception 'Suspended member cast a discussion vote.';
+ exception when insufficient_privilege then null; end;
+end $suspended_member$;
 reset role;
 rollback;

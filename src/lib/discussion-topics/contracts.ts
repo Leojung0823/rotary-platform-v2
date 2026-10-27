@@ -16,6 +16,29 @@ export type DiscussionTopicDetail = DiscussionTopicSummary & Readonly<{
   namedVotes: readonly Readonly<{ membershipId: string; displayName: string; optionId: string; optionText: string }>[];
 }>;
 
+export type DiscussionTopicEditData = Readonly<{
+  id: string;
+  clubId: string;
+  title: string;
+  description: string;
+  deadlineAt: string;
+  audienceKind: DiscussionAudienceKind;
+  anonymousVotes: boolean;
+  options: readonly Readonly<{ id: string; label: string }>[];
+  audienceTagIds: readonly string[];
+  audienceMembershipIds: readonly string[];
+  voteCount: number;
+  commentCount: number;
+}>;
+
+export type DiscussionVoteResult = Readonly<{
+  topicId: string;
+  clubId: string;
+  myVoteOptionId: string;
+  voteCount: number;
+  options: readonly Readonly<{ id: string; voteCount: number }>[];
+}>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -107,5 +130,94 @@ export function parseDiscussionTopicDetail(value: unknown, expectedClubId: strin
     options: options as DiscussionTopicDetail["options"],
     comments: comments as DiscussionTopicDetail["comments"],
     namedVotes: namedVotes as DiscussionTopicDetail["namedVotes"],
+  };
+}
+
+export function parseDiscussionTopicEditData(
+  value: unknown,
+  expectedClubId: string,
+  expectedTopicId: string,
+): DiscussionTopicEditData {
+  if (!isRecord(value) || typeof value.id !== "string"
+    || value.id.toLowerCase() !== expectedTopicId.toLowerCase()
+    || typeof value.club_id !== "string"
+    || value.club_id.toLowerCase() !== expectedClubId.toLowerCase()
+    || typeof value.title !== "string" || value.title.length < 2 || value.title.length > 120
+    || typeof value.description !== "string" || value.description.length < 1 || value.description.length > 5000
+    || !isDateTime(value.deadline_at)
+    || typeof value.audience_kind !== "string"
+    || !(audienceKinds as readonly string[]).includes(value.audience_kind)
+    || typeof value.anonymous_votes !== "boolean"
+    || !Number.isSafeInteger(value.vote_count) || (value.vote_count as number) < 0
+    || !Number.isSafeInteger(value.comment_count) || (value.comment_count as number) < 0
+    || !Array.isArray(value.options) || value.options.length < 2 || value.options.length > 8
+    || !Array.isArray(value.audience_tag_ids) || value.audience_tag_ids.length > 20
+    || !Array.isArray(value.audience_membership_ids) || value.audience_membership_ids.length > 100) {
+    throw new Error("invalid_discussion_topic_edit_data");
+  }
+
+  const options = value.options.map((option) => {
+    if (!isRecord(option) || typeof option.id !== "string" || !uuidPattern.test(option.id)
+      || typeof option.label !== "string" || option.label.length < 1 || option.label.length > 100) return null;
+    return { id: option.id.toLowerCase(), label: option.label };
+  });
+  const parseIds = (ids: unknown[]) => ids.map((id) =>
+    typeof id === "string" && uuidPattern.test(id) ? id.toLowerCase() : null);
+  const audienceTagIds = parseIds(value.audience_tag_ids);
+  const audienceMembershipIds = parseIds(value.audience_membership_ids);
+  if (options.some((option) => option === null)
+    || audienceTagIds.some((id) => id === null)
+    || audienceMembershipIds.some((id) => id === null)) {
+    throw new Error("invalid_discussion_topic_edit_data");
+  }
+
+  return {
+    id: expectedTopicId.toLowerCase(),
+    clubId: expectedClubId.toLowerCase(),
+    title: value.title,
+    description: value.description,
+    deadlineAt: value.deadline_at,
+    audienceKind: value.audience_kind as DiscussionAudienceKind,
+    anonymousVotes: value.anonymous_votes,
+    options: options as DiscussionTopicEditData["options"],
+    audienceTagIds: audienceTagIds as string[],
+    audienceMembershipIds: audienceMembershipIds as string[],
+    voteCount: value.vote_count as number,
+    commentCount: value.comment_count as number,
+  };
+}
+
+export function parseDiscussionVoteResult(
+  value: unknown,
+  expectedClubId: string,
+  expectedTopicId: string,
+): DiscussionVoteResult {
+  if (!isRecord(value)
+    || "named_votes" in value || "comments" in value
+    || typeof value.topic_id !== "string" || value.topic_id.toLowerCase() !== expectedTopicId.toLowerCase()
+    || typeof value.club_id !== "string" || value.club_id.toLowerCase() !== expectedClubId.toLowerCase()
+    || typeof value.my_vote_option_id !== "string" || !uuidPattern.test(value.my_vote_option_id)
+    || !Number.isSafeInteger(value.vote_count) || (value.vote_count as number) < 1
+    || !Array.isArray(value.options) || value.options.length < 2 || value.options.length > 8) {
+    throw new Error("invalid_discussion_vote_result");
+  }
+  const options = value.options.map((option) => {
+    if (!isRecord(option) || typeof option.id !== "string" || !uuidPattern.test(option.id)
+      || !Number.isSafeInteger(option.vote_count) || (option.vote_count as number) < 0) return null;
+    return { id: option.id.toLowerCase(), voteCount: option.vote_count as number };
+  });
+  const validOptions = options.filter((option): option is NonNullable<typeof option> => option !== null);
+  if (validOptions.length !== options.length
+    || new Set(validOptions.map((option) => option.id)).size !== validOptions.length
+    || !validOptions.some((option) => option.id === (value.my_vote_option_id as string).toLowerCase())
+    || validOptions.reduce((sum, option) => sum + option.voteCount, 0) !== value.vote_count) {
+    throw new Error("invalid_discussion_vote_result");
+  }
+  return {
+    topicId: expectedTopicId.toLowerCase(),
+    clubId: expectedClubId.toLowerCase(),
+    myVoteOptionId: (value.my_vote_option_id as string).toLowerCase(),
+    voteCount: value.vote_count as number,
+    options: validOptions,
   };
 }
