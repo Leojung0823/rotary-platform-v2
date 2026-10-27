@@ -11,6 +11,14 @@
 
 ## 2026-10-27 最新接力狀態（本節優先於下方歷史紀錄）
 
+- 最新 staging 產品 revision `11e931eb5d2a50d324d4ceb1d683af3c267043e0` 已部署。CI `40424265531`、Browser Smoke `40424265620`、Release plan `40425814322`、Go-Live `40427019420` 成功；本次沒有新 migration。`/api/health` 為 `revision=11e931eb5d2a`、`status=ok`、configuration/database `true`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過。production 未修改。
+- E-12 本機加密匯出完成：密文 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`。AES-GCM/gzip 與 checksum 驗證通過，沒有明文落地或上傳；匯出範圍僅 public schema 與資料，不含 Auth、Storage、project secrets／設定。FileVault 開啟，建立的一次性 staging-only Project Settings Read token 已撤銷。尚未在隔離資料庫 restore，不能稱為完整復原演練。
+- 備份與解密私鑰分別保存在本機 repo 外私密目錄，請保留兩者、不可提交 repo；完整路徑只在本機交付，不寫入 GitHub 文件。舊的主 checkout `/Users/leoj/Documents/GitHub/rotary-platform-v2` 可能含未提交工作，本輪未修改；備份使用乾淨 main clone。
+- E-06 前後量測 run `40423362042` → `40427338234` 同為 staging／warm cache／每頁 5 次。管理首頁 LCP/FCP/TTFB/INP 中位數 `1104/348/314.3/16` → `748/304/288.3/16 ms`；社員首頁 `1096/428/325.2/16` → `1104/608/579.4/16 ms`。管理頁方向正向，社員頁未證明改善；E-06 仍需查社員頁波動。詳見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
+- Message Center scheduler 是獨立營運設定，未完成送達對象驗收前不要啟動。E-03 LINE OA follow 自動配對真人驗收已完成（只使用 `PANCHIAO-ELITE`；HAPPY 不使用）。PR #204 仍待專用測試帳號真人完成 recovery email→更新密碼→重新登入 hosted 驗收；不自動合併。E-07／E-11 真人實機驗收仍待做，E-08 production 維持未授權不碰，E-09 custom SMTP 暫緩。
+
+## 2026-10-27 前次接力狀態（歷史狀態）
+
 - 產品程式 revision `eba0815a31e22f298f6655a274055831ecc88e49` 已部署 staging。CI `40415448937`、Browser Smoke `40415449015`、Staging Release plan `40415907270`、Go-Live `40417434022` 成功；9 支 migration 已套用，HTTPS smoke 與受保護社員驗收通過。2026-10-27 再查 `/api/health` 為 `status=ok`、environment `staging`、configuration/database `true`、`issues=[]`、`warnings=[]`。本輪文件同步前 GitHub `main` 基準 SHA 為 `dfffeb17886775fe72a01533cd82cf98fc9ebcf2`；同步後請以 `git rev-parse origin/main` 核對。production 未修改。
 - E-12 備份嘗試：主 checkout `.env.staging` 有必要欄位、權限 `600`；固定 staging Management API 回 HTTP `401`，沒有建立或上傳備份。FileVault 開啟，本機接收憑證與私鑰有效且權限 `600`，備份目錄仍空；需安全更新有效的本機 `SUPABASE_ACCESS_TOKEN` 後重跑。主 checkout 位於 `main@b6a184b`、含未提交工作且落後已 fetch 的 `origin/main@dfffeb1`；本輪沒有切換、清除、stash 或修改它。備份匯出器從乾淨的 main clone 執行並在 staging 身份驗證時以 401 終止。這次 Go-Live 依 migration review 後的 staging-only additive forward-fix 執行，不能稱為已備份。
 - E-06 專項 repeat run `40419925680` 成功：staging revision `eba0815`、warm cache、受保護社員／幹部登入、每頁 5 次。社員首頁中位數 LCP/FCP/TTFB/INP `776/384/357.8/16 ms`，管理首頁 `856/396/352/16 ms`；CDP 兩頁 0 長任務。相同 revision 的前次 run `40417885104` LCP 中位數為 `1348/972 ms`，差異大；工具沒有輸出 LCP 元素或資源時間，根因仍未知。Chrome DevTools／使用者 Chrome 沒有登入中的 Rotary session，故未做假登入量測。完整數字見 `PERFORMANCE_IMPROVEMENT_LOG.md`。

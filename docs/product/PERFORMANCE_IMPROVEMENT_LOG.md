@@ -5,6 +5,20 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
+## 2026-10-27 管理首頁權限投影延後（run `40423362042` → `40427338234`；管理指標下降，社員頁未證明改善）
+
+- 產品 commit `11e931eb5d2a50d324d4ceb1d683af3c267043e0` 將只用來顯示導覽／首頁管理連結的權限投影移進既有 Suspense 邊界，不再阻擋主要內容；route、RPC、RLS、登入、角色與社團隔離均維持原狀。沒有新增 migration、快取或旗標。
+- 比較修改前 staging runtime `eba0815a31e22f298f6655a274055831ecc88e49` 與修改後 `11e931eb5d2a50d324d4ceb1d683af3c267043e0`。兩次皆為受保護登入、同一 staging、desktop Chromium、每頁 5 次、`warm` browser cache、無 CPU／網路限速；前 run `40423362042`，後 run `40427338234`。測量來源是 PerformanceObserver 與 Chrome DevTools Protocol 摘要，不是手動 DevTools UI trace；原始 trace 未保存。
+- 下表是各組 5 個樣本的中位數，欄位為 LCP／FCP／TTFB／INP。負值代表修改後較低；百分比以修改前為基準。
+
+| 頁面 | 修改前 `eba0815` | 修改後 `11e931e` | 觀察差異 |
+|---|---:|---:|---:|
+| 社員首頁 `member-dashboard` | `1096／428／325.2／16 ms` | `1104／608／579.4／16 ms` | `+8 ms (+0.7%)`／`+180 ms (+42.1%)`／`+254.2 ms (+78.2%)`／`0 ms` |
+| 社務管理首頁 `management-dashboard` | `1104／348／314.3／16 ms` | `748／304／288.3／16 ms` | `-356 ms (-32.2%)`／`-44 ms (-12.6%)`／`-26 ms (-8.3%)`／`0 ms` |
+
+- 管理首頁 LCP 在修改後五次都落在主要標題，修改前則有三次以帳號摘要為 LCP；這與主要內容較早呈現的方向一致，但單次前後 run 仍不能證明所有差異皆由程式造成。兩頁 trace 摘要均為 0 個長任務。
+- 結論：管理首頁有同條件的正向觀察（LCP 中位數低 356 ms），社員首頁沒有改善證據且 FCP／TTFB 本輪較慢；不能宣稱所有登入首頁都變快。E-06 維持進行中，後續應針對社員頁偏高的 TTFB／LCP 波動查明來源，再做重複比較。
+
 ## 2026-10-27 E-06 同條件 staging 前後比較（run `40417885104`；未證明整體變快）
 
 - 比較 staging baseline `00f4d07a964a6640359359be6034266ef711543e` 與 restore revision `eba0815a31e22f298f6655a274055831ecc88e49`；同一受保護測試流程、desktop Chromium、社員／管理測試帳號、warm browser cache，每頁每版 5 次。流程先部署舊版取樣，再自動恢復新版；workflow 成功，staging `/api/health` 最終回到 `eba0815a31e2`、`status=ok`、`issues=[]`、`warnings=[]`。

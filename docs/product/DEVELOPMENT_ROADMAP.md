@@ -4,6 +4,14 @@
 
 ## 2026-10-27 最新 staging／部署狀態（本節優先於下方歷史紀錄）
 
+- 發布規則：新功能成功部署後自動可用，不要求人工開旗標；緊急停用仍須受保護，既有 opt-in 功能不批次開啟。此規則不自動啟動外部訊息排程，也不取代登入、角色、社籍、RLS／RPC 權限。
+- 已部署至 staging 的產品 revision：`11e931eb5d2a50d324d4ceb1d683af3c267043e0`。CI `40424265531`、Browser Smoke `40424265620`、Staging Release plan `40425814322`、Go-Live `40427019420` 均成功；資料庫已是最新，沒有新 migration。health `status=ok`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過。production 未修改。
+- E-12 本機加密 logical export 已完成，密文與 checksum 留在本機 repo 外私密目錄，檔名 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`。只含 `public` schema 與資料，不含 Auth／Storage／平台 secrets；沒有上傳，短期 staging-only scoped token 已撤銷。尚未在隔離資料庫 restore，E-12 仍待復原演練。
+- E-06 run `40423362042` → `40427338234` 同條件比較（staging、warm cache、每頁 5 次）：管理首頁 LCP/FCP/TTFB/INP 中位數 `1104/348/314.3/16` → `748/304/288.3/16 ms`；社員首頁 `1096/428/325.2/16` → `1104/608/579.4/16 ms`。管理頁有正向觀察，社員頁未證明改善，E-06 仍進行中；詳見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
+- Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對真人驗收已完成（只使用 `PANCHIAO-ELITE`；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策、production 未修改；E-09 custom SMTP 暫緩；PR #204 recovery email 完整重設流程仍待 hosted 真人驗收，不自動合併。細節見 `TO-DO-LIST.md` 與 `CURRENT_SESSION_HANDOFF.md`。
+
+## 2026-10-27 前次 staging／部署核對（歷史狀態）
+
 - 發布規則：**未來新功能在成功部署後立即可用，不要求人工開旗標**。一般功能不要新增 rollout flag；若 RPC 確需 rollout row 作緊急回復控制，必須由同次 migration 建立預設啟用設定並留 system audit。只保留受保護的緊急停用／回滾控制；歷史 opt-in 功能維持原狀，不批次開啟。此規則不會自動啟動 LINE 等外部訊息排程，也不取代登入、角色、社籍、RLS 或 RPC 權限檢查。
 - 截至本次文件同步前，GitHub `main` 基準 SHA 為 `dfffeb17886775fe72a01533cd82cf98fc9ebcf2`；同步後的最新 SHA 請以 `git rev-parse origin/main` 核對。產品程式仍是已部署 staging revision `eba0815a31e2`。該產品版 CI `40415448937`、Browser Smoke `40415449015`、Staging Release plan `40415907270`、Go-Live `40417434022` 成功；9 支 migration 已套用，2026-10-27 health 為 `status=ok`、`issues=[]`、`warnings=[]`。只部署 staging，production 未修改。
 - E-12 本機加密 logical backup 尚未產生：主 checkout `.env.staging` 欄位齊全但目前 Management API token 回 HTTP `401`；FileVault 與本機接收憑證／私鑰已就緒，輸出目錄仍空。沒有上傳或修改 hosted 資料；Go-Live 採 migration review 後的 staging-only additive forward-fix，不得稱為已備份。

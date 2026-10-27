@@ -2,7 +2,16 @@
 
 更新日期：2026-10-27（Asia/Taipei；最新主線 SHA 請以 `git rev-parse origin/main` 現場核對）
 
-## 2026-10-27 staging／待辦即時核對（優先於下方歷史紀錄）
+## 2026-10-27 最新 staging／待辦核對（本節優先）
+
+- staging 已部署產品 revision：`11e931eb5d2a50d324d4ceb1d683af3c267043e0`。CI `40424265531`、Browser Smoke `40424265620`、Release plan `40425814322`、Go-Live `40427019420` 成功；沒有新 migration，資料庫保持最新。staging health revision `11e931eb5d2a`、`status=ok`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過，production 未修改。
+- E-12 本機加密匯出完成：密文 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`；位於本機 repo 外私密目錄。AES-GCM/gzip 與 checksum 驗證通過，未落明文、未上傳。範圍僅 `public` schema 與資料，不含 Auth、Storage 物件或平台設定；短期 staging-only scoped token 已撤銷。尚未在隔離資料庫 restore，E-12 仍待演練。
+- E-06 run `40423362042` → `40427338234` 同條件比較（staging、warm cache、每頁 5 次）：管理首頁 LCP/FCP/TTFB/INP 中位數 `1104/348/314.3/16` → `748/304/288.3/16 ms`；社員首頁 `1096/428/325.2/16` → `1104/608/579.4/16 ms`。管理頁有正向觀察，社員頁未證明變快；E-06 仍待查社員頁 TTFB／LCP 波動。詳見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
+- E-03 LINE OA follow 自動配對真人驗收已由產品負責人確認完成、目前可用；只限已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。Message Center scheduler 專用環境仍未建立；送達對象驗收前不啟動排程。
+- PR #204 草稿空白到期日問題已修正並部署；PR #204 尚未合併，仍待專用測試帳號真人完成 recovery email「收信→確認→更新密碼→重新登入」hosted 驗收，不自動合併。
+- E-07（真實 iPhone／Android、M1 五位使用者測試）、E-11（各社 OA／Rich Menu 實機驗收）仍待真人／外部操作。E-08 是 production 決策與發布，未有明確範圍核准前不碰 production；E-09 custom SMTP 維持暫緩。
+
+## 2026-10-27 前次 staging／待辦核對（歷史狀態）
 
 - 發布規則：新功能成功部署後就應自動可用，不要求人工開旗標；若緊急回復確需旗標，由 migration 預設啟用並留下 system audit，旗標只作受保護的緊急停用／回滾。既有 opt-in 功能不批次開啟；權限仍由登入、角色、社籍、RLS／RPC 執行。
 - 截至本次文件同步前，GitHub `main` 基準 SHA 為 `dfffeb17886775fe72a01533cd82cf98fc9ebcf2`（同步後以 `git rev-parse origin/main` 核對）；產品程式仍是 staging 的 `eba0815a31e2`。CI `40415448937`、Browser Smoke `40415449015`、Staging Release plan `40415907270`、Go-Live `40417434022` 均對應產品版 `eba0815`；9 支 migration 已套用，2026-10-27 再查 `/api/health` 仍是 `status=ok`、`issues=[]`、`warnings=[]`。只部署 staging，production 未修改。
@@ -980,6 +989,9 @@ production 沒有修改。
 
 ### E-06 登入後管理頁效能量測 `[>]`
 
+- **2026-10-27 最新部署後比較**：run `40423362042`（修改前 runtime `eba0815`）與 `40427338234`（修改後 `11e931e`）使用相同受保護登入、desktop Chromium、warm cache、每頁 5 次。管理首頁 LCP/FCP/TTFB/INP 中位數 `1104/348/314.3/16` → `748/304/288.3/16 ms`；社員首頁 `1096/428/325.2/16` → `1104/608/579.4/16 ms`。管理頁方向正向，社員頁未證明變快，E-06 尚未結案。細節見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
+- **已部署修正**：commit `11e931eb5d2a50d324d4ceb1d683af3c267043e0` 將管理權限投影移出首頁主要等待路徑；權限與 RPC/RLS 邊界不變。staging Go-Live `40427019420`、health 與受保護社員驗收通過。
+
 - **2026-09-16 已建立登入後基線**：同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未限速；量測當時 staging runtime `1ef38bb50407`，目前已部署 runtime 為 `36f32f8a44e1`。
   管理頁 LCP `1,777 ms`、FCP `760 ms`、LCP TTFB `637 ms`、CLS `0.00`；社員首頁 LCP `1,929 ms`、FCP `562 ms`、
   LCP TTFB `452 ms`、CLS `0.01`。兩頁 INP 均為「未量測」。
@@ -1010,7 +1022,11 @@ production 沒有修改。
 - **必要動作**：確認 production 備份／還原點、HTTPS 網域、server secrets、migration plan、人工核准閘門與回復步驟。
 - **安全界線**：本清單更新前 production 沒有修改；任何 production 操作要另開明確 release 任務。
 
-### E-12 staging 本機加密 logical backup `[>]`
+### E-12 staging 本機加密 logical backup `[>]`（匯出完成；restore 演練待做）
+
+- **2026-10-27 本機匯出完成**：在乾淨、與 `origin/main` 同 SHA 的 `main` checkout，使用已驗證的 staging session pooler 讀取，輸出到 repo 外 FileVault 保護目錄。密文 411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`；exporter 成功驗證 AES-256-GCM、gzip，並複核 checksum。明文未落地、檔案未上傳。一次性 scoped token 僅有指定 staging 專案的 Project Settings Read 權限，已於匯出後撤銷。
+- **檔案位置**：本機 repo 外私密目錄中的 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，checksum 同資料夾。解密私鑰保存在另一個本機私密目錄；需一併保留私鑰，否則密文不可還原。兩個目錄都不可提交 repo。
+- **尚未完成**：此檔只有 `public` schema 與資料，不含 `auth`、Storage 物件、secrets／project 設定。尚未還原至隔離 Supabase 專案；restore drill 仍待做，因此 E-12 保持 `[>]`，不得稱為完整復原演練完成。
 
 - **限制仍在**：staging Supabase Free 方案沒有內建 project backup／PITR；因此採用受控匯出，不把它誤稱為 Supabase 原生備份。
 - **歷史證據**：2026-09-15 backup run `34912448897` 曾把加密 artifact `10374966439` 放在 GitHub Actions，之後下載、解密驗證，再刪除 artifact 與明文檔。這證明當時匯出成功，
