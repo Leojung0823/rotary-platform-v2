@@ -5,7 +5,7 @@
 ## 2026-10-27 最新 staging／部署狀態（本節優先於下方歷史紀錄）
 
 - 發布規則：新功能成功部署後自動可用，不要求人工開旗標；緊急停用仍須受保護，既有 opt-in 功能不批次開啟。此規則不自動啟動外部訊息排程，也不取代登入、角色、社籍、RLS／RPC 權限。
-- 已部署至 staging 的產品 revision：`11e931eb5d2a50d324d4ceb1d683af3c267043e0`。CI `40424265531`、Browser Smoke `40424265620`、Staging Release plan `40425814322`、Go-Live `40427019420` 均成功；資料庫已是最新，沒有新 migration。health `status=ok`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過。production 未修改。
+- 已部署至 staging 的產品 revision：`3543b58bf8bd27b663a09b191b3cf65e0990ee44`。Staging Release plan `40448096523` dry-run 成功，確認沒有待套用 migration；Go-Live `40448288080` 已完成部署、exact revision wait、HTTPS smoke 與受保護社員驗收。`/api/health` 回報 `status=ok`、`issues=[]`、`warnings=[]`；production 未修改。之後 main 的文件同步不代表 staging runtime 版本改變。
 - E-12 本機加密 logical export 與 public-only 隔離還原演練完成：密文與 checksum 留在本機 repo 外私密目錄，檔名 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`。98 張表／3,398 筆資料逐表吻合，98 張表 RLS 啟用、Auth 外鍵有效；72 個 Auth IDs 僅為隔離演練的合成占位，不含真實 Auth／Storage／平台設定，也不代表完整災難復原。沒有上傳，短期 staging-only scoped token 已撤銷。
 - E-06 已依產品決定結案：run `40430963025` 的社員／管理首頁 LCP、TTFB、INP 均達 Core Web Vitals 良好門檻；不再追查剩餘伺服器等待，也未宣稱已加速。歷史測量、限制與保留的診斷工具見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md) 及 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。
 - E-07、E-11、PR #204 真人／手機驗收依產品決定封存但未驗收；E-08 production 發布前須重新評估是否補做，E-09 暫緩。PR #204 維持 open/draft、不合併；Message Center scheduler 不啟動且不建立排程。LINE OA 僅使用 `PANCHIAO-ELITE`，HAPPY 不使用。唯一現行工程待辦以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 為準。
