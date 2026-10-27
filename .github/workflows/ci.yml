@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -44,7 +48,7 @@ jobs:
     needs: change-scope
     if: needs.change-scope.outputs.run_full == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
       - name: Set up Supabase CLI
@@ -54,15 +58,7 @@ jobs:
           github-token: ${{ github.token }}
       - name: Start local Supabase database
         shell: bash
-        run: |
-          if timeout -k 30 600 supabase db start > /tmp/supabase-start.log 2>&1; then
-            :
-          else
-            status=$?
-            echo "Local Supabase database failed or timed out while starting (status ${status})."
-            cat /tmp/supabase-start.log
-            exit 1
-          fi
+        run: bash scripts/retry-supabase-start.sh database
       - name: Reset database from migrations
         shell: bash
         run: |
@@ -111,3 +107,192 @@ jobs:
       - name: Fail when database verification failed
         if: steps.verify_database.outcome == 'failure'
         run: exit 1
+
+  member-browser-smoke:
+    name: member-browser-smoke
+    needs: [change-scope, database]
+    if: needs.change-scope.outputs.run_full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      E2E_ADMIN_EMAIL: admin@example.test
+      E2E_BASE_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install application dependencies
+        run: npm ci
+
+      - name: Install isolated browser test dependencies
+        run: npm ci --prefix e2e
+
+      - name: Install Chromium and operating-system dependencies
+        shell: bash
+        run: |
+          # Installing OS dependencies reaches the runner's Ubuntu mirror, which
+          # stalls rather than failing when the mirror is unreachable -- that
+          # turns a transient outage into a job that burns its entire timeout.
+          # Bound each attempt so a stall fails fast, and retry, because the
+          # mirror has consistently recovered within minutes.
+          for attempt in 1 2 3; do
+            if timeout -k 30 240 npm --prefix e2e run install:chromium; then
+              exit 0
+            fi
+            echo "Chromium install attempt ${attempt} failed or stalled; retrying."
+            # timeout only kills its direct child, so the apt-get underneath
+            # survives and keeps /var/lib/apt/lists/lock -- which made every
+            # later attempt fail instantly on the lock instead of retrying the
+            # download. Clear it before trying again. The runner is ephemeral,
+            # so there is nothing else here worth preserving.
+            sudo pkill -9 -x apt-get 2>/dev/null || true
+            sudo pkill -9 -x dpkg 2>/dev/null || true
+            sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock 2>/dev/null || true
+            sudo dpkg --configure -a 2>/dev/null || true
+            sleep 20
+          done
+          echo "Chromium install did not succeed after 3 attempts."
+          exit 1
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.84.2
+          github-token: ${{ github.token }}
+
+      - name: Generate ephemeral local E2E credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          admin_password="$(openssl rand -hex 24)"
+          role_password="$(openssl rand -hex 24)"
+          operator_password="$(openssl rand -hex 24)"
+          line_mock_signing_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$admin_password"
+          echo "::add-mask::$role_password"
+          echo "::add-mask::$operator_password"
+          echo "::add-mask::$line_mock_signing_secret"
+          {
+            echo "E2E_ADMIN_PASSWORD=$admin_password"
+            echo "E2E_ROLE_PASSWORD=$role_password"
+            echo "VERIFY_OPERATOR_PASSWORD=$operator_password"
+            echo "E2E_LINE_MOCK_SIGNING_SECRET=$line_mock_signing_secret"
+          } >> "$GITHUB_ENV"
+          echo "Ephemeral local E2E credentials generated and masked."
+
+      - name: Start local Supabase with bounded image-pull retries
+        shell: bash
+        run: bash scripts/retry-supabase-start.sh full -x 'studio,imgproxy,logflare,vector,edge-runtime,realtime,postgres-meta,supavisor'
+
+      - name: Reset local database from migrations
+        shell: bash
+        run: |
+          if timeout -k 30 600 supabase db reset --local > /tmp/supabase-reset.log 2>&1; then
+            :
+          else
+            status=$?
+            echo "Local database reset failed or timed out (status ${status})."
+            tail -n 120 /tmp/supabase-reset.log
+            exit 1
+          fi
+
+      - name: Create isolated local application environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase status -o env > /tmp/supabase-status.env
+          set -a
+          source /tmp/supabase-status.env
+          set +a
+
+          api_url="${API_URL:-${SUPABASE_URL:-}}"
+          public_key="${PUBLISHABLE_KEY:-${ANON_KEY:-}}"
+          server_key="${SECRET_KEY:-${SERVICE_ROLE_KEY:-}}"
+
+          [[ -n "$api_url" ]] || { echo "Local Supabase API URL was not exported."; exit 1; }
+          [[ -n "$public_key" ]] || { echo "Local Supabase public key was not exported."; exit 1; }
+          [[ -n "$server_key" ]] || { echo "Local Supabase server key was not exported."; exit 1; }
+
+          umask 077
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=$api_url
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$public_key
+          SUPABASE_SERVICE_ROLE_KEY=$server_key
+          BOOTSTRAP_SUPERADMIN_EMAIL=$E2E_ADMIN_EMAIL
+          BOOTSTRAP_SUPERADMIN_PASSWORD=$E2E_ADMIN_PASSWORD
+          BOOTSTRAP_SUPERADMIN_NAME=平台管理員
+          VERIFY_OPERATOR_PASSWORD=$VERIFY_OPERATOR_PASSWORD
+          NEXT_PUBLIC_SITE_URL=$E2E_BASE_URL
+          APP_ENV=local
+          TRUSTED_ADMIN_ENVIRONMENT=
+          LINE_LOGIN_MODE=mock
+          LINE_LOGIN_CHANNEL_ID=
+          LINE_LOGIN_CHANNEL_SECRET=
+          LINE_LOGIN_CALLBACK_URL=
+          LINE_MOCK_SIGNING_SECRET=$E2E_LINE_MOCK_SIGNING_SECRET
+          LINE_OA_MODE=mock
+          EOF
+          echo "Local E2E environment created. Credential values were not printed."
+
+      - name: Bootstrap local superadmin
+        run: node --env-file=.env.local scripts/bootstrap-superadmin.mjs
+
+      - name: Enable birthday fixture flags through the protected RPC
+        run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
+
+      - name: Create local role-shell browser fixtures
+        run: node --env-file=.env.local scripts/bootstrap-role-shell-browser-fixtures.mjs
+
+      - name: Verify role-shell rollback with the database flag disabled
+        run: |
+          node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs disabled
+          npm run build
+          npm --prefix e2e run test:role-shells-off
+
+      - name: Enable role-shell browser fixture through the protected RPC
+        run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs member-home-disabled
+
+      - name: Verify member-home rollback with the database flag disabled
+        run: |
+          npm run build
+          npm --prefix e2e run test:member-home-off
+
+      - name: Enable role-shell and member-home fixtures through the protected RPC
+        run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
+
+      - name: Verify dynamic QR rollback with the database flag disabled
+        run: |
+          node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs checkin-disabled
+          npm run build
+          npm --prefix e2e run test:checkin-off
+
+      - name: Enable dynamic QR browser fixture through the protected RPC
+        run: node --env-file=.env.local scripts/configure-local-e2e-role-shells.mjs enabled
+
+      - name: Build the application
+        run: npm run build
+
+      - name: Run desktop, mobile, and role-shell browser smoke tests
+        run: npm --prefix e2e test
+
+      - name: Verify role-shell rollback with the emergency kill switch
+        run: E2E_FORCE_LEGACY_ROLE_SHELLS=true npm --prefix e2e run test:role-shells-force
+
+      - name: Verify member-home rollback with the emergency kill switch
+        run: E2E_FORCE_LEGACY_MEMBER_HOME=true npm --prefix e2e run test:member-home-force
+
+      - name: Upload browser smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke-diagnostics
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          if-no-files-found: warn
+          retention-days: 7

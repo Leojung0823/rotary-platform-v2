@@ -1,6 +1,6 @@
 # Rotary Platform 待辦執行清單
 
-更新日期：2026-10-27（Asia/Taipei）
+更新日期：2026-10-28（Asia/Taipei）
 
 > 本文件是目前**唯一現行待辦清單**。過往快照已移至 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md) 封存；封存內容只供追溯，不是待辦，也不可覆蓋本清單狀態。每個仍未結案的項目只在本文件列一次。
 
@@ -11,11 +11,15 @@
 - E-12 本機加密 public-only logical export 與隔離還原演練已完成；它不包含 Auth、Storage 物件或 Supabase 專案設定，不等於完整災難復原。備份與解密私鑰留在 repo 外本機私密目錄；一次性 staging-only token 已撤銷。
 - E-06 已結案，見封存檔 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。
 
+## 2026-10-28 開發狀態
+
+- PR 1 工程待辦：在 `codex/ci-supabase-smoke-serialization` 整合 CI 與 Browser Smoke，讓 smoke 等 database 成功後才執行；加入只針對 Supabase image pull 限流／失敗的有上限重試，並移除已由後續 staging Go-Live 覆蓋的一次性 rollout workflow。PR 檢查待結果；本項不觸發 staging 發布。
+
 ## 1. 現行待辦（唯一清單）
 
 **GPS 簽到規則（已完成，不是待辦）**：以與活動地點相距 200 公尺內判定，不設 GPS accuracy 門檻；定位請求使用 `maximumAge: 0`。不要自行補上 accuracy 限制。
 
-目前沒有尚待執行的工程待辦。2026-10-27 Browser Smoke failure triage 已完成兩次連續成功執行；根因、修正、本機 E2E 與 run／attempt 證據記於封存檔。封存不代表外部真人驗收已完成。
+目前只有上方列出的 CI 穩定性 PR 1 工程待辦。2026-10-27 Browser Smoke failure triage 已完成兩次連續成功執行；根因、修正、本機 E2E 與 run／attempt 證據記於封存檔。封存不代表外部真人驗收已完成。
 
 ## 2. 需要產品決定或目前暫緩（不是可自行執行的開發）
 

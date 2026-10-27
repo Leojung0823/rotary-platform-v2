@@ -1,9 +1,11 @@
 name: Browser Smoke
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -26,7 +28,7 @@ jobs:
     needs: change-scope
     if: needs.change-scope.outputs.run_full == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 75
     env:
       E2E_ADMIN_EMAIL: admin@example.test
       E2E_BASE_URL: http://localhost:3000
@@ -100,15 +102,7 @@ jobs:
 
       - name: Start local Supabase
         shell: bash
-        run: |
-          if timeout -k 30 600 supabase start > /tmp/supabase-start.log 2>&1; then
-            :
-          else
-            status=$?
-            echo "Local Supabase failed or timed out while starting (status ${status})."
-            tail -n 80 /tmp/supabase-start.log
-            exit 1
-          fi
+        run: bash scripts/retry-supabase-start.sh full -x 'studio,imgproxy,logflare,vector,edge-runtime,realtime,postgres-meta,supavisor'
 
       - name: Reset local database from migrations
         shell: bash
