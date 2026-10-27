@@ -231,6 +231,7 @@ describe("current navigation resolver", () => {
     expect(resolveCurrentNavigationItemId(items, "/dashboard")).toBe("home");
     expect(resolveCurrentNavigationItemId(items, "/dashboard/detail")).toBeNull();
     expect(resolveCurrentNavigationItemId(items, "/events/fixture-event")).toBe("events");
+    expect(resolveCurrentNavigationItemId(items, "/topics/fixture-topic")).toBe("interact");
     expect(resolveCurrentNavigationItemId(items, "/directory/fixture-member")).toBe("directory");
     expect(resolveCurrentNavigationItemId(items, "/me/security")).toBe("account");
     expect(resolveCurrentNavigationItemId(items, "/eventual")).toBeNull();
@@ -264,6 +265,10 @@ describe("current navigation resolver", () => {
     )).toBe("overview");
     expect(resolveCurrentNavigationItemId(management, "/attendance/manage/fixture-event"))
       .toBe("attendance");
+    expect(resolveCurrentNavigationItemId(
+      management,
+      "/clubs/" + memberClub.club_id + "/topics/fixture-topic",
+    )).toBe("overview");
     expect(resolveCurrentNavigationItemId(management, "/messages/fixture-message"))
       .toBe("messages");
 

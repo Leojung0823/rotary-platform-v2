@@ -10,9 +10,10 @@ const taskProjection = latestDefinition("list_my_member_pending_tasks");
 const taskMigration = readFileSync("supabase/migrations/20261002000200_member_task_center.sql", "utf8");
 const joyTaskMigration = readFileSync("supabase/migrations/20261002000400_joy_iou_member_tasks.sql", "utf8");
 const joyQuestionDeadlineMigration = readFileSync("supabase/migrations/20261003000700_joy_question_task_deadlines.sql", "utf8");
+const discussionTopicMigration = readFileSync("supabase/migrations/20261027000400_discussion_topics_v1.sql", "utf8");
 
 /** The kinds that genuinely have a due date. */
-const withDeadline = ["event_response", "birthday_wish", "joy_question"];
+const withDeadline = ["event_response", "birthday_wish", "joy_question", "topic_discussion"];
 /** The kinds that cannot be late, and so must never say they are. */
 const withoutDeadline = ["dues_outstanding", "unread_messages", "profile_incomplete"];
 
@@ -118,7 +119,8 @@ describe("待辦提醒不只有活動報名", () => {
 
   it("emits every kind the page knows how to draw", () => {
     for (const kind of pendingTaskKinds) {
-      const emittingDefinition = kind === "joy_iou" || kind === "joy_question" ? joyTaskMigration : projection;
+      const emittingDefinition = kind === "joy_iou" || kind === "joy_question" ? joyTaskMigration
+        : kind === "topic_discussion" ? discussionTopicMigration : projection;
       expect(emittingDefinition, `the projection never emits ${kind}`).toContain(`'kind', '${kind}'`);
     }
   });
@@ -128,6 +130,17 @@ describe("待辦提醒不只有活動報名", () => {
     expect(joyQuestionDeadlineMigration).toContain("at time zone 'Asia/Taipei'");
     expect(joyQuestionDeadlineMigration).toContain("'is_overdue'");
     expect(joyQuestionDeadlineMigration).not.toMatch(/where[\s\S]*?due_on\s*>=/iu);
+  });
+
+  it("adds discussion vote reminders to both task projections and removes them after voting or deadline", () => {
+    expect(discussionTopicMigration).toContain("'public.list_my_member_pending_tasks(uuid,integer,integer,boolean)'");
+    expect(discussionTopicMigration).toContain("'public.list_my_member_pending_tasks_with_joy_tasks(uuid,integer,integer,boolean,boolean)'");
+    expect(discussionTopicMigration).toContain("ballot.membership_id = active_membership_id");
+    expect(discussionTopicMigration).toContain("topic.deadline_at > statement_timestamp()");
+    expect(discussionTopicMigration).toContain("concat('/topics/', task.topic_id::text");
+    expect(discussionTopicMigration).toContain("replace(function_definition, cte_marker, '')");
+    expect(discussionTopicMigration).toContain("replace(function_definition, counted_marker, '')");
+    expect(discussionTopicMigration).toContain("discussion topic tasks were not added to both member task projections");
   });
 
   it("keeps overdue IOUs visible without inventing a negative countdown", () => {
@@ -175,6 +188,11 @@ describe("一個不可能遲到的提醒不准說自己快遲到了", () => {
   it.each(withDeadline)("%s does carry one", (kind) => {
     if (kind === "joy_question") {
       expect(joyQuestionDeadlineMigration).toContain("'hours_remaining', case");
+      return;
+    }
+    if (kind === "topic_discussion") {
+      expect(discussionTopicMigration).toContain("'deadline', task.deadline_at");
+      expect(discussionTopicMigration).toContain("'hours_remaining', greatest(0");
       return;
     }
     const branch = projection.slice(projection.indexOf(`'kind', '${kind}'`));

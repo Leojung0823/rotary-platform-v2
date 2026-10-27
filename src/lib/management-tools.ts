@@ -53,6 +53,12 @@ export function managementToolsForClub(
       description: "更新社員服務、職業服務、社區服務與國際服務成果。",
       href: managementToolHref(clubId, "service-plan"),
     } : null,
+    hasPermission("discussion.manage") ? {
+      id: "discussion-topics",
+      title: "議題討論",
+      description: "發佈議題、設定參與對象與截止時間，並檢視討論和投票結果。",
+      href: managementToolHref(clubId, "topics"),
+    } : null,
     features.blessingIouEnabled && hasPermission("blessing_iou.manage") ? {
       id: "blessing-iou",
       title: "祝福 IOU",

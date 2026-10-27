@@ -7,6 +7,7 @@ const allPermissions = [
   "invitation.manage",
   "identity.read",
   "service_plan.manage",
+  "discussion.manage",
   "blessing_iou.manage",
   "finance.read",
   "role.manage",
@@ -25,6 +26,7 @@ describe("management overview cards", () => {
       "invitations",
       "identity",
       "service-plan",
+      "discussion-topics",
       "blessing-iou",
       "dues-finance",
       "birthday-collection",
@@ -48,6 +50,13 @@ describe("management overview cards", () => {
       .toBe("/clubs/club%2Fwith%20spaces/archives?mode=management");
     expect(tools.find((tool) => tool.id === "service-plan")?.href)
       .toBe("/clubs/club%2Fwith%20spaces/service-plan?mode=management");
+    expect(tools.find((tool) => tool.id === "discussion-topics")?.href)
+      .toBe("/clubs/club%2Fwith%20spaces/topics?mode=management");
     expect(tools.some((tool) => tool.id === "messages")).toBe(false);
+  });
+
+  it("never exposes discussion administration without its permission", () => {
+    expect(managementToolsForClub(clubId, ["member.manage"], allFeatures)
+      .some((tool) => tool.id === "discussion-topics")).toBe(false);
   });
 });

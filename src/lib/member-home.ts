@@ -73,6 +73,7 @@ export const pendingTaskKinds = [
   "profile_incomplete",
   "joy_iou",
   "joy_question",
+  "topic_discussion",
 ] as const;
 export type PendingTaskKind = (typeof pendingTaskKinds)[number];
 

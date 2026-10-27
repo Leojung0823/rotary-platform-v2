@@ -32,6 +32,7 @@ test("the member homepage opens an interaction hub that reaches all four social 
   // Every card must actually open its page rather than 404. The finance card
   // deep-links to the member's advance application, not the management ledger.
   for (const [name, pattern, anchor] of [
+    ["議題討論", /\/topics/u],
     ["留言板", /\/board/u],
     ["生日祝福", /\/birthdays/u],
     ["祝福 IOU", /\/blessings/u],

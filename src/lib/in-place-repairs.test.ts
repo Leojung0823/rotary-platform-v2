@@ -22,6 +22,15 @@ function repairs(): Repair[] {
     const text = readFileSync(join(migrations, file), "utf8");
     if (!text.includes("pg_get_functiondef") && !text.includes("to_regprocedure")) continue;
     const target = /'public\.(\w+)\([^)]*\)'/u.exec(text)?.[1];
+    // New task kinds are spliced into both existing member-task projections
+    // through unique CTE markers. This is an additive composition, not a repair
+    // that replaces an old definition; its migration checks marker uniqueness
+    // and verifies both resulting database definitions after execution.
+    const additiveTaskProjection = text.includes("cte_marker text := '  ), candidate_tasks as ('")
+      && text.includes("counted_marker text := '  ), counted as ('")
+      && text.includes("discussion_topic_actionable")
+      && text.includes("discussion topic tasks were not added to both member task projections");
+    if (additiveTaskProjection) continue;
     expect(target, `${file} repairs a function in place but names none`).toBeTruthy();
     // A migration may read an existing definition to create a separate wrapper.
     // That does not rewrite the source function and must not be treated as an

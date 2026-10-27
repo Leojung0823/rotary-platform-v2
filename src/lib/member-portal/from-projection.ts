@@ -121,6 +121,7 @@ const taskIcons: Record<MemberHomePendingTask["kind"], PortalTask["icon"]> = {
   profile_incomplete: "user",
   joy_iou: "heart",
   joy_question: "bell",
+  topic_discussion: "bell",
 };
 
 /**

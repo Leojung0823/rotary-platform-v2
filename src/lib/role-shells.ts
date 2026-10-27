@@ -117,11 +117,18 @@ export function resolveCurrentNavigationItemId(
 
   if (bestMatch) return bestMatch.id;
 
+  // Discussion topics are member content inside 社內互動, and a low-frequency
+  // management tool. Keep each mode's existing navigation destination selected.
+  if (currentPath === "/topics" || currentPath.startsWith("/topics/")) {
+    const interact = items.find((item) => item.id === "interact");
+    if (interact) return interact.id;
+  }
+
   // Low-frequency management tools intentionally live in the overview card
   // area instead of consuming a first-level tab. Keep the overview selected
   // while one of those child routes is open, so the shell never looks blank.
   const managementOverview = items.find((item) => item.id === "overview");
-  if (managementOverview && /^\/clubs\/[^/]+\/(?:archives|birthday-collection|blessing-iou|dues|identity|invitations|operators|service-plan)(?:\/|$)/u.test(currentPath)) {
+  if (managementOverview && /^\/clubs\/[^/]+\/(?:archives|birthday-collection|blessing-iou|dues|identity|invitations|operators|service-plan|topics)(?:\/|$)/u.test(currentPath)) {
     return managementOverview.id;
   }
 

@@ -26,6 +26,12 @@ export default async function InteractPage() {
   const birthdayWishesEnabled = birthdayWishesV1.enabled || birthdayWishesV2.enabled;
 
   const entries: InteractionEntry[] = [];
+  entries.push({
+    href: "/topics",
+    title: "議題討論",
+    body: "參與社團議題、留下想法並投票表達意見。",
+    icon: "chat",
+  });
   if (messageBoard.enabled) {
     entries.push({
       href: "/board",
