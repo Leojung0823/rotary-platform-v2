@@ -6,8 +6,8 @@
 
 ## 2026-10-27 最新狀態基準
 
-- GitHub `main` 已含待辦整理 commit `578ab690b0b17ce9a139eea0037ab5bb6da8523e`、效能診斷工具 revision `59958784efc157c64f4bc87c3c1940b8cb5a5836`，以及 Browser Smoke 修正 commit `47589943b023b393ed50a619310038189270a3d8`。產品 staging revision 仍是 `11e931eb5d2a50d324d4ceb1d683af3c267043e0`；本次 Smoke／Joy UI 修正只同步 main，沒有部署 staging。
-- 最近一次 staging health 為 `status=ok`、`issues=[]`；production 本輪沒有修改。
+- GitHub `main` 最新 commit 為 `3543b58bf8bd27b663a09b191b3cf65e0990ee44`，包含 Browser Smoke 修正與封存結案紀錄。Staging Release plan `40448096523` dry-run 成功，遠端資料庫沒有待套用 migration；Staging Go-Live `40448288080` 已部署並通過 HTTPS smoke 與 hosted member acceptance。
+- Staging 目前 revision 為 `3543b58bf8bd`；`/api/health` 回傳 `status=ok`、`issues=[]`、HTTP 200。production 本輪沒有修改。
 - E-12 本機加密 public-only logical export 與隔離還原演練已完成；它不包含 Auth、Storage 物件或 Supabase 專案設定，不等於完整災難復原。備份與解密私鑰留在 repo 外本機私密目錄；一次性 staging-only token 已撤銷。
 - E-06 已結案，見封存檔 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。
 
