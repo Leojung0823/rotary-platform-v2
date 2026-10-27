@@ -176,6 +176,6 @@ verification 要測「誰不能做什麼」，不只是成功路徑：
 |---|---|---|
 | migration | `20260902000200` | `20260902000300` 起 |
 | 主要檔案 | `api/line-oa/webhook/[clubId]/route.ts` | `lib/line/oa-dispatch.ts`、公告／活動／生日 server code |
-| 共用檔 | `scripts/database-verification-files.txt`（各 append 一行）、`docs/product/TO-DO-LIST.md`（各寫自己的段落） |
+| 共用檔 | `scripts/database-verification-files.txt`（各 append 一行）、根目錄 `TO-DO-LIST.md`（各寫自己的段落） |
 
 `AGENTS.md` §2：**不要對別人的分支 force push，用 merge 不要 rebase。**

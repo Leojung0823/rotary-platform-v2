@@ -7,8 +7,8 @@
 - 發布規則：新功能成功部署後自動可用，不要求人工開旗標；緊急停用仍須受保護，既有 opt-in 功能不批次開啟。此規則不自動啟動外部訊息排程，也不取代登入、角色、社籍、RLS／RPC 權限。
 - 已部署至 staging 的產品 revision：`3543b58bf8bd27b663a09b191b3cf65e0990ee44`。Staging Release plan `40448096523` dry-run 成功，確認沒有待套用 migration；Go-Live `40448288080` 已完成部署、exact revision wait、HTTPS smoke 與受保護社員驗收。`/api/health` 回報 `status=ok`、`issues=[]`、`warnings=[]`；production 未修改。之後 main 的文件同步不代表 staging runtime 版本改變。
 - E-12 本機加密 logical export 與 public-only 隔離還原演練完成：密文與 checksum 留在本機 repo 外私密目錄，檔名 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`。98 張表／3,398 筆資料逐表吻合，98 張表 RLS 啟用、Auth 外鍵有效；72 個 Auth IDs 僅為隔離演練的合成占位，不含真實 Auth／Storage／平台設定，也不代表完整災難復原。沒有上傳，短期 staging-only scoped token 已撤銷。
-- E-06 已依產品決定結案：run `40430963025` 的社員／管理首頁 LCP、TTFB、INP 均達 Core Web Vitals 良好門檻；不再追查剩餘伺服器等待，也未宣稱已加速。歷史測量、限制與保留的診斷工具見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md) 及 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。
-- E-07、E-11、PR #204 真人／手機驗收依產品決定封存但未驗收；E-08 production 發布前須重新評估是否補做，E-09 暫緩。PR #204 維持 open/draft、不合併；Message Center scheduler 不啟動且不建立排程。LINE OA 僅使用 `PANCHIAO-ELITE`，HAPPY 不使用。唯一現行工程待辦以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 為準。
+- E-06 已依產品決定結案：run `40430963025` 的社員／管理首頁 LCP、TTFB、INP 均達 Core Web Vitals 良好門檻；不再追查剩餘伺服器等待，也未宣稱已加速。歷史測量、限制與保留的診斷工具見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md) 及根目錄 [`TO-DO-LIST-HISTORY-2026-10-27.md`](../../TO-DO-LIST-HISTORY-2026-10-27.md)。
+- E-07、E-11、PR #204 真人／手機驗收依產品決定封存但未驗收；E-08 production 發布前須重新評估是否補做，E-09 暫緩。PR #204 維持 open/draft、不合併；Message Center scheduler 不啟動且不建立排程。LINE OA 僅使用 `PANCHIAO-ELITE`，HAPPY 不使用。唯一現行工程待辦以根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md) 為準。
 
 ## 2026-10-27 前次 staging／部署核對（歷史狀態）
 
@@ -16,7 +16,7 @@
 - 截至本次文件同步前，GitHub `main` 基準 SHA 為 `dfffeb17886775fe72a01533cd82cf98fc9ebcf2`；同步後的最新 SHA 請以 `git rev-parse origin/main` 核對。產品程式仍是已部署 staging revision `eba0815a31e2`。該產品版 CI `40415448937`、Browser Smoke `40415449015`、Staging Release plan `40415907270`、Go-Live `40417434022` 成功；9 支 migration 已套用，2026-10-27 health 為 `status=ok`、`issues=[]`、`warnings=[]`。只部署 staging，production 未修改。
 - E-12 本機加密 logical backup 尚未產生：主 checkout `.env.staging` 欄位齊全但目前 Management API token 回 HTTP `401`；FileVault 與本機接收憑證／私鑰已就緒，輸出目錄仍空。沒有上傳或修改 hosted 資料；Go-Live 採 migration review 後的 staging-only additive forward-fix，不得稱為已備份。
 - E-06 專項 warm 量測 run `40419925680` 成功，staging revision `eba0815`、受保護登入、desktop Chromium、每頁 5 次：社員首頁中位數 LCP/FCP/TTFB/INP `776/384/357.8/16 ms`，管理首頁 `856/396/352/16 ms`；CDP 摘要兩頁均 0 長任務。與同一 revision 的前次 warm run `40417885104` 數值差距明顯，且現有工具沒有 LCP 元素／資源時間，因此仍無法定位根因或宣稱整體變快。細節見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
-- Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對已由產品負責人確認真人驗收完成、可用（只使用 `PANCHIAO-ELITE`；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。PR #204 的 recovery email 完整重設流程仍待真人 hosted 驗收，不自動合併。細節見 `TO-DO-LIST.md`、`CURRENT_SESSION_HANDOFF.md`。
+- Message Center scheduler 是獨立營運設定，未經送達對象驗收前不啟動。E-03 LINE OA follow 自動配對已由產品負責人確認真人驗收完成、可用（只使用 `PANCHIAO-ELITE`；HAPPY 不使用）；E-07、E-11 仍需真人／手機／LINE 外部操作；E-08 是 production 決策，production 未修改；E-09 custom SMTP 維持暫緩。PR #204 的 recovery email 完整重設流程仍待真人 hosted 驗收，不自動合併。細節見根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md) 與 [`CURRENT_SESSION_HANDOFF.md`](./CURRENT_SESSION_HANDOFF.md)。
 
 ## 2026-10-27 歡喜牆互動封鎖（已同步 main 並部署 staging）
 
@@ -79,7 +79,7 @@
 - 功能 commit `07de2e0da4754647026fe76d55a5449f961ccbe2` 與 migration `20261026000100_joy_recipient_actions.sql` 已同步 main；沒有為功能另開 PR。後續 CI `40295780260` 與 Browser Smoke `40295780270` 通過。
 - 收件人可私下確認已收到，作者只取得匿名總數；要求幹部隱藏會進既有審核佇列，不會直接隱藏貼文。新增 migration `20261026000100_joy_recipient_actions.sql`、API/UI 與安全驗證，沿用 `joy_wall_v1`，沒有新增旗標或改權限模型。
 - 原始驗證為 217 檔／1,609 tests、typecheck、lint、build、migration guard、85 份 SQL verification、隔離 Supabase replay 與指定桌機 E2E 1/1；後續 main CI／Browser Smoke 亦成功。
-- Staging Release `40297992217` 已於 2026-10-26 核准並成功完成，但只對 SHA `931dd23` 做 migration dry-run，沒有套用 migration 或部署。尚未開啟 hosted flag 或完成真人 staging 驗收；Go-Live 前仍受 E-12 備份與受保護發布流程限制。Issue #4 仍有其他開發與發布工作，詳見 `TO-DO-LIST.md`。
+- Staging Release `40297992217` 已於 2026-10-26 核准並成功完成，但只對 SHA `931dd23` 做 migration dry-run，沒有套用 migration 或部署。尚未開啟 hosted flag 或完成真人 staging 驗收；Go-Live 前仍受 E-12 備份與受保護發布流程限制。Issue #4 仍有其他開發與發布工作，詳見根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md)。
 
 ## 2026-10-26 活動單擊報名與首頁活動定位（已部署 staging 並驗收）
 
@@ -144,7 +144,7 @@
 - staging health 為 `revision=b6a184bb4c44`、status `ok`、issues／warnings 空，但仍早於目前 main；目前 main 尚未部署。最新成功 Go-Live `36831610118` 只對應 b6a184；waiting Release `36920967197` 是舊 SHA `e388933`，較新的 Release `37063069490` 已取消，皆不能沿用到目前 main。production 未修改。
 - 尚待外部／真人：#25 iPhone／Android 實機與 staging 社員流程、#36 staging 出席角色隔離、#44 新 recovery email 真人重設閉環、#55 五位 M1、E-11 各社 OA／Rich Menu 手機驗收、E-12 本機加密備份及 restore。2026-10-27 唯讀重驗時 `.env.staging` 的 staging ref、access token、DB password 欄位皆有值，但 project identity API request 仍失敗；沒有新備份或 hosted 寫入。Issue #4 已同步的功能詳見本文件上方 2026-10-27 狀態；尚待封鎖互動與本人同意後的生日／回憶素材整合及保存政策。
 - 當時的掃描曾將收件人動作列為本機未同步；後續 Git ancestry 確認功能 commit `07de2e0` 已進 `origin/main@931dd23`，且後續 CI／Browser Smoke 成功。該歷史狀態不可當成現況；Staging Release `40297992217` 僅為 dry-run，仍未由此證明 staging 已部署。
-- 這不是 Issue #4 的完成宣告。IOU 提醒與題庫／批次派題程式已在 main，但 staging 尚未部署、旗標仍按既有 fail-closed 流程管理；站內提醒未新增。未開發模組及外部驗收須分別結案，詳見 [`TO-DO-LIST.md`](./TO-DO-LIST.md)。
+- 這不是 Issue #4 的完成宣告。IOU 提醒與題庫／批次派題程式已在 main，但 staging 尚未部署、旗標仍按既有 fail-closed 流程管理；站內提醒未新增。未開發模組及外部驗收須分別結案，詳見根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md)。
 
 ## 2026-10-02 本機備份安全修正（main `363e7cf`；尚未完成匯出）
 
@@ -632,7 +632,7 @@ Staging Go-Live `35083792540` 已發布產品程式 `1ef38bb`。後續主線只�
   `issues=[]`、`warnings=[]`；production 沒有修改。
 - 因此目前 `main` 的程式與 migration 已包含在 staging release；Rich Menu、社費／報表、生日設定、
   社務服務計劃、活動編輯、活動推播版本與 active-club redirect 的「已部署」狀態已更新，但各自的 hosted／真人／OA 驗收仍依 E-01–E-11 管理。
-- 當時主線曾有 staging 受控 logical backup workflow；backup run `34912448897` 是歷史紀錄，細節與目前政策修正見 `TO-DO-LIST.md` 的 E-12。
+- 當時主線曾有 staging 受控 logical backup workflow；backup run `34912448897` 是歷史紀錄，細節與目前政策修正見根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md) 的 E-12。
 - 主線 CI `34855905908` 的 database job 在設定 Supabase CLI 時遇到外部 HTTP 504；validate job 通過，不能把這次工具下載失敗當成程式檢查通過。
 - Staging Release `34842549154` 的 dry-run 曾明確拒絕地點 migration，原因是遠端已有 `20260914000800`。#115 已把 `include_all` 做成預設關閉的明確 workflow input；#118 進一步把未套用的地點 migration 改為 `20260914000900`，消除 clean reset 的同號錯誤。
 - 目前 `main` 的 migration 版本已無重複；下一次 staging 發布應使用最新 `main` 的 exact SHA，並先確認 plan／Go-Live 的 migration 與 health 結果。
@@ -675,7 +675,7 @@ follow 事件自動配對真人驗收。
 出席 UI 整合已完成，並且如原本要求的那樣繼續使用 PR #61 的 canonical Attendance RPC，未另建 authority。
 
 所有需要 LINE Developers Console、Render／GitHub secret、staging 發布、Chrome DevTools、實機／真人驗收或產品決策的項目，
-目前可執行的待辦統一記在 [`TO-DO-LIST.md`](./TO-DO-LIST.md)；已完成與依產品決定封存的項目及證據見 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。本文件只保留路線與依賴，不另維護第二份待辦清單。
+目前可執行的待辦統一記在根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md)；已完成與依產品決定封存的項目及證據見 [`TO-DO-LIST-HISTORY-2026-10-27.md`](../../TO-DO-LIST-HISTORY-2026-10-27.md)。本文件只保留路線與依賴，不另維護第二份待辦清單。
 
 ## 開發原則
 
@@ -750,13 +750,13 @@ Phase 2 之後追加並完成的社務功能：
 以下是實作與本文件原則之間目前存在的落差，記錄於此以免被誤認為已處理：
 
 - `birthday_wishes_v1`、`message_board_v1`、`archive_handover_v1` 已由 `20260823000100_existing_domain_feature_flags.sql` 納入 direct-route gate 與 rollback allow-list；`birthday_wishes_v2` 已由 `20260824000400_birthday_wishes_v2_core.sql` 納入明確啟用清單。這些 key 能 rollback，但多數仍預設關閉或需要明確 row，**已完成不等於社員現在看得到**。
-- GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見 `TO-DO-LIST.md` 第 1 節。
+- GPS accuracy 政策已於 2026-08-31 決定：**不設 accuracy 門檻**，只以 200 公尺距離判定；`maximumAge: 0` 已涵蓋定位新鮮度。理由與「不要自行補門檻」的提醒見根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md) 第 1 節。
 - staging 目前 runtime 是 `1ef38bb50407`，`/api/health` 的 `issues` 與 `warnings` 都是空的；Go-Live 使用 exact SHA
   `1ef38bb504075d7a197e99c2364db8b087cea22e`。GitHub `main` 後續若只有文件同步而前進，不能因此宣稱 staging runtime 也前進；
   閱讀本文件時仍應把 release source SHA 與 staging runtime 分開看。
 - PR #135 前的 staging 實測曾在社員切換社團時回傳內部 `0.0.0.0:10000` redirect；PR #135 已在 `main` 改用受信任的公開站台網址，
   並已隨本次 Go-Live 發布；仍要完成一次 hosted 社團切換回歸，才能把使用者行為標為完成。
-- Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見 `TO-DO-LIST.md` 第 2 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試依 2026-10-27 產品決定封存、未驗收，production 發布前須重新評估是否補做。
+- Auth 同步 workflow 已修復並通過（run `33400262734`），staging redirect 已同步並驗證。recovery email 範本與 custom SMTP 已由產品決定**暫時擱置**（LINE login 是主要登入方式），詳見根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md) 第 2 節；擱置期間不要拿 recovery 信件當驗收證據。iOS／Android 實機驗收與 M1 使用者測試依 2026-10-27 產品決定封存、未驗收，production 發布前須重新評估是否補做。
 - 生日祝福徵集的排程、題庫、每月公平派發與幹部工作台已完成程式與本機資料庫驗證，且已包含在 staging `1ef38bb50407`；生日旗標、Render scheduler secret、migration、HTTPS smoke 與 hosted acceptance 均已完成。生日邀請真人送達與冪等重跑已由 scheduler `34695450977`／`34695655038` 驗收；follow identity pairing 仍依 E-03 待精確身份核對。
 - 生日 scheduler 的環境隔離問題已修正：workflow 使用只允許 `main` 的 `birthday-scheduler` environment，並保留 staging 部署保護；secret 已同步。不可移除 staging 保護或把部署用 secrets 暴露給無審核 job。
 - 本輪已完成並部署 webhook redelivery 雜湊修補、LINE OA 管理頁安全環境變數名稱投影與生日徵集 LINE 推播程式；前兩項的本機 verification、後一項的 service-role boundary 均已通過。舊 webhook row 只保存舊版 raw hash，無法安全回算，因此舊事件的失敗重送不自動放寬檢查。
@@ -1029,6 +1029,6 @@ PR-01c 不做：
 
 ## Current Next Actions
 
-唯一現行待辦與可執行項目以 [`TO-DO-LIST.md`](./TO-DO-LIST.md) 為準；歷史驗收證據、已完成項目與 2026-10-27 封存決定見 [`TO-DO-LIST-HISTORY-2026-10-27.md`](./TO-DO-LIST-HISTORY-2026-10-27.md)。E-06 已依產品決定結案、未宣稱已加速；E-07、E-11、PR #204 真人驗收封存但未驗收。E-08 production 發布前需重新評估是否補做，E-09 維持暫緩。不要從本路線圖重開已封存項目。
+唯一現行待辦與可執行項目以根目錄 [`TO-DO-LIST.md`](../../TO-DO-LIST.md) 為準；歷史驗收證據、已完成項目與 2026-10-27 封存決定見 [`TO-DO-LIST-HISTORY-2026-10-27.md`](../../TO-DO-LIST-HISTORY-2026-10-27.md)。E-06 已依產品決定結案、未宣稱已加速；E-07、E-11、PR #204 真人驗收封存但未驗收。E-08 production 發布前需重新評估是否補做，E-09 維持暫緩。不要從本路線圖重開已封存項目。
 
 目前採本地開發、完整驗證、清楚 commit 後同步 `main` 的節奏；production 永遠不在本輪範圍。staging 只能依受保護的 release／Go-Live workflow 操作，不得直接修改 hosted database，也不得使用真實社員資料驗證。#124、#126、#127、#130、#132、#135、#139 與 #145 已隨 Go-Live `34912921064` 發布；#136–#141 與 #143／#144／#146／#147 是文件／發布工具變更。後續若只有文件同步，不需要重新部署 staging。

@@ -8,7 +8,7 @@
 生日徵集邀請的 LINE 推播也已完成有收件人的實際送達與冪等重跑驗收：`34695450977` 送達、`34695655038` 重跑不重送；早期無收件人的 `34673612440` 只保留為歷史紀錄。
 GitHub `birthday-scheduler` 與正確 Render staging service 的 secret 已同步。production 仍未修改。
 
-所有需要外部平台、真人收訊、實機或產品決策的事項，統一回 [`TO-DO-LIST.md`](../product/TO-DO-LIST.md) E-01–E-11。
+所有需要外部平台、真人收訊、實機或產品決策的事項，統一回 [`TO-DO-LIST.md`](../../TO-DO-LIST.md) E-01–E-11。
 
 ## 憑證與環境變數
 
