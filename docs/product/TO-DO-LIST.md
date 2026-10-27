@@ -5,7 +5,7 @@
 ## 2026-10-27 最新 staging／待辦核對（本節優先）
 
 - staging 已部署產品 revision：`11e931eb5d2a50d324d4ceb1d683af3c267043e0`。CI `40424265531`、Browser Smoke `40424265620`、Release plan `40425814322`、Go-Live `40427019420` 成功；沒有新 migration，資料庫保持最新。staging health revision `11e931eb5d2a`、`status=ok`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過，production 未修改。
-- E-12 本機加密匯出完成：密文 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`；位於本機 repo 外私密目錄。AES-GCM/gzip 與 checksum 驗證通過，未落明文、未上傳。範圍僅 `public` schema 與資料，不含 Auth、Storage 物件或平台設定；短期 staging-only scoped token 已撤銷。尚未在隔離資料庫 restore，E-12 仍待演練。
+- E-12 本機加密匯出與 public-only 還原演練完成：密文 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`；位於本機 repo 外私密目錄。AES-GCM/gzip 與 checksum 通過；隔離、無網路 Supabase PostgreSQL 17.6 還原 98 張表／3,398 筆資料，表筆數逐一吻合、440 個函式載入、98 張表均啟用 RLS、3 個 Auth 外鍵通過驗證。為符合備份不含 Auth 的範圍，還原時只在隔離資料庫建立 72 個合成 Auth ID；這不是完整應用程式／災難復原。未落地明文、未上傳，短期 staging-only scoped token 已撤銷；不含 Auth、Storage 物件或平台設定。
 - E-06 run `40423362042` → `40427338234` 同條件比較（staging、warm cache、每頁 5 次）：管理首頁 LCP/FCP/TTFB/INP 中位數 `1104/348/314.3/16` → `748/304/288.3/16 ms`；社員首頁 `1096/428/325.2/16` → `1104/608/579.4/16 ms`。管理頁有正向觀察，社員頁未證明變快；E-06 仍待查社員頁 TTFB／LCP 波動。詳見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
 - E-03 LINE OA follow 自動配對真人驗收已由產品負責人確認完成、目前可用；只限已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。Message Center scheduler 專用環境仍未建立；送達對象驗收前不啟動排程。
 - PR #204 草稿空白到期日問題已修正並部署；PR #204 尚未合併，仍待專用測試帳號真人完成 recovery email「收信→確認→更新密碼→重新登入」hosted 驗收，不自動合併。
@@ -1022,11 +1022,12 @@ production 沒有修改。
 - **必要動作**：確認 production 備份／還原點、HTTPS 網域、server secrets、migration plan、人工核准閘門與回復步驟。
 - **安全界線**：本清單更新前 production 沒有修改；任何 production 操作要另開明確 release 任務。
 
-### E-12 staging 本機加密 logical backup `[>]`（匯出完成；restore 演練待做）
+### E-12 staging 本機加密 logical backup `[x]`（public-only 匯出與隔離還原演練完成；不是完整災難復原）
 
 - **2026-10-27 本機匯出完成**：在乾淨、與 `origin/main` 同 SHA 的 `main` checkout，使用已驗證的 staging session pooler 讀取，輸出到 repo 外 FileVault 保護目錄。密文 411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`；exporter 成功驗證 AES-256-GCM、gzip，並複核 checksum。明文未落地、檔案未上傳。一次性 scoped token 僅有指定 staging 專案的 Project Settings Read 權限，已於匯出後撤銷。
 - **檔案位置**：本機 repo 外私密目錄中的 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，checksum 同資料夾。解密私鑰保存在另一個本機私密目錄；需一併保留私鑰，否則密文不可還原。兩個目錄都不可提交 repo。
-- **尚未完成**：此檔只有 `public` schema 與資料，不含 `auth`、Storage 物件、secrets／project 設定。尚未還原至隔離 Supabase 專案；restore drill 仍待做，因此 E-12 保持 `[>]`，不得稱為完整復原演練完成。
+- **2026-10-27 隔離還原演練完成**：解密只在記憶體串流，載入到無網路、臨時 Supabase PostgreSQL 17.6 容器，逐表比較 98 張表共 3,398 筆資料，全部吻合；440 個函式載入、98 張表的 RLS 均啟用、3 個指向 `auth.users` 的外鍵均有效，0 個未驗證 constraint。因備份明確不含 Auth，演練只建立 72 個合成 Auth user ID 以驗證 public 外鍵；不含真實 Auth 使用者欄位、Storage bytes、Secrets 或平台設定，也沒有做登入／API／檔案層級的應用程式恢復測試。臨時容器已停止並移除，正式 staging／production 與既有本機 Supabase 資料未修改。
+- **結案範圍**：`[x]` 僅代表本機加密的 `public` schema logical export 與隔離資料庫 schema/data restore drill 完成，不等同 Supabase 專案完整備份或完整災難復原。若未來要完整恢復登入、Storage 或專案設定，必須另有對應備份來源與演練。
 
 - **限制仍在**：staging Supabase Free 方案沒有內建 project backup／PITR；因此採用受控匯出，不把它誤稱為 Supabase 原生備份。
 - **歷史證據**：2026-09-15 backup run `34912448897` 曾把加密 artifact `10374966439` 放在 GitHub Actions，之後下載、解密驗證，再刪除 artifact 與明文檔。這證明當時匯出成功，
