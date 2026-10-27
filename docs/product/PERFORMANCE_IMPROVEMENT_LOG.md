@@ -5,6 +5,23 @@
 這是效能改善的共同紀錄。每次要修改載入速度、快取、Server Component
 或資料查詢前，先讀本文件；完成後把量測條件、數字與未量測項目補回來。
 
+## 2026-10-27 E-06 proxy auth 時間與 LCP 歸因診斷（run `40430963025`；根因尚未完全定位）
+
+- 測量 staging 產品 revision `11e931eb5d2a50d324d4ceb1d683af3c267043e0`；工作流程測試程式 revision `59958784efc157c64f4bc87c3c1940b8cb5a5836`。使用受保護社員／管理者測試登入、desktop Chromium、warm browser cache、每頁 5 次，未設定 CPU／網路限速。測量前 `/api/health` 為 `status=ok`、`issues=[]`、`warnings=[]`。沒有改產品程式、資料庫、feature flag 或 hosted 設定。
+- 欄位順序為 LCP／FCP／TTFB／INP，單位毫秒：
+
+| 頁面 | 五次樣本 | 中位數 |
+|---|---|---|
+| 社員首頁 `member-dashboard` | `832/340/314/16`、`660/340/309.6/16`、`996/320/292.6/16`、`1368/408/389.2/32`、`548/228/203.6/24` | **832/340/309.6/16 ms** |
+| 社務管理首頁 `management-dashboard` | `608/300/268.8/24`、`552/244/212.1/16`、`1288/236/207/16`、`836/524/493.5/16`、`1004/688/662/16` | **836/300/268.8/16 ms** |
+
+- 新增的 proxy auth `Server-Timing`（只量 proxy `getClaims`）中位數為社員 `1.5 ms`、管理 `1.6 ms`，所以 proxy 身份驗證本身不是約 270–310 ms TTFB 的主要解釋；這不包含頁面伺服器元件內的工作。
+- LCP 歸因：社員首頁 3/5 次以 `img.member-portal-module__wpzd3a__backdropImage`／`/hero-mountains.webp` 為 LCP，資源時間 `193.7/232.5/192.8 ms`，載入後 render delay `25.6/107.2/151.9 ms`、transfer size `300 B`；另 2/5 次 LCP 是 `h1`。管理首頁 5/5 次 LCP 都是 `h1`。CDP 摘要兩頁皆為 0 個長任務（`>=50 ms`）；原始 trace 沒有保存。
+- 同產品 revision 前次 `40427338234` 的中位數為社員 `1104/608/579.4/16 ms`、管理 `748/304/288.3/16 ms`。前後 run 差異不可歸因於本次診斷工具或產品優化，應視為相同 runtime 下的測量／主機波動。proxy auth timing 的 browser 數值只回傳名稱與時長給 runner，並由 Node 端套用有限範圍 sanitizer；不傳頁面內容、身份資料、cookie、URL 或原始 trace。
+- 對 staging `public.platform_product_telemetry` 的唯讀彙總查詢顯示最近 24 小時沒有可用事件，因此缺乏 `member_home_projection_duration`／`member_context_resolve_success` 的實際資料，無法拆解該層查詢耗時。沒有開啟 telemetry 旗標，也沒有寫入／修改 staging 資料。
+- Read-only source review：dashboard 已在 await 前並行啟動 identity、feature-flag row 與 experience-context；身份確認後，九個旗標 evaluation 以 `Promise.all` 執行。社員首頁的 member-home projection 與 LINE OA onboarding status 也並行，鈴鐺與主內容共用 request-scoped projection；主內容已有 `Suspense` skeleton，私有封面簽名在辨識路徑後另行啟動。這些既有設計表示不應再籠統建議「把查詢改成 Promise.all」或新增跨請求個資快取。
+- 結論：目前數字排除 proxy `getClaims`、長任務，以及 hero 圖載入是主要延遲的假設；伺服器其他 SSR／資料往返仍未拆解，因此不能宣稱已找到唯一根因或整體已變快。E-06 維持進行中。下一步是為社員首頁現有 server-side 阻塞階段建立不含個資的時間觀測，再以重複 staging 樣本確認，不要猜測性改權限、快取或資料查詢。
+
 ## 2026-10-27 管理首頁權限投影延後（run `40423362042` → `40427338234`；管理指標下降，社員頁未證明改善）
 
 - 產品 commit `11e931eb5d2a50d324d4ceb1d683af3c267043e0` 將只用來顯示導覽／首頁管理連結的權限投影移進既有 Suspense 邊界，不再阻擋主要內容；route、RPC、RLS、登入、角色與社團隔離均維持原狀。沒有新增 migration、快取或旗標。

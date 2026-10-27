@@ -6,7 +6,7 @@
 
 - staging 已部署產品 revision：`11e931eb5d2a50d324d4ceb1d683af3c267043e0`。CI `40424265531`、Browser Smoke `40424265620`、Release plan `40425814322`、Go-Live `40427019420` 成功；沒有新 migration，資料庫保持最新。staging health revision `11e931eb5d2a`、`status=ok`、`issues=[]`、`warnings=[]`；HTTPS smoke 與受保護社員驗收通過，production 未修改。
 - E-12 本機加密匯出與 public-only 還原演練完成：密文 `rotary-staging-public-11e931eb5d2a-20261027T002933Z.sql.gz.enc`，411,020 bytes，SHA-256 `e921abc8503fa3574b36a3f13be1faed29948bf8e5678e9473858d241a4c0552`；位於本機 repo 外私密目錄。AES-GCM/gzip 與 checksum 通過；隔離、無網路 Supabase PostgreSQL 17.6 還原 98 張表／3,398 筆資料，表筆數逐一吻合、440 個函式載入、98 張表均啟用 RLS、3 個 Auth 外鍵通過驗證。為符合備份不含 Auth 的範圍，還原時只在隔離資料庫建立 72 個合成 Auth ID；這不是完整應用程式／災難復原。未落地明文、未上傳，短期 staging-only scoped token 已撤銷；不含 Auth、Storage 物件或平台設定。
-- E-06 run `40423362042` → `40427338234` 同條件比較（staging、warm cache、每頁 5 次）：管理首頁 LCP/FCP/TTFB/INP 中位數 `1104/348/314.3/16` → `748/304/288.3/16 ms`；社員首頁 `1096/428/325.2/16` → `1104/608/579.4/16 ms`。管理頁有正向觀察，社員頁未證明變快；E-06 仍待查社員頁 TTFB／LCP 波動。詳見 `PERFORMANCE_IMPROVEMENT_LOG.md`。
+- E-06 最新診斷 run `40430963025`（產品 revision `11e931e`、staging、warm cache、每頁 5 次）：社員首頁 LCP/FCP/TTFB/INP 中位數 `832/340/309.6/16 ms`，管理首頁 `836/300/268.8/16 ms`。proxy auth 驗證中位數僅 `1.5/1.6 ms`，CDP 兩頁均 0 個長任務；社員首頁 hero 圖片載入約 `194–233 ms`，不是主要等待。這沒有定位其餘伺服器／資料往返耗時，也不是產品修改前後比較，不能宣稱整體已加速；E-06 仍進行中。詳細樣本與限制見 `PERFORMANCE_IMPROVEMENT_LOG.md`。診斷工具 CI `40430771863` 成功。Browser Smoke `40430771865` 首次執行 245 passed／123 skipped，Joy Wall 派題的 locator 逾時，另有 2 個測試重試後通過；截圖／錯誤上下文仍顯示派題與 `0/2 已回答`，失敗更像等待不穩但仍待重跑確認。Attempt 2 正在重跑失敗 job。
 - E-03 LINE OA follow 自動配對真人驗收已由產品負責人確認完成、目前可用；只限已設定的 `PANCHIAO-ELITE`，HAPPY 不使用。Message Center scheduler 專用環境仍未建立；送達對象驗收前不啟動排程。
 - PR #204 草稿空白到期日問題已修正並部署；PR #204 尚未合併，仍待專用測試帳號真人完成 recovery email「收信→確認→更新密碼→重新登入」hosted 驗收，不自動合併。
 - E-07（真實 iPhone／Android、M1 五位使用者測試）、E-11（各社 OA／Rich Menu 實機驗收）仍待真人／外部操作。E-08 是 production 決策與發布，未有明確範圍核准前不碰 production；E-09 custom SMTP 維持暫緩。
@@ -989,7 +989,6 @@ production 沒有修改。
 
 ### E-06 登入後管理頁效能量測 `[>]`
 
-- **2026-10-27 最新部署後比較**：run `40423362042`（修改前 runtime `eba0815`）與 `40427338234`（修改後 `11e931e`）使用相同受保護登入、desktop Chromium、warm cache、每頁 5 次。管理首頁 LCP/FCP/TTFB/INP 中位數 `1104/348/314.3/16` → `748/304/288.3/16 ms`；社員首頁 `1096/428/325.2/16` → `1104/608/579.4/16 ms`。管理頁方向正向，社員頁未證明變快，E-06 尚未結案。細節見 [`PERFORMANCE_IMPROVEMENT_LOG.md`](./PERFORMANCE_IMPROVEMENT_LOG.md)。
 - **已部署修正**：commit `11e931eb5d2a50d324d4ceb1d683af3c267043e0` 將管理權限投影移出首頁主要等待路徑；權限與 RPC/RLS 邊界不變。staging Go-Live `40427019420`、health 與受保護社員驗收通過。
 
 - **2026-09-16 已建立登入後基線**：同一個已登入 Chrome session、PANCHIAO-ELITE、viewport `1365×813`、DPR `1`、CPU `1x`、未限速；量測當時 staging runtime `1ef38bb50407`，目前已部署 runtime 為 `36f32f8a44e1`。
