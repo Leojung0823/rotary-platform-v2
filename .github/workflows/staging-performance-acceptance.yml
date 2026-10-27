@@ -109,6 +109,40 @@ jobs:
           STAGING_PERFORMANCE_OUTPUT: ${{ runner.temp }}/staging-performance-results.json
         run: npm --prefix e2e run test:staging-performance -- --project=desktop-chromium
 
+      - name: Set up Supabase CLI for read-only timing diagnostics
+        if: success()
+        uses: supabase/setup-cli@v2
+        continue-on-error: true
+        with:
+          version: 2.109.1
+          github-token: ${{ github.token }}
+
+      - name: Query privacy-safe staging timing aggregates
+        if: success()
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          EXPECTED_STAGING_SUPABASE_PROJECT_REF: vmmzdautcsgknhyqrsto
+          STAGING_DASHBOARD_TELEMETRY_OUTPUT: ${{ runner.temp }}/staging-dashboard-telemetry.json
+        shell: bash
+        run: |
+          if [ -z "$SUPABASE_PROJECT_REF" ] || [ "$SUPABASE_PROJECT_REF" != "$EXPECTED_STAGING_SUPABASE_PROJECT_REF" ]; then
+            echo "### Staging dashboard server-side timings" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Query refused because the configured project was missing or matched the production project." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! supabase --output-format json db query \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --file scripts/staging-dashboard-telemetry.sql \
+            > "$STAGING_DASHBOARD_TELEMETRY_OUTPUT" \
+            2>/dev/null; then
+            echo "### Staging dashboard server-side timings" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Read-only query unavailable; no credentials or raw database output were retained." >> "$GITHUB_STEP_SUMMARY"
+            rm -f "$STAGING_DASHBOARD_TELEMETRY_OUTPUT"
+            exit 0
+          fi
+          node scripts/append-staging-dashboard-telemetry-summary.mjs
+
       - name: Record performance baseline in the job summary
         if: success()
         env:

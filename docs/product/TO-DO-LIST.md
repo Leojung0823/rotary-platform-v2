@@ -19,8 +19,9 @@
 
 - **已完成**：為 staging 效能測試加入 proxy auth 計時與 LCP 歸因；查明 proxy auth、主執行緒長任務及首頁 hero 圖都不是目前看到的主要延遲。原始碼盤點確認 dashboard 已並行啟動身份、社團情境與旗標讀取；社員首頁也並行讀取首頁投影與 LINE OA onboarding，已有 request-scoped 去重及 Suspense 骨架。
 - **接下來**：補上不含個人資料的伺服器階段耗時證據，優先檢查 identity／context／首頁投影的實際等待，以及遙測寫入端是否可用；再用相同 staging、warm cache、每頁 5 次重測。不能只因同一產品 revision 的不同 run 有較低數字就宣稱改善。
+- **工具準備**：Staging Performance Acceptance 已加入只讀的 15 分鐘 staging telemetry 彙總；硬性比對 staging project ref，只輸出事件種類、樣本數、中位數、P95，不查個人識別資料或原始 payload。待此工具同步 main 後，以目前部署 revision 重跑量測；產品 runtime 不變，不需要重新部署。
 - **不可做**：不把整個登入首頁設為公開快取；不共用其他使用者的個人資料；不改登入、角色、RLS、RPC 權限或社團隔離。沒有證據前不猜測性改查詢或快取。
-- **驗證現況**：效能測試 CI `40430771863` 通過。Browser Smoke `40430771865` attempt 2 已結束但整體失敗；細節列於下方「Browser Smoke failure triage」。本結果不代表 staging 產品部署失敗，也不是效能測試失敗。
+- **驗證現況**：訊息中心 Browser Smoke 不穩定問題已另行修正並在最新完整 run 通過；E-06 仍待補伺服器階段耗時證據及同條件複測。本結果不代表 staging 產品部署失敗。
 
 ### E-07 iOS／Android 實機與 M1 使用者測試 `[ ]`
 
@@ -32,12 +33,6 @@
 - 程式已在 main／staging；待相關扶輪社完成其 LINE OA 後台設定，再以手機逐項點選 Rich Menu，確認導向正確社別與功能。
 - 目前產品確認只使用 `PANCHIAO-ELITE`；HAPPY 不使用，不得把 PANCHIAO 設定或憑證套用到 HAPPY。
 - 驗收須記錄每個已設定社別、實際 OA、手機結果；未設定的社別不得寫成已完成。
-
-### Browser Smoke failure triage `[>]`
-
-- run `40430771865` attempt 1：245 passed／123 skipped；Joy Wall 派題文字 locator 逾時，另 2 個案例重試後通過。錯誤截圖與上下文顯示派題成功、`0/2 已回答` 可見。
-- attempt 2：246 passed／123 skipped；Joy Wall 案例通過，但訊息中心 `tests/message-center.e2e.mjs:107` 等不到「草稿已儲存。」提示而失敗；定位簽到另有 1 個案例重試後通過。
-- **接下來**：檢查 attempt 2 的訊息中心錯誤上下文／狀態，確認是 UI 流程回歸、提示文字定位不穩，還是測試資料／時序問題；修因果，不要只放寬斷言。除非有新證據，這項與 E-06 效能診斷分開處理。
 
 ### PR #204 Recovery email hosted 真人驗收 `[>]`
 
@@ -71,6 +66,7 @@
 | E-05 | 推播超額「停止並通知管理員」政策、程式與 staging 驗收完成。 |
 | E-10 | 雙重社籍／跨社角色負向權限驗收完成。 |
 | E-12 | 本機加密 public-only 備份與隔離還原演練完成；範圍限制見上方基準。 |
+| Browser Smoke 訊息中心測試穩定性 | 根因是測試在收件對象選擇器 hydration 完成前輸入，送出時標題欄仍空白；測試現在等待載入完成並確認欄位值，不放寬產品驗收。CI `40436731139` 成功，完整 Browser Smoke `40436731002` 於 exact SHA `060e75b03cc14a5db3ffc9930af4018bd21e2f99` 成功（248 passed／123 skipped），兩項 rollback 測試通過。 |
 
 ## 4. 共用執行邊界
 
