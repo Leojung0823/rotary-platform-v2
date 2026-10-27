@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { DiscussionTopicListCard } from "@/components/discussion-topics/topic-list-card";
+import styles from "@/components/discussion-topics/topic-list.module.css";
 import { DiscussionTopicComposer } from "@/components/discussion-topics/topic-composer";
 import { Card, Notice } from "@/components/ui";
 import { requireIdentity } from "@/lib/auth";
@@ -8,11 +10,6 @@ import { parseDiscussionTopicList } from "@/lib/discussion-topics/contracts";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
-const dateTime = new Intl.DateTimeFormat("zh-TW", {
-  timeZone: "Asia/Taipei", month: "long", day: "numeric", weekday: "short",
-  hour: "2-digit", minute: "2-digit", hour12: false,
-});
-
 function audienceOptions(value: unknown): Record<string, unknown>[] {
   if (!Array.isArray(value)) return [];
   return value.filter((candidate): candidate is Record<string, unknown> =>
@@ -74,36 +71,30 @@ export default async function DiscussionTopicManagementPage({
     unexpected: "操作沒有完成，請稍後再試。",
   };
 
-  return <div className="page-stack">
+  return <div className={`page-stack ${styles.managementPage}`}>
     <ManagementHeader />
     {query.success === "published" && <Notice tone="success">議題已發佈，指定社員可在社員模式看到議題與投票提醒。</Notice>}
     {query.success === "deleted" && <Notice tone="success">議題已從社員端隱藏，投票與留言歷史已保留。</Notice>}
     {query.error && <Notice tone="error">{errorMessages[query.error] ?? errorMessages.unexpected}</Notice>}
     <Notice>截止後社員仍可閱讀歷史內容，但不能再留言或投票；未完成的待辦提醒也會自動消失。</Notice>
     <DiscussionTopicComposer clubId={clubId} tags={tags} members={members} />
-    <section className="page-stack" aria-labelledby="topic-list-heading">
-      <div className="section-heading"><div><p className="eyebrow">管理清單</p><h2 id="topic-list-heading">已發佈議題</h2></div></div>
-      {topics.length === 0 ? <Card><p>目前還沒有議題。</p></Card> : <div className="card-grid">
-        {topics.map((topic) => <Link key={topic.id} className="card card-link"
-          href={`/clubs/${encodeURIComponent(clubId)}/topics/${encodeURIComponent(topic.id)}?mode=management`}
-          prefetch={false}>
-          <div className="section-heading">
-            <div><p className="eyebrow">{topic.isOpen ? "討論中" : "已截止"}</p><h3>{topic.title}</h3></div>
-            <span>{topic.audienceCount ?? 0} 位對象</span>
-          </div>
-          <p>{topic.description}</p>
-          <p className="hint">截止：{dateTime.format(new Date(topic.deadlineAt))} · {topic.anonymousVotes ? "匿名投票" : "具名投票"} · {topic.voteCount} 票 · {topic.commentCount} 則留言</p>
-          {topic.audienceTags && topic.audienceTags.length > 0 && <p className="hint">標籤：{topic.audienceTags.join("、")}</p>}
-        </Link>)}
+    <section className={styles.list} aria-labelledby="topic-list-heading">
+      <div className={styles.listHeading}><h2 id="topic-list-heading">已發佈議題</h2><span>{topics.length} 件</span></div>
+      {topics.length === 0 ? <Card><p>目前還沒有議題。</p></Card> : <div className={styles.cards}>
+        {topics.map((topic) => <DiscussionTopicListCard key={topic.id} topic={topic} managementView
+          href={`/clubs/${encodeURIComponent(clubId)}/topics/${encodeURIComponent(topic.id)}?mode=management`} />)}
       </div>}
     </section>
   </div>;
 }
 
 function ManagementHeader() {
-  return <header className="page-header">
-    <div><p className="eyebrow">社務管理 · 社內互動</p><h1>議題討論管理</h1>
-      <p>發佈要討論的議題，指定全社、標籤或個別社員，並查看進度。</p></div>
-    <Link className="button button-secondary" href="/dashboard?mode=management" prefetch={false}>返回社務總覽</Link>
+  return <header className={styles.header}>
+    <div className={styles.headerTop}>
+      <p className={styles.context}>社務管理 · 社內互動</p>
+      <Link className={styles.backLink} href="/dashboard?mode=management" prefetch={false}>返回社務總覽</Link>
+    </div>
+    <h1 className={styles.pageTitle}>議題討論管理</h1>
+    <p className={styles.intro}>發佈要討論的議題，指定全社、標籤或個別社員，並查看進度。</p>
   </header>;
 }

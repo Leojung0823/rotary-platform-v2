@@ -45,10 +45,19 @@ test("幹部發佈議題後，社員收到待辦、留言投票，具名票只�
   await managerTopic.click();
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
 
-  const memberContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const memberContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   try {
     const memberPage = await memberContext.newPage();
     await signIn(memberPage, "e2e-shell-ordinary@example.test");
+    await memberPage.goto(new URL("/topics?clubId=" + clubId + "&mode=member", baseURL).toString());
+    const topicCard = memberPage.getByRole("link").filter({ hasText: title });
+    await expect(topicCard).toBeVisible();
+    await expect(topicCard).toHaveCSS("display", "grid");
+    await expect(topicCard.getByText("尚未投票")).toBeVisible();
+    const hasHorizontalOverflow = await memberPage.evaluate(() =>
+      document.documentElement.scrollWidth > document.documentElement.clientWidth);
+    expect(hasHorizontalOverflow).toBe(false);
+
     await memberPage.goto(new URL("/tasks?clubId=" + clubId + "&mode=member", baseURL).toString());
     const topicTask = memberPage.getByRole("link").filter({ hasText: title });
     await expect(topicTask).toBeVisible();
