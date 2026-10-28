@@ -36,6 +36,9 @@ describe("auth session proxy", () => {
     expect(shouldRefreshAuthSession("/birthdays")).toBe(true);
     expect(shouldRefreshAuthSession("/dashboard")).toBe(true);
     expect(shouldRefreshAuthSession("/messages")).toBe(true);
+    expect(shouldRefreshAuthSession("/topics/topic-id")).toBe(true);
+    expect(shouldRefreshAuthSession("/joy")).toBe(true);
+    expect(shouldRefreshAuthSession("/club-affairs")).toBe(true);
     expect(shouldRefreshAuthSession("/clubs/club-id/members")).toBe(true);
     expect(shouldRefreshAuthSession("/invite/accept")).toBe(true);
     expect(shouldRefreshAuthSession("/reset-password")).toBe(true);
@@ -69,7 +72,9 @@ describe("auth session proxy", () => {
     const response = await proxy(new NextRequest("https://app.example.test/dashboard?mode=platform"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+    const location = new URL(response.headers.get("location")!);
+    expect(location.pathname).toBe("/login");
+    expect(location.searchParams.get("returnTo")).toBe("/dashboard?mode=platform");
     expect(response.headers.get("server-timing")).toBeNull();
   });
 
@@ -96,7 +101,7 @@ describe("auth session proxy", () => {
     const response = await proxy(new NextRequest("https://app.example.test/events"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+    expect(new URL(response.headers.get("location")!).searchParams.get("returnTo")).toBe("/events");
   });
 
   it("fails closed when claims verification throws", async () => {
@@ -105,7 +110,7 @@ describe("auth session proxy", () => {
     const response = await proxy(new NextRequest("https://app.example.test/me"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+    expect(new URL(response.headers.get("location")!).searchParams.get("returnTo")).toBe("/me");
   });
 
   it("preserves refreshed auth cookies on the anonymous login redirect", async () => {
@@ -125,7 +130,7 @@ describe("auth session proxy", () => {
     const response = await proxy(new NextRequest("https://app.example.test/dashboard"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+    expect(new URL(response.headers.get("location")!).searchParams.get("returnTo")).toBe("/dashboard");
     expect(response.cookies.get("sb-example-auth-token")?.value).toBe("cleared-or-refreshed-session-cookie");
   });
 
@@ -135,8 +140,17 @@ describe("auth session proxy", () => {
     const response = await proxy(new NextRequest("https://app.example.test/dashboard"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://app.example.test/login");
+    expect(new URL(response.headers.get("location")!).searchParams.get("returnTo")).toBe("/dashboard");
     expect(mocks.createServerClient).not.toHaveBeenCalled();
+  });
+
+  it("preserves a shared topic path and its query without trusting the host as a destination", async () => {
+    mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: null });
+    const response = await proxy(new NextRequest("https://app.example.test/topics/abc?clubId=club-1&mode=member"));
+    const location = new URL(response.headers.get("location")!);
+    expect(location.origin).toBe("https://app.example.test");
+    expect(location.pathname).toBe("/login");
+    expect(location.searchParams.get("returnTo")).toBe("/topics/abc?clubId=club-1&mode=member");
   });
 
   it("forwards refreshed session cookies to this request and overwrites browser-supplied rotary headers", async () => {

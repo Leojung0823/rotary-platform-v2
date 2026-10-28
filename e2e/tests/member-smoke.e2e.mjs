@@ -46,7 +46,8 @@ test.describe("社員平台公開與權限邊界", () => {
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/dashboard");
-    await expect(page).toHaveURL(/\/login$/u);
+    await expect(page).toHaveURL(/\/login\?returnTo=%2Fdashboard$/u);
+    expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/dashboard");
     await expect(page.getByRole("heading", { level: 1, name: "歡迎回來" })).toBeVisible();
   });
 });

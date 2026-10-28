@@ -222,6 +222,13 @@ describe("GET /api/auth/line/callback", () => {
     expect(mocks.verifyOtp).toHaveBeenCalled();
   });
 
+  it("returns to the shared topic and its query after successful LINE login", async () => {
+    cookieValues.line_return_to = "/topics/abc?clubId=club-1&mode=member";
+    const response = await GET(callback("state=expected-state&code=signed-code"));
+    expect(response.headers.get("location")).toBe("http://localhost:3000/topics/abc?clubId=club-1&mode=member");
+    expect(mocks.verifyOtp).toHaveBeenCalled();
+  });
+
   it("explains that an existing LINE identity still needs active platform access", async () => {
     accountHasAccess = false;
     const response = await GET(callback("state=expected-state&code=signed-code"));
