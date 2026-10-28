@@ -73,8 +73,7 @@ npm run check:migrations   # migration 前向性
 
 ### CI 與 Browser Smoke 變更範圍規則
 
-CI 與 Browser Smoke 會先執行輕量的 change-scope gate。只有文件／README／CHANGELOG／LICENSE／Dependabot
-設定等低風險變更會跳過完整工作；`src/`、`supabase/`、`scripts/`、`e2e/`、`public/`、`tests/`、套件鎖檔、建置／部署設定、GitHub workflow、`AGENTS.md` 與無法辨識的新路徑，都視為高風險並執行完整檢查。分類失敗時 fail-open，執行完整檢查。詳細規則見 `docs/development/CI_EXECUTION_POLICY.md`。
+CI 與手動 Browser Smoke 都會先執行輕量的 change-scope gate。高風險變更時，CI 的 validate 與 database 可並行；`member-browser-smoke` 則等待 change-scope 和 database 成功後才啟動。PR 不再另外平行啟動第二份自動 Browser Smoke。`.github/workflows/browser-smoke.yml` 僅供 `workflow_dispatch` 手動備援。只有文件／README／CHANGELOG／LICENSE／Dependabot 設定等低風險變更會跳過完整工作；`src/`、`supabase/`、`scripts/`、`e2e/`、`public/`、`tests/`、套件鎖檔、建置／部署設定、GitHub workflow、`AGENTS.md` 與無法辨識的新路徑，都視為高風險並執行完整檢查。分類失敗時 fail-open，執行完整檢查。詳細規則見 `docs/development/CI_EXECUTION_POLICY.md`。
 
 ## 5. 安全邊界
 

@@ -40,7 +40,7 @@ Environment secrets：
 
 ## 執行步驟
 
-1. 確認目標 commit 已合併至 `main`，Quality、CI 與 Browser Smoke 均通過。
+1. 確認目標 commit 已合併至 `main`，Quality 與 CI（含 `member-browser-smoke`）均通過。
 2. 確認部署平台已完成該 commit 的 staging 部署。
 3. 開啟 `/api/health`，確認 `status=ok`、`environment=staging`，且 `revision` 為目標 commit 的前 12 字元。
 4. 進入 Actions → `Staging Browser Acceptance` → Run workflow。
