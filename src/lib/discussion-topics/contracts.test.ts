@@ -49,6 +49,19 @@ describe("議題討論資料契約", () => {
       comments: [], named_votes: [{ display_name: "不完整" }],
     }, clubId, topicId)).toThrow("invalid_discussion_topic_detail");
   });
+  it("顯示投票者但拒絕名單夾帶個人選項", () => {
+    const base = {
+      ...summary(), my_vote_option_id: null,
+      options: [{ id: optionId, label: "A", vote_count: 1 },
+        { id: "c3000000-0000-4000-8000-000000000002", label: "B", vote_count: 0 }],
+      comments: [], named_votes: [],
+    };
+    const voter = { membership_id: "e5000000-0000-4000-8000-000000000001", display_name: "社員甲" };
+    expect(parseDiscussionTopicDetail({ ...base, voters: [voter] }, clubId, topicId).voters)
+      .toEqual([{ membershipId: voter.membership_id, displayName: voter.display_name }]);
+    expect(() => parseDiscussionTopicDetail({ ...base, voters: [{ ...voter, option_id: optionId }] }, clubId, topicId))
+      .toThrow("invalid_discussion_topic_detail");
+  });
   it("接受僅供幹部使用的編輯資料並驗證社團與選項", () => {
     const edit = parseDiscussionTopicEditData({
       id: topicId, club_id: clubId, title: "服務方向討論", description: "說明",

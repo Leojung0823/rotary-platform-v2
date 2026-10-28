@@ -42,6 +42,9 @@ export function DiscussionTopicDetailView({
     <Card>
       <div className={styles.description}>{topic.description}</div>
       <p className={styles.state}>{topic.isOpen ? "討論與投票進行中" : "已截止：目前只能閱讀"}</p>
+      <p className={styles.privacy}>參與這個議題的人可以看到誰已投票。{topic.anonymousVotes
+        ? "匿名投票不顯示個人選擇，但人數少時仍可能從票數推測。"
+        : "只有社務管理幹部可以查看個人的投票選項。"}</p>
       {managementView && !topic.anonymousVotes && <p className={styles.privacy}>具名投票名單只在社務管理模式顯示。</p>}
     </Card>
 
@@ -63,6 +66,15 @@ export function DiscussionTopicDetailView({
             </div>;
           })}
         </div>}
+    </Card>
+
+    <Card>
+      <div className="section-heading"><div><p className="eyebrow">投票進度</p><h2>已投票的社員</h2></div>
+        <span>{topic.voteCount} 人已投票</span></div>
+      {topic.voters.length === 0 ? <p className={styles.empty}>目前還沒有人投票。</p>
+        : <ul className={styles.voters}>{topic.voters.map((voter) => <li key={voter.membershipId}>
+          <strong>{voter.displayName}</strong>
+        </li>)}</ul>}
     </Card>
 
     {managementView && topic.namedVotes.length > 0 && <Card>

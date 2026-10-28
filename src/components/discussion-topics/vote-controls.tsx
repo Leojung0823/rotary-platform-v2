@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { castDiscussionVoteAction } from "@/app/discussion-topic-actions";
 import { Button } from "@/components/ui";
 import type { DiscussionVoteResult } from "@/lib/discussion-topics/contracts";
@@ -21,6 +22,7 @@ export function DiscussionVoteControls({
   initialVoteCount: number;
   initialMyVoteOptionId: string | null;
 }) {
+  const router = useRouter();
   const [options, setOptions] = useState(initialOptions);
   const [voteCount, setVoteCount] = useState(initialVoteCount);
   const [myVoteOptionId, setMyVoteOptionId] = useState(initialMyVoteOptionId);
@@ -75,6 +77,7 @@ export function DiscussionVoteControls({
       setVoteCount(result.vote.voteCount);
       setMyVoteOptionId(result.vote.myVoteOptionId);
       setStatus("投票已記錄；截止前可以再次改票。");
+      router.refresh();
     } catch {
       setNeedsRefresh(true);
       setStatus("連線中斷，無法確認伺服器是否已記錄；畫面保留暫時選擇，請重新整理核對。");

@@ -3,6 +3,7 @@ import { Button, Card, Field, Input, Notice } from "@/components/ui";
 import { publishDiscussionTopicAction, updateDiscussionTopicAction } from "@/app/discussion-topic-actions";
 import { audienceFromEvent } from "@/lib/audience/selection";
 import type { DiscussionTopicEditData } from "@/lib/discussion-topics/contracts";
+import styles from "./topic-composer.module.css";
 
 function dateTimeLocal(value: string) {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
@@ -68,12 +69,17 @@ export function DiscussionTopicComposer({ clubId, tags, members, initialTopic }:
           <legend className="label">誰可以看到這個議題</legend>
           <AudiencePicker clubId={clubId} tags={tags} members={members} initial={selection} />
         </fieldset>
-        <fieldset className="form-stack">
+        <fieldset className={styles.voteModes}>
           <legend className="label">投票方式</legend>
-          <label className="tag-option"><input type="radio" name="voteMode" value="anonymous"
-            defaultChecked={initialTopic?.anonymousVotes ?? true} /> 匿名投票（任何人都看不到個別投票者）</label>
-          <label className="tag-option"><input type="radio" name="voteMode" value="named"
-            defaultChecked={initialTopic ? !initialTopic.anonymousVotes : undefined} /> 具名投票（只有社務管理幹部能查看誰投了哪一票）</label>
+          <p className="hint">請點選一種方式；有投票或留言後就不能更改。</p>
+          <label className={styles.voteMode}>
+            <input type="radio" name="voteMode" value="anonymous" defaultChecked={initialTopic?.anonymousVotes ?? true} />
+            <span><strong>匿名投票</strong><small>參與者可看到誰已投票，但不顯示個人選擇；人數少時仍可能從票數推測。</small></span>
+          </label>
+          <label className={styles.voteMode}>
+            <input type="radio" name="voteMode" value="named" defaultChecked={initialTopic ? !initialTopic.anonymousVotes : undefined} />
+            <span><strong>具名投票</strong><small>參與者可看到誰已投票；只有社務管理幹部能查看誰投了哪一票。</small></span>
+          </label>
           <p className="hint">社員都能看投票統計；留言會顯示留言者姓名。</p>
         </fieldset>
       </>}
