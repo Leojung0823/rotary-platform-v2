@@ -6,18 +6,27 @@ import { NextResponse, type NextRequest } from "next/server";
 // fallback can stream a 200.
 export const PROTECTED_SESSION_PATHS = [
   "/archives",
+  "/attendance",
+  "/birthday-collection",
   "/birthdays",
+  "/blessings",
   "/board",
   "/club",
+  "/club-affairs",
   "/clubs",
   "/dashboard",
   "/directory",
   "/dues",
   "/events",
   "/features",
+  "/interact",
+  "/joy",
   "/me",
   "/messages",
   "/platform",
+  "/search",
+  "/tasks",
+  "/topics",
 ] as const;
 
 // Anonymous-first pages, outside the (authenticated) layout entirely: they
@@ -63,6 +72,7 @@ function loginRedirectResponse(request: NextRequest, refreshedResponse: NextResp
   loginUrl.pathname = "/login";
   loginUrl.search = "";
   loginUrl.hash = "";
+  loginUrl.searchParams.set("returnTo", request.nextUrl.pathname + request.nextUrl.search);
 
   const redirectResponse = NextResponse.redirect(loginUrl);
   refreshedResponse.cookies.getAll().forEach(({ name, value, ...options }) => {
@@ -114,18 +124,27 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/archives/:path*",
+    "/attendance/:path*",
+    "/birthday-collection/:path*",
     "/birthdays/:path*",
+    "/blessings/:path*",
     "/board/:path*",
     "/club/:path*",
+    "/club-affairs/:path*",
     "/clubs/:path*",
     "/dashboard/:path*",
     "/directory/:path*",
     "/dues/:path*",
     "/events/:path*",
     "/features/:path*",
+    "/interact/:path*",
+    "/joy/:path*",
     "/me/:path*",
     "/messages/:path*",
     "/platform/:path*",
+    "/search/:path*",
+    "/tasks/:path*",
+    "/topics/:path*",
     "/invite/accept",
     "/join",
     "/reset-password",

@@ -62,6 +62,10 @@ describe("safe error and redirect handling", () => {
     expect(safeRedirectPath("/invite/accept")).toBe("/invite/accept");
     expect(safeRedirectPath("//evil.example", "/login")).toBe("/login");
     expect(safeRedirectPath("https://evil.example", "/login")).toBe("/login");
+    expect(safeRedirectPath("/events/123?clubId=abc&mode=member", "/login")).toBe("/events/123?clubId=abc&mode=member");
+    for (const unsafe of ["/\\evil.example", "/%2f%2fevil.example", "/%255c%255cevil.example", "/bad%0dpath"]) {
+      expect(safeRedirectPath(unsafe, "/login")).toBe("/login");
+    }
   });
 });
 
