@@ -56,14 +56,25 @@ jobs:
         with:
           version: 2.84.2
           github-token: ${{ github.token }}
+      - name: Select Supabase image registry after CLI setup
+        run: echo 'SUPABASE_INTERNAL_IMAGE_REGISTRY=public.ecr.aws' >> "$GITHUB_ENV"
       - name: Start local Supabase database
+        env:
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
         shell: bash
         run: bash scripts/retry-supabase-start.sh database
       - name: Reset database from migrations
+        env:
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
         shell: bash
         run: |
+          echo "Supabase image registry: $SUPABASE_INTERNAL_IMAGE_REGISTRY"
           if timeout -k 30 600 supabase db reset --local > /tmp/supabase-reset.log 2>&1; then
-            :
+            if grep -Eiq '(toomanyrequests|too many requests|rate exceeded|rate limit|(^|[^0-9])429([^0-9]|$))' /tmp/supabase-reset.log; then
+              echo "Public ECR rate limit detected during reset; stopping without retry."
+              cat /tmp/supabase-reset.log
+              exit 1
+            fi
           else
             status=$?
             echo "Local database reset failed or timed out (status ${status})."
@@ -165,6 +176,9 @@ jobs:
           version: 2.84.2
           github-token: ${{ github.token }}
 
+      - name: Select Supabase image registry after CLI setup
+        run: echo 'SUPABASE_INTERNAL_IMAGE_REGISTRY=public.ecr.aws' >> "$GITHUB_ENV"
+
       - name: Generate ephemeral local E2E credentials
         shell: bash
         run: |
@@ -186,14 +200,23 @@ jobs:
           echo "Ephemeral local E2E credentials generated and masked."
 
       - name: Start local Supabase with bounded image-pull retries
+        env:
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
         shell: bash
         run: bash scripts/retry-supabase-start.sh full -x 'studio,imgproxy,logflare,vector,edge-runtime,realtime,postgres-meta,supavisor'
 
       - name: Reset local database from migrations
+        env:
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
         shell: bash
         run: |
+          echo "Supabase image registry: $SUPABASE_INTERNAL_IMAGE_REGISTRY"
           if timeout -k 30 600 supabase db reset --local > /tmp/supabase-reset.log 2>&1; then
-            :
+            if grep -Eiq '(toomanyrequests|too many requests|rate exceeded|rate limit|(^|[^0-9])429([^0-9]|$))' /tmp/supabase-reset.log; then
+              echo "Public ECR rate limit detected during reset; stopping without retry."
+              cat /tmp/supabase-reset.log
+              exit 1
+            fi
           else
             status=$?
             echo "Local database reset failed or timed out (status ${status})."

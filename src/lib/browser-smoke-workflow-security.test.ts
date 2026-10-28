@@ -43,6 +43,28 @@ describe("browser smoke workflow security", () => {
     expect(manualWorkflow).toContain("cancel-in-progress: true");
   });
 
+  it("overrides setup-cli with public ECR for every local start and reset", () => {
+    const ciDatabase = ciWorkflow.slice(ciWorkflow.indexOf("  database:\n"), ciWorkflow.indexOf("  member-browser-smoke:\n"));
+    const ciSmoke = ciWorkflow.slice(ciWorkflow.indexOf("  member-browser-smoke:\n"));
+    const manualSmoke = manualWorkflow.slice(manualWorkflow.indexOf("  member-browser-smoke:\n"));
+    for (const job of [ciDatabase, ciSmoke, manualSmoke]) {
+      const setup = job.indexOf("uses: supabase/setup-cli@v2");
+      const override = job.indexOf("SUPABASE_INTERNAL_IMAGE_REGISTRY=public.ecr.aws' >> \"$GITHUB_ENV\"");
+      const start = job.indexOf("- name: Start local Supabase");
+      const reset = job.indexOf("- name: Reset ");
+      expect(setup).toBeGreaterThan(-1);
+      expect(job).toContain("version: 2.84.2");
+      expect(override).toBeGreaterThan(setup);
+      expect(start).toBeGreaterThan(override);
+      expect(reset).toBeGreaterThan(start);
+      expect(job.slice(start, reset)).toContain("SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws");
+      const nextStep = job.indexOf("      - name:", reset + 1);
+      const resetStep = nextStep === -1 ? job.slice(reset) : job.slice(reset, nextStep);
+      expect(resetStep).toContain("SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws");
+      expect(resetStep).toContain("Supabase image registry: $SUPABASE_INTERNAL_IMAGE_REGISTRY");
+    }
+  });
+
   it("does not couple CI cancellation to the separately serialized staging release workflows", () => {
     expect(stagingReleaseWorkflow).toContain("group: staging-release");
     expect(stagingReleaseWorkflow).toContain("cancel-in-progress: false");

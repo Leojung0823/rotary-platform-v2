@@ -32,6 +32,7 @@ esac
 
 log_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/supabase-start-retry.XXXXXX")"
 trap 'rm -rf -- "$log_dir"' EXIT
+echo "Supabase image registry: ${SUPABASE_INTERNAL_IMAGE_REGISTRY:-CLI default}"
 
 is_retryable_image_pull_failure() {
   local status="$1"
@@ -69,13 +70,31 @@ print_attempt_logs() {
   done
 }
 
+is_ecr_rate_limited() {
+  [[ "${SUPABASE_INTERNAL_IMAGE_REGISTRY:-}" == "public.ecr.aws" ]] \
+    && grep -Eiq '(toomanyrequests|too many requests|rate exceeded|rate limit|(^|[^0-9])429([^0-9]|$))' "$1"
+}
+
 for attempt in 1 2 3; do
   attempt_log="$log_dir/attempt-${attempt}.log"
   if timeout -k 30 600 "${command[@]}" >"$attempt_log" 2>&1; then
+    if is_ecr_rate_limited "$attempt_log"; then
+      echo "Public ECR rate limit detected; stopping without retry."
+      print_attempt_logs
+      exit 1
+    fi
     echo "Supabase ${mode} startup succeeded on attempt ${attempt}."
     exit 0
   else
     status=$?
+  fi
+
+  # The product owner explicitly requires stopping on ECR rate limiting,
+  # including avoiding another attempt within this same job.
+  if is_ecr_rate_limited "$attempt_log"; then
+    echo "Public ECR rate limit detected; stopping without retry."
+    print_attempt_logs
+    exit "$status"
   fi
 
   if ! is_retryable_image_pull_failure "$status" "$attempt_log"; then

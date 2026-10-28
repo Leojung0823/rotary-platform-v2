@@ -15,9 +15,10 @@ import { describe, expect, it } from "vitest";
 const helper = resolve("scripts/retry-supabase-start.sh");
 
 function runWithFakeCommands(options: {
-  mode: "retry-twice" | "always-pull" | "non-image" | "stalled-pull" | "cleanup-fails" | "success";
+  mode: "retry-twice" | "always-pull" | "non-image" | "stalled-pull" | "cleanup-fails" | "ecr-rate-limit" | "ecr-429" | "ecr-recovers" | "success";
   helperArgs: string[];
   github?: boolean;
+  registry?: string;
 }): {
   status: number | null;
   stdout: string;
@@ -49,6 +50,9 @@ case "$SUPABASE_TEST_MODE:$start_count" in
   always-pull:*) echo 'failed to pull image: registry unavailable'; exit 1 ;;
   non-image:1) echo 'database initialization failed'; exit 1 ;;
   cleanup-fails:1) echo 'toomanyrequests: registry rate limit'; exit 1 ;;
+  ecr-rate-limit:1) echo 'public.ecr.aws: toomanyrequests: Rate exceeded'; exit 1 ;;
+  ecr-429:1) echo 'public.ecr.aws: unexpected HTTP status 429'; exit 1 ;;
+  ecr-recovers:1) echo 'public.ecr.aws: toomanyrequests: Rate exceeded'; exit 0 ;;
   *) echo 'local services started' ;;
 esac
 `);
@@ -75,6 +79,7 @@ printf '%s\\n' "$1" >> "$SUPABASE_TEST_SLEEPS"
     SUPABASE_TEST_CALLS: callsPath,
     SUPABASE_TEST_SLEEPS: sleepsPath,
     SUPABASE_TEST_MODE: options.mode,
+    SUPABASE_INTERNAL_IMAGE_REGISTRY: options.registry ?? "ghcr.io",
     RUNNER_TEMP: root,
   };
   if (options.github !== false) {
@@ -138,6 +143,19 @@ describe("Supabase CI startup retry helper", () => {
       expect(result.calls.filter((call) => call === "stop --no-backup")).toHaveLength(2);
       expect(result.sleeps).toEqual(["60", "120"]);
       expect(`${result.stdout}${result.stderr}`).toContain("failed after 3 image-pull attempts");
+    } finally {
+      rmSync(result.root, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["ecr-rate-limit", "ecr-429", "ecr-recovers"] as const)("stops immediately on ECR rate limiting: %s", (mode) => {
+    const result = runWithFakeCommands({ mode, registry: "public.ecr.aws", helperArgs: ["database"] });
+    try {
+      expect(result.status).toBe(1);
+      expect(result.calls).toEqual(["db start"]);
+      expect(result.sleeps).toEqual([]);
+      expect(result.stdout).toContain("Supabase image registry: public.ecr.aws");
+      expect(result.stdout).toContain("Public ECR rate limit detected; stopping without retry");
     } finally {
       rmSync(result.root, { recursive: true, force: true });
     }
