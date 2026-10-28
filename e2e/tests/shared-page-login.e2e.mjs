@@ -18,5 +18,5 @@ test("登入後回到分享的議題頁面與社團", async ({ page }) => {
   await page.getByLabel("密碼").fill(password);
   await page.getByRole("button", { name: "登入平台" }).click();
   await expect(page).toHaveURL(new RegExp(`/topics\\?clubId=${clubId}&mode=member`, "u"));
-  await expect(page.getByRole("heading", { name: "議題討論" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "議題討論", exact: true })).toBeVisible();
 });
