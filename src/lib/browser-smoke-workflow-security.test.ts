@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
 const ciWorkflow = readFileSync(".github/workflows/ci.yml", "utf8");
@@ -43,25 +46,78 @@ describe("browser smoke workflow security", () => {
     expect(manualWorkflow).toContain("cancel-in-progress: true");
   });
 
-  it("overrides setup-cli with public ECR for every local start and reset", () => {
+  it("uses GHCR authentication with an isolated anonymous fallback before every local start", () => {
     const ciDatabase = ciWorkflow.slice(ciWorkflow.indexOf("  database:\n"), ciWorkflow.indexOf("  member-browser-smoke:\n"));
     const ciSmoke = ciWorkflow.slice(ciWorkflow.indexOf("  member-browser-smoke:\n"));
     const manualSmoke = manualWorkflow.slice(manualWorkflow.indexOf("  member-browser-smoke:\n"));
     for (const job of [ciDatabase, ciSmoke, manualSmoke]) {
       const setup = job.indexOf("uses: supabase/setup-cli@v2");
-      const override = job.indexOf("SUPABASE_INTERNAL_IMAGE_REGISTRY=public.ecr.aws' >> \"$GITHUB_ENV\"");
+      const override = job.indexOf("SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io' >> \"$GITHUB_ENV\"");
+      const login = job.indexOf("uses: docker/login-action@v3");
+      const report = job.indexOf("- name: Report GHCR authentication or fall back to anonymous");
       const start = job.indexOf("- name: Start local Supabase");
       const reset = job.indexOf("- name: Reset ");
       expect(setup).toBeGreaterThan(-1);
       expect(job).toContain("version: 2.84.2");
+      expect(job).toContain("packages: read");
+      expect(job).toContain("contents: read");
       expect(override).toBeGreaterThan(setup);
-      expect(start).toBeGreaterThan(override);
+      expect(login).toBeGreaterThan(override);
+      expect(report).toBeGreaterThan(login);
+      expect(start).toBeGreaterThan(report);
       expect(reset).toBeGreaterThan(start);
-      expect(job.slice(start, reset)).toContain("SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws");
+      const loginStep = job.slice(job.lastIndexOf("- name: Log in to GHCR", login), report);
+      expect(loginStep).toContain("continue-on-error: true");
+      expect(loginStep).toContain("registry: ghcr.io");
+      expect(loginStep).toContain("username: ${{ github.actor }}");
+      expect(loginStep).toContain("password: ${{ secrets.GITHUB_TOKEN }}");
+      expect(job.slice(report, start)).toContain("steps.ghcr_login.outcome");
+      expect(job.slice(report, start)).toContain("supabase-anonymous.XXXXXX");
+      expect(job.slice(start, reset)).toContain("SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io");
       const nextStep = job.indexOf("      - name:", reset + 1);
       const resetStep = nextStep === -1 ? job.slice(reset) : job.slice(reset, nextStep);
-      expect(resetStep).toContain("SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws");
+      expect(resetStep).toContain("SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io");
       expect(resetStep).toContain("Supabase image registry: $SUPABASE_INTERNAL_IMAGE_REGISTRY");
+    }
+  });
+
+  it("falls back to an empty Docker configuration when login fails", () => {
+    const jobs = [
+      ciWorkflow.slice(ciWorkflow.indexOf("  database:\n"), ciWorkflow.indexOf("  member-browser-smoke:\n")),
+      ciWorkflow.slice(ciWorkflow.indexOf("  member-browser-smoke:\n")),
+      manualWorkflow.slice(manualWorkflow.indexOf("  member-browser-smoke:\n")),
+    ];
+    for (const job of jobs) {
+      const section = job.slice(job.indexOf("      - name: Report GHCR authentication or fall back to anonymous"));
+      const scriptStart = section.indexOf("        run: |\n") + "        run: |\n".length;
+      const scriptEnd = section.indexOf("\n      - name:", scriptStart);
+      expect(scriptStart).toBeGreaterThan("        run: |\n".length - 1);
+      expect(scriptEnd).toBeGreaterThan(scriptStart);
+      const script = section.slice(scriptStart, scriptEnd).split("\n").map((line) => line.replace(/^ {10}/u, "")).join("\n");
+      const root = mkdtempSync(join(tmpdir(), "rotary-ghcr-fallback-"));
+      try {
+        const githubEnv = join(root, "github-env");
+        writeFileSync(githubEnv, "");
+        const failure = spawnSync("bash", ["-e", "-c", script], {
+          encoding: "utf8",
+          env: { ...process.env, GHCR_LOGIN_OUTCOME: "failure", RUNNER_TEMP: root, GITHUB_ENV: githubEnv },
+        });
+        expect(failure.status).toBe(0);
+        expect(failure.stdout).toContain("using anonymous Docker configuration");
+        const entry = readFileSync(githubEnv, "utf8").trim();
+        expect(entry).toMatch(/^DOCKER_CONFIG=/u);
+        expect(readdirSync(entry.slice("DOCKER_CONFIG=".length))).toEqual([]);
+        writeFileSync(githubEnv, "");
+        const success = spawnSync("bash", ["-e", "-c", script], {
+          encoding: "utf8",
+          env: { ...process.env, GHCR_LOGIN_OUTCOME: "success", RUNNER_TEMP: root, GITHUB_ENV: githubEnv },
+        });
+        expect(success.status).toBe(0);
+        expect(success.stdout).toContain("Docker login succeeded");
+        expect(readFileSync(githubEnv, "utf8")).toBe("");
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
     }
   });
 

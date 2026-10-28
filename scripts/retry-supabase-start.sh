@@ -70,16 +70,16 @@ print_attempt_logs() {
   done
 }
 
-is_ecr_rate_limited() {
-  [[ "${SUPABASE_INTERNAL_IMAGE_REGISTRY:-}" == "public.ecr.aws" ]] \
+is_registry_rate_limited() {
+  [[ "${SUPABASE_INTERNAL_IMAGE_REGISTRY:-}" == "public.ecr.aws" || "${SUPABASE_INTERNAL_IMAGE_REGISTRY:-}" == "ghcr.io" ]] \
     && grep -Eiq '(toomanyrequests|too many requests|rate exceeded|rate limit|(^|[^0-9])429([^0-9]|$))' "$1"
 }
 
 for attempt in 1 2 3; do
   attempt_log="$log_dir/attempt-${attempt}.log"
   if timeout -k 30 600 "${command[@]}" >"$attempt_log" 2>&1; then
-    if is_ecr_rate_limited "$attempt_log"; then
-      echo "Public ECR rate limit detected; stopping without retry."
+    if is_registry_rate_limited "$attempt_log"; then
+      echo "Registry rate limit detected (${SUPABASE_INTERNAL_IMAGE_REGISTRY}); stopping without retry."
       print_attempt_logs
       exit 1
     fi
@@ -89,10 +89,10 @@ for attempt in 1 2 3; do
     status=$?
   fi
 
-  # The product owner explicitly requires stopping on ECR rate limiting,
+  # The product owner explicitly requires stopping on registry rate limiting,
   # including avoiding another attempt within this same job.
-  if is_ecr_rate_limited "$attempt_log"; then
-    echo "Public ECR rate limit detected; stopping without retry."
+  if is_registry_rate_limited "$attempt_log"; then
+    echo "Registry rate limit detected (${SUPABASE_INTERNAL_IMAGE_REGISTRY}); stopping without retry."
     print_attempt_logs
     exit "$status"
   fi
