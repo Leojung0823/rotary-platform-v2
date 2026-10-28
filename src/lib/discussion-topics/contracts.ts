@@ -13,6 +13,7 @@ export type DiscussionTopicDetail = DiscussionTopicSummary & Readonly<{
   myVoteOptionId: string | null;
   options: readonly Readonly<{ id: string; label: string; voteCount: number }>[];
   comments: readonly Readonly<{ id: string; body: string; authorDisplayName: string; createdAt: string }>[];
+  voters: readonly Readonly<{ membershipId: string; displayName: string }>[];
   namedVotes: readonly Readonly<{ membershipId: string; displayName: string; optionId: string; optionText: string }>[];
 }>;
 
@@ -100,7 +101,8 @@ export function parseDiscussionTopicDetail(value: unknown, expectedClubId: strin
     || !(value.my_vote_option_id === null || (typeof value.my_vote_option_id === "string" && uuidPattern.test(value.my_vote_option_id)))
     || !Array.isArray(value.options) || value.options.length < 2 || value.options.length > 8
     || !Array.isArray(value.comments) || value.comments.length > 200
-    || !Array.isArray(value.named_votes) || value.named_votes.length > 1000) throw new Error("invalid_discussion_topic_detail");
+    || !Array.isArray(value.named_votes) || value.named_votes.length > 1000
+    || (value.voters !== undefined && (!Array.isArray(value.voters) || value.voters.length > 1000))) throw new Error("invalid_discussion_topic_detail");
 
   const options = value.options.map((option) => {
     if (!isRecord(option) || typeof option.id !== "string" || !uuidPattern.test(option.id)
@@ -115,6 +117,12 @@ export function parseDiscussionTopicDetail(value: unknown, expectedClubId: strin
       || !isDateTime(comment.created_at)) return null;
     return { id: comment.id.toLowerCase(), body: comment.body, authorDisplayName: comment.author_display_name, createdAt: comment.created_at };
   });
+  const voters = (value.voters ?? []).map((voter: unknown) => {
+    if (!isRecord(voter) || typeof voter.membership_id !== "string" || !uuidPattern.test(voter.membership_id)
+      || typeof voter.display_name !== "string" || voter.display_name.length > 100
+      || "option_id" in voter || "option_text" in voter) return null;
+    return { membershipId: voter.membership_id.toLowerCase(), displayName: voter.display_name };
+  });
   const namedVotes = value.named_votes.map((vote) => {
     if (!isRecord(vote) || typeof vote.membership_id !== "string" || !uuidPattern.test(vote.membership_id)
       || typeof vote.display_name !== "string" || vote.display_name.length > 100
@@ -123,12 +131,14 @@ export function parseDiscussionTopicDetail(value: unknown, expectedClubId: strin
     return { membershipId: vote.membership_id.toLowerCase(), displayName: vote.display_name, optionId: vote.option_id.toLowerCase(), optionText: vote.option_text };
   });
   if (options.some((option) => option === null) || comments.some((comment) => comment === null)
+    || voters.some((voter: unknown) => voter === null)
     || namedVotes.some((vote) => vote === null)) throw new Error("invalid_discussion_topic_detail");
   return {
     ...summary,
     myVoteOptionId: value.my_vote_option_id === null ? null : (value.my_vote_option_id as string).toLowerCase(),
     options: options as DiscussionTopicDetail["options"],
     comments: comments as DiscussionTopicDetail["comments"],
+    voters: voters as DiscussionTopicDetail["voters"],
     namedVotes: namedVotes as DiscussionTopicDetail["namedVotes"],
   };
 }

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { castDiscussionVoteAction } from "@/app/discussion-topic-actions";
-import { Button } from "@/components/ui";
-import type { DiscussionVoteResult } from "@/lib/discussion-topics/contracts";
+import { Button, Card } from "@/components/ui";
+import type { DiscussionTopicDetail, DiscussionVoteResult } from "@/lib/discussion-topics/contracts";
 import styles from "./topic-detail.module.css";
 
 type VoteOption = { id: string; label: string; voteCount: number };
@@ -14,12 +14,14 @@ export function DiscussionVoteControls({
   initialOptions,
   initialVoteCount,
   initialMyVoteOptionId,
+  initialVoters,
 }: {
   clubId: string;
   topicId: string;
   initialOptions: readonly VoteOption[];
   initialVoteCount: number;
   initialMyVoteOptionId: string | null;
+  initialVoters: DiscussionTopicDetail["voters"];
 }) {
   const [options, setOptions] = useState(initialOptions);
   const [voteCount, setVoteCount] = useState(initialVoteCount);
@@ -27,6 +29,7 @@ export function DiscussionVoteControls({
   const [pending, setPending] = useState(false);
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const [status, setStatus] = useState("");
+  const [voters, setVoters] = useState<DiscussionTopicDetail["voters"] | null>(initialVoters);
 
   async function castVote(optionId: string) {
     if (pending) return;
@@ -75,6 +78,7 @@ export function DiscussionVoteControls({
       setVoteCount(result.vote.voteCount);
       setMyVoteOptionId(result.vote.myVoteOptionId);
       setStatus("投票已記錄；截止前可以再次改票。");
+      setVoters(result.voters);
     } catch {
       setNeedsRefresh(true);
       setStatus("連線中斷，無法確認伺服器是否已記錄；畫面保留暫時選擇，請重新整理核對。");
@@ -84,6 +88,8 @@ export function DiscussionVoteControls({
   }
 
   return <>
+    <Card>
+    <div className="section-heading"><div><p className="eyebrow">投票</p><h2>選擇一個答案</h2></div></div>
     <div className={styles.options}>
       {options.map((option) => {
         const selected = myVoteOptionId === option.id;
@@ -103,6 +109,16 @@ export function DiscussionVoteControls({
     <p className={styles.voteStatus} role="status" aria-live="polite">
       {status || `${voteCount} 人已投票`}
     </p>
+    </Card>
+    <Card>
+      <div className="section-heading"><div><p className="eyebrow">投票進度</p><h2>已投票的社員</h2></div>
+        <span>{voteCount} 人已投票</span></div>
+      {voters === null ? <p className={styles.empty}>投票已記錄，但名單暫時無法更新，請重新整理。</p>
+        : voters.length === 0 ? <p className={styles.empty}>目前還沒有人投票。</p>
+          : <ul className={styles.voters}>{voters.map((voter) => <li key={voter.membershipId}>
+            <strong>{voter.displayName}</strong>
+          </li>)}</ul>}
+    </Card>
   </>;
 }
 

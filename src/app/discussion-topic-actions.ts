@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireIdentity } from "@/lib/auth";
-import { parseDiscussionVoteResult, type DiscussionVoteResult } from "@/lib/discussion-topics/contracts";
+import { parseDiscussionTopicDetail, parseDiscussionVoteResult, type DiscussionTopicDetail, type DiscussionVoteResult } from "@/lib/discussion-topics/contracts";
 import { createClient } from "@/lib/supabase/server";
 import {
   parseDiscussionAudienceKind, parseDiscussionOptions, parseDiscussionUuid,
@@ -158,7 +158,7 @@ export async function addDiscussionCommentAction(formData: FormData) {
 }
 
 export type CastDiscussionVoteActionResult =
-  | { ok: true; vote: DiscussionVoteResult }
+  | { ok: true; vote: DiscussionVoteResult; voters: DiscussionTopicDetail["voters"] | null }
   | { ok: false; message: "closed" | "invalid_input" | "unexpected" | "uncertain" };
 
 export async function castDiscussionVoteAction(formData: FormData): Promise<CastDiscussionVoteActionResult> {
@@ -182,13 +182,22 @@ export async function castDiscussionVoteAction(formData: FormData): Promise<Cast
     const vote = parseDiscussionVoteResult(data, clubId, topicId);
     if (vote.myVoteOptionId !== optionId) return { ok: false, message: "uncertain" };
     confirmedVote = vote;
+    let voters: DiscussionTopicDetail["voters"] | null = null;
+    try {
+      const detail = await supabase.rpc("get_my_club_discussion_topic", { p_club_id: clubId, p_topic_id: topicId });
+      if (!detail.error && detail.data) voters = parseDiscussionTopicDetail(detail.data, clubId, topicId).voters;
+    } catch {
+      // The vote is already committed; never report it as a failed vote.
+    }
     revalidatePath("/topics");
+    revalidatePath(`/topics/${topicId}`);
+    revalidatePath(`/clubs/${clubId}/topics/${topicId}`);
     revalidatePath("/dashboard");
     revalidatePath("/tasks");
-    return { ok: true, vote };
+    return { ok: true, vote, voters };
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("NEXT_REDIRECT")) throw error;
-    if (confirmedVote) return { ok: true, vote: confirmedVote };
+    if (confirmedVote) return { ok: true, vote: confirmedVote, voters: null };
     if (rpcAttempted) return { ok: false, message: "uncertain" };
     return { ok: false, message: "invalid_input" };
   }

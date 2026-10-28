@@ -36,7 +36,18 @@ test("幹部發佈議題後，社員收到待辦、留言投票，具名票只�
   await page.locator('textarea[name="description"]').fill("請社員分享想法，並投票決定是否先進行小規模試辦。");
   await page.locator('textarea[name="options"]').fill("先小規模試辦\n維持原計劃");
   await page.locator('input[name="deadlineAt"]').fill(futureTaipeiDateTime());
-  await page.getByRole("radio", { name: /具名投票/u }).check();
+  const anonymous = page.getByRole("radio", { name: /匿名投票/u });
+  const named = page.getByRole("radio", { name: /具名投票/u });
+  await expect(anonymous).toBeVisible();
+  await expect(named).toBeVisible();
+  await expect(anonymous).toBeChecked();
+  await page.getByText("具名投票", { exact: true }).click();
+  await expect(named).toBeChecked();
+  await anonymous.focus();
+  await page.keyboard.press("Space");
+  await expect(anonymous).toBeChecked();
+  await page.getByText("具名投票", { exact: true }).click();
+  await expect(named).toBeChecked();
   await page.getByRole("button", { name: "發布議題" }).click();
   await expect(page.getByRole("status").filter({ hasText: "議題已發佈" })).toContainText("議題已發佈");
 
@@ -75,6 +86,8 @@ test("幹部發佈議題後，社員收到待辦、留言投票，具名票只�
       .toHaveCSS("background-color", "rgb(10, 114, 232)");
     await expect(memberPage.getByText("您目前選擇")).toBeVisible();
     await expect(memberPage.getByText(/投票已送出|投票已記錄/u)).toBeVisible();
+    await expect(memberPage.getByRole("heading", { name: "已投票的社員" })).toBeVisible();
+    await expect(memberPage.locator("ul").filter({ hasText: "一般社員" }).getByText("一般社員", { exact: true })).toBeVisible();
     await memberPage.goto(new URL("/tasks?clubId=" + clubId + "&mode=member", baseURL).toString());
     await expect(memberPage.getByRole("link").filter({ hasText: title })).toHaveCount(0);
 
@@ -82,7 +95,8 @@ test("幹部發佈議題後，社員收到待辦、留言投票，具名票只�
     const detailLink = page.getByRole("link").filter({ hasText: title }).first();
     await detailLink.click();
     await expect(page.getByRole("heading", { name: "具名投票名單" })).toBeVisible();
-    await expect(page.locator("ul").filter({ hasText: "一般社員" }).getByText("一般社員", { exact: true })).toBeVisible();
+    await expect(page.locator("section").filter({ has: page.getByRole("heading", { name: "具名投票名單" }) })
+      .getByText("一般社員", { exact: true })).toBeVisible();
 
     await page.getByRole("link", { name: "編輯議題" }).click();
     await expect(page.getByText(/已有投票或留言/u)).toBeVisible();
@@ -98,6 +112,38 @@ test("幹部發佈議題後，社員收到待辦、留言投票，具名票只�
     await expect(page.getByRole("link").filter({ hasText: title })).toHaveCount(0);
     await memberPage.goto(new URL("/topics?clubId=" + clubId + "&mode=member", baseURL).toString());
     await expect(memberPage.getByRole("link").filter({ hasText: title })).toHaveCount(0);
+  } finally {
+    await memberContext.close();
+  }
+});
+
+test("匿名議題顯示投票者，但不顯示個人選項", async ({ page, browser }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium", "This flow writes fixture data and runs once.");
+  test.setTimeout(60_000);
+  const title = "匿名投票驗收 " + Date.now();
+  await signIn(page, "e2e-shell-member-manager@example.test");
+  await page.goto(new URL("/clubs/" + clubId + "/topics?mode=management", baseURL).toString());
+  await page.locator('input[name="title"]').fill(title);
+  await page.locator('textarea[name="description"]').fill("請社員參與匿名投票。");
+  await page.locator('textarea[name="options"]').fill("同意\n不同意");
+  await page.locator('input[name="deadlineAt"]').fill(futureTaipeiDateTime());
+  await expect(page.getByRole("radio", { name: /匿名投票/u })).toBeChecked();
+  await page.getByRole("button", { name: "發布議題" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "議題已發佈" })).toBeVisible();
+  const memberContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  try {
+    const memberPage = await memberContext.newPage();
+    await signIn(memberPage, "e2e-shell-ordinary@example.test");
+    await memberPage.goto(new URL("/topics?clubId=" + clubId + "&mode=member", baseURL).toString());
+    await memberPage.getByRole("link").filter({ hasText: title }).click();
+    await expect(memberPage.getByText(/人數少時仍可能從票數推測/u)).toBeVisible();
+    await memberPage.getByRole("button", { name: "投這一票" }).first().click();
+    await expect(memberPage.getByText("投票已記錄；截止前可以再次改票。", { exact: true })).toBeVisible();
+    await expect(memberPage.locator("section").filter({ has: memberPage.getByRole("heading", { name: "已投票的社員" }) })
+      .getByText("一般社員", { exact: true })).toBeVisible();
+    await page.getByRole("link").filter({ hasText: title }).first().click();
+    await expect(page.getByRole("heading", { name: "已投票的社員" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "具名投票名單" })).toHaveCount(0);
   } finally {
     await memberContext.close();
   }

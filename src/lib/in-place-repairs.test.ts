@@ -76,7 +76,9 @@ describe("就地修補過的函式，不准被下一次重述悄悄改回去", (
       if (!declared.includes(repair.after)) {
         reverted.push(`${declaring} restates ${repair.target} without ${repair.file}'s fix`);
       }
-      if (declared.includes(repair.before)) {
+      // Additive replacements deliberately retain the anchor inside the new
+      // text; presence of the full replacement above is the meaningful guard.
+      if (!repair.after.includes(repair.before) && declared.includes(repair.before)) {
         reverted.push(`${declaring} brought back the text ${repair.file} repaired`);
       }
     }

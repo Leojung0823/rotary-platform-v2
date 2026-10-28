@@ -122,6 +122,12 @@ begin
  end if;
  perform public.add_club_discussion_comment('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid,'支持擴大服務。');
  vote_result := public.cast_club_discussion_vote('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid,current_setting('discussion.target_option')::uuid);
+ detail := public.get_my_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid);
+ if not exists(select 1 from jsonb_array_elements(detail->'voters') v where v->>'display_name'='受邀社員')
+   or exists(select 1 from jsonb_array_elements(detail->'voters') v where v ? 'option_id' or v ? 'option_text')
+   or jsonb_array_length(detail->'named_votes')<>0 then
+  raise exception 'Anonymous participation missing or ballot choice leaked.';
+ end if;
  if vote_result ? 'named_votes' or vote_result ? 'comments'
    or vote_result->>'my_vote_option_id'<>current_setting('discussion.target_option')
    or vote_result->>'vote_count'<>'1' then
@@ -171,6 +177,9 @@ begin
  then raise exception 'Officer could not read named ballot.'; end if;
  anonymous_detail := public.get_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid);
  if jsonb_array_length(anonymous_detail->'named_votes')<>0 then raise exception 'Anonymous ballot was disclosed to officer.'; end if;
+ if not exists(select 1 from jsonb_array_elements(anonymous_detail->'voters') v where v->>'display_name'='受邀社員')
+   or exists(select 1 from jsonb_array_elements(anonymous_detail->'voters') v where v ? 'option_id' or v ? 'option_text')
+ then raise exception 'Officer participation list was missing or exposed an anonymous choice.'; end if;
 
  edit_data := public.get_club_discussion_topic_edit('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid);
  updated := public.update_club_discussion_topic('5d000000-0000-4000-8000-000000000001',current_setting('discussion.targeted_id')::uuid,
