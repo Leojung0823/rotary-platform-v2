@@ -185,5 +185,15 @@ export function mapDatabaseError(message: string): string {
 }
 
 export function safeRedirectPath(value: string | null | undefined, fallback = "/dashboard") {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : fallback;
+  if (!value || value.length > 2048 || !value.startsWith("/") || value.startsWith("//")) return fallback;
+  if (value.includes("\\") || /[\u0000-\u001f\u007f]/u.test(value)) return fallback;
+  let decoded = value;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try { decoded = decodeURIComponent(decoded); } catch { return fallback; }
+    if (decoded.startsWith("//") || decoded.includes("\\") || /[\u0000-\u001f\u007f]/u.test(decoded)) return fallback;
+  }
+  try {
+    if (new URL(value, "https://redirect.local").origin !== "https://redirect.local") return fallback;
+  } catch { return fallback; }
+  return value;
 }
