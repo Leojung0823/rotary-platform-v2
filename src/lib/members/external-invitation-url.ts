@@ -1,4 +1,4 @@
-import { withLineExternalBrowser } from "@/lib/pwa/install";
+import { withExternalBrowser } from "@/lib/line/external-browser";
 
 export type MemberInvitationPath = "/join" | "/join-club";
 
@@ -14,5 +14,5 @@ export function externalMemberInvitationUrl(
 ) {
   const target = new URL(path, siteOrigin);
   target.searchParams.set("token", token);
-  return withLineExternalBrowser(target.toString());
+  return withExternalBrowser(target.toString());
 }

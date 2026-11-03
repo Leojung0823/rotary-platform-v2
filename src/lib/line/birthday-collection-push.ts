@@ -1,4 +1,5 @@
 import "server-only";
+import { withExternalBrowser } from "@/lib/line/external-browser";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { evaluateFeatureFlag, parseFeatureFlagRecord, resolveRuntimeAppEnvironment } from "@/lib/product/feature-flags";
@@ -70,7 +71,7 @@ export function resolveInvitationLink(
   try {
     const site = trustedSiteUrl(environment);
     const target = new URL(actionPath, site);
-    return target.origin === site.origin ? target.toString() : null;
+    return target.origin === site.origin ? withExternalBrowser(target.toString()) : null;
   } catch {
     return null;
   }

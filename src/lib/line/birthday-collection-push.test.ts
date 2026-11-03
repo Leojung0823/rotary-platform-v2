@@ -123,7 +123,7 @@ describe("birthday invitation link", () => {
 
   it("builds an absolute link from the in-app action path", () => {
     expect(resolveInvitationLink("/birthday-collection?clubId=abc", hosted))
-      .toBe("https://club.example.com/birthday-collection?clubId=abc");
+      .toBe("https://club.example.com/birthday-collection?clubId=abc&openExternalBrowser=1");
   });
 
   it("refuses a protocol-relative path that would resolve to another site", () => {

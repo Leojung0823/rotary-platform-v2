@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { trustedSiteUrl } from "@/lib/site-url";
+import { withExternalBrowser } from "@/lib/line/external-browser";
 import { sendLineOaMessage, type LineDeliveryResult } from "./messaging";
 import { loadClubOaDispatchContext } from "./oa-dispatch";
 
@@ -69,7 +70,7 @@ export function composeJoyIouReminderText(
     const site = trustedSiteUrl(environment);
     const path = "/joy?clubId=" + encodeURIComponent(clubId) + "&mode=member";
     const link = new URL(path, site);
-    if (link.origin === site.origin) return message + "\n\n查看待辦：\n" + link.toString();
+    if (link.origin === site.origin) return message + "\n\n查看待辦：\n" + withExternalBrowser(link.toString());
   } catch {
     // The reminder remains useful without a link if the site origin is
     // temporarily misconfigured. Never substitute an untrusted host.

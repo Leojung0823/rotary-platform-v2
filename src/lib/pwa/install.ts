@@ -1,3 +1,5 @@
+import { withExternalBrowser } from "@/lib/line/external-browser";
+
 export const INSTALL_PAGE_HREF = "/install?openExternalBrowser=1";
 
 export const INSTALL_DISMISSAL_KEY = "rotary-install-card-dismissed-until";
@@ -62,30 +64,14 @@ export function detectEmbeddedBrowser(userAgent: string): "line" | "facebook" | 
  * LIFF URLs are intentionally left untouched because LINE ignores the
  * parameter for them.
  */
-export function withLineExternalBrowser(url: string, baseUrl = "https://rotary.invalid"): string {
-  let parsed: URL;
-  try {
-    parsed = new URL(url, baseUrl);
-  } catch {
-    return url;
-  }
-
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return url;
-  if (parsed.hostname === "liff.line.me") return url;
-
-  parsed.searchParams.set("openExternalBrowser", "1");
-  const isAbsolute = /^[a-z][a-z\d+.-]*:/iu.test(url);
-  return isAbsolute
-    ? parsed.toString()
-    : `${parsed.pathname}${parsed.search}${parsed.hash}`;
-}
+export const withLineExternalBrowser = withExternalBrowser;
 
 export function externalInstallUrl(origin: string): string {
   let pageUrl: URL;
   try {
     pageUrl = new URL("/install", origin);
   } catch {
-    return withLineExternalBrowser("/install");
+    return withExternalBrowser("/install");
   }
-  return withLineExternalBrowser(pageUrl.toString());
+  return withExternalBrowser(pageUrl.toString());
 }

@@ -53,6 +53,7 @@ describe("Joy IOU deadline reminder delivery", () => {
     );
     expect(text).toContain("3筆非金錢承諾已逾期");
     expect(text).toContain("https://rotary.example.com/joy?clubId=");
+    expect(text).toContain("openExternalBrowser=1");
     expect(text).not.toContain("承諾內容");
     expect(text).not.toContain("收件者姓名");
   });
