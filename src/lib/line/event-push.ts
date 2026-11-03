@@ -1,7 +1,7 @@
 import "server-only";
 
 import { evaluateCurrentFeatureFlag } from "@/lib/product/feature-flag-adapter.server";
-import { withLineExternalBrowser } from "@/lib/pwa/install";
+import { withExternalBrowser } from "@/lib/line/external-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MessagePushOutcome } from "./message-push-outcome";
 import { deliverClubOaText, loadClubOaDispatchContext } from "./oa-dispatch";
@@ -31,7 +31,7 @@ function formatStart(startsAt: string, timeUnspecified: boolean) {
  */
 export function eventUrl(eventId: string) {
   const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/+$/u, "");
-  return withLineExternalBrowser(`${origin}/events/${encodeURIComponent(eventId)}`);
+  return withExternalBrowser(`${origin}/events/${encodeURIComponent(eventId)}`);
 }
 
 /**

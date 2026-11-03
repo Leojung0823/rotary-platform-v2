@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 
 const mocks = vi.hoisted(() => ({
   createServerClient: vi.fn(),
@@ -214,14 +215,44 @@ describe("auth session proxy", () => {
 });
 
 describe("middleware matcher", () => {
-  it("runs the middleware for exactly the paths that declare they need it", () => {
-    // A path listed as protected but absent from the matcher is not protected
-    // at all: the middleware never runs, so an anonymous visitor gets a 200
-    // shell that redirects itself from the client instead of a 307 before any
-    // of the page streams. That is how /messages shipped the first time.
-    expect(config.matcher).toEqual([
-      ...PROTECTED_SESSION_PATHS.map((path) => `${path}/:path*`),
-      ...SESSION_REFRESH_ONLY_PATHS,
-    ]);
+  it("keeps every protected and public entry point covered while excluding assets and APIs", () => {
+    for (const path of [...PROTECTED_SESSION_PATHS, ...SESSION_REFRESH_ONLY_PATHS, "/", "/login", "/install", "/join-club"]) {
+      expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url: path }), path).toBe(true);
+    }
+    for (const path of ["/api/test", "/_next/static/x.js", "/icon.png", "/manifest.webmanifest"]) {
+      expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url: path }), path).toBe(false);
+    }
+  });
+});
+
+describe("LINE external browser redirect", () => {
+  const line = "Mozilla/5.0 Line/14.2";
+  const request = (path: string, headers: Record<string, string> = {}, method = "GET") =>
+    new NextRequest(`https://app.example.test${path}`, { method, headers: { "user-agent": line, accept: "text/html", ...headers } });
+
+  it("adds the parameter without losing path or duplicate query values", async () => {
+    const response = await proxy(request("/events/123?clubId=a&tag=one&tag=two"));
+    const target = new URL(response.headers.get("location")!);
+    expect(response.status).toBe(307);
+    expect(target.pathname).toBe("/events/123");
+    expect(target.searchParams.getAll("tag")).toEqual(["one", "two"]);
+    expect(target.searchParams.get("clubId")).toBe("a");
+    expect(target.searchParams.get("openExternalBrowser")).toBe("1");
+    expect(response.headers.get("cache-control")).toContain("no-store");
+  });
+  it.each([
+    ["already present", "/install?openExternalBrowser=0", {}, "GET"],
+    ["non LINE", "/install", { "user-agent": "Mozilla" }, "GET"],
+    ["LIFF", "/install", { "user-agent": "Line/14 LIFF" }, "GET"],
+    ["API", "/api/auth/line/callback?state=x", {}, "GET"],
+    ["auth callback", "/auth/callback?code=x&state=y", {}, "GET"],
+    ["image", "/icon.png", {}, "GET"],
+    ["manifest", "/manifest.webmanifest", {}, "GET"],
+    ["POST", "/install", {}, "POST"],
+    ["RSC", "/install", { rsc: "1" }, "GET"],
+    ["fetch", "/install", { "sec-fetch-dest": "empty" }, "GET"],
+  ])("does not redirect %s", async (_name, path, headers, method) => {
+    const response = await proxy(request(path, headers, method));
+    expect(response.headers.get("location")).toBeNull();
   });
 });

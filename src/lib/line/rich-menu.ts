@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { withLineExternalBrowser } from "@/lib/pwa/install";
+import { withExternalBrowser } from "@/lib/line/external-browser";
 
 export const RICH_MENU_WIDTH = 2500;
 export const RICH_MENU_HEIGHT = 1686;
@@ -77,7 +77,7 @@ function memberUri(siteUrl: string, path: string, clubId: string) {
   if (url.origin !== trustedSite(siteUrl).origin) throw new Error("invalid_site_url");
   url.searchParams.set("clubId", clubId);
   url.searchParams.set("mode", "member");
-  return withLineExternalBrowser(url.toString());
+  return withExternalBrowser(url.toString());
 }
 
 function menuName(clubId: string) {

@@ -82,6 +82,26 @@ function loginRedirectResponse(request: NextRequest, refreshedResponse: NextResp
 }
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const userAgent = request.headers.get("user-agent") ?? "";
+  const destination = request.headers.get("sec-fetch-dest");
+  const isPageNavigation = request.method === "GET"
+    && (!destination || destination === "document")
+    && !request.headers.has("rsc") && !request.headers.has("next-router-prefetch")
+    && !request.headers.has("next-action")
+    && (!request.headers.has("accept") || request.headers.get("accept")!.includes("text/html"));
+  const excluded = /^\/(?:api|_next|auth)(?:\/|$)/iu.test(pathname)
+    || /\.(?:avif|css|gif|ico|jpe?g|js|json|map|png|svg|webmanifest|webp|woff2?)$/iu.test(pathname)
+    || pathname === "/manifest";
+  if (isPageNavigation && !excluded && /Line\//iu.test(userAgent) && !/LIFF/iu.test(userAgent)
+      && !request.nextUrl.searchParams.has("openExternalBrowser")) {
+    const target = request.nextUrl.clone();
+    target.searchParams.set("openExternalBrowser", "1");
+    const redirect = NextResponse.redirect(target);
+    redirect.headers.set("Cache-Control", "private, no-store");
+    redirect.headers.set("Vary", "User-Agent");
+    return redirect;
+  }
   let response = forwardedResponse(request);
   if (!shouldRefreshAuthSession(request.nextUrl.pathname)) return response;
 
@@ -117,36 +137,8 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-// Next requires a statically analysable matcher, so this repeats the lists
-// above rather than deriving from them. A path present in one and missing from
-// the other silently loses its protection -- the middleware simply never runs
-// for it -- so `proxy.test.ts` asserts the two stay in step.
+// Include public page routes as well as protected pages, while keeping static
+// assets and API calls out of the proxy. Auth callbacks are excluded in code.
 export const config = {
-  matcher: [
-    "/archives/:path*",
-    "/attendance/:path*",
-    "/birthday-collection/:path*",
-    "/birthdays/:path*",
-    "/blessings/:path*",
-    "/board/:path*",
-    "/club/:path*",
-    "/club-affairs/:path*",
-    "/clubs/:path*",
-    "/dashboard/:path*",
-    "/directory/:path*",
-    "/dues/:path*",
-    "/events/:path*",
-    "/features/:path*",
-    "/interact/:path*",
-    "/joy/:path*",
-    "/me/:path*",
-    "/messages/:path*",
-    "/platform/:path*",
-    "/search/:path*",
-    "/tasks/:path*",
-    "/topics/:path*",
-    "/invite/accept",
-    "/join",
-    "/reset-password",
-  ],
+  matcher: ["/((?!api(?:/|$)|_next(?:/|$)|.*\\.(?:avif|css|gif|ico|jpe?g|js|json|map|png|svg|webmanifest|webp|woff2?)$).*)"],
 };
