@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { resetPasswordAction } from "@/app/auth-actions";
 import { Button, Card, Field, Input, Notice } from "@/components/ui";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { trustedSiteRedirect } from "@/lib/site-url";
 import { safeMessage } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,9 @@ export default async function ResetPasswordPage({
   const store = await cookies();
   const recoveryMarker = store.get("rotary_recovery")?.value ?? "";
   const user = await getAuthenticatedUser();
-  if (!user || !/^[0-9a-f]{48}$/i.test(recoveryMarker)) redirect("/login?error=recovery_invalid");
+  if (!user || !/^[0-9a-f]{48}$/i.test(recoveryMarker)) {
+    redirect(trustedSiteRedirect("/login?error=recovery_invalid").toString());
+  }
 
   const query = await searchParams;
   const message = safeMessage(query.error);
